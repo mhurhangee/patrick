@@ -3,20 +3,17 @@
 ## Structure
 
 ```
-apps/web        React + Vite frontend
-apps/api        Hono on Bun (API server)
+apps/frontend   React + Vite (browser + Tauri webview)
+apps/api        Hono on Bun (API server / Tauri sidecar)
 apps/desktop    Tauri desktop wrapper
-packages/ui     Shared shadcn/ui components
 packages/db     Drizzle schema + migrations
-packages/ai     AI SDK config and providers
-_archive/       Reference code (not active)
 ```
 
 ## Stack
 
 - **Frontend**: React + Vite, Tailwind, shadcn/ui
-- **API**: Hono on Bun — compiles to standalone binary for Tauri sidecar
-- **Desktop**: Tauri (wraps `apps/web`, sidecars `apps/api` binary)
+- **API**: Hono on Bun — compiles to standalone binary for Tauri sidecar. AI SDK lives here (lib/ai.ts for provider config).
+- **Desktop**: Tauri (wraps `apps/frontend`, sidecars `apps/api` binary)
 - **DB**: Drizzle ORM — SQLite locally, libSQL/Turso in cloud, per-tenant
 - **Auth**: None locally, Better Auth for cloud/self-hosted
 - **AI**: Vercel AI SDK — Ollama locally, Anthropic/OpenAI in cloud
@@ -31,8 +28,8 @@ _archive/       Reference code (not active)
 ## Running
 
 ```bash
-pnpm --filter web dev    # frontend on localhost:5173
-pnpm --filter api dev    # api on localhost:3000
+pnpm --filter frontend dev   # frontend on localhost:5173
+pnpm --filter api dev        # api on localhost:3000
 ```
 
 See `ARCHITECTURE.md` for deployment model detail.

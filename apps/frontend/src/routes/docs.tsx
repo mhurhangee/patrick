@@ -1,7 +1,11 @@
-import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router"
+import {
+	createFileRoute,
+	Link,
+	Outlet,
+	useRouterState,
+} from "@tanstack/react-router"
 import { AppHeader } from "@/components/app-header"
 import { DocNavigation } from "@/components/doc-navigation"
-import { DOC_NAV } from "@/lib/doc-nav"
 import {
 	Sidebar,
 	SidebarContent,
@@ -13,6 +17,7 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 } from "@/components/ui/sidebar"
+import { DOC_NAV } from "@/lib/doc-nav"
 
 export const Route = createFileRoute("/docs")({
 	component: DocsLayout,

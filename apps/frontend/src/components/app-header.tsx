@@ -10,9 +10,13 @@ export function AppHeader() {
 			<div className="flex items-center gap-2">
 				<Link to="/" className="flex items-center gap-2">
 					<Logo size={18} />
-					<span className="font-heading font-semibold tracking-tight">PatrickOS</span>
+					<span className="font-heading font-semibold tracking-tight">
+						PatrickOS
+					</span>
 				</Link>
-				<Badge variant="secondary" className="text-xs">beta</Badge>
+				<Badge variant="secondary" className="text-xs">
+					beta
+				</Badge>
 			</div>
 			<nav className="flex items-center gap-2">
 				<Button variant="ghost" size="sm" asChild>
@@ -22,7 +26,11 @@ export function AppHeader() {
 					</Link>
 				</Button>
 				<Button variant="ghost" size="sm" asChild>
-					<a href="https://github.com/mhurhangee/patrickos" target="_blank" rel="noopener noreferrer">
+					<a
+						href="https://github.com/mhurhangee/patrickos"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
 						<GitBranch size={14} />
 						GitHub
 					</a>

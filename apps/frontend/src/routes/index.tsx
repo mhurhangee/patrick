@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { BookOpen, Lock, Puzzle } from "lucide-react"
 import { AppHeader } from "@/components/app-header"
 import { Logo } from "@/components/logo"
@@ -43,7 +43,8 @@ function LandingPage() {
 						Patent drafting on your terms
 					</h1>
 					<p className="text-muted-foreground text-lg max-w-lg">
-						An open-source AI assistant for patent attorneys. Works offline, runs on your infrastructure, stays under your control.
+						An open-source AI assistant for patent attorneys. Works offline,
+						runs on your infrastructure, stays under your control.
 					</p>
 					<div className="flex items-center gap-3 mt-2">
 						<Button size="lg" asChild>
@@ -64,9 +65,13 @@ function LandingPage() {
 						<div key={title} className="flex flex-col gap-2">
 							<div className="flex items-center gap-2 text-primary">
 								<Icon size={15} />
-								<span className="font-heading font-semibold text-sm text-foreground">{title}</span>
+								<span className="font-heading font-semibold text-sm text-foreground">
+									{title}
+								</span>
 							</div>
-							<p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+							<p className="text-muted-foreground text-sm leading-relaxed">
+								{description}
+							</p>
 						</div>
 					))}
 				</div>
@@ -81,8 +86,18 @@ function LandingPage() {
 						<span className="text-xs text-muted-foreground">— MIT licence</span>
 					</div>
 					<nav className="flex items-center gap-4">
-						<Link to="/docs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
-						<Link to="/workspace" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Workspace</Link>
+						<Link
+							to="/docs"
+							className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+						>
+							Docs
+						</Link>
+						<Link
+							to="/workspace"
+							className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+						>
+							Workspace
+						</Link>
 						<a
 							href="https://github.com/mhurhangee/patrickos"
 							target="_blank"
