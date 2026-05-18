@@ -1,0 +1,21 @@
+{
+	"name": "@patrickos/db",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"generate": "drizzle-kit generate",
+		"migrate": "drizzle-kit migrate"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.45.2"
+	},
+	"devDependencies": {
+		"@libsql/client": "^0.17.3",
+		"drizzle-kit": "^0.31.10",
+		"typescript": "~5.9.3"
+	}
+}

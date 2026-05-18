@@ -1,5 +1,5 @@
 # dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -30,6 +30,12 @@ pnpm-debug.log*
 
 # env files
 .env*.local
+.env
+
+# local database files
+*.db
+*.db-shm
+*.db-wal
 
 # typescript
 *.tsbuildinfo

@@ -2,7 +2,7 @@
   "name": "patrickos",
   "version": "0.0.1",
   "private": true,
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.26.2",
   "scripts": {
     "dev": "pnpm -r --parallel dev"
   }
