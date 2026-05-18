@@ -18,15 +18,26 @@ packages/db     Database schema (Drizzle)
 ```bash
 pnpm install
 
-# Run frontend + API separately (browser dev)
-pnpm --filter frontend dev   # localhost:5173
-pnpm --filter api dev        # localhost:3000
+# Browser dev (frontend + API)
+pnpm dev
 
-# Or run the full desktop app
-pnpm --filter api build
-cp apps/api/bin/api apps/desktop/src-tauri/binaries/api-$(rustc -vV | grep -oP '(?<=host: ).*')
-cd apps/desktop && pnpm tauri dev
+# Desktop dev (build API binary first, then Tauri)
+pnpm build:api
+pnpm dev:desktop
 ```
+
+## Root scripts
+
+| Script | What it does |
+|---|---|
+| `pnpm dev` | Start frontend + API in parallel (browser dev) |
+| `pnpm dev:desktop` | Start Tauri desktop dev (frontend launched automatically) |
+| `pnpm build:api` | Compile API binary and copy to desktop binaries |
+| `pnpm typecheck` | Type-check all packages |
+| `pnpm lint` | Biome lint all packages |
+| `pnpm lint:fix` | Auto-fix lint issues |
+| `pnpm format` | Auto-format all files |
+| `pnpm check` | Typecheck + lint together |
 
 ## Docs
 

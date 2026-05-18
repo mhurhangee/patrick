@@ -1,9 +1,20 @@
 {
-  "name": "patrickos",
-  "version": "0.0.1",
-  "private": true,
-  "packageManager": "pnpm@10.26.2",
-  "scripts": {
-    "dev": "pnpm -r --parallel dev"
-  }
+	"name": "patrickos",
+	"version": "0.0.1",
+	"private": true,
+	"packageManager": "pnpm@10.26.2",
+	"scripts": {
+		"dev": "pnpm --filter frontend --filter api --parallel dev",
+		"dev:desktop": "pnpm --filter desktop dev",
+		"build:api": "pnpm --filter api build && cp apps/api/bin/api apps/desktop/src-tauri/binaries/api-x86_64-unknown-linux-gnu",
+		"typecheck": "pnpm -r --parallel --if-present typecheck",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"check": "pnpm typecheck && pnpm lint"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.15",
+		"typescript": "~5.9.3"
+	}
 }

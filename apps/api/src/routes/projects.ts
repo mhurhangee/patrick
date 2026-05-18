@@ -1,7 +1,7 @@
-import { Hono } from "hono"
+import { assets, projects } from "@patrickos/db"
 import { eq } from "drizzle-orm"
+import { Hono } from "hono"
 import { db } from "../lib/db"
-import { projects, assets } from "@patrickos/db"
 
 export const projectsRouter = new Hono()
 
@@ -11,7 +11,10 @@ projectsRouter.get("/", async (c) => {
 })
 
 projectsRouter.get("/:id", async (c) => {
-	const [row] = await db.select().from(projects).where(eq(projects.id, c.req.param("id")))
+	const [row] = await db
+		.select()
+		.from(projects)
+		.where(eq(projects.id, c.req.param("id")))
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json(row)
 })

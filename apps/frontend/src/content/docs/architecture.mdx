@@ -14,19 +14,32 @@ patrickos/
 
 All JavaScript/TypeScript is managed with `pnpm` workspaces. Running `pnpm install` at the root installs dependencies for every package at once.
 
+## Domain model
+
+The core concepts are **Projects** and **Assets**.
+
+A **Project** is a top-level container — think of it as a patent matter or case.
+
+**Assets** are everything inside a project, split into two kinds:
+
+| Kind | Name | Description |
+|---|---|---|
+| `source` | Source | Uploaded PDF — read-only context (prior art, office actions, disclosures) |
+| `artifact` | Artifact | Rich text document created and edited in the app, by humans or AI |
+
+Every asset also has a **Type** — its domain category: `inventor-disclosure`, `office-action`, `patent-spec`, `prior-art`, `claims-draft`, or `response-draft`. Type applies to both sources and artifacts.
+
 ## Request flow
 
-Every action in the UI (creating a project, loading artifacts) goes through the same path:
+Every action in the UI goes through the same path:
 
 ```
 Frontend (React)  →  API (Hono/Bun)  →  Database (SQLite)
 ```
 
-The frontend never touches the database directly — it only speaks to the API over HTTP. This matters because it means the same frontend code works whether you're running locally, self-hosted, or in the cloud. Only the API URL changes.
+The frontend never touches the database directly — it only speaks to the API over HTTP. This means the same frontend code works whether running locally, self-hosted, or in the cloud. Only the API URL changes.
 
 ## Three deployment tiers
-
-The project is designed to run in three different configurations using the same codebase:
 
 | Tier | Frontend | API | Database |
 |---|---|---|---|
@@ -34,25 +47,24 @@ The project is designed to run in three different configurations using the same 
 | **Self-hosted** | Static site | Bun server process | libSQL / sqld server |
 | **Cloud** | Static site | Bun server process | Turso (managed libSQL) |
 
-Right now only the **local** tier is wired up end-to-end. The self-hosted and cloud tiers share the same API code but use different `DATABASE_URL` values.
+Only the **local** tier is wired up end-to-end today.
 
 ## Why these tools?
 
 **Bun** — runs TypeScript natively (no build step for development), has SQLite built in, and can compile an entire Node-style app into a single standalone binary. That last point is what makes the Tauri sidecar possible.
 
-**Hono** — a small, fast HTTP framework. Works identically on Bun, Node, Deno, and edge runtimes. If we ever move the API to a serverless platform, the code changes very little.
+**Hono** — a small, fast HTTP framework. Works identically on Bun, Node, Deno, and edge runtimes. If the API moves to a serverless platform, the code changes very little.
 
-**Tauri** — a Rust framework for building desktop apps where the UI is a web view (a browser engine embedded in the app). It's lighter than Electron because it uses the OS's own browser engine instead of bundling Chromium. The app shell and system integration are written in Rust; everything the user sees is React.
+**Tauri** — a Rust framework for building desktop apps where the UI is a web view. It's lighter than Electron because it uses the OS's own browser engine instead of bundling Chromium.
 
-**Drizzle ORM** — a TypeScript library for working with databases. It lets you define your schema in TypeScript and write queries in TypeScript, so you get type errors if you reference a column that doesn't exist. Drizzle generates plain SQL — there's no runtime magic or hidden queries.
+**Drizzle ORM** — TypeScript schema → type-safe queries → plain SQL. If you reference a column that doesn't exist, TypeScript errors at compile time.
 
-## Dev vs production
-
-In development you run things separately:
+## Root scripts
 
 ```bash
-pnpm --filter frontend dev   # Vite dev server on localhost:5173
-pnpm --filter api dev        # Bun API server on localhost:3000
+pnpm dev              # frontend + API in parallel (browser dev)
+pnpm dev:desktop      # Tauri desktop dev (requires build:api first)
+pnpm build:api        # compile API binary + copy to desktop binaries
+pnpm typecheck        # type-check all packages
+pnpm lint / check     # biome lint / typecheck + lint
 ```
-
-In the desktop app (`pnpm tauri dev`), Tauri starts the frontend dev server automatically, then launches the compiled API binary as a sidecar process. The frontend connects to the sidecar on `localhost:3000`.

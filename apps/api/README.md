@@ -1,14 +1,18 @@
 # apps/api
 
-Hono HTTP server running on Bun. Handles projects and artifacts. Compiles to a standalone binary for the Tauri sidecar.
+Hono HTTP server running on Bun. Handles projects and assets. Compiles to a standalone binary for the Tauri sidecar.
 
 ## Run
 
 ```bash
-pnpm --filter api dev    # watch mode on localhost:3000
-pnpm --filter api build  # compile to bin/api (standalone binary)
-pnpm --filter api start  # run built source once
+pnpm dev          # watch mode on localhost:3000
+pnpm build        # compile to bin/api (standalone binary)
+pnpm start        # run built source once
+pnpm typecheck    # type-check
+pnpm lint         # biome lint
 ```
+
+Or from the workspace root: `pnpm dev` starts frontend + api together.
 
 ## Env vars
 
@@ -20,14 +24,18 @@ pnpm --filter api start  # run built source once
 ## Endpoints
 
 ```
-GET  /health
-GET  /projects
-POST /projects
-GET  /projects/:id
-GET  /artifacts?projectId=
-POST /artifacts
-GET  /artifacts/:id
-PUT  /artifacts/:id
+GET    /health
+GET    /projects
+POST   /projects          { name }
+GET    /projects/:id
+PUT    /projects/:id      { name }
+DELETE /projects/:id      (cascade deletes assets)
+
+GET    /assets?projectId=
+POST   /assets            { projectId, title, type, kind, content?, date?, notes? }
+GET    /assets/:id
+PUT    /assets/:id        (partial update — only fields present are changed)
+DELETE /assets/:id
 ```
 
 ## Docs

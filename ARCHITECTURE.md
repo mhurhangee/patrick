@@ -12,6 +12,16 @@ PatrickOS supports three deployment modes using the same codebase throughout.
 | Auth     | None                 | Better Auth           | Better Auth         |
 | AI       | Ollama               | Self-hosted models    | Anthropic / OpenAI  |
 
+Only the **local** tier is wired up end-to-end today.
+
+## Domain model
+
+- **Projects** — top-level containers (a patent matter or case)
+- **Assets** — everything inside a project, split into two kinds:
+  - **Sources** (`kind: "source"`) — uploaded PDFs providing context (prior art, office actions, inventor disclosures)
+  - **Artifacts** (`kind: "artifact"`) — rich text documents written in the app, edited by humans and AI
+- **AssetType** — domain classification applied to both sources and artifacts: `inventor-disclosure`, `office-action`, `patent-spec`, `prior-art`, `claims-draft`, `response-draft`
+
 ## Key decisions
 
 **SQLite locally, libSQL for cloud** — the compiled Bun binary uses `bun:sqlite` (built into Bun, bundles without native addon issues). Self-hosted and cloud tiers use `@libsql/client` against sqld or Turso. Same Drizzle schema throughout; the driver is the only difference.

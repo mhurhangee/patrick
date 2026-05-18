@@ -4,15 +4,10 @@ Tauri v2 desktop app. Wraps `apps/frontend` as a webview and runs `apps/api` as 
 
 ## Run
 
-The API binary must be built and copied before running:
-
 ```bash
-pnpm --filter api build
-cp apps/api/bin/api apps/desktop/src-tauri/binaries/api-$(rustc -vV | grep -oP '(?<=host: ).*')
-
-cd apps/desktop
-pnpm tauri dev    # dev mode (starts frontend dev server automatically)
-pnpm tauri build  # production installer
+# From workspace root:
+pnpm build:api      # compile API binary and copy to binaries/
+pnpm dev:desktop    # start Tauri dev (launches frontend dev server automatically)
 ```
 
 The database is stored in the OS app data directory:

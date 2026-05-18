@@ -1,7 +1,7 @@
-import { Hono } from "hono"
+import { type AssetKind, type AssetType, assets } from "@patrickos/db"
 import { eq } from "drizzle-orm"
+import { Hono } from "hono"
 import { db } from "../lib/db"
-import { assets } from "@patrickos/db"
 
 export const assetsRouter = new Hono()
 
@@ -14,26 +14,47 @@ assetsRouter.get("/", async (c) => {
 })
 
 assetsRouter.get("/:id", async (c) => {
-	const [row] = await db.select().from(assets).where(eq(assets.id, c.req.param("id")))
+	const [row] = await db
+		.select()
+		.from(assets)
+		.where(eq(assets.id, c.req.param("id")))
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json(row)
 })
 
 assetsRouter.post("/", async (c) => {
-	const { projectId, title, content = "", type = "claims-draft", kind = "artifact", date = "", notes = "" } =
-		await c.req.json<{
-			projectId: string
-			title: string
-			content?: string
-			type?: string
-			kind?: string
-			date?: string
-			notes?: string
-		}>()
+	const {
+		projectId,
+		title,
+		content = "",
+		type = "claims-draft",
+		kind = "artifact",
+		date = "",
+		notes = "",
+	} = await c.req.json<{
+		projectId: string
+		title: string
+		content?: string
+		type?: AssetType
+		kind?: AssetKind
+		date?: string
+		notes?: string
+	}>()
 	const now = new Date()
 	const [row] = await db
 		.insert(assets)
-		.values({ id: crypto.randomUUID(), projectId, title, content, type, kind, date, notes, createdAt: now, updatedAt: now })
+		.values({
+			id: crypto.randomUUID(),
+			projectId,
+			title,
+			content,
+			type,
+			kind,
+			date,
+			notes,
+			createdAt: now,
+			updatedAt: now,
+		})
 		.returning()
 	return c.json(row, 201)
 })
@@ -48,7 +69,7 @@ assetsRouter.put("/:id", async (c) => {
 		notes?: string
 	}>()
 	const patch = Object.fromEntries(
-		Object.entries(body).filter(([, v]) => v !== undefined)
+		Object.entries(body).filter(([, v]) => v !== undefined),
 	)
 	const [row] = await db
 		.update(assets)

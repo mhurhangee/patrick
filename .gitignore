@@ -40,5 +40,9 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# build outputs
 _temp/
-apps/api/bin/api
+**/dist/
+apps/api/bin/
+**/.tanstack/

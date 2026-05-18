@@ -1,0 +1,8 @@
+{
+	"files": [],
+	"references": [
+		{ "path": "packages/db" },
+		{ "path": "apps/api" },
+		{ "path": "apps/frontend" }
+	]
+}

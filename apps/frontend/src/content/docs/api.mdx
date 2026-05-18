@@ -11,21 +11,21 @@ const app = new Hono()
 app.use("*", cors())
 app.get("/health", (c) => c.json({ ok: true }))
 app.route("/projects", projectsRouter)
-app.route("/artifacts", artifactsRouter)
+app.route("/assets", assetsRouter)
 
 export default { port: 3000, fetch: app.fetch }
 ```
 
-`cors()` middleware allows the frontend (running on a different port in dev, or in a Tauri webview) to make requests. Without it browsers block cross-origin requests.
+`cors()` middleware allows the frontend (running on a different port in dev, or in a Tauri webview) to make requests.
 
 `/health` is a simple liveness check — useful for confirming the sidecar started correctly.
 
 ## Running it
 
 ```bash
-pnpm --filter api dev    # watch mode — restarts on file changes
-pnpm --filter api start  # run once, no watching
-pnpm --filter api build  # compile to bin/api (standalone binary)
+pnpm dev          # watch mode — restarts on file changes
+pnpm start        # run once, no watching
+pnpm build        # compile to bin/api (standalone binary)
 ```
 
 ## Database connection
@@ -42,9 +42,7 @@ const dbPath = (process.env.DATABASE_URL ?? "file:../../packages/db/local.db")
 const sqlite = new Database(dbPath)
 ```
 
-The `DATABASE_URL` environment variable controls which database file is used. The default path (`../../packages/db/local.db`) works when running the API directly from `apps/api/`. When running as a Tauri sidecar, `DATABASE_URL` is set by `lib.rs` to a path inside the app data directory.
-
-The `file:` prefix is stripped because `bun:sqlite` takes a plain filesystem path, not a URL.
+`DATABASE_URL` controls which database file is used. In dev it defaults to `packages/db/local.db`. When running as a Tauri sidecar, `lib.rs` sets it to a path inside the OS app data directory.
 
 ## Routes
 
@@ -54,36 +52,25 @@ The `file:` prefix is stripped because `bun:sqlite` takes a plain filesystem pat
 |---|---|---|
 | `GET` | `/projects` | List all projects |
 | `GET` | `/projects/:id` | Get a single project |
-| `POST` | `/projects` | Create a project — body: `{ name: string }` |
+| `POST` | `/projects` | Create — body: `{ name }` |
+| `PUT` | `/projects/:id` | Rename — body: `{ name }` |
+| `DELETE` | `/projects/:id` | Delete project and all its assets |
 
-IDs are generated with `crypto.randomUUID()` — a standard UUID v4, available in Bun without any imports.
+The DELETE handler manually deletes assets first, then the project. SQLite enforces foreign keys (`PRAGMA foreign_keys = ON`) but there's no `ON DELETE CASCADE` on the schema, so the cascade is done in code.
 
-Timestamps are stored as `new Date()` and Drizzle handles the conversion to integers for SQLite.
-
-### Artifacts — `src/routes/artifacts.ts`
+### Assets — `src/routes/assets.ts`
 
 | Method | Path | What it does |
 |---|---|---|
-| `GET` | `/artifacts?projectId=` | List artifacts, optionally filtered by project |
-| `GET` | `/artifacts/:id` | Get a single artifact |
-| `POST` | `/artifacts` | Create — body: `{ projectId, title, content? }` |
-| `PUT` | `/artifacts/:id` | Update title and/or content |
+| `GET` | `/assets?projectId=` | List assets, optionally filtered by project |
+| `GET` | `/assets/:id` | Get a single asset |
+| `POST` | `/assets` | Create — body: `{ projectId, title, type, kind, content?, date?, notes? }` |
+| `PUT` | `/assets/:id` | Partial update — only fields present in body are changed |
+| `DELETE` | `/assets/:id` | Delete a single asset |
 
-The `PUT` handler only updates fields that are present in the request body:
-
-```typescript
-.set({
-  ...(title !== undefined && { title }),
-  ...(content !== undefined && { content }),
-  updatedAt: new Date(),
-})
-```
-
-This means you can send `{ content: "..." }` without including `title` and it won't overwrite the title.
+The `PUT` handler only updates fields that are present in the request body, so you can send `{ content: "..." }` without including `title` and it won't overwrite it.
 
 ## Known gaps
 
-- **No DELETE** — there's no way to delete a project or artifact yet. This will cause an issue once the UI needs a delete button.
-- **No validation** — the routes trust that the request body has the right shape. A missing `name` on `POST /projects` will cause a runtime error. For an MVP this is fine; [Zod](https://zod.dev) + Hono's validator middleware would be the clean fix.
-- **No pagination** — `GET /projects` and `GET /artifacts` return everything. Fine while data is small.
-- **Projects not cascade-deleting artifacts** — when a project is deleted (once that's implemented), its artifacts won't be automatically removed unless we add `ON DELETE CASCADE` to the foreign key.
+- **No validation** — routes trust the request body has the right shape. For MVP this is fine; Zod + Hono's validator middleware is the clean fix when it matters.
+- **No pagination** — all list endpoints return everything. Fine while data is small.

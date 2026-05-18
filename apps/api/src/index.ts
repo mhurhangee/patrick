@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { cors } from "hono/cors"
-import { projectsRouter } from "./routes/projects"
 import { assetsRouter } from "./routes/assets"
+import { projectsRouter } from "./routes/projects"
 
 const app = new Hono()
 

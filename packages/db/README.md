@@ -5,13 +5,26 @@ Shared Drizzle schema for PatrickOS. Imported by `apps/api` for type-safe querie
 ## Tables
 
 - `projects` — top-level containers (name, timestamps)
-- `artifacts` — documents belonging to a project (title, content, timestamps)
+- `assets` — sources and artifacts belonging to a project (title, content, type, kind, date, notes, timestamps)
+
+## Types
+
+```typescript
+type AssetKind = "source" | "artifact"
+// source   = uploaded PDF, read-only context
+// artifact = rich text document created/edited in-app
+
+type AssetType =
+  | "inventor-disclosure" | "office-action" | "patent-spec"
+  | "prior-art" | "claims-draft" | "response-draft"
+```
 
 ## Scripts
 
 ```bash
-pnpm --filter @patrickos/db generate  # generate SQL migration files from schema
-pnpm --filter @patrickos/db migrate   # apply pending migrations to DATABASE_URL
+pnpm typecheck    # type-check the schema
+pnpm generate     # generate SQL migration files from schema
+pnpm migrate      # apply pending migrations to DATABASE_URL
 ```
 
 Set `DATABASE_URL` to target a specific database file (default: `file:./local.db`).

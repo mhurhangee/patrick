@@ -4,13 +4,13 @@ The database layer lives in `packages/db`. It's a shared package — the API imp
 
 ## Why a separate package?
 
-Right now only the API uses the schema. But in the future, database migration tooling, seed scripts, or admin utilities would all need the same type definitions. Keeping the schema in one place means changing a column name is a one-line edit that propagates everywhere.
+Right now only the API uses the schema. But migration tooling, seed scripts, or admin utilities would all need the same type definitions. Keeping the schema in one place means changing a column name is a one-line edit that propagates everywhere.
 
 ## Drizzle ORM
 
 Drizzle is the library that bridges TypeScript and SQL. There are two parts:
 
-**`drizzle-orm`** — the runtime query builder you use in application code:
+**`drizzle-orm`** — the runtime query builder used in application code:
 ```typescript
 const rows = await db.select().from(projects)
 // generates: SELECT * FROM projects
@@ -18,10 +18,13 @@ const rows = await db.select().from(projects)
 
 **`drizzle-kit`** — a CLI tool (dev-only) for generating and running SQL migration files from your schema.
 
-The schema is just TypeScript — it's the authoritative definition of what's in the database:
+## Schema
+
+### projects
+
+A top-level container — a patent matter or case.
 
 ```typescript
-// packages/db/src/schema.ts
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -30,47 +33,61 @@ export const projects = sqliteTable("projects", {
 })
 ```
 
-Drizzle reads this and knows the types of every column. If you write `projects.nonExistentColumn` anywhere in the API, TypeScript will error at compile time.
+### assets
 
-## Schema: projects and artifacts
+Documents belonging to a project. Split into Sources (uploaded PDFs) and Artifacts (in-app rich text).
 
-There are two tables:
+```typescript
+export type AssetKind = "source" | "artifact"
+export type AssetType =
+  | "inventor-disclosure" | "office-action" | "patent-spec"
+  | "prior-art" | "claims-draft" | "response-draft"
 
-**`projects`** — a top-level container. Each project has a name and timestamps. Think of it as a matter or case.
+export const assets = sqliteTable("assets", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id),
+  title: text("title").notNull(),
+  content: text("content").notNull().default(""),
+  type: text("type").$type<AssetType>().notNull().default("claims-draft"),
+  kind: text("kind").$type<AssetKind>().notNull().default("artifact"),
+  date: text("date").notNull().default(""),
+  notes: text("notes").notNull().default(""),
+  createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
+})
+```
 
-**`artifacts`** — documents that belong to a project. Each artifact has a `project_id` foreign key, a title, and a `content` field (plain text for now, Markdown or structured JSON later). Artifacts are the things AI will help draft and edit.
+`kind` controls how the asset is rendered: `"source"` → PDF viewer, `"artifact"` → rich text editor.
 
-The `createdAt`/`updatedAt` columns are stored as Unix timestamp integers (`INTEGER` in SQLite). Drizzle's `mode: "timestamp"` converts between JavaScript `Date` objects and those integers automatically.
+`type` is the domain classification — both sources and artifacts can be any type.
+
+`content` stores the Tiptap JSON for artifacts (rich text editor). Currently a placeholder — editor not yet wired up.
 
 ## SQLite driver choice
 
-The API uses **`bun:sqlite`** — SQLite built directly into Bun. This is different from `@libsql/client` (the libSQL client that supports Turso cloud databases).
+The API uses **`bun:sqlite`** — SQLite built directly into Bun. This differs from `@libsql/client` (which supports Turso cloud).
 
-The reason: `@libsql/client` ships native `.node` binaries (pre-compiled C++ code). When Bun compiles an app into a standalone binary, it can bundle JavaScript but not native binaries. So `@libsql/client` fails to import inside a compiled Bun binary.
+The reason: `@libsql/client` ships native `.node` binaries. When Bun compiles an app into a standalone binary, it bundles JavaScript but not native binaries. So `@libsql/client` fails inside a compiled Bun binary. `bun:sqlite` is part of the Bun runtime itself — always available, including inside compiled binaries.
 
-`bun:sqlite` is part of the Bun runtime itself, so it's always available — including inside compiled binaries.
-
-**Trade-off:** `bun:sqlite` is SQLite only. The self-hosted and cloud tiers need `@libsql/client` to connect to remote libSQL/Turso databases. That will need to be wired in later — most likely by checking `DATABASE_URL` at startup and choosing the driver, or by building the API differently per tier.
+**Trade-off:** the self-hosted and cloud tiers need `@libsql/client` to connect to remote libSQL/Turso databases. That will be wired in later — most likely by checking `DATABASE_URL` at startup and choosing the driver accordingly.
 
 ## Schema initialisation
 
-In a typical app you'd run migration files (SQL scripts that add/change tables) and track which ones have run. The API doesn't do this currently. Instead, `apps/api/src/lib/db.ts` runs `CREATE TABLE IF NOT EXISTS` statements every time the server starts:
+`apps/api/src/lib/db.ts` runs `CREATE TABLE IF NOT EXISTS` on every startup:
 
 ```typescript
 sqlite.exec(`CREATE TABLE IF NOT EXISTS projects (...)`)
-sqlite.exec(`CREATE TABLE IF NOT EXISTS artifacts (...)`)
+sqlite.exec(`CREATE TABLE IF NOT EXISTS assets (...)`)
 ```
 
-`IF NOT EXISTS` makes it idempotent — safe to run on every startup, nothing breaks if the table already exists.
-
-**The limitation:** this approach can only create tables. It can't add a new column to an existing table, rename a column, or change a data type. When the schema needs to change (migration #2 onwards), this will need to be replaced with proper migration tracking.
+`IF NOT EXISTS` makes it idempotent — safe to run on every startup. This approach only works for new tables; adding columns to existing tables requires proper migrations. For now, if the schema changes materially, the local DB can simply be deleted and it will be recreated on next startup.
 
 ## WAL mode
 
-The API enables WAL (Write-Ahead Logging) mode:
+The API enables WAL (Write-Ahead Logging):
 
 ```typescript
 sqlite.exec("PRAGMA journal_mode = WAL")
 ```
 
-SQLite's default journal mode locks the entire database file for the duration of a write. WAL mode allows reads to continue while a write is in progress. For a local app with a single user this rarely matters, but it's a cheap win and avoids mysterious "database is locked" errors.
+SQLite's default mode locks the entire file for writes. WAL allows reads to continue while a write is in progress — a cheap win that avoids "database is locked" errors.

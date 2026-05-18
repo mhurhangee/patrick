@@ -1,9 +1,11 @@
 import { Database } from "bun:sqlite"
-import { drizzle } from "drizzle-orm/bun-sqlite"
 import * as schema from "@patrickos/db"
+import { drizzle } from "drizzle-orm/bun-sqlite"
 
 // Strip "file:" prefix — bun:sqlite takes a plain path, not a libsql URL
-const dbPath = (process.env.DATABASE_URL ?? "file:../../packages/db/local.db").replace(/^file:/, "")
+const dbPath = (
+	process.env.DATABASE_URL ?? "file:../../packages/db/local.db"
+).replace(/^file:/, "")
 const sqlite = new Database(dbPath)
 
 sqlite.exec("PRAGMA foreign_keys = ON")
