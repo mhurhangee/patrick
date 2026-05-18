@@ -41,3 +41,4 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 _temp/
+apps/api/bin/api

@@ -167,3 +167,9 @@
 		font: inherit;
 	}
 }
+
+@utility prose {
+  h1, h2, h3{
+    @apply font-heading font-extrabold tracking-tight;
+  }
+}

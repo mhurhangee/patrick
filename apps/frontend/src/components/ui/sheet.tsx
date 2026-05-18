@@ -114,7 +114,7 @@ function SheetTitle({
     <SheetPrimitive.Title
       data-slot="sheet-title"
       className={cn(
-        "font-heading text-base font-medium text-foreground",
+        "font-heading text-3xl text-foreground font-semibold tracking-tight",
         className
       )}
       {...props}
