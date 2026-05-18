@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { api } from "@/lib/api"
+import type { ArtifactKind, ArtifactType } from "@patrickos/db"
+import { api, type ApiArtifact } from "@/lib/api"
 import {
 	CalendarDays,
 	Check,
@@ -97,26 +98,6 @@ export const Route = createFileRoute("/workspace/")({
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DocType =
-	| "inventor-disclosure"
-	| "office-action"
-	| "patent-spec"
-	| "prior-art"
-	| "claims-draft"
-	| "response-draft"
-
-type DocKind = "pdf" | "draft" | "generated"
-
-interface Doc {
-	id: string
-	name: string
-	type: DocType
-	kind: DocKind
-	date: string
-	notes: string
-	isNew?: boolean
-}
-
 interface Message {
 	id: string
 	role: "user" | "assistant"
@@ -130,64 +111,13 @@ interface Project {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const DOC_TYPES: { id: DocType; label: string }[] = [
+const ARTIFACT_TYPES: { id: ArtifactType; label: string }[] = [
 	{ id: "inventor-disclosure", label: "Inventor Disclosures" },
 	{ id: "office-action", label: "Office Actions" },
 	{ id: "patent-spec", label: "Patent Specification" },
 	{ id: "prior-art", label: "Prior Art" },
 	{ id: "claims-draft", label: "Claims Drafts" },
 	{ id: "response-draft", label: "Response Drafts" },
-]
-
-const INITIAL_DOCS: Doc[] = [
-	{
-		id: "d1",
-		name: "disclosure_v2.pdf",
-		type: "inventor-disclosure",
-		kind: "pdf",
-		date: "2024-03-15",
-		notes: "",
-	},
-	{
-		id: "d2",
-		name: "drawings_final.pdf",
-		type: "inventor-disclosure",
-		kind: "pdf",
-		date: "2024-04-02",
-		notes: "",
-	},
-	{
-		id: "o1",
-		name: "OA_2024-11-03.pdf",
-		type: "office-action",
-		kind: "pdf",
-		date: "2024-11-03",
-		notes: "§103 rejection on claims 1–4. Smith prior art.",
-	},
-	{
-		id: "dr2",
-		name: "specification_v1",
-		type: "patent-spec",
-		kind: "draft",
-		date: "2024-11-20",
-		notes: "",
-	},
-	{
-		id: "dr1",
-		name: "claims_draft_v3",
-		type: "claims-draft",
-		kind: "draft",
-		date: "2024-12-10",
-		notes: "",
-	},
-	{
-		id: "dr3",
-		name: "OA_response_draft",
-		type: "response-draft",
-		kind: "generated",
-		date: "2025-01-08",
-		notes: "Generated response to §103 rejection.",
-	},
 ]
 
 const INITIAL_MESSAGES: Message[] = [
@@ -214,16 +144,15 @@ const INITIAL_MESSAGES: Message[] = [
 	},
 ]
 
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function groupDocsByType(docs: Doc[]) {
-	const groups: { type: DocType; label: string; docs: Doc[] }[] = []
-	for (const { id, label } of DOC_TYPES) {
-		const typeDocs = docs
-			.filter((d) => d.type === id)
+function groupArtifactsByType(artifacts: ApiArtifact[]) {
+	const groups: { type: ArtifactType; label: string; artifacts: ApiArtifact[] }[] = []
+	for (const { id, label } of ARTIFACT_TYPES) {
+		const typeArtifacts = artifacts
+			.filter((a) => a.type === id)
 			.sort((a, b) => a.date.localeCompare(b.date))
-		if (typeDocs.length > 0) groups.push({ type: id, label, docs: typeDocs })
+		if (typeArtifacts.length > 0) groups.push({ type: id, label, artifacts: typeArtifacts })
 	}
 	return groups
 }
@@ -246,9 +175,9 @@ function formatDisplayDate(date: string): string {
 	})
 }
 
-// ─── Doc kind icon ─────────────────────────────────────────────────────────────
+// ─── Artifact kind icon ────────────────────────────────────────────────────────
 
-function DocKindIcon({ kind, size = 13 }: { kind: DocKind; size?: number }) {
+function ArtifactKindIcon({ kind, size = 13 }: { kind: ArtifactKind; size?: number }) {
 	if (kind === "pdf")
 		return <File size={size} className="shrink-0 text-red-500" />
 	if (kind === "generated")
@@ -435,7 +364,7 @@ function SettingsSheet({
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function AppSidebar({
-	docs,
+	artifacts,
 	openTabIds,
 	projects,
 	projectsLoading,
@@ -448,7 +377,7 @@ function AppSidebar({
 	onAuthOpen,
 	onSettingsOpen,
 }: {
-	docs: Doc[]
+	artifacts: ApiArtifact[]
 	openTabIds: string[]
 	projects: Project[]
 	projectsLoading: boolean
@@ -462,7 +391,7 @@ function AppSidebar({
 	onSettingsOpen: () => void
 }) {
 	const openSet = new Set(openTabIds)
-	const groups = groupDocsByType(docs)
+	const groups = groupArtifactsByType(artifacts)
 
 	return (
 		<Sidebar collapsible="icon">
@@ -486,18 +415,18 @@ function AppSidebar({
 					<SidebarGroup key={group.type}>
 						<SidebarGroupLabel>{group.label}</SidebarGroupLabel>
 						<SidebarMenu>
-							{group.docs.map((doc) => (
-								<SidebarMenuItem key={doc.id}>
+							{group.artifacts.map((artifact) => (
+								<SidebarMenuItem key={artifact.id}>
 									<SidebarMenuButton
-										onClick={() => onOpen(doc.id)}
-										isActive={openSet.has(doc.id)}
+										onClick={() => onOpen(artifact.id)}
+										isActive={openSet.has(artifact.id)}
 										className="gap-2 text-xs"
-										tooltip={doc.name}
+										tooltip={artifact.title}
 									>
-										<DocKindIcon kind={doc.kind} />
-										<span className="truncate">{doc.name}</span>
+										<ArtifactKindIcon kind={artifact.kind} />
+										<span className="truncate">{artifact.title}</span>
 										<span className="ml-auto shrink-0 text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
-											{formatShortDate(doc.date)}
+											{formatShortDate(artifact.date)}
 										</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -554,46 +483,42 @@ function AppSidebar({
 	)
 }
 
-// ─── Doc pane ─────────────────────────────────────────────────────────────────
+// ─── Artifact pane ─────────────────────────────────────────────────────────────
 
 const LABEL_CLASS =
 	"text-[10px] uppercase tracking-widest text-muted-foreground font-normal"
 
-function DocPane({
-	doc,
+function ArtifactPane({
+	artifact,
+	isNew,
 	onUpdate,
 	onDelete,
 }: {
-	doc: Doc
-	onUpdate: (id: string, changes: Partial<Doc>) => void
+	artifact: ApiArtifact
+	isNew: boolean
+	onUpdate: (id: string, changes: Parameters<typeof api.artifacts.update>[1]) => void
 	onDelete: (id: string) => void
 }) {
-	const [open, setOpen] = React.useState(doc.isNew ?? false)
-	const [name, setName] = React.useState(doc.name)
-	const [type, setType] = React.useState<DocType>(doc.type)
-	const [date, setDate] = React.useState(doc.date)
-	const [notes, setNotes] = React.useState(doc.notes)
+	const [open, setOpen] = React.useState(isNew)
+	const [title, setTitle] = React.useState(artifact.title)
+	const [type, setType] = React.useState<ArtifactType>(artifact.type)
+	const [date, setDate] = React.useState(artifact.date)
+	const [notes, setNotes] = React.useState(artifact.notes)
 
 	const selectedDate = date ? new Date(`${date}T00:00:00`) : undefined
 
 	return (
 		<ScrollArea className="h-full w-full">
 			<div className="mx-auto max-w-2xl px-8 py-6">
-				<Collapsible
-					open={open}
-					onOpenChange={(o) => {
-						setOpen(o)
-						if (!o && doc.isNew) onUpdate(doc.id, { isNew: false })
-					}}
-				>
+				<Collapsible open={open} onOpenChange={setOpen}>
 					<CollapsibleTrigger asChild>
 						<button
 							type="button"
 							className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted"
 						>
-							<DocKindIcon kind={doc.kind} size={13} />
+							<ArtifactKindIcon kind={artifact.kind} size={13} />
 							<span className="flex-1 truncate text-left font-medium">
-								{name}
+								{title}
 							</span>
 							<ChevronDown
 								size={13}
@@ -608,11 +533,11 @@ function DocPane({
 						<div className="mt-2 rounded-md border bg-muted/30 p-4">
 							<FieldGroup className="gap-3">
 								<Field>
-									<FieldLabel className={LABEL_CLASS}>Name</FieldLabel>
+									<FieldLabel className={LABEL_CLASS}>Title</FieldLabel>
 									<Input
-										value={name}
-										onChange={(e) => setName(e.target.value)}
-										onBlur={() => onUpdate(doc.id, { name })}
+										value={title}
+										onChange={(e) => setTitle(e.target.value)}
+										onBlur={() => onUpdate(artifact.id, { title })}
 										className="h-7 text-xs"
 									/>
 								</Field>
@@ -621,9 +546,9 @@ function DocPane({
 									<Select
 										value={type}
 										onValueChange={(v) => {
-											const t = v as DocType
+											const t = v as ArtifactType
 											setType(t)
-											onUpdate(doc.id, { type: t })
+											onUpdate(artifact.id, { type: t })
 										}}
 									>
 										<SelectTrigger
@@ -633,13 +558,13 @@ function DocPane({
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{DOC_TYPES.map((dt) => (
+											{ARTIFACT_TYPES.map((at) => (
 												<SelectItem
-													key={dt.id}
-													value={dt.id}
+													key={at.id}
+													value={at.id}
 													className="py-1.5 text-xs focus:bg-muted focus:text-foreground"
 												>
-													{dt.label}
+													{at.label}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -666,7 +591,7 @@ function DocPane({
 													if (!d) return
 													const iso = d.toISOString().split("T")[0]
 													setDate(iso)
-													onUpdate(doc.id, { date: iso })
+													onUpdate(artifact.id, { date: iso })
 												}}
 											/>
 										</PopoverContent>
@@ -677,7 +602,7 @@ function DocPane({
 									<Textarea
 										value={notes}
 										onChange={(e) => setNotes(e.target.value)}
-										onBlur={() => onUpdate(doc.id, { notes })}
+										onBlur={() => onUpdate(artifact.id, { notes })}
 										className="min-h-[60px] resize-none text-xs"
 										placeholder="Add notes…"
 									/>
@@ -697,14 +622,14 @@ function DocPane({
 									<AlertDialogHeader>
 										<AlertDialogTitle>Delete document?</AlertDialogTitle>
 										<AlertDialogDescription>
-											"{name}" will be permanently removed.
+											"{title}" will be permanently removed.
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
 										<AlertDialogCancel>Cancel</AlertDialogCancel>
 										<AlertDialogAction
 											variant="destructive"
-											onClick={() => onDelete(doc.id)}
+											onClick={() => onDelete(artifact.id)}
 										>
 											Delete
 										</AlertDialogAction>
@@ -724,32 +649,34 @@ function DocPane({
 // ─── Doc viewer ───────────────────────────────────────────────────────────────
 
 function DocViewer({
-	docs,
+	artifacts,
 	openTabIds,
 	activeTab,
+	newArtifactId,
 	splitView,
 	onTabClick,
 	onTabClose,
 	onSplitToggle,
 	onChatToggle,
-	onUpdateDoc,
-	onDeleteDoc,
+	onUpdateArtifact,
+	onDeleteArtifact,
 }: {
-	docs: Doc[]
+	artifacts: ApiArtifact[]
 	openTabIds: string[]
 	activeTab: string
+	newArtifactId: string | null
 	splitView: boolean
 	onTabClick: (id: string) => void
 	onTabClose: (id: string) => void
 	onSplitToggle: () => void
 	onChatToggle: () => void
-	onUpdateDoc: (id: string, changes: Partial<Doc>) => void
-	onDeleteDoc: (id: string) => void
+	onUpdateArtifact: (id: string, changes: Parameters<typeof api.artifacts.update>[1]) => void
+	onDeleteArtifact: (id: string) => void
 }) {
-	const openDocs = openTabIds
-		.map((id) => docs.find((d) => d.id === id))
-		.filter(Boolean) as Doc[]
-	const activeDoc = openDocs.find((d) => d.id === activeTab) ?? openDocs[0]
+	const openArtifacts = openTabIds
+		.map((id) => artifacts.find((a) => a.id === id))
+		.filter(Boolean) as ApiArtifact[]
+	const activeArtifact = openArtifacts.find((a) => a.id === activeTab) ?? openArtifacts[0]
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
@@ -759,12 +686,12 @@ function DocViewer({
 					<SidebarTrigger className="h-6 w-6" />
 				</div>
 				<div className="flex flex-1 items-end gap-0.5 overflow-x-auto px-1">
-					{openDocs.map((doc) => (
+					{openArtifacts.map((artifact) => (
 						<div
-							key={doc.id}
+							key={artifact.id}
 							className={cn(
 								"group flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
-								!splitView && activeTab === doc.id
+								!splitView && activeTab === artifact.id
 									? "z-10 border-border bg-background text-foreground"
 									: "border-transparent text-muted-foreground hover:text-foreground",
 							)}
@@ -772,16 +699,16 @@ function DocViewer({
 							<Button
 								variant="ghost"
 								size="xs"
-								onClick={() => onTabClick(doc.id)}
+								onClick={() => onTabClick(artifact.id)}
 								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
 							>
-								<DocKindIcon kind={doc.kind} />
-								<span className="max-w-[120px] truncate">{doc.name}</span>
+								<ArtifactKindIcon kind={artifact.kind} />
+								<span className="max-w-[120px] truncate">{artifact.title}</span>
 							</Button>
 							<Button
 								variant="ghost"
 								size="icon-xs"
-								onClick={() => onTabClose(doc.id)}
+								onClick={() => onTabClose(artifact.id)}
 								className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
 							>
 								<X size={10} />
@@ -800,7 +727,7 @@ function DocViewer({
 							variant="ghost"
 							size="xs"
 							onClick={onSplitToggle}
-							disabled={openDocs.length < 2}
+							disabled={openArtifacts.length < 2}
 						>
 							<Columns3 /> Split
 						</Button>
@@ -813,26 +740,27 @@ function DocViewer({
 				</div>
 			</div>
 
-			{openDocs.length === 0 ? (
+			{openArtifacts.length === 0 ? (
 				<div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
 					Open a document from the sidebar
 				</div>
-			) : splitView && openDocs.length > 1 ? (
+			) : splitView && openArtifacts.length > 1 ? (
 				<ResizablePanelGroup orientation="horizontal" className="flex-1">
-					{openDocs.map((doc, i) => (
-						<React.Fragment key={doc.id}>
+					{openArtifacts.map((artifact, i) => (
+						<React.Fragment key={artifact.id}>
 							{i > 0 && <ResizableHandle withHandle />}
 							<ResizablePanel
-								defaultSize={`${100 / openDocs.length}%`}
+								defaultSize={`${100 / openArtifacts.length}%`}
 								collapsible
 								collapsedSize="0%"
 								minSize="10%"
 							>
-								<DocPane
-									key={doc.id}
-									doc={doc}
-									onUpdate={onUpdateDoc}
-									onDelete={onDeleteDoc}
+								<ArtifactPane
+									key={artifact.id}
+									artifact={artifact}
+									isNew={artifact.id === newArtifactId}
+									onUpdate={onUpdateArtifact}
+									onDelete={onDeleteArtifact}
 								/>
 							</ResizablePanel>
 						</React.Fragment>
@@ -840,12 +768,13 @@ function DocViewer({
 				</ResizablePanelGroup>
 			) : (
 				<div className="flex-1 overflow-hidden">
-					{activeDoc && (
-						<DocPane
-							key={activeDoc.id}
-							doc={activeDoc}
-							onUpdate={onUpdateDoc}
-							onDelete={onDeleteDoc}
+					{activeArtifact && (
+						<ArtifactPane
+							key={activeArtifact.id}
+							artifact={activeArtifact}
+							isNew={activeArtifact.id === newArtifactId}
+							onUpdate={onUpdateArtifact}
+							onDelete={onDeleteArtifact}
 						/>
 					)}
 				</div>
@@ -857,11 +786,11 @@ function DocViewer({
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 
 function Chat({
-	openDocs,
-	onRemoveDoc,
+	openArtifacts,
+	onRemoveArtifact,
 }: {
-	openDocs: Doc[]
-	onRemoveDoc: (id: string) => void
+	openArtifacts: ApiArtifact[]
+	onRemoveArtifact: (id: string) => void
 }) {
 	const [messages, setMessages] = React.useState<Message[]>(INITIAL_MESSAGES)
 	const [input, setInput] = React.useState("")
@@ -903,20 +832,20 @@ function Chat({
 				</div>
 			</ScrollArea>
 			<div className="shrink-0 space-y-2 p-3">
-				{openDocs.length > 0 && (
+				{openArtifacts.length > 0 && (
 					<div className="flex flex-wrap items-center gap-1">
 						<span className="shrink-0 text-[10px] text-muted-foreground">
 							In context:
 						</span>
-						{openDocs.map((doc) => (
+						{openArtifacts.map((artifact) => (
 							<span
-								key={doc.id}
+								key={artifact.id}
 								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
 							>
-								{doc.name}
+								{artifact.title}
 								<button
 									type="button"
-									onClick={() => onRemoveDoc(doc.id)}
+									onClick={() => onRemoveArtifact(artifact.id)}
 									className="hover:text-foreground"
 								>
 									<X size={9} />
@@ -952,26 +881,37 @@ function Chat({
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 function WorkspacePage() {
-	const [docs, setDocs] = React.useState<Doc[]>(INITIAL_DOCS)
-	const [openTabIds, setOpenTabIds] = React.useState<string[]>(["dr1", "o1"])
-	const [activeTab, setActiveTab] = React.useState("dr1")
+	const [artifacts, setArtifacts] = React.useState<ApiArtifact[]>([])
+	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
+	const [activeTab, setActiveTab] = React.useState("")
+	const [newArtifactId, setNewArtifactId] = React.useState<string | null>(null)
 	const [splitView, setSplitView] = React.useState(false)
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
 	const [projects, setProjects] = React.useState<Project[]>([])
 	const [projectsLoading, setProjectsLoading] = React.useState(true)
 	const [currentProjectId, setCurrentProjectId] = React.useState("")
+	const [authOpen, setAuthOpen] = React.useState(false)
+	const [settingsOpen, setSettingsOpen] = React.useState(false)
+	const chatPanelRef = usePanelRef()
 
+	// Load projects on mount
 	React.useEffect(() => {
 		api.projects.list().then((data) => {
 			setProjects(data)
 			if (data.length > 0) setCurrentProjectId(data[0].id)
 		}).finally(() => setProjectsLoading(false))
 	}, [])
-	const [authOpen, setAuthOpen] = React.useState(false)
-	const [settingsOpen, setSettingsOpen] = React.useState(false)
-	const chatPanelRef = usePanelRef()
 
-	function openDoc(id: string) {
+	// Load artifacts when project changes
+	React.useEffect(() => {
+		if (!currentProjectId) return
+		setArtifacts([])
+		setOpenTabIds([])
+		setActiveTab("")
+		api.artifacts.list(currentProjectId).then(setArtifacts)
+	}, [currentProjectId])
+
+	function openArtifact(id: string) {
 		setOpenTabIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
 		setActiveTab(id)
 	}
@@ -985,43 +925,41 @@ function WorkspacePage() {
 		})
 	}
 
-	function updateDoc(id: string, changes: Partial<Doc>) {
-		setDocs((prev) => prev.map((d) => (d.id === id ? { ...d, ...changes } : d)))
+	async function updateArtifact(id: string, changes: Parameters<typeof api.artifacts.update>[1]) {
+		const updated = await api.artifacts.update(id, changes)
+		setArtifacts((prev) => prev.map((a) => (a.id === id ? updated : a)))
 	}
 
-	function deleteDoc(id: string) {
+	async function deleteArtifact(id: string) {
+		await api.artifacts.delete(id)
 		closeTab(id)
-		setDocs((prev) => prev.filter((d) => d.id !== id))
+		setArtifacts((prev) => prev.filter((a) => a.id !== id))
 	}
 
-	function addDraft() {
-		const id = `draft-${Date.now()}`
-		const newDoc: Doc = {
-			id,
-			name: "New Draft",
+	async function addDraft() {
+		if (!currentProjectId) return
+		const artifact = await api.artifacts.create({
+			projectId: currentProjectId,
+			title: "New Draft",
 			type: "claims-draft",
 			kind: "draft",
-			date: new Date().toISOString().split("T")[0],
-			notes: "",
-			isNew: true,
-		}
-		setDocs((prev) => [...prev, newDoc])
-		openDoc(id)
+		})
+		setArtifacts((prev) => [...prev, artifact])
+		setNewArtifactId(artifact.id)
+		openArtifact(artifact.id)
 	}
 
-	function addUpload() {
-		const id = `upload-${Date.now()}`
-		const newDoc: Doc = {
-			id,
-			name: "Uploaded Document",
+	async function addUpload() {
+		if (!currentProjectId) return
+		const artifact = await api.artifacts.create({
+			projectId: currentProjectId,
+			title: "Uploaded Document",
 			type: "inventor-disclosure",
 			kind: "pdf",
-			date: new Date().toISOString().split("T")[0],
-			notes: "",
-			isNew: true,
-		}
-		setDocs((prev) => [...prev, newDoc])
-		openDoc(id)
+		})
+		setArtifacts((prev) => [...prev, artifact])
+		setNewArtifactId(artifact.id)
+		openArtifact(artifact.id)
 	}
 
 	async function createProject() {
@@ -1042,20 +980,20 @@ function WorkspacePage() {
 		}
 	}
 
-	const openDocs = openTabIds
-		.map((id) => docs.find((d) => d.id === id))
-		.filter(Boolean) as Doc[]
+	const openArtifacts = openTabIds
+		.map((id) => artifacts.find((a) => a.id === id))
+		.filter(Boolean) as ApiArtifact[]
 
 	return (
 		<>
 			<SidebarProvider>
 				<AppSidebar
-					docs={docs}
+					artifacts={artifacts}
 					openTabIds={openTabIds}
 					projects={projects}
 					projectsLoading={projectsLoading}
 					currentProjectId={currentProjectId}
-					onOpen={openDoc}
+					onOpen={openArtifact}
 					onAddDraft={addDraft}
 					onUpload={addUpload}
 					onProjectChange={setCurrentProjectId}
@@ -1070,9 +1008,10 @@ function WorkspacePage() {
 					>
 						<ResizablePanel defaultSize="68%" minSize="30%">
 							<DocViewer
-								docs={docs}
+								artifacts={artifacts}
 								openTabIds={openTabIds}
 								activeTab={activeTab}
+								newArtifactId={newArtifactId}
 								splitView={splitView}
 								onTabClick={(id) => {
 									setActiveTab(id)
@@ -1081,8 +1020,8 @@ function WorkspacePage() {
 								onTabClose={closeTab}
 								onSplitToggle={() => setSplitView((v) => !v)}
 								onChatToggle={toggleChat}
-								onUpdateDoc={updateDoc}
-								onDeleteDoc={deleteDoc}
+								onUpdateArtifact={updateArtifact}
+								onDeleteArtifact={deleteArtifact}
 							/>
 						</ResizablePanel>
 						<ResizableHandle withHandle />
@@ -1095,7 +1034,7 @@ function WorkspacePage() {
 							collapsedSize="0%"
 							style={{ transition: "flex 150ms ease" }}
 						>
-							<Chat openDocs={openDocs} onRemoveDoc={closeTab} />
+							<Chat openArtifacts={openArtifacts} onRemoveArtifact={closeTab} />
 						</ResizablePanel>
 					</ResizablePanelGroup>
 				</SidebarInset>

@@ -15,6 +15,7 @@
 	"dependencies": {
 		"@fontsource-variable/ibm-plex-sans": "^5.2.8",
 		"@fontsource-variable/lora": "^5.2.8",
+		"@patrickos/db": "workspace:*",
 		"@tailwindcss/vite": "^4.2.1",
 		"@tanstack/react-router": "^1.170.4",
 		"class-variance-authority": "^0.7.1",

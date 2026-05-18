@@ -20,26 +20,50 @@ artifactsRouter.get("/:id", async (c) => {
 })
 
 artifactsRouter.post("/", async (c) => {
-	const { projectId, title, content = "" } = await c.req.json<{
-		projectId: string
-		title: string
-		content?: string
-	}>()
+	const { projectId, title, content = "", type = "claims-draft", kind = "draft", date = "", notes = "" } =
+		await c.req.json<{
+			projectId: string
+			title: string
+			content?: string
+			type?: string
+			kind?: string
+			date?: string
+			notes?: string
+		}>()
 	const now = new Date()
 	const [row] = await db
 		.insert(artifacts)
-		.values({ id: crypto.randomUUID(), projectId, title, content, createdAt: now, updatedAt: now })
+		.values({ id: crypto.randomUUID(), projectId, title, content, type, kind, date, notes, createdAt: now, updatedAt: now })
 		.returning()
 	return c.json(row, 201)
 })
 
 artifactsRouter.put("/:id", async (c) => {
-	const { title, content } = await c.req.json<{ title?: string; content?: string }>()
+	const body = await c.req.json<{
+		title?: string
+		content?: string
+		type?: string
+		kind?: string
+		date?: string
+		notes?: string
+	}>()
+	const patch = Object.fromEntries(
+		Object.entries(body).filter(([, v]) => v !== undefined)
+	)
 	const [row] = await db
 		.update(artifacts)
-		.set({ ...(title !== undefined && { title }), ...(content !== undefined && { content }), updatedAt: new Date() })
+		.set({ ...patch, updatedAt: new Date() })
 		.where(eq(artifacts.id, c.req.param("id")))
 		.returning()
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json(row)
+})
+
+artifactsRouter.delete("/:id", async (c) => {
+	const [row] = await db
+		.delete(artifacts)
+		.where(eq(artifacts.id, c.req.param("id")))
+		.returning()
+	if (!row) return c.json({ error: "Not found" }, 404)
+	return c.json({ ok: true })
 })
