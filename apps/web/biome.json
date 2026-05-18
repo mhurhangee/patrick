@@ -12,7 +12,8 @@
 			"!dist",
 			"!node_modules",
 			"!src/components/ui",
-			"!src/index.css"
+			"!src/index.css",
+			"!src/routeTree.gen.ts"
 		]
 	},
 	"formatter": {
