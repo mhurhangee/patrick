@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { ArrowRight, BookOpen, BookText, GitBranch, Lock, Puzzle } from "lucide-react"
+import { BookOpen, Lock, Puzzle } from "lucide-react"
+import { AppHeader } from "@/components/app-header"
 import { Logo } from "@/components/logo"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
@@ -33,33 +33,7 @@ const FEATURES = [
 function LandingPage() {
 	return (
 		<div className="flex min-h-svh flex-col">
-			{/* Nav */}
-			<header className="flex h-14 items-center justify-between border-b px-6">
-				<div className="flex items-center gap-2">
-					<Logo size={18} />
-					<span className="font-heading font-semibold tracking-tight">PatrickOS</span>
-					<Badge variant="secondary" className="text-xs">beta</Badge>
-				</div>
-				<nav className="flex items-center gap-2">
-					<Button variant="ghost" size="sm" asChild>
-						<Link to="/docs">
-							<BookText size={14} />
-							Docs
-						</Link>
-					</Button>
-					<Button variant="ghost" size="sm" asChild>
-						<a href="https://github.com/mhurhangee/patrickos" target="_blank" rel="noopener noreferrer">
-							<GitBranch size={14} />
-							GitHub
-						</a>
-					</Button>
-					<Button size="sm" asChild>
-						<Link to="/workspace">
-							Open workspace <ArrowRight size={14} />
-						</Link>
-					</Button>
-				</nav>
-			</header>
+			<AppHeader />
 
 			{/* Hero */}
 			<main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
