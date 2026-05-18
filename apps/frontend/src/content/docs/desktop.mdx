@@ -1,0 +1,144 @@
+# Desktop
+
+The desktop app lives in `apps/desktop`. It's a [Tauri](https://tauri.app) v2 application.
+
+## What Tauri does
+
+Tauri is a Rust framework that wraps a web frontend in a native desktop window. Instead of bundling a full browser (like Electron does with Chromium), it uses the operating system's own browser engine. On Linux that's WebKit via GTK; on macOS it's WebKit; on Windows it's WebView2 (Chromium-based).
+
+The result is a smaller binary and lower memory usage. The trade-off is that you can't rely on every modern browser feature being available — but for a React app with standard features, this is rarely a problem.
+
+## Structure
+
+```
+apps/desktop/
+└── src-tauri/
+    ├── src/
+    │   ├── lib.rs       App setup — plugins, sidecar startup
+    │   └── main.rs      Entry point (calls lib.rs)
+    ├── binaries/        Where the compiled API binary lives (gitignored)
+    ├── capabilities/    Permissions the app is granted
+    ├── icons/           App icons
+    ├── Cargo.toml       Rust dependencies
+    └── tauri.conf.json  Tauri configuration
+```
+
+There's no separate JavaScript source in `apps/desktop` — the UI comes entirely from `apps/frontend`.
+
+## tauri.conf.json
+
+```json
+{
+  "build": {
+    "frontendDist": "../../frontend/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm --filter frontend dev",
+    "beforeBuildCommand": "pnpm --filter frontend build"
+  }
+}
+```
+
+- `devUrl` — in dev mode, Tauri opens a window pointing at the Vite dev server
+- `frontendDist` — in production, Tauri serves the built files directly from this path
+- `beforeDevCommand` — Tauri starts the frontend dev server automatically when you run `pnpm tauri dev`
+
+## The sidecar
+
+A **sidecar** is an external binary that Tauri bundles with and manages alongside the main app. We use it to run the API server inside the desktop app.
+
+The binary is the Hono API compiled by Bun:
+
+```bash
+pnpm --filter api build
+# produces: apps/api/bin/api
+```
+
+For Tauri to bundle it, the binary must be copied to `src-tauri/binaries/` and named with the Rust target triple:
+
+```
+src-tauri/binaries/api-x86_64-unknown-linux-gnu   # Linux x64
+src-tauri/binaries/api-aarch64-apple-darwin         # macOS Apple Silicon
+```
+
+To find your target triple: `rustc -vV | grep host`
+
+The binary is registered in `tauri.conf.json`:
+
+```json
+"bundle": {
+  "externalBin": ["binaries/api"]
+}
+```
+
+> **Note:** The `binaries/` directory is gitignored. Before running `pnpm tauri dev` or building a release, you must first build the API binary and copy it manually. This step isn't automated yet.
+
+## lib.rs
+
+`src/lib.rs` is where the Rust app setup lives. It does two things:
+
+**1. Starts the API sidecar with the right environment:**
+
+```rust
+let data_dir = app.path().app_data_dir()?;
+std::fs::create_dir_all(&data_dir)?;
+let db_path = data_dir.join("patrickos.db");
+
+app.shell()
+    .sidecar("api")?
+    .env("DATABASE_URL", format!("file:{}", db_path.display()))
+    .env("PORT", "3000")
+    .spawn()?;
+```
+
+`app_data_dir()` returns the platform-specific directory for app data:
+- Linux: `~/.local/share/com.patrickos.desktop/`
+- macOS: `~/Library/Application Support/com.patrickos.desktop/`
+- Windows: `%APPDATA%\com.patrickos.desktop\`
+
+The API binary creates `patrickos.db` there on first run, and reuses it on subsequent runs — that's why projects persist across restarts.
+
+**2. Sets up logging in debug builds:**
+
+```rust
+if cfg!(debug_assertions) {
+    app.handle().plugin(tauri_plugin_log::Builder::default()
+        .level(log::LevelFilter::Info)
+        .build())?;
+}
+```
+
+`cfg!(debug_assertions)` is true in dev mode and false in release builds. Log output appears in the terminal where you ran `pnpm tauri dev`.
+
+## Capabilities
+
+`capabilities/default.json` controls what the Tauri app is allowed to do. Tauri v2 uses an explicit allow-list — nothing works unless it's listed here:
+
+```json
+{
+  "permissions": [
+    "core:default",
+    "shell:allow-execute",
+    "shell:allow-spawn"
+  ]
+}
+```
+
+`shell:allow-spawn` is what permits starting the API sidecar. Without it, the `spawn()` call in `lib.rs` would be blocked at runtime.
+
+## Building a release
+
+Before building, make sure the API binary is in place:
+
+```bash
+pnpm --filter api build
+cp apps/api/bin/api apps/desktop/src-tauri/binaries/api-$(rustc -vV | grep -oP '(?<=host: ).*')
+```
+
+Then build the desktop app:
+
+```bash
+cd apps/desktop
+pnpm tauri build
+```
+
+This produces an installer in `src-tauri/target/release/bundle/`.

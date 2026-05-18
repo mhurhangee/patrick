@@ -1,0 +1,141 @@
+# Frontend
+
+The frontend lives in `apps/frontend`. It's a React app built with Vite.
+
+## Running it
+
+```bash
+pnpm --filter frontend dev    # dev server on localhost:5173
+pnpm --filter frontend build  # build to dist/
+```
+
+## Stack
+
+- **React 19** — UI library
+- **Vite** — build tool and dev server (fast hot reload)
+- **TanStack Router** — client-side routing (file-based, fully typed)
+- **Tailwind CSS v4** — utility-first CSS
+- **shadcn/ui** — pre-built component library built on Radix UI primitives
+- **Biome** — linter and formatter (replaces ESLint + Prettier)
+
+## Routing
+
+TanStack Router uses file-based routing — the file structure in `src/routes/` maps directly to URL paths:
+
+```
+src/routes/
+├── __root.tsx          Layout wrapper (just renders <Outlet />)
+├── index.tsx           → /            (landing page)
+├── docs.tsx            → /docs        (docs layout with sidebar)
+├── docs/
+│   ├── index.tsx       → /docs/       (redirects to /docs/architecture)
+│   ├── architecture.tsx → /docs/architecture
+│   └── ...
+└── workspace/
+    └── index.tsx       → /workspace/
+```
+
+TanStack Router generates `routeTree.gen.ts` automatically when you run the dev server. Don't edit that file — it's regenerated on every route change.
+
+Every route component starts with:
+
+```typescript
+export const Route = createFileRoute("/docs/architecture")({
+  component: MyComponent,
+})
+```
+
+The string passed to `createFileRoute` must match the file's path exactly — TypeScript will error if it doesn't.
+
+## Pages
+
+### Landing (`routes/index.tsx`)
+
+A marketing-style landing page. Purely presentational — no state, no API calls. Has links to the workspace and docs.
+
+### Docs (`routes/docs.tsx` + `routes/docs/*.tsx`)
+
+A layout with a collapsible sidebar (shadcn `Sidebar` component) and an `<Outlet />` that renders the active doc page. Each doc page imports an MDX file and renders it wrapped in Tailwind's `prose` class for typography styling.
+
+The sidebar is driven by `lib/doc-nav.ts` — to add a page: write the MDX, create the route file, add an entry to `DOC_NAV`.
+
+### Workspace (`routes/workspace/index.tsx`)
+
+The main app. The entire workspace is one large file (~1100 lines) with several sub-components. This is intentional for now — easier to see everything in one place while the shape of the UI is still being figured out.
+
+## Workspace structure
+
+The workspace is a three-panel layout built with `react-resizable-panels`:
+
+```
+[ Sidebar ] | [ Document viewer ] | [ Chat panel ]
+```
+
+**Sidebar** — shows the project selector at the top, then documents grouped by type (inventor disclosures, office actions, etc.). Project data comes from the API; document data is still mock (see below).
+
+**Document viewer** — tabs for open documents, split view support (two docs side by side), and a collapsible metadata panel per document. The tab bar also has the sidebar toggle and the chat toggle button.
+
+**Chat panel** — collapsible. Shows a message thread and a text input. Collapsing/expanding uses `react-resizable-panels`'s imperative panel API (`usePanelRef` / `panel.collapse()`).
+
+## What's real vs mock
+
+This is important to understand — the workspace has two distinct layers:
+
+| Thing | Status |
+|---|---|
+| Projects (sidebar dropdown) | **Real** — loaded from and created via the API |
+| Documents in the sidebar | **Mock** — hardcoded `INITIAL_DOCS` array in memory |
+| Document metadata editing | **Mock** — updates in React state only, not persisted |
+| Chat messages | **Mock** — hardcoded `INITIAL_MESSAGES`, send button only updates local state |
+| Add draft / Upload | **Mock** — creates an in-memory doc, not saved anywhere |
+
+The next step is connecting the workspace's document concept to `artifacts` in the API. Currently they use different types (`Doc` in the frontend vs `Artifact` in the API). Once that bridge is built, the sidebar, editor, and chat context will all be working with real persisted data.
+
+## API client (`lib/api.ts`)
+
+All HTTP calls go through `lib/api.ts`:
+
+```typescript
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
+
+export const api = {
+  projects: {
+    list: () => request<ApiProject[]>("/projects"),
+    create: (name: string) => request<ApiProject>("/projects", { ... }),
+  },
+}
+```
+
+`import.meta.env.VITE_API_URL` is a Vite environment variable — set it in a `.env` file to point at a different API server. If not set, it defaults to `localhost:3000` (the sidecar or local dev server).
+
+To add a new API call, add a method here. The `request<T>()` helper handles the fetch, throws on non-2xx, and returns typed JSON.
+
+## Theme system (`components/theme-provider.tsx`)
+
+The `ThemeProvider` wraps the whole app and manages `light` / `dark` / `system` themes. It:
+- Reads from `localStorage` on load
+- Applies the theme by toggling a class on `<html>`
+- Listens for OS theme changes when set to `system`
+- Disables CSS transitions during theme switches to prevent flash
+- Adds a keyboard shortcut: press `d` (outside inputs) to toggle dark/light
+
+The workspace's settings sheet has a theme dropdown wired to `useTheme()`.
+
+## Component library
+
+Components in `components/ui/` come from [shadcn/ui](https://ui.shadcn.com). They're not installed as a package — they're copied into your source code so you can edit them. If you need to customise a component, just edit the file directly.
+
+Key components used in the workspace:
+- `Sidebar` — collapsible navigation panel (from shadcn)
+- `ResizablePanelGroup` / `ResizablePanel` — the three-column layout
+- `Sheet` — the auth and settings slides that open from the right
+- `AlertDialog` — the "delete document?" confirmation modal
+- `Popover` + `Calendar` — the date picker on document metadata
+
+## Fonts
+
+Two variable fonts are loaded from `@fontsource-variable`:
+- **IBM Plex Sans** — body and UI text
+- **Lora** — headings (`font-heading` in Tailwind)
+
+Both are self-hosted (loaded from `node_modules`) — no Google Fonts, no network requests for type.

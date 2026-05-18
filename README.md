@@ -13,11 +13,21 @@ apps/desktop    Desktop app (Tauri)
 packages/db     Database schema (Drizzle)
 ```
 
-## Getting started
+## Quick start
 
 ```bash
 pnpm install
-pnpm --filter frontend dev
+
+# Run frontend + API separately (browser dev)
+pnpm --filter frontend dev   # localhost:5173
+pnpm --filter api dev        # localhost:3000
+
+# Or run the full desktop app
+pnpm --filter api build
+cp apps/api/bin/api apps/desktop/src-tauri/binaries/api-$(rustc -vV | grep -oP '(?<=host: ).*')
+cd apps/desktop && pnpm tauri dev
 ```
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for deployment model and tech decisions.
+## Docs
+
+Full developer docs are built into the app — open `/docs` after starting the frontend, or read the MDX source in `apps/frontend/src/content/docs/`.

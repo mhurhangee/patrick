@@ -13,8 +13,11 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceIndexRouteImport } from './routes/workspace/index'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
-import { Route as DocsGettingStartedRouteImport } from './routes/docs/getting-started'
-import { Route as DocsDeploymentRouteImport } from './routes/docs/deployment'
+import { Route as DocsFrontendRouteImport } from './routes/docs/frontend'
+import { Route as DocsDesktopRouteImport } from './routes/docs/desktop'
+import { Route as DocsDatabaseRouteImport } from './routes/docs/database'
+import { Route as DocsArchitectureRouteImport } from './routes/docs/architecture'
+import { Route as DocsApiRouteImport } from './routes/docs/api'
 
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
@@ -36,29 +39,50 @@ const DocsIndexRoute = DocsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DocsRoute,
 } as any)
-const DocsGettingStartedRoute = DocsGettingStartedRouteImport.update({
-  id: '/getting-started',
-  path: '/getting-started',
+const DocsFrontendRoute = DocsFrontendRouteImport.update({
+  id: '/frontend',
+  path: '/frontend',
   getParentRoute: () => DocsRoute,
 } as any)
-const DocsDeploymentRoute = DocsDeploymentRouteImport.update({
-  id: '/deployment',
-  path: '/deployment',
+const DocsDesktopRoute = DocsDesktopRouteImport.update({
+  id: '/desktop',
+  path: '/desktop',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsDatabaseRoute = DocsDatabaseRouteImport.update({
+  id: '/database',
+  path: '/database',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
+  id: '/architecture',
+  path: '/architecture',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsApiRoute = DocsApiRouteImport.update({
+  id: '/api',
+  path: '/api',
   getParentRoute: () => DocsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/docs': typeof DocsRouteWithChildren
-  '/docs/deployment': typeof DocsDeploymentRoute
-  '/docs/getting-started': typeof DocsGettingStartedRoute
+  '/docs/api': typeof DocsApiRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/database': typeof DocsDatabaseRoute
+  '/docs/desktop': typeof DocsDesktopRoute
+  '/docs/frontend': typeof DocsFrontendRoute
   '/docs/': typeof DocsIndexRoute
   '/workspace/': typeof WorkspaceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/docs/deployment': typeof DocsDeploymentRoute
-  '/docs/getting-started': typeof DocsGettingStartedRoute
+  '/docs/api': typeof DocsApiRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/database': typeof DocsDatabaseRoute
+  '/docs/desktop': typeof DocsDesktopRoute
+  '/docs/frontend': typeof DocsFrontendRoute
   '/docs': typeof DocsIndexRoute
   '/workspace': typeof WorkspaceIndexRoute
 }
@@ -66,8 +90,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/docs': typeof DocsRouteWithChildren
-  '/docs/deployment': typeof DocsDeploymentRoute
-  '/docs/getting-started': typeof DocsGettingStartedRoute
+  '/docs/api': typeof DocsApiRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/database': typeof DocsDatabaseRoute
+  '/docs/desktop': typeof DocsDesktopRoute
+  '/docs/frontend': typeof DocsFrontendRoute
   '/docs/': typeof DocsIndexRoute
   '/workspace/': typeof WorkspaceIndexRoute
 }
@@ -76,23 +103,32 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/docs'
-    | '/docs/deployment'
-    | '/docs/getting-started'
+    | '/docs/api'
+    | '/docs/architecture'
+    | '/docs/database'
+    | '/docs/desktop'
+    | '/docs/frontend'
     | '/docs/'
     | '/workspace/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/docs/deployment'
-    | '/docs/getting-started'
+    | '/docs/api'
+    | '/docs/architecture'
+    | '/docs/database'
+    | '/docs/desktop'
+    | '/docs/frontend'
     | '/docs'
     | '/workspace'
   id:
     | '__root__'
     | '/'
     | '/docs'
-    | '/docs/deployment'
-    | '/docs/getting-started'
+    | '/docs/api'
+    | '/docs/architecture'
+    | '/docs/database'
+    | '/docs/desktop'
+    | '/docs/frontend'
     | '/docs/'
     | '/workspace/'
   fileRoutesById: FileRoutesById
@@ -133,32 +169,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsIndexRouteImport
       parentRoute: typeof DocsRoute
     }
-    '/docs/getting-started': {
-      id: '/docs/getting-started'
-      path: '/getting-started'
-      fullPath: '/docs/getting-started'
-      preLoaderRoute: typeof DocsGettingStartedRouteImport
+    '/docs/frontend': {
+      id: '/docs/frontend'
+      path: '/frontend'
+      fullPath: '/docs/frontend'
+      preLoaderRoute: typeof DocsFrontendRouteImport
       parentRoute: typeof DocsRoute
     }
-    '/docs/deployment': {
-      id: '/docs/deployment'
-      path: '/deployment'
-      fullPath: '/docs/deployment'
-      preLoaderRoute: typeof DocsDeploymentRouteImport
+    '/docs/desktop': {
+      id: '/docs/desktop'
+      path: '/desktop'
+      fullPath: '/docs/desktop'
+      preLoaderRoute: typeof DocsDesktopRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/database': {
+      id: '/docs/database'
+      path: '/database'
+      fullPath: '/docs/database'
+      preLoaderRoute: typeof DocsDatabaseRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/architecture': {
+      id: '/docs/architecture'
+      path: '/architecture'
+      fullPath: '/docs/architecture'
+      preLoaderRoute: typeof DocsArchitectureRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/api': {
+      id: '/docs/api'
+      path: '/api'
+      fullPath: '/docs/api'
+      preLoaderRoute: typeof DocsApiRouteImport
       parentRoute: typeof DocsRoute
     }
   }
 }
 
 interface DocsRouteChildren {
-  DocsDeploymentRoute: typeof DocsDeploymentRoute
-  DocsGettingStartedRoute: typeof DocsGettingStartedRoute
+  DocsApiRoute: typeof DocsApiRoute
+  DocsArchitectureRoute: typeof DocsArchitectureRoute
+  DocsDatabaseRoute: typeof DocsDatabaseRoute
+  DocsDesktopRoute: typeof DocsDesktopRoute
+  DocsFrontendRoute: typeof DocsFrontendRoute
   DocsIndexRoute: typeof DocsIndexRoute
 }
 
 const DocsRouteChildren: DocsRouteChildren = {
-  DocsDeploymentRoute: DocsDeploymentRoute,
-  DocsGettingStartedRoute: DocsGettingStartedRoute,
+  DocsApiRoute: DocsApiRoute,
+  DocsArchitectureRoute: DocsArchitectureRoute,
+  DocsDatabaseRoute: DocsDatabaseRoute,
+  DocsDesktopRoute: DocsDesktopRoute,
+  DocsFrontendRoute: DocsFrontendRoute,
   DocsIndexRoute: DocsIndexRoute,
 }
 

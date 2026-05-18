@@ -1,0 +1,58 @@
+# Architecture
+
+PatrickOS is a monorepo — one git repository containing multiple apps and packages that work together.
+
+```
+patrickos/
+├── apps/
+│   ├── frontend/   React + Vite — the UI
+│   ├── api/        Hono on Bun — the API server
+│   └── desktop/    Tauri — wraps the UI as a desktop app
+└── packages/
+    └── db/         Drizzle schema — shared between api and future tooling
+```
+
+All JavaScript/TypeScript is managed with `pnpm` workspaces. Running `pnpm install` at the root installs dependencies for every package at once.
+
+## Request flow
+
+Every action in the UI (creating a project, loading artifacts) goes through the same path:
+
+```
+Frontend (React)  →  API (Hono/Bun)  →  Database (SQLite)
+```
+
+The frontend never touches the database directly — it only speaks to the API over HTTP. This matters because it means the same frontend code works whether you're running locally, self-hosted, or in the cloud. Only the API URL changes.
+
+## Three deployment tiers
+
+The project is designed to run in three different configurations using the same codebase:
+
+| Tier | Frontend | API | Database |
+|---|---|---|---|
+| **Local** | Tauri webview | Bun sidecar binary | SQLite file in app data dir |
+| **Self-hosted** | Static site | Bun server process | libSQL / sqld server |
+| **Cloud** | Static site | Bun server process | Turso (managed libSQL) |
+
+Right now only the **local** tier is wired up end-to-end. The self-hosted and cloud tiers share the same API code but use different `DATABASE_URL` values.
+
+## Why these tools?
+
+**Bun** — runs TypeScript natively (no build step for development), has SQLite built in, and can compile an entire Node-style app into a single standalone binary. That last point is what makes the Tauri sidecar possible.
+
+**Hono** — a small, fast HTTP framework. Works identically on Bun, Node, Deno, and edge runtimes. If we ever move the API to a serverless platform, the code changes very little.
+
+**Tauri** — a Rust framework for building desktop apps where the UI is a web view (a browser engine embedded in the app). It's lighter than Electron because it uses the OS's own browser engine instead of bundling Chromium. The app shell and system integration are written in Rust; everything the user sees is React.
+
+**Drizzle ORM** — a TypeScript library for working with databases. It lets you define your schema in TypeScript and write queries in TypeScript, so you get type errors if you reference a column that doesn't exist. Drizzle generates plain SQL — there's no runtime magic or hidden queries.
+
+## Dev vs production
+
+In development you run things separately:
+
+```bash
+pnpm --filter frontend dev   # Vite dev server on localhost:5173
+pnpm --filter api dev        # Bun API server on localhost:3000
+```
+
+In the desktop app (`pnpm tauri dev`), Tauri starts the frontend dev server automatically, then launches the compiled API binary as a sidecar process. The frontend connects to the sidecar on `localhost:3000`.
