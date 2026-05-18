@@ -1,0 +1,7 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"ignoreDependencies": ["postcss-load-config"],
+	"ignoreIssues": {
+		"components/ui/**": ["exports", "types"]
+	}
+}
