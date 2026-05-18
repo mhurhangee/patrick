@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { api } from "@/lib/api"
 import {
 	CalendarDays,
 	Check,
@@ -213,11 +214,6 @@ const INITIAL_MESSAGES: Message[] = [
 	},
 ]
 
-const INITIAL_PROJECTS: Project[] = [
-	{ id: "p1", name: "Smith v. Jones — EP21234" },
-	{ id: "p2", name: "Mueller Technologies — US2024" },
-	{ id: "p3", name: "Acme Corp — PCT/US2023" },
-]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -265,11 +261,13 @@ function DocKindIcon({ kind, size = 13 }: { kind: DocKind; size?: number }) {
 function ProjectSelector({
 	projects,
 	currentId,
+	loading,
 	onChange,
 	onCreate,
 }: {
 	projects: Project[]
 	currentId: string
+	loading: boolean
 	onChange: (id: string) => void
 	onCreate: () => void
 }) {
@@ -282,7 +280,9 @@ function ProjectSelector({
 					type="button"
 					className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-xs font-medium hover:bg-muted group-data-[collapsible=icon]:hidden"
 				>
-					<span className="flex-1 truncate text-left">{current.name}</span>
+					<span className="flex-1 truncate text-left text-muted-foreground">
+						{loading ? "Loading…" : (current?.name ?? "No projects")}
+					</span>
 					<ChevronsUpDown
 						size={11}
 						className="shrink-0 text-muted-foreground"
@@ -438,6 +438,7 @@ function AppSidebar({
 	docs,
 	openTabIds,
 	projects,
+	projectsLoading,
 	currentProjectId,
 	onOpen,
 	onAddDraft,
@@ -450,6 +451,7 @@ function AppSidebar({
 	docs: Doc[]
 	openTabIds: string[]
 	projects: Project[]
+	projectsLoading: boolean
 	currentProjectId: string
 	onOpen: (id: string) => void
 	onAddDraft: () => void
@@ -472,6 +474,7 @@ function AppSidebar({
 					<ProjectSelector
 						projects={projects}
 						currentId={currentProjectId}
+						loading={projectsLoading}
 						onChange={onProjectChange}
 						onCreate={onProjectCreate}
 					/>
@@ -954,10 +957,16 @@ function WorkspacePage() {
 	const [activeTab, setActiveTab] = React.useState("dr1")
 	const [splitView, setSplitView] = React.useState(false)
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
-	const [projects, setProjects] = React.useState<Project[]>(INITIAL_PROJECTS)
-	const [currentProjectId, setCurrentProjectId] = React.useState(
-		INITIAL_PROJECTS[0].id,
-	)
+	const [projects, setProjects] = React.useState<Project[]>([])
+	const [projectsLoading, setProjectsLoading] = React.useState(true)
+	const [currentProjectId, setCurrentProjectId] = React.useState("")
+
+	React.useEffect(() => {
+		api.projects.list().then((data) => {
+			setProjects(data)
+			if (data.length > 0) setCurrentProjectId(data[0].id)
+		}).finally(() => setProjectsLoading(false))
+	}, [])
 	const [authOpen, setAuthOpen] = React.useState(false)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
 	const chatPanelRef = usePanelRef()
@@ -1015,10 +1024,10 @@ function WorkspacePage() {
 		openDoc(id)
 	}
 
-	function createProject() {
-		const id = `project-${Date.now()}`
-		setProjects((prev) => [...prev, { id, name: "New Project" }])
-		setCurrentProjectId(id)
+	async function createProject() {
+		const project = await api.projects.create("New Project")
+		setProjects((prev) => [...prev, project])
+		setCurrentProjectId(project.id)
 	}
 
 	function toggleChat() {
@@ -1044,6 +1053,7 @@ function WorkspacePage() {
 					docs={docs}
 					openTabIds={openTabIds}
 					projects={projects}
+					projectsLoading={projectsLoading}
 					currentProjectId={currentProjectId}
 					onOpen={openDoc}
 					onAddDraft={addDraft}

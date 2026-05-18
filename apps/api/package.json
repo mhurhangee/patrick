@@ -9,7 +9,6 @@
 		"start": "bun run src/index.ts"
 	},
 	"dependencies": {
-		"@libsql/client": "^0.17.3",
 		"@patrickos/db": "workspace:*",
 		"drizzle-orm": "^0.45.2",
 		"hono": "^4.12.19"

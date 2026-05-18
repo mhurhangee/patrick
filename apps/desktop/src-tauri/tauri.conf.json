@@ -33,6 +33,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "externalBin": ["binaries/api"],
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }
