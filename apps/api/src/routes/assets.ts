@@ -1,26 +1,26 @@
 import { Hono } from "hono"
 import { eq } from "drizzle-orm"
 import { db } from "../lib/db"
-import { artifacts } from "@patrickos/db"
+import { assets } from "@patrickos/db"
 
-export const artifactsRouter = new Hono()
+export const assetsRouter = new Hono()
 
-artifactsRouter.get("/", async (c) => {
+assetsRouter.get("/", async (c) => {
 	const projectId = c.req.query("projectId")
 	const rows = projectId
-		? await db.select().from(artifacts).where(eq(artifacts.projectId, projectId))
-		: await db.select().from(artifacts)
+		? await db.select().from(assets).where(eq(assets.projectId, projectId))
+		: await db.select().from(assets)
 	return c.json(rows)
 })
 
-artifactsRouter.get("/:id", async (c) => {
-	const [row] = await db.select().from(artifacts).where(eq(artifacts.id, c.req.param("id")))
+assetsRouter.get("/:id", async (c) => {
+	const [row] = await db.select().from(assets).where(eq(assets.id, c.req.param("id")))
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json(row)
 })
 
-artifactsRouter.post("/", async (c) => {
-	const { projectId, title, content = "", type = "claims-draft", kind = "draft", date = "", notes = "" } =
+assetsRouter.post("/", async (c) => {
+	const { projectId, title, content = "", type = "claims-draft", kind = "artifact", date = "", notes = "" } =
 		await c.req.json<{
 			projectId: string
 			title: string
@@ -32,13 +32,13 @@ artifactsRouter.post("/", async (c) => {
 		}>()
 	const now = new Date()
 	const [row] = await db
-		.insert(artifacts)
+		.insert(assets)
 		.values({ id: crypto.randomUUID(), projectId, title, content, type, kind, date, notes, createdAt: now, updatedAt: now })
 		.returning()
 	return c.json(row, 201)
 })
 
-artifactsRouter.put("/:id", async (c) => {
+assetsRouter.put("/:id", async (c) => {
 	const body = await c.req.json<{
 		title?: string
 		content?: string
@@ -51,18 +51,18 @@ artifactsRouter.put("/:id", async (c) => {
 		Object.entries(body).filter(([, v]) => v !== undefined)
 	)
 	const [row] = await db
-		.update(artifacts)
+		.update(assets)
 		.set({ ...patch, updatedAt: new Date() })
-		.where(eq(artifacts.id, c.req.param("id")))
+		.where(eq(assets.id, c.req.param("id")))
 		.returning()
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json(row)
 })
 
-artifactsRouter.delete("/:id", async (c) => {
+assetsRouter.delete("/:id", async (c) => {
 	const [row] = await db
-		.delete(artifacts)
-		.where(eq(artifacts.id, c.req.param("id")))
+		.delete(assets)
+		.where(eq(assets.id, c.req.param("id")))
 		.returning()
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json({ ok: true })

@@ -1,4 +1,4 @@
-import type { ArtifactKind, ArtifactType } from "@patrickos/db"
+import type { AssetKind, AssetType } from "@patrickos/db"
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
@@ -9,13 +9,13 @@ export type ApiProject = {
 	updatedAt: string
 }
 
-export type ApiArtifact = {
+export type ApiAsset = {
 	id: string
 	projectId: string
 	title: string
 	content: string
-	type: ArtifactType
-	kind: ArtifactKind
+	type: AssetType
+	kind: AssetKind
 	date: string
 	notes: string
 	createdAt: string
@@ -29,22 +29,37 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 function json(body: unknown, init?: RequestInit): RequestInit {
-	return { ...init, headers: { "Content-Type": "application/json", ...init?.headers }, body: JSON.stringify(body) }
+	return {
+		...init,
+		headers: { "Content-Type": "application/json", ...init?.headers },
+		body: JSON.stringify(body),
+	}
 }
 
 export const api = {
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
-		create: (name: string) => request<ApiProject>("/projects", json({ name }, { method: "POST" })),
-		rename: (id: string, name: string) => request<ApiProject>(`/projects/${id}`, json({ name }, { method: "PUT" })),
-		delete: (id: string) => request<{ ok: boolean }>(`/projects/${id}`, { method: "DELETE" }),
+		create: (name: string) =>
+			request<ApiProject>("/projects", json({ name }, { method: "POST" })),
+		rename: (id: string, name: string) =>
+			request<ApiProject>(`/projects/${id}`, json({ name }, { method: "PUT" })),
+		delete: (id: string) =>
+			request<{ ok: boolean }>(`/projects/${id}`, { method: "DELETE" }),
 	},
-	artifacts: {
-		list: (projectId: string) => request<ApiArtifact[]>(`/artifacts?projectId=${projectId}`),
-		create: (data: Pick<ApiArtifact, "projectId" | "title" | "type" | "kind"> & Partial<Pick<ApiArtifact, "content" | "date" | "notes">>) =>
-			request<ApiArtifact>("/artifacts", json(data, { method: "POST" })),
-		update: (id: string, patch: Partial<Pick<ApiArtifact, "title" | "content" | "type" | "kind" | "date" | "notes">>) =>
-			request<ApiArtifact>(`/artifacts/${id}`, json(patch, { method: "PUT" })),
-		delete: (id: string) => request<{ ok: boolean }>(`/artifacts/${id}`, { method: "DELETE" }),
+	assets: {
+		list: (projectId: string) =>
+			request<ApiAsset[]>(`/assets?projectId=${projectId}`),
+		create: (
+			data: Pick<ApiAsset, "projectId" | "title" | "type" | "kind"> &
+				Partial<Pick<ApiAsset, "content" | "date" | "notes">>,
+		) => request<ApiAsset>("/assets", json(data, { method: "POST" })),
+		update: (
+			id: string,
+			patch: Partial<
+				Pick<ApiAsset, "title" | "content" | "type" | "kind" | "date" | "notes">
+			>,
+		) => request<ApiAsset>(`/assets/${id}`, json(patch, { method: "PUT" })),
+		delete: (id: string) =>
+			request<{ ok: boolean }>(`/assets/${id}`, { method: "DELETE" }),
 	},
 }

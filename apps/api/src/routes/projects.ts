@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { eq } from "drizzle-orm"
 import { db } from "../lib/db"
-import { projects, artifacts } from "@patrickos/db"
+import { projects, assets } from "@patrickos/db"
 
 export const projectsRouter = new Hono()
 
@@ -40,7 +40,7 @@ projectsRouter.put("/:id", async (c) => {
 projectsRouter.delete("/:id", async (c) => {
 	const id = c.req.param("id")
 	// Delete artifacts first — SQLite FK enforcement is on but no CASCADE defined
-	await db.delete(artifacts).where(eq(artifacts.projectId, id))
+	await db.delete(assets).where(eq(assets.projectId, id))
 	const [row] = await db.delete(projects).where(eq(projects.id, id)).returning()
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json({ ok: true })

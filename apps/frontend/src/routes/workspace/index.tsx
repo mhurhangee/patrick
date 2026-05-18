@@ -1,6 +1,5 @@
+import type { AssetKind, AssetType } from "@patrickos/db"
 import { createFileRoute } from "@tanstack/react-router"
-import type { ArtifactKind, ArtifactType } from "@patrickos/db"
-import { api, type ApiArtifact } from "@/lib/api"
 import {
 	CalendarDays,
 	Check,
@@ -11,7 +10,6 @@ import {
 	FilePen,
 	FilePlus,
 	FolderOpen,
-	Layers,
 	PanelRight,
 	Pencil,
 	Plus,
@@ -85,6 +83,7 @@ import {
 	SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Textarea } from "@/components/ui/textarea"
+import { type ApiAsset, api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/workspace/")({
@@ -106,7 +105,7 @@ interface Project {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const ARTIFACT_TYPES: { id: ArtifactType; label: string }[] = [
+const ASSET_TYPES: { id: AssetType; label: string }[] = [
 	{ id: "inventor-disclosure", label: "Inventor Disclosures" },
 	{ id: "office-action", label: "Office Actions" },
 	{ id: "patent-spec", label: "Patent Specification" },
@@ -141,13 +140,14 @@ const INITIAL_MESSAGES: Message[] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function groupArtifactsByType(artifacts: ApiArtifact[]) {
-	const groups: { type: ArtifactType; label: string; artifacts: ApiArtifact[] }[] = []
-	for (const { id, label } of ARTIFACT_TYPES) {
-		const typeArtifacts = artifacts
+function groupAssetsByType(assets: ApiAsset[]) {
+	const groups: { type: AssetType; label: string; assets: ApiAsset[] }[] = []
+	for (const { id, label } of ASSET_TYPES) {
+		const typeAssets = assets
 			.filter((a) => a.type === id)
 			.sort((a, b) => a.date.localeCompare(b.date))
-		if (typeArtifacts.length > 0) groups.push({ type: id, label, artifacts: typeArtifacts })
+		if (typeAssets.length > 0)
+			groups.push({ type: id, label, assets: typeAssets })
 	}
 	return groups
 }
@@ -170,13 +170,17 @@ function formatDisplayDate(date: string): string {
 	})
 }
 
-// ─── Artifact kind icon ────────────────────────────────────────────────────────
+// ─── Asset kind icon ───────────────────────────────────────────────────────────
 
-function ArtifactKindIcon({ kind, size = 13 }: { kind: ArtifactKind; size?: number }) {
-	if (kind === "pdf")
+function AssetKindIcon({
+	kind,
+	size = 13,
+}: {
+	kind: AssetKind
+	size?: number
+}) {
+	if (kind === "source")
 		return <File size={size} className="shrink-0 text-red-500" />
-	if (kind === "generated")
-		return <Layers size={size} className="shrink-0 text-emerald-500" />
 	return <FilePen size={size} className="shrink-0 text-amber-500" />
 }
 
@@ -212,7 +216,7 @@ function ProjectsSheet({
 	}
 
 	return (
-		<Sheet open={open} onOpenChange={onOpenChange} >
+		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent side="left">
 				<SheetHeader>
 					<SheetTitle>Projects</SheetTitle>
@@ -222,9 +226,7 @@ function ProjectsSheet({
 				</SheetHeader>
 
 				<div className="flex flex-col gap-1 px-4 pt-4">
-					{loading && (
-						<p className="text-xs text-muted-foreground">Loading…</p>
-					)}
+					{loading && <p className="text-xs text-muted-foreground">Loading…</p>}
 					{!loading && projects.length === 0 && (
 						<p className="text-xs text-muted-foreground">No projects yet.</p>
 					)}
@@ -243,29 +245,40 @@ function ProjectsSheet({
 									className="h-7 flex-1 text-xs"
 								/>
 							) : (
-								<button
-									type="button"
-									onClick={() => { onSelect(p.id); onOpenChange(false) }}
-									className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+								<Button
+									variant="ghost"
+									onClick={() => {
+										onSelect(p.id)
+										onOpenChange(false)
+									}}
+									className="flex flex-1 items-center gap-2 justify-start px-2 py-1.5 h-auto text-sm"
 								>
-									{p.id === currentId
-										? <Check size={13} className="shrink-0 text-primary" />
-										: <span className="size-[13px] shrink-0" />
-									}
+									{p.id === currentId ? (
+										<Check size={13} className="shrink-0 text-primary" />
+									) : (
+										<span className="size-[13px] shrink-0" />
+									)}
 									<span className="truncate">{p.name}</span>
-								</button>
+								</Button>
 							)}
 							<div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
 								<Button
 									variant="ghost"
 									size="icon-xs"
-									onClick={() => { setEditingId(p.id); setEditingName(p.name) }}
+									onClick={() => {
+										setEditingId(p.id)
+										setEditingName(p.name)
+									}}
 								>
 									<Pencil size={12} />
 								</Button>
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
-										<Button variant="ghost" size="icon-xs" className="text-destructive hover:text-destructive">
+										<Button
+											variant="ghost"
+											size="icon-xs"
+											className="text-destructive hover:text-destructive"
+										>
 											<Trash2 size={12} />
 										</Button>
 									</AlertDialogTrigger>
@@ -273,12 +286,16 @@ function ProjectsSheet({
 										<AlertDialogHeader>
 											<AlertDialogTitle>Delete project?</AlertDialogTitle>
 											<AlertDialogDescription>
-												"{p.name}" and all its documents will be permanently deleted.
+												"{p.name}" and all its assets will be permanently
+												deleted.
 											</AlertDialogDescription>
 										</AlertDialogHeader>
 										<AlertDialogFooter>
 											<AlertDialogCancel>Cancel</AlertDialogCancel>
-											<AlertDialogAction variant="destructive" onClick={() => onDelete(p.id)}>
+											<AlertDialogAction
+												variant="destructive"
+												onClick={() => onDelete(p.id)}
+											>
 												Delete
 											</AlertDialogAction>
 										</AlertDialogFooter>
@@ -289,7 +306,12 @@ function ProjectsSheet({
 					))}
 				</div>
 				<div className="px-4 pt-4">
-					<Button variant="outline" size="sm" className="w-full gap-2" onClick={onCreate}>
+					<Button
+						variant="outline"
+						size="sm"
+						className="w-full gap-2"
+						onClick={onCreate}
+					>
 						<Plus size={13} />
 						New project
 					</Button>
@@ -313,9 +335,7 @@ function AuthSheet({
 			<SheetContent side="left">
 				<SheetHeader>
 					<SheetTitle>Account</SheetTitle>
-					<SheetDescription>
-						Here you can manage your account.
-					</SheetDescription>
+					<SheetDescription>Here you can manage your account.</SheetDescription>
 				</SheetHeader>
 				<div className="flex flex-col gap-4 px-4 pt-4">
 					<div className="flex items-center gap-3">
@@ -428,32 +448,32 @@ function SettingsSheet({
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function AppSidebar({
-	artifacts,
+	assets,
 	openTabIds,
 	projects,
 	projectsLoading,
 	currentProjectId,
 	onOpen,
-	onAddDraft,
-	onUpload,
+	onAddArtifact,
+	onAddSource,
 	onManageProjects,
 	onAuthOpen,
 	onSettingsOpen,
 }: {
-	artifacts: ApiArtifact[]
+	assets: ApiAsset[]
 	openTabIds: string[]
 	projects: Project[]
 	projectsLoading: boolean
 	currentProjectId: string
 	onOpen: (id: string) => void
-	onAddDraft: () => void
-	onUpload: () => void
+	onAddArtifact: () => void
+	onAddSource: () => void
 	onManageProjects: () => void
 	onAuthOpen: () => void
 	onSettingsOpen: () => void
 }) {
 	const openSet = new Set(openTabIds)
-	const groups = groupArtifactsByType(artifacts)
+	const groups = groupAssetsByType(assets)
 	const currentProject = projects.find((p) => p.id === currentProjectId)
 
 	return (
@@ -470,7 +490,9 @@ function AppSidebar({
 					>
 						<FolderOpen size={12} className="shrink-0 text-muted-foreground" />
 						<span className="flex-1 truncate text-left text-muted-foreground">
-							{projectsLoading ? "Loading…" : (currentProject?.name ?? "Projects")}
+							{projectsLoading
+								? "Loading…"
+								: (currentProject?.name ?? "Projects")}
 						</span>
 					</Button>
 				</div>
@@ -481,18 +503,18 @@ function AppSidebar({
 					<SidebarGroup key={group.type}>
 						<SidebarGroupLabel>{group.label}</SidebarGroupLabel>
 						<SidebarMenu>
-							{group.artifacts.map((artifact) => (
-								<SidebarMenuItem key={artifact.id}>
+							{group.assets.map((asset) => (
+								<SidebarMenuItem key={asset.id}>
 									<SidebarMenuButton
-										onClick={() => onOpen(artifact.id)}
-										isActive={openSet.has(artifact.id)}
+										onClick={() => onOpen(asset.id)}
+										isActive={openSet.has(asset.id)}
 										className="gap-2 text-xs"
-										tooltip={artifact.title}
+										tooltip={asset.title}
 									>
-										<ArtifactKindIcon kind={artifact.kind} />
-										<span className="truncate">{artifact.title}</span>
+										<AssetKindIcon kind={asset.kind} />
+										<span className="truncate">{asset.title}</span>
 										<span className="ml-auto shrink-0 text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
-											{formatShortDate(artifact.date)}
+											{formatShortDate(asset.date)}
 										</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -506,22 +528,22 @@ function AppSidebar({
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton
-							onClick={onAddDraft}
+							onClick={onAddArtifact}
 							className="gap-2 text-xs text-muted-foreground"
-							tooltip="New draft"
+							tooltip="New artifact"
 						>
 							<FilePlus size={14} />
-							<span>New draft</span>
+							<span>New artifact</span>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<SidebarMenuButton
-							onClick={onUpload}
+							onClick={onAddSource}
 							className="gap-2 text-xs text-muted-foreground"
-							tooltip="Upload file"
+							tooltip="Add source"
 						>
 							<CloudUpload size={14} />
-							<span>Upload file</span>
+							<span>Add source</span>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
@@ -534,13 +556,14 @@ function AppSidebar({
 								<UserCircle size={14} />
 								<span>Demo User</span>
 							</SidebarMenuButton>
-							<button
-								type="button"
+							<Button
+								variant="ghost"
+								size="icon-xs"
 								onClick={onSettingsOpen}
-								className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground group-data-[collapsible=icon]:hidden"
+								className="shrink-0 group-data-[collapsible=icon]:hidden"
 							>
 								<Settings size={14} />
-							</button>
+							</Button>
 						</div>
 					</SidebarMenuItem>
 				</SidebarMenu>
@@ -549,27 +572,30 @@ function AppSidebar({
 	)
 }
 
-// ─── Artifact pane ─────────────────────────────────────────────────────────────
+// ─── Asset pane ────────────────────────────────────────────────────────────────
 
 const LABEL_CLASS =
 	"text-[10px] uppercase tracking-widest text-muted-foreground font-normal"
 
-function ArtifactPane({
-	artifact,
+function AssetPane({
+	asset,
 	isNew,
 	onUpdate,
 	onDelete,
 }: {
-	artifact: ApiArtifact
+	asset: ApiAsset
 	isNew: boolean
-	onUpdate: (id: string, changes: Parameters<typeof api.artifacts.update>[1]) => void
+	onUpdate: (
+		id: string,
+		changes: Parameters<typeof api.assets.update>[1],
+	) => void
 	onDelete: (id: string) => void
 }) {
 	const [open, setOpen] = React.useState(isNew)
-	const [title, setTitle] = React.useState(artifact.title)
-	const [type, setType] = React.useState<ArtifactType>(artifact.type)
-	const [date, setDate] = React.useState(artifact.date)
-	const [notes, setNotes] = React.useState(artifact.notes)
+	const [title, setTitle] = React.useState(asset.title)
+	const [type, setType] = React.useState<AssetType>(asset.type)
+	const [date, setDate] = React.useState(asset.date)
+	const [notes, setNotes] = React.useState(asset.notes)
 
 	const selectedDate = date ? new Date(`${date}T00:00:00`) : undefined
 
@@ -578,11 +604,11 @@ function ArtifactPane({
 			<div className="mx-auto max-w-2xl px-8 py-6">
 				<Collapsible open={open} onOpenChange={setOpen}>
 					<CollapsibleTrigger asChild>
-						<button
-							type="button"
-							className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted"
+						<Button
+							variant="ghost"
+							className="flex w-full items-center gap-2 px-2 py-1.5 h-auto text-xs justify-start"
 						>
-							<ArtifactKindIcon kind={artifact.kind} size={13} />
+							<AssetKindIcon kind={asset.kind} size={13} />
 							<span className="flex-1 truncate text-left font-medium">
 								{title}
 							</span>
@@ -593,7 +619,7 @@ function ArtifactPane({
 									open && "rotate-180",
 								)}
 							/>
-						</button>
+						</Button>
 					</CollapsibleTrigger>
 					<CollapsibleContent>
 						<div className="mt-2 rounded-md border bg-muted/30 p-4">
@@ -603,7 +629,7 @@ function ArtifactPane({
 									<Input
 										value={title}
 										onChange={(e) => setTitle(e.target.value)}
-										onBlur={() => onUpdate(artifact.id, { title })}
+										onBlur={() => onUpdate(asset.id, { title })}
 										className="h-7 text-xs"
 									/>
 								</Field>
@@ -612,9 +638,9 @@ function ArtifactPane({
 									<Select
 										value={type}
 										onValueChange={(v) => {
-											const t = v as ArtifactType
+											const t = v as AssetType
 											setType(t)
-											onUpdate(artifact.id, { type: t })
+											onUpdate(asset.id, { type: t })
 										}}
 									>
 										<SelectTrigger
@@ -624,7 +650,7 @@ function ArtifactPane({
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{ARTIFACT_TYPES.map((at) => (
+											{ASSET_TYPES.map((at) => (
 												<SelectItem
 													key={at.id}
 													value={at.id}
@@ -657,7 +683,7 @@ function ArtifactPane({
 													if (!d) return
 													const iso = d.toISOString().split("T")[0]
 													setDate(iso)
-													onUpdate(artifact.id, { date: iso })
+													onUpdate(asset.id, { date: iso })
 												}}
 											/>
 										</PopoverContent>
@@ -668,7 +694,7 @@ function ArtifactPane({
 									<Textarea
 										value={notes}
 										onChange={(e) => setNotes(e.target.value)}
-										onBlur={() => onUpdate(artifact.id, { notes })}
+										onBlur={() => onUpdate(asset.id, { notes })}
 										className="min-h-[60px] resize-none text-xs"
 										placeholder="Add notes…"
 									/>
@@ -681,12 +707,12 @@ function ArtifactPane({
 								<AlertDialogTrigger asChild>
 									<Button variant="destructive" size="xs" className="gap-1.5">
 										<Trash2 />
-										Delete document
+										Delete asset
 									</Button>
 								</AlertDialogTrigger>
 								<AlertDialogContent size="sm">
 									<AlertDialogHeader>
-										<AlertDialogTitle>Delete document?</AlertDialogTitle>
+										<AlertDialogTitle>Delete asset?</AlertDialogTitle>
 										<AlertDialogDescription>
 											"{title}" will be permanently removed.
 										</AlertDialogDescription>
@@ -695,7 +721,7 @@ function ArtifactPane({
 										<AlertDialogCancel>Cancel</AlertDialogCancel>
 										<AlertDialogAction
 											variant="destructive"
-											onClick={() => onDelete(artifact.id)}
+											onClick={() => onDelete(asset.id)}
 										>
 											Delete
 										</AlertDialogAction>
@@ -715,34 +741,38 @@ function ArtifactPane({
 // ─── Doc viewer ───────────────────────────────────────────────────────────────
 
 function DocViewer({
-	artifacts,
+	assets,
 	openTabIds,
 	activeTab,
-	newArtifactId,
+	newAssetId,
 	splitView,
 	onTabClick,
 	onTabClose,
 	onSplitToggle,
 	onChatToggle,
-	onUpdateArtifact,
-	onDeleteArtifact,
+	onUpdateAsset,
+	onDeleteAsset,
 }: {
-	artifacts: ApiArtifact[]
+	assets: ApiAsset[]
 	openTabIds: string[]
 	activeTab: string
-	newArtifactId: string | null
+	newAssetId: string | null
 	splitView: boolean
 	onTabClick: (id: string) => void
 	onTabClose: (id: string) => void
 	onSplitToggle: () => void
 	onChatToggle: () => void
-	onUpdateArtifact: (id: string, changes: Parameters<typeof api.artifacts.update>[1]) => void
-	onDeleteArtifact: (id: string) => void
+	onUpdateAsset: (
+		id: string,
+		changes: Parameters<typeof api.assets.update>[1],
+	) => void
+	onDeleteAsset: (id: string) => void
 }) {
-	const openArtifacts = openTabIds
-		.map((id) => artifacts.find((a) => a.id === id))
-		.filter(Boolean) as ApiArtifact[]
-	const activeArtifact = openArtifacts.find((a) => a.id === activeTab) ?? openArtifacts[0]
+	const openAssets = openTabIds
+		.map((id) => assets.find((a) => a.id === id))
+		.filter(Boolean) as ApiAsset[]
+	const activeAsset =
+		openAssets.find((a) => a.id === activeTab) ?? openAssets[0]
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
@@ -752,12 +782,12 @@ function DocViewer({
 					<SidebarTrigger className="h-6 w-6" />
 				</div>
 				<div className="flex flex-1 items-end gap-0.5 overflow-x-auto px-1">
-					{openArtifacts.map((artifact) => (
+					{openAssets.map((asset) => (
 						<div
-							key={artifact.id}
+							key={asset.id}
 							className={cn(
 								"group flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
-								!splitView && activeTab === artifact.id
+								!splitView && activeTab === asset.id
 									? "z-10 border-border bg-background text-foreground"
 									: "border-transparent text-muted-foreground hover:text-foreground",
 							)}
@@ -765,16 +795,16 @@ function DocViewer({
 							<Button
 								variant="ghost"
 								size="xs"
-								onClick={() => onTabClick(artifact.id)}
+								onClick={() => onTabClick(asset.id)}
 								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
 							>
-								<ArtifactKindIcon kind={artifact.kind} />
-								<span className="max-w-[120px] truncate">{artifact.title}</span>
+								<AssetKindIcon kind={asset.kind} />
+								<span className="max-w-[120px] truncate">{asset.title}</span>
 							</Button>
 							<Button
 								variant="ghost"
 								size="icon-xs"
-								onClick={() => onTabClose(artifact.id)}
+								onClick={() => onTabClose(asset.id)}
 								className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
 							>
 								<X size={10} />
@@ -793,7 +823,7 @@ function DocViewer({
 							variant="ghost"
 							size="xs"
 							onClick={onSplitToggle}
-							disabled={openArtifacts.length < 2}
+							disabled={openAssets.length < 2}
 						>
 							<Columns3 /> Split
 						</Button>
@@ -806,27 +836,27 @@ function DocViewer({
 				</div>
 			</div>
 
-			{openArtifacts.length === 0 ? (
+			{openAssets.length === 0 ? (
 				<div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-					Open a document from the sidebar
+					Open an asset from the sidebar
 				</div>
-			) : splitView && openArtifacts.length > 1 ? (
+			) : splitView && openAssets.length > 1 ? (
 				<ResizablePanelGroup orientation="horizontal" className="flex-1">
-					{openArtifacts.map((artifact, i) => (
-						<React.Fragment key={artifact.id}>
+					{openAssets.map((asset, i) => (
+						<React.Fragment key={asset.id}>
 							{i > 0 && <ResizableHandle withHandle />}
 							<ResizablePanel
-								defaultSize={`${100 / openArtifacts.length}%`}
+								defaultSize={`${100 / openAssets.length}%`}
 								collapsible
 								collapsedSize="0%"
 								minSize="10%"
 							>
-								<ArtifactPane
-									key={artifact.id}
-									artifact={artifact}
-									isNew={artifact.id === newArtifactId}
-									onUpdate={onUpdateArtifact}
-									onDelete={onDeleteArtifact}
+								<AssetPane
+									key={asset.id}
+									asset={asset}
+									isNew={asset.id === newAssetId}
+									onUpdate={onUpdateAsset}
+									onDelete={onDeleteAsset}
 								/>
 							</ResizablePanel>
 						</React.Fragment>
@@ -834,13 +864,13 @@ function DocViewer({
 				</ResizablePanelGroup>
 			) : (
 				<div className="flex-1 overflow-hidden">
-					{activeArtifact && (
-						<ArtifactPane
-							key={activeArtifact.id}
-							artifact={activeArtifact}
-							isNew={activeArtifact.id === newArtifactId}
-							onUpdate={onUpdateArtifact}
-							onDelete={onDeleteArtifact}
+					{activeAsset && (
+						<AssetPane
+							key={activeAsset.id}
+							asset={activeAsset}
+							isNew={activeAsset.id === newAssetId}
+							onUpdate={onUpdateAsset}
+							onDelete={onDeleteAsset}
 						/>
 					)}
 				</div>
@@ -852,11 +882,11 @@ function DocViewer({
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 
 function Chat({
-	openArtifacts,
-	onRemoveArtifact,
+	openAssets,
+	onRemoveAsset,
 }: {
-	openArtifacts: ApiArtifact[]
-	onRemoveArtifact: (id: string) => void
+	openAssets: ApiAsset[]
+	onRemoveAsset: (id: string) => void
 }) {
 	const [messages, setMessages] = React.useState<Message[]>(INITIAL_MESSAGES)
 	const [input, setInput] = React.useState("")
@@ -898,24 +928,25 @@ function Chat({
 				</div>
 			</ScrollArea>
 			<div className="shrink-0 space-y-2 p-3">
-				{openArtifacts.length > 0 && (
+				{openAssets.length > 0 && (
 					<div className="flex flex-wrap items-center gap-1">
 						<span className="shrink-0 text-[10px] text-muted-foreground">
 							In context:
 						</span>
-						{openArtifacts.map((artifact) => (
+						{openAssets.map((asset) => (
 							<span
-								key={artifact.id}
+								key={asset.id}
 								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
 							>
-								{artifact.title}
-								<button
-									type="button"
-									onClick={() => onRemoveArtifact(artifact.id)}
-									className="hover:text-foreground"
+								{asset.title}
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									onClick={() => onRemoveAsset(asset.id)}
+									className="h-auto w-auto p-0 hover:bg-transparent"
 								>
 									<X size={9} />
-								</button>
+								</Button>
 							</span>
 						))}
 					</div>
@@ -930,7 +961,7 @@ function Chat({
 								send()
 							}
 						}}
-						placeholder="Ask about open documents…"
+						placeholder="Ask about open assets…"
 						className="min-h-[64px] resize-none border-0 bg-transparent p-3 text-xs shadow-none focus-visible:ring-0"
 					/>
 					<div className="flex justify-end px-3 pb-2">
@@ -947,10 +978,10 @@ function Chat({
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 function WorkspacePage() {
-	const [artifacts, setArtifacts] = React.useState<ApiArtifact[]>([])
+	const [assets, setAssets] = React.useState<ApiAsset[]>([])
 	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
 	const [activeTab, setActiveTab] = React.useState("")
-	const [newArtifactId, setNewArtifactId] = React.useState<string | null>(null)
+	const [newAssetId, setNewAssetId] = React.useState<string | null>(null)
 	const [splitView, setSplitView] = React.useState(false)
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
 	const [projects, setProjects] = React.useState<Project[]>([])
@@ -963,22 +994,25 @@ function WorkspacePage() {
 
 	// Load projects on mount
 	React.useEffect(() => {
-		api.projects.list().then((data) => {
-			setProjects(data)
-			if (data.length > 0) setCurrentProjectId(data[0].id)
-		}).finally(() => setProjectsLoading(false))
+		api.projects
+			.list()
+			.then((data) => {
+				setProjects(data)
+				if (data.length > 0) setCurrentProjectId(data[0].id)
+			})
+			.finally(() => setProjectsLoading(false))
 	}, [])
 
-	// Load artifacts when project changes
+	// Load assets when project changes
 	React.useEffect(() => {
 		if (!currentProjectId) return
-		setArtifacts([])
+		setAssets([])
 		setOpenTabIds([])
 		setActiveTab("")
-		api.artifacts.list(currentProjectId).then(setArtifacts)
+		api.assets.list(currentProjectId).then(setAssets)
 	}, [currentProjectId])
 
-	function openArtifact(id: string) {
+	function openAsset(id: string) {
 		setOpenTabIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
 		setActiveTab(id)
 	}
@@ -992,41 +1026,44 @@ function WorkspacePage() {
 		})
 	}
 
-	async function updateArtifact(id: string, changes: Parameters<typeof api.artifacts.update>[1]) {
-		const updated = await api.artifacts.update(id, changes)
-		setArtifacts((prev) => prev.map((a) => (a.id === id ? updated : a)))
+	async function updateAsset(
+		id: string,
+		changes: Parameters<typeof api.assets.update>[1],
+	) {
+		const updated = await api.assets.update(id, changes)
+		setAssets((prev) => prev.map((a) => (a.id === id ? updated : a)))
 	}
 
-	async function deleteArtifact(id: string) {
-		await api.artifacts.delete(id)
+	async function deleteAsset(id: string) {
+		await api.assets.delete(id)
 		closeTab(id)
-		setArtifacts((prev) => prev.filter((a) => a.id !== id))
+		setAssets((prev) => prev.filter((a) => a.id !== id))
 	}
 
-	async function addDraft() {
+	async function addArtifact() {
 		if (!currentProjectId) return
-		const artifact = await api.artifacts.create({
+		const asset = await api.assets.create({
 			projectId: currentProjectId,
-			title: "New Draft",
+			title: "New Artifact",
 			type: "claims-draft",
-			kind: "draft",
+			kind: "artifact",
 		})
-		setArtifacts((prev) => [...prev, artifact])
-		setNewArtifactId(artifact.id)
-		openArtifact(artifact.id)
+		setAssets((prev) => [...prev, asset])
+		setNewAssetId(asset.id)
+		openAsset(asset.id)
 	}
 
-	async function addUpload() {
+	async function addSource() {
 		if (!currentProjectId) return
-		const artifact = await api.artifacts.create({
+		const asset = await api.assets.create({
 			projectId: currentProjectId,
-			title: "Uploaded Document",
+			title: "New Source",
 			type: "inventor-disclosure",
-			kind: "pdf",
+			kind: "source",
 		})
-		setArtifacts((prev) => [...prev, artifact])
-		setNewArtifactId(artifact.id)
-		openArtifact(artifact.id)
+		setAssets((prev) => [...prev, asset])
+		setNewAssetId(asset.id)
+		openAsset(asset.id)
 	}
 
 	async function createProject() {
@@ -1048,7 +1085,7 @@ function WorkspacePage() {
 			return next
 		})
 		if (currentProjectId === id) {
-			setArtifacts([])
+			setAssets([])
 			setOpenTabIds([])
 			setActiveTab("")
 		}
@@ -1066,22 +1103,22 @@ function WorkspacePage() {
 		}
 	}
 
-	const openArtifacts = openTabIds
-		.map((id) => artifacts.find((a) => a.id === id))
-		.filter(Boolean) as ApiArtifact[]
+	const openAssets = openTabIds
+		.map((id) => assets.find((a) => a.id === id))
+		.filter(Boolean) as ApiAsset[]
 
 	return (
 		<>
 			<SidebarProvider>
 				<AppSidebar
-					artifacts={artifacts}
+					assets={assets}
 					openTabIds={openTabIds}
 					projects={projects}
 					projectsLoading={projectsLoading}
 					currentProjectId={currentProjectId}
-					onOpen={openArtifact}
-					onAddDraft={addDraft}
-					onUpload={addUpload}
+					onOpen={openAsset}
+					onAddArtifact={addArtifact}
+					onAddSource={addSource}
 					onManageProjects={() => setProjectsOpen(true)}
 					onAuthOpen={() => setAuthOpen(true)}
 					onSettingsOpen={() => setSettingsOpen(true)}
@@ -1093,10 +1130,10 @@ function WorkspacePage() {
 					>
 						<ResizablePanel defaultSize="68%" minSize="30%">
 							<DocViewer
-								artifacts={artifacts}
+								assets={assets}
 								openTabIds={openTabIds}
 								activeTab={activeTab}
-								newArtifactId={newArtifactId}
+								newAssetId={newAssetId}
 								splitView={splitView}
 								onTabClick={(id) => {
 									setActiveTab(id)
@@ -1105,8 +1142,8 @@ function WorkspacePage() {
 								onTabClose={closeTab}
 								onSplitToggle={() => setSplitView((v) => !v)}
 								onChatToggle={toggleChat}
-								onUpdateArtifact={updateArtifact}
-								onDeleteArtifact={deleteArtifact}
+								onUpdateAsset={updateAsset}
+								onDeleteAsset={deleteAsset}
 							/>
 						</ResizablePanel>
 						<ResizableHandle withHandle />
@@ -1119,7 +1156,7 @@ function WorkspacePage() {
 							collapsedSize="0%"
 							style={{ transition: "flex 150ms ease" }}
 						>
-							<Chat openArtifacts={openArtifacts} onRemoveArtifact={closeTab} />
+							<Chat openAssets={openAssets} onRemoveAsset={closeTab} />
 						</ResizablePanel>
 					</ResizablePanelGroup>
 				</SidebarInset>
