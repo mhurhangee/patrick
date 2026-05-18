@@ -36,6 +36,8 @@ export const api = {
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
 		create: (name: string) => request<ApiProject>("/projects", json({ name }, { method: "POST" })),
+		rename: (id: string, name: string) => request<ApiProject>(`/projects/${id}`, json({ name }, { method: "PUT" })),
+		delete: (id: string) => request<{ ok: boolean }>(`/projects/${id}`, { method: "DELETE" }),
 	},
 	artifacts: {
 		list: (projectId: string) => request<ApiArtifact[]>(`/artifacts?projectId=${projectId}`),

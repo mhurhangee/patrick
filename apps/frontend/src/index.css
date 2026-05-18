@@ -2,8 +2,9 @@
 @plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource-variable/inter";
 @import "@fontsource-variable/lora";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -109,7 +110,7 @@
 }
 
 @theme inline {
-    --font-sans: 'IBM Plex Sans Variable', sans-serif;
+    --font-sans: 'Inter Variable', sans-serif;
     --font-heading: 'Lora Variable', serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -155,10 +156,14 @@
 	* {
 		@apply border-border outline-ring/50;
 	}
+	html, body {
+		@apply font-sans;
+	}
 	body {
 		@apply bg-background text-foreground;
 	}
-	html {
-		@apply font-sans;
+	/* WebKit (Tauri/Safari) overrides font on form elements — force inheritance */
+	button, input, optgroup, select, textarea {
+		font: inherit;
 	}
 }

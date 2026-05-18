@@ -69,7 +69,7 @@ function LandingPage() {
 									{title}
 								</span>
 							</div>
-							<p className="text-muted-foreground text-sm leading-relaxed">
+							<p className="font-ibm text-muted-foreground text-sm leading-relaxed">
 								{description}
 							</p>
 						</div>

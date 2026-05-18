@@ -5,14 +5,15 @@ import {
 	CalendarDays,
 	Check,
 	ChevronDown,
-	ChevronsUpDown,
 	CloudUpload,
 	Columns3,
 	File,
 	FilePen,
 	FilePlus,
+	FolderOpen,
 	Layers,
 	PanelRight,
+	Pencil,
 	Plus,
 	Settings,
 	Trash2,
@@ -41,13 +42,6 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -72,6 +66,7 @@ import { Separator } from "@/components/ui/separator"
 import {
 	Sheet,
 	SheetContent,
+	SheetDescription,
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet"
@@ -185,59 +180,122 @@ function ArtifactKindIcon({ kind, size = 13 }: { kind: ArtifactKind; size?: numb
 	return <FilePen size={size} className="shrink-0 text-amber-500" />
 }
 
-// ─── Project selector ─────────────────────────────────────────────────────────
+// ─── Projects sheet ───────────────────────────────────────────────────────────
 
-function ProjectSelector({
+function ProjectsSheet({
+	open,
+	onOpenChange,
 	projects,
 	currentId,
 	loading,
-	onChange,
+	onSelect,
 	onCreate,
+	onRename,
+	onDelete,
 }: {
+	open: boolean
+	onOpenChange: (v: boolean) => void
 	projects: Project[]
 	currentId: string
 	loading: boolean
-	onChange: (id: string) => void
+	onSelect: (id: string) => void
 	onCreate: () => void
+	onRename: (id: string, name: string) => void
+	onDelete: (id: string) => void
 }) {
-	const current = projects.find((p) => p.id === currentId) ?? projects[0]
+	const [editingId, setEditingId] = React.useState<string | null>(null)
+	const [editingName, setEditingName] = React.useState("")
+
+	function commitRename() {
+		if (editingId && editingName.trim()) onRename(editingId, editingName.trim())
+		setEditingId(null)
+	}
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<button
-					type="button"
-					className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-xs font-medium hover:bg-muted group-data-[collapsible=icon]:hidden"
-				>
-					<span className="flex-1 truncate text-left text-muted-foreground">
-						{loading ? "Loading…" : (current?.name ?? "No projects")}
-					</span>
-					<ChevronsUpDown
-						size={11}
-						className="shrink-0 text-muted-foreground"
-					/>
-				</button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-60">
-				{projects.map((p) => (
-					<DropdownMenuItem
-						key={p.id}
-						onClick={() => onChange(p.id)}
-						className="text-xs"
-					>
-						<span className="flex-1 truncate">{p.name}</span>
-						{p.id === currentId && (
-							<Check size={12} className="ml-2 shrink-0" />
-						)}
-					</DropdownMenuItem>
-				))}
-				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={onCreate} className="text-xs">
-					<Plus size={12} />
-					New project
-				</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<Sheet open={open} onOpenChange={onOpenChange} >
+			<SheetContent side="left">
+				<SheetHeader>
+					<SheetTitle>Projects</SheetTitle>
+					<SheetDescription>
+						Here you can change, create, and delete your projects.
+					</SheetDescription>
+				</SheetHeader>
+
+				<div className="flex flex-col gap-1 px-4 pt-4">
+					{loading && (
+						<p className="text-xs text-muted-foreground">Loading…</p>
+					)}
+					{!loading && projects.length === 0 && (
+						<p className="text-xs text-muted-foreground">No projects yet.</p>
+					)}
+					{projects.map((p) => (
+						<div key={p.id} className="group flex items-center gap-1">
+							{editingId === p.id ? (
+								<Input
+									value={editingName}
+									onChange={(e) => setEditingName(e.target.value)}
+									onBlur={commitRename}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") commitRename()
+										if (e.key === "Escape") setEditingId(null)
+									}}
+									autoFocus
+									className="h-7 flex-1 text-xs"
+								/>
+							) : (
+								<button
+									type="button"
+									onClick={() => { onSelect(p.id); onOpenChange(false) }}
+									className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+								>
+									{p.id === currentId
+										? <Check size={13} className="shrink-0 text-primary" />
+										: <span className="size-[13px] shrink-0" />
+									}
+									<span className="truncate">{p.name}</span>
+								</button>
+							)}
+							<div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									onClick={() => { setEditingId(p.id); setEditingName(p.name) }}
+								>
+									<Pencil size={12} />
+								</Button>
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button variant="ghost" size="icon-xs" className="text-destructive hover:text-destructive">
+											<Trash2 size={12} />
+										</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent size="sm">
+										<AlertDialogHeader>
+											<AlertDialogTitle>Delete project?</AlertDialogTitle>
+											<AlertDialogDescription>
+												"{p.name}" and all its documents will be permanently deleted.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancel</AlertDialogCancel>
+											<AlertDialogAction variant="destructive" onClick={() => onDelete(p.id)}>
+												Delete
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							</div>
+						</div>
+					))}
+				</div>
+				<div className="px-4 pt-4">
+					<Button variant="outline" size="sm" className="w-full gap-2" onClick={onCreate}>
+						<Plus size={13} />
+						New project
+					</Button>
+				</div>
+			</SheetContent>
+		</Sheet>
 	)
 }
 
@@ -252,9 +310,12 @@ function AuthSheet({
 }) {
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent>
+			<SheetContent side="left">
 				<SheetHeader>
 					<SheetTitle>Account</SheetTitle>
+					<SheetDescription>
+						Here you can manage your account.
+					</SheetDescription>
 				</SheetHeader>
 				<div className="flex flex-col gap-4 px-4 pt-4">
 					<div className="flex items-center gap-3">
@@ -295,9 +356,12 @@ function SettingsSheet({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent>
+			<SheetContent side="left">
 				<SheetHeader>
 					<SheetTitle>Settings</SheetTitle>
+					<SheetDescription>
+						Here you can manage your settings.
+					</SheetDescription>
 				</SheetHeader>
 				<div className="flex flex-col gap-5 px-4 pt-4">
 					<div className="flex flex-col gap-2">
@@ -372,8 +436,7 @@ function AppSidebar({
 	onOpen,
 	onAddDraft,
 	onUpload,
-	onProjectChange,
-	onProjectCreate,
+	onManageProjects,
 	onAuthOpen,
 	onSettingsOpen,
 }: {
@@ -385,13 +448,13 @@ function AppSidebar({
 	onOpen: (id: string) => void
 	onAddDraft: () => void
 	onUpload: () => void
-	onProjectChange: (id: string) => void
-	onProjectCreate: () => void
+	onManageProjects: () => void
 	onAuthOpen: () => void
 	onSettingsOpen: () => void
 }) {
 	const openSet = new Set(openTabIds)
 	const groups = groupArtifactsByType(artifacts)
+	const currentProject = projects.find((p) => p.id === currentProjectId)
 
 	return (
 		<Sidebar collapsible="icon">
@@ -400,13 +463,16 @@ function AppSidebar({
 					<div className="shrink-0">
 						<Logo size={20} />
 					</div>
-					<ProjectSelector
-						projects={projects}
-						currentId={currentProjectId}
-						loading={projectsLoading}
-						onChange={onProjectChange}
-						onCreate={onProjectCreate}
-					/>
+					<Button
+						onClick={onManageProjects}
+						variant="ghost"
+						className="group-data-[collapsible=icon]:hidden"
+					>
+						<FolderOpen size={12} className="shrink-0 text-muted-foreground" />
+						<span className="flex-1 truncate text-left text-muted-foreground">
+							{projectsLoading ? "Loading…" : (currentProject?.name ?? "Projects")}
+						</span>
+					</Button>
 				</div>
 			</SidebarHeader>
 
@@ -890,6 +956,7 @@ function WorkspacePage() {
 	const [projects, setProjects] = React.useState<Project[]>([])
 	const [projectsLoading, setProjectsLoading] = React.useState(true)
 	const [currentProjectId, setCurrentProjectId] = React.useState("")
+	const [projectsOpen, setProjectsOpen] = React.useState(false)
 	const [authOpen, setAuthOpen] = React.useState(false)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
 	const chatPanelRef = usePanelRef()
@@ -968,6 +1035,25 @@ function WorkspacePage() {
 		setCurrentProjectId(project.id)
 	}
 
+	async function renameProject(id: string, name: string) {
+		const updated = await api.projects.rename(id, name)
+		setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)))
+	}
+
+	async function deleteProject(id: string) {
+		await api.projects.delete(id)
+		setProjects((prev) => {
+			const next = prev.filter((p) => p.id !== id)
+			if (currentProjectId === id) setCurrentProjectId(next[0]?.id ?? "")
+			return next
+		})
+		if (currentProjectId === id) {
+			setArtifacts([])
+			setOpenTabIds([])
+			setActiveTab("")
+		}
+	}
+
 	function toggleChat() {
 		const panel = chatPanelRef.current
 		if (!panel) return
@@ -996,8 +1082,7 @@ function WorkspacePage() {
 					onOpen={openArtifact}
 					onAddDraft={addDraft}
 					onUpload={addUpload}
-					onProjectChange={setCurrentProjectId}
-					onProjectCreate={createProject}
+					onManageProjects={() => setProjectsOpen(true)}
 					onAuthOpen={() => setAuthOpen(true)}
 					onSettingsOpen={() => setSettingsOpen(true)}
 				/>
@@ -1039,6 +1124,17 @@ function WorkspacePage() {
 					</ResizablePanelGroup>
 				</SidebarInset>
 			</SidebarProvider>
+			<ProjectsSheet
+				open={projectsOpen}
+				onOpenChange={setProjectsOpen}
+				projects={projects}
+				currentId={currentProjectId}
+				loading={projectsLoading}
+				onSelect={setCurrentProjectId}
+				onCreate={createProject}
+				onRename={renameProject}
+				onDelete={deleteProject}
+			/>
 			<AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
 			<SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
 		</>

@@ -32,6 +32,11 @@ pub fn run() {
                 .spawn()
                 .expect("failed to spawn api sidecar");
 
+            // WSLg/X11 reports 96 DPI regardless of actual display scale,
+            // so WebKitGTK renders tiny on high-DPI displays. Apply a zoom factor.
+            let window = app.get_webview_window("main").expect("main window not found");
+            window.set_zoom(1.5).expect("failed to set zoom");
+
             Ok(())
         })
         .run(tauri::generate_context!())

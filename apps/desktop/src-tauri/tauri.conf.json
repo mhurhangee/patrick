@@ -15,7 +15,10 @@
         "title": "PatrickOS",
         "width": 1280,
         "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
         "resizable": true,
+        "maximized": true,
         "fullscreen": false
       }
     ],
@@ -25,7 +28,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "rpm"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
