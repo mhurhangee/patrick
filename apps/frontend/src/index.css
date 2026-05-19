@@ -130,3 +130,12 @@
     @apply font-sans;
     }
 }
+
+@utility tab-scroll {
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 2.5rem), transparent 100%);
+  mask-image: linear-gradient(to right, black 0, black calc(100% - 2.5rem), transparent 100%);
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

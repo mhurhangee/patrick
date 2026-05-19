@@ -7,7 +7,6 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	ChevronsUpDown,
-	Clock,
 	Columns3,
 	FolderOpen,
 	FolderPlus,
@@ -15,10 +14,12 @@ import {
 	Lightbulb,
 	ListChecks,
 	type LucideIcon,
+	MessageSquare,
 	Pencil,
 	Plus,
 	Reply,
 	Search,
+	Send,
 	Settings,
 	Sparkles,
 	Trash2,
@@ -126,6 +127,13 @@ interface Project {
 	name: string
 }
 
+interface Chat {
+	id: string
+	title: string
+	messages: Message[]
+	createdAt: Date
+}
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const ASSET_TYPES: {
@@ -179,27 +187,82 @@ const ASSET_TYPES: {
 		},
 	]
 
-const INITIAL_MESSAGES: Message[] = [
+const AGENTPAT_SUGGESTIONS = [
+	"Draft a §103 response",
+	"Search prior art",
+	"Amend claims",
+]
+
+// Dates relative to module load — fine for mock data
+const _now = new Date()
+const _d = (daysAgo: number) =>
+	new Date(
+		_now.getFullYear(),
+		_now.getMonth(),
+		_now.getDate() - daysAgo,
+		10,
+		30,
+	)
+
+const MOCK_CHATS: Chat[] = [
 	{
-		id: "1",
-		role: "user",
-		content: "Draft a response to the §103 rejection for claims 1–4.",
+		id: "mock-1",
+		title: "§103 rejection response strategy",
+		messages: [
+			{
+				id: "m1",
+				role: "user",
+				content: "Draft a response to the §103 rejection for claims 1–4.",
+			},
+			{
+				id: "m2",
+				role: "assistant",
+				content:
+					"Smith doesn't disclose applying the transformation before transmission — claim 1 is distinguishable on that basis. Want me to draft the traversal argument?",
+			},
+			{
+				id: "m3",
+				role: "user",
+				content: "Yes, and amend claim 3 to narrow the training data.",
+			},
+			{
+				id: "m4",
+				role: "assistant",
+				content:
+					"Drafting now — I'll open the response as a new tab when ready.",
+			},
+		],
+		createdAt: _d(0),
 	},
 	{
-		id: "2",
-		role: "assistant",
-		content:
-			"Smith doesn't disclose applying the transformation before transmission — claim 1 is distinguishable on that basis. Want me to draft the traversal argument?",
+		id: "mock-2",
+		title: "Prior art search for claim 1",
+		messages: [
+			{
+				id: "m5",
+				role: "user",
+				content: "Can you find prior art for the data compression claims?",
+			},
+			{
+				id: "m6",
+				role: "assistant",
+				content:
+					"I'll analyse the key claim elements and suggest relevant search strategies.",
+			},
+		],
+		createdAt: _d(1),
 	},
 	{
-		id: "3",
-		role: "user",
-		content: "Yes, and amend claim 3 to narrow the training data.",
+		id: "mock-3",
+		title: "Claims 1–4 amendment draft",
+		messages: [],
+		createdAt: _d(3),
 	},
 	{
-		id: "4",
-		role: "assistant",
-		content: "Drafting now — I'll open the response as a new tab when ready.",
+		id: "mock-4",
+		title: "Client response to office action",
+		messages: [],
+		createdAt: _d(10),
 	},
 ]
 
@@ -531,6 +594,8 @@ function SettingsSheet({
 function AppSidebar({
 	assets,
 	openTabIds,
+	chats,
+	openChatIds,
 	projects,
 	projectsLoading,
 	currentProjectId,
@@ -538,12 +603,17 @@ function AppSidebar({
 	onEdit,
 	onAddArtifact,
 	onAddSource,
+	onOpenChat,
+	onNewChat,
+	onEditChat,
 	onManageProjects,
 	onAuthOpen,
 	onSettingsOpen,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
+	chats: Chat[]
+	openChatIds: string[]
 	projects: Project[]
 	projectsLoading: boolean
 	currentProjectId: string
@@ -551,12 +621,25 @@ function AppSidebar({
 	onEdit: (id: string) => void
 	onAddArtifact: () => void
 	onAddSource: () => void
+	onOpenChat: (id: string) => void
+	onNewChat: () => void
+	onEditChat: (id: string) => void
 	onManageProjects: () => void
 	onAuthOpen: () => void
 	onSettingsOpen: () => void
 }) {
+	const CHAT_LIMIT = 5
+	const [showAllChats, setShowAllChats] = React.useState(false)
+
 	const openSet = new Set(openTabIds)
+	const openChatSet = new Set(openChatIds)
 	const kindGroups = groupAssetsByKindAndType(assets)
+	const sortedChats = [...chats].sort(
+		(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+	)
+	const visibleChats = showAllChats
+		? sortedChats
+		: sortedChats.slice(0, CHAT_LIMIT)
 	const currentProject = projects.find((p) => p.id === currentProjectId)
 
 	return (
@@ -589,24 +672,39 @@ function AppSidebar({
 				>
 					<span className="flex items-center gap-1">
 						{currentProject ? (
-							<FolderOpen size={13} className="text-muted-foreground shrink-0" />
+							<FolderOpen
+								size={13}
+								className="text-muted-foreground shrink-0"
+							/>
 						) : (
-							<FolderPlus size={13} className="text-muted-foreground shrink-0" />
+							<FolderPlus
+								size={13}
+								className="text-muted-foreground shrink-0"
+							/>
 						)}
-						{projectsLoading ? "Loading…" : (currentProject?.name ?? "Select project")}
+						{projectsLoading
+							? "Loading…"
+							: (currentProject?.name ?? "Select project")}
 					</span>
-					<ChevronsUpDown size={11} className="text-muted-foreground shrink-0" />
+					<ChevronsUpDown
+						size={11}
+						className="text-muted-foreground shrink-0"
+					/>
 				</Button>
-
 			</SidebarHeader>
 
 			<SidebarContent>
+				{/* Sources + Artifacts */}
 				{kindGroups.map((kindGroup) => (
 					<SidebarGroup key={kindGroup.kind}>
 						<SidebarGroupLabel>{kindGroup.label}</SidebarGroupLabel>
 						<SidebarGroupAction
-							title={kindGroup.kind === "source" ? "Add source" : "New artifact"}
-							onClick={kindGroup.kind === "source" ? onAddSource : onAddArtifact}
+							title={
+								kindGroup.kind === "source" ? "Add source" : "New artifact"
+							}
+							onClick={
+								kindGroup.kind === "source" ? onAddSource : onAddArtifact
+							}
 						>
 							<Plus />
 							<span className="sr-only">
@@ -636,7 +734,9 @@ function AppSidebar({
 													size={13}
 													className={cn("shrink-0", typeGroup.color)}
 												/>
-												<span className="uppercase tracking-widest">{typeGroup.label}</span>
+												<span className="uppercase tracking-widest">
+													{typeGroup.label}
+												</span>
 												<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
 											</SidebarMenuButton>
 										</CollapsibleTrigger>
@@ -671,6 +771,57 @@ function AppSidebar({
 						</SidebarMenu>
 					</SidebarGroup>
 				))}
+
+
+				{/* Chats */}
+				<SidebarGroup>
+					<SidebarGroupLabel>Chats</SidebarGroupLabel>
+					<SidebarGroupAction title="New chat" onClick={onNewChat}>
+						<Plus />
+						<span className="sr-only">New chat</span>
+					</SidebarGroupAction>
+					<SidebarMenu>
+						{sortedChats.length === 0 && (
+							<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+								No chats yet.
+							</p>
+						)}
+						<SidebarMenuSub>
+							{visibleChats.map((chat) => (
+								<SidebarMenuSubItem key={chat.id}>
+									<SidebarMenuSubButton
+										onClick={() => onOpenChat(chat.id)}
+										isActive={openChatSet.has(chat.id)}
+									>
+										<span className="truncate">{chat.title}</span>
+									</SidebarMenuSubButton>
+									<SidebarMenuAction
+										className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
+										onClick={(e) => {
+											e.stopPropagation()
+											onEditChat(chat.id)
+										}}
+									>
+										<Pencil size={12} />
+										<span className="sr-only">Edit chat</span>
+									</SidebarMenuAction>
+								</SidebarMenuSubItem>
+							))}
+							{sortedChats.length > CHAT_LIMIT && (
+								<SidebarMenuSubItem>
+									<SidebarMenuSubButton
+										onClick={() => setShowAllChats((v) => !v)}
+										className="justify-center text-muted-foreground"
+									>
+										{showAllChats
+											? "Show less"
+											: `${sortedChats.length - CHAT_LIMIT} older…`}
+									</SidebarMenuSubButton>
+								</SidebarMenuSubItem>
+							)}
+						</SidebarMenuSub>
+					</SidebarMenu>
+				</SidebarGroup>
 			</SidebarContent>
 
 			<SidebarFooter className="p-2">
@@ -762,7 +913,11 @@ function AssetMetaSheet({
 	const [saving, setSaving] = React.useState(false)
 
 	const stateKey =
-		state.mode === "edit" ? state.assetId : state.mode === "create" ? `create-${state.kind}` : null
+		state.mode === "edit"
+			? state.assetId
+			: state.mode === "create"
+				? `create-${state.kind}`
+				: null
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only sync on open/switch
 	React.useEffect(() => {
@@ -811,7 +966,12 @@ function AssetMetaSheet({
 	const selectedDate = date ? new Date(`${date}T00:00:00`) : undefined
 
 	return (
-		<Sheet open={state.mode !== "closed"} onOpenChange={(v) => { if (!v) onClose() }}>
+		<Sheet
+			open={state.mode !== "closed"}
+			onOpenChange={(v) => {
+				if (!v) onClose()
+			}}
+		>
 			<SheetContent side="left">
 				<SheetHeader>
 					<SheetTitle>
@@ -976,7 +1136,7 @@ function AssetViewer({
 				<div className="relative z-10 flex shrink-0 items-center self-stretch px-2">
 					<SidebarTrigger className="h-6 w-6" />
 				</div>
-				<div className="flex flex-1 items-end gap-0.5 overflow-x-auto px-1">
+				<div className="flex flex-1 items-end gap-0.5 overflow-x-auto px-1 tab-scroll">
 					{openAssets.map((asset) => (
 						<div
 							key={asset.id}
@@ -1074,63 +1234,124 @@ function AssetViewer({
 	)
 }
 
-// ─── Chat ─────────────────────────────────────────────────────────────────────
+// ─── AgentPat pane ────────────────────────────────────────────────────────────
 
-function Chat({
-	openAssets,
-	onRemoveAsset,
-}: {
-	openAssets: ApiAsset[]
-	onRemoveAsset: (id: string) => void
-}) {
-	const [messages, setMessages] = React.useState<Message[]>(INITIAL_MESSAGES)
+function AgentPatPane({ onSend }: { onSend: (message: string) => void }) {
 	const [input, setInput] = React.useState("")
 
-	function send() {
-		if (!input.trim()) return
-		setMessages((m) => [
-			...m,
-			{ id: Date.now().toString(), role: "user", content: input },
-		])
+	function send(message: string) {
+		const trimmed = message.trim()
+		if (!trimmed) return
+		onSend(trimmed)
 		setInput("")
 	}
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden">
-			<div className="relative flex h-10 shrink-0 items-end bg-muted px-1">
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
-				<div className="relative z-10 flex items-center gap-1.5 rounded-t-md border border-b-0 border-border bg-background px-2.5 py-1.5 text-xs font-medium">
-					<Sparkles size={12} className="text-primary" />
-					AgentPat
+		<div className="flex h-full flex-col overflow-hidden bg-sidebar">
+			<ScrollArea className="flex-1">
+				<div className="mx-auto max-w-sm px-6 py-10 text-center">
+					<div className="mb-4 flex justify-center">
+						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+							<Sparkles size={22} className="text-primary" />
+						</div>
+					</div>
+					<h2 className="mb-1 font-heading text-lg font-semibold">AgentPat</h2>
+					<p className="text-sm text-muted-foreground">
+						Your AI patent attorney assistant. To get started send a message or
+						pick a suggestion.
+					</p>
 				</div>
-				<div className="relative z-10 ml-auto flex items-center self-stretch">
-					<Button variant="ghost" size="icon-xs">
-						<Plus />
+			</ScrollArea>
+			<div className="shrink-0 flex gap-2 overflow-x-auto px-3 tab-scroll">
+				{AGENTPAT_SUGGESTIONS.map((s) => (
+					<Button
+						key={s}
+						variant="secondary"
+						size="sm"
+						className="h-auto rounded-full px-3 py-1.5 text-xs font-normal"
+						onClick={() => send(s)}
+					>
+						{s}
 					</Button>
+				))}
+			</div>
+			<div className="shrink-0 p-3">
+				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
+					<Textarea
+						value={input}
+						onChange={(e) => setInput(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && !e.shiftKey) {
+								e.preventDefault()
+								send(input)
+							}
+						}}
+						placeholder="Ask AgentPat anything…"
+						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent dark:bg-transparent p-3 text-sm shadow-none focus-visible:ring-0"
+					/>
+					<div className="flex justify-end px-3 pb-2">
+						<Button size="sm" onClick={() => send(input)}>
+							Send <Send />
+						</Button>
+					</div>
 				</div>
 			</div>
+		</div>
+	)
+}
+
+// ─── Chat pane ────────────────────────────────────────────────────────────────
+
+function ChatPane({
+	chat,
+	openAssets,
+	onRemoveAsset,
+	onSend,
+}: {
+	chat: Chat
+	openAssets: ApiAsset[]
+	onRemoveAsset: (id: string) => void
+	onSend: (chatId: string, message: string) => void
+}) {
+	const [input, setInput] = React.useState("")
+
+	function send() {
+		const trimmed = input.trim()
+		if (!trimmed) return
+		onSend(chat.id, trimmed)
+		setInput("")
+	}
+
+	return (
+		<div className="flex h-full flex-col overflow-hidden bg-sidebar">
 			<ScrollArea className="flex-1 px-3 py-3">
 				<div className="space-y-4">
-					{messages.map((msg) => (
-						<div
-							key={msg.id}
-							className={cn(
-								"flex flex-col gap-1",
-								msg.role === "user" ? "items-end" : "items-start",
-							)}
-						>
+					{chat.messages.length === 0 ? (
+						<p className="py-12 text-center text-sm text-muted-foreground">
+							No messages yet. Start the conversation below.
+						</p>
+					) : (
+						chat.messages.map((msg) => (
 							<div
+								key={msg.id}
 								className={cn(
-									"max-w-[88%] rounded-lg px-3 py-2 text-sm",
-									msg.role === "user"
-										? "bg-primary/10 text-foreground"
-										: "text-foreground",
+									"flex flex-col gap-1",
+									msg.role === "user" ? "items-end" : "items-start",
 								)}
 							>
-								{msg.content}
+								<div
+									className={cn(
+										"max-w-[88%] rounded-lg px-3 py-2 text-sm",
+										msg.role === "user"
+											? "bg-primary/10 text-foreground"
+											: "text-foreground",
+									)}
+								>
+									{msg.content}
+								</div>
 							</div>
-						</div>
-					))}
+						))
+					)}
 				</div>
 			</ScrollArea>
 			<div className="shrink-0 space-y-2 p-3">
@@ -1157,7 +1378,7 @@ function Chat({
 						))}
 					</div>
 				)}
-				<div className="rounded-lg border focus-within:ring-1 focus-within:ring-ring">
+				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
 					<Textarea
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
@@ -1168,7 +1389,7 @@ function Chat({
 							}
 						}}
 						placeholder="Ask about open assets…"
-						className="min-h-[64px] resize-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0"
+						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent dark:bg-transparent p-3 text-sm shadow-none focus-visible:ring-0"
 					/>
 					<div className="flex justify-end px-3 pb-2">
 						<Button size="sm" onClick={send}>
@@ -1181,14 +1402,249 @@ function Chat({
 	)
 }
 
+// ─── Chat panel ───────────────────────────────────────────────────────────────
+
+function ChatPanel({
+	chats,
+	openChatIds,
+	activeChatId,
+	openAssets,
+	onNewChat,
+	onCloseChat,
+	onSetActiveChat,
+	onSendToChat,
+	onSendInAgentPat,
+	onRemoveAsset,
+}: {
+	chats: Chat[]
+	openChatIds: string[]
+	activeChatId: string
+	openAssets: ApiAsset[]
+	onNewChat: () => void
+	onCloseChat: (id: string) => void
+	onSetActiveChat: (id: string) => void
+	onSendToChat: (chatId: string, message: string) => void
+	onSendInAgentPat: (message: string) => void
+	onRemoveAsset: (id: string) => void
+}) {
+	const openChats = openChatIds
+		.map((id) => chats.find((c) => c.id === id))
+		.filter(Boolean) as Chat[]
+	const activeChat = openChats.find((c) => c.id === activeChatId)
+
+	return (
+		<div className="flex h-full flex-col overflow-hidden border-l">
+			{/* Tab bar */}
+			<div className="relative flex h-10 shrink-0 items-end bg-muted px-1 gap-0.5">
+				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
+
+				{/* AgentPat — fixed left, shrinks to icon when other tabs are open */}
+				<div
+					className={cn(
+						"relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
+						activeChatId === "agentpat"
+							? "border-border bg-sidebar text-foreground"
+							: "border-transparent text-muted-foreground hover:text-foreground",
+					)}
+				>
+					<Button
+						variant="ghost"
+						size="xs"
+						onClick={() => onSetActiveChat("agentpat")}
+						className="gap-1.5"
+					>
+						<Sparkles size={12} className="shrink-0 text-primary" />
+						{openChatIds.length === 0 && <span>AgentPat</span>}
+					</Button>
+				</div>
+
+				{/* Open chat tabs */}
+				<div className="flex flex-1 items-end gap-0.5 overflow-x-auto tab-scroll">
+					{openChats.map((chat) => (
+						<div
+							key={chat.id}
+							className={cn(
+								"relative group flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
+								activeChatId === chat.id
+									? "z-10 border-border bg-sidebar text-foreground"
+									: "border-transparent text-muted-foreground hover:text-foreground",
+							)}
+						>
+							<Button
+								variant="ghost"
+								size="xs"
+								onClick={() => onSetActiveChat(chat.id)}
+								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
+							>
+								<MessageSquare size={12} className="shrink-0" />
+								<span className="max-w-[120px] truncate">{chat.title}</span>
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								onClick={() => onCloseChat(chat.id)}
+								className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+							>
+								<X size={10} />
+							</Button>
+						</div>
+					))}
+				</div>
+
+				{/* Plus — new chat, styled as a tab */}
+				<div className="relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 border-transparent text-muted-foreground transition-colors hover:text-foreground">
+					<Button
+						variant="ghost"
+						size="xs"
+						onClick={onNewChat}
+						title="New chat"
+					>
+						<Plus size={12} />
+					</Button>
+				</div>
+			</div>
+
+			{/* Content */}
+			{activeChatId === "agentpat" || !activeChat ? (
+				<AgentPatPane onSend={onSendInAgentPat} />
+			) : (
+				<ChatPane
+					chat={activeChat}
+					openAssets={openAssets}
+					onRemoveAsset={onRemoveAsset}
+					onSend={onSendToChat}
+				/>
+			)}
+		</div>
+	)
+}
+
+// ─── Chat meta sheet ──────────────────────────────────────────────────────────
+
+type ChatSheetState = { mode: "closed" } | { mode: "edit"; chatId: string }
+
+function ChatMetaSheet({
+	state,
+	chat,
+	onClose,
+	onUpdated,
+	onDeleted,
+}: {
+	state: ChatSheetState
+	chat: Chat | undefined
+	onClose: () => void
+	onUpdated: (id: string, title: string) => void
+	onDeleted: (id: string) => void
+}) {
+	const [title, setTitle] = React.useState("")
+	const [saving, setSaving] = React.useState(false)
+
+	const chatId = state.mode === "edit" ? state.chatId : null
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only sync on open/switch
+	React.useEffect(() => {
+		if (state.mode === "edit" && chat) setTitle(chat.title)
+	}, [chatId])
+
+	function handleSave() {
+		if (state.mode !== "edit" || !chat) return
+		setSaving(true)
+		onUpdated(chat.id, title.trim() || "New Chat")
+		setSaving(false)
+		onClose()
+	}
+
+	return (
+		<Sheet
+			open={state.mode !== "closed"}
+			onOpenChange={(v) => {
+				if (!v) onClose()
+			}}
+		>
+			<SheetContent side="left">
+				<SheetHeader>
+					<SheetTitle>{chat?.title ?? ""}</SheetTitle>
+					<SheetDescription>Rename or delete this chat.</SheetDescription>
+				</SheetHeader>
+				<div className="flex flex-col gap-5 px-4 pt-4">
+					<FieldGroup className="gap-3">
+						<Field>
+							<FieldLabel className="text-xs font-medium text-muted-foreground">
+								Title
+							</FieldLabel>
+							<Input
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								placeholder="New Chat"
+								onKeyDown={(e) => {
+									if (e.key === "Enter") handleSave()
+								}}
+							/>
+						</Field>
+					</FieldGroup>
+					<Button onClick={handleSave} disabled={saving}>
+						{saving ? "Saving…" : "Save"}
+					</Button>
+					{state.mode === "edit" && chat && (
+						<>
+							<Separator />
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button variant="destructive" size="sm" className="gap-1.5">
+										<Trash2 size={14} />
+										Delete chat
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent size="sm">
+									<AlertDialogHeader>
+										<AlertDialogTitle>Delete chat?</AlertDialogTitle>
+										<AlertDialogDescription>
+											"{chat.title}" will be permanently removed.
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Cancel</AlertDialogCancel>
+										<AlertDialogAction
+											variant="destructive"
+											onClick={() => {
+												onDeleted(chat.id)
+												onClose()
+											}}
+										>
+											Delete
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
+						</>
+					)}
+				</div>
+			</SheetContent>
+		</Sheet>
+	)
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 function WorkspacePage() {
+	// Assets
 	const [assets, setAssets] = React.useState<ApiAsset[]>([])
 	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
 	const [activeTab, setActiveTab] = React.useState("")
-
 	const [splitView, setSplitView] = React.useState(false)
+	const [assetSheet, setAssetSheet] = React.useState<AssetSheetState>({
+		mode: "closed",
+	})
+
+	// Chats
+	const [chats, setChats] = React.useState<Chat[]>(MOCK_CHATS)
+	const [openChatIds, setOpenChatIds] = React.useState<string[]>([])
+	const [activeChatId, setActiveChatId] = React.useState("agentpat")
+	const [chatSheet, setChatSheet] = React.useState<ChatSheetState>({
+		mode: "closed",
+	})
+
+	// Projects / UI
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
 	const [projects, setProjects] = React.useState<Project[]>([])
 	const [projectsLoading, setProjectsLoading] = React.useState(true)
@@ -1196,7 +1652,7 @@ function WorkspacePage() {
 	const [projectsOpen, setProjectsOpen] = React.useState(false)
 	const [authOpen, setAuthOpen] = React.useState(false)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
-	const [assetSheet, setAssetSheet] = React.useState<AssetSheetState>({ mode: "closed" })
+
 	const chatPanelRef = usePanelRef()
 
 	React.useEffect(() => {
@@ -1216,6 +1672,8 @@ function WorkspacePage() {
 		setActiveTab("")
 		api.assets.list(currentProjectId).then(setAssets)
 	}, [currentProjectId])
+
+	// ── Asset handlers ────────────────────────────────────────────────────────
 
 	function openAsset(id: string) {
 		setOpenTabIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
@@ -1247,6 +1705,8 @@ function WorkspacePage() {
 		setAssetSheet({ mode: "create", kind: "source" })
 	}
 
+	// ── Project handlers ──────────────────────────────────────────────────────
+
 	async function createProject() {
 		const project = await api.projects.create("New Project")
 		setProjects((prev) => [...prev, project])
@@ -1272,6 +1732,81 @@ function WorkspacePage() {
 		}
 	}
 
+	// ── Chat handlers ─────────────────────────────────────────────────────────
+
+	function openChat(id: string) {
+		setOpenChatIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+		setActiveChatId(id)
+	}
+
+	function closeChat(id: string) {
+		setOpenChatIds((prev) => {
+			const next = prev.filter((c) => c !== id)
+			if (activeChatId === id) setActiveChatId(next.at(-1) ?? "agentpat")
+			return next
+		})
+	}
+
+	function newChat() {
+		const chat: Chat = {
+			id: crypto.randomUUID(),
+			title: "New Chat",
+			messages: [],
+			createdAt: new Date(),
+		}
+		setChats((prev) => [chat, ...prev])
+		openChat(chat.id)
+	}
+
+	function deleteChat(id: string) {
+		setChats((prev) => prev.filter((c) => c.id !== id))
+		closeChat(id)
+	}
+
+	function updateChat(id: string, title: string) {
+		setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)))
+	}
+
+	function sendInAgentPat(message: string) {
+		const chat: Chat = {
+			id: crypto.randomUUID(),
+			title: message.length > 50 ? `${message.slice(0, 50)}…` : message,
+			messages: [
+				{ id: crypto.randomUUID(), role: "user", content: message },
+				{
+					id: crypto.randomUUID(),
+					role: "assistant",
+					content: "On it. I'll start working through this now.",
+				},
+			],
+			createdAt: new Date(),
+		}
+		setChats((prev) => [chat, ...prev])
+		openChat(chat.id)
+	}
+
+	function sendToChat(chatId: string, message: string) {
+		const userMsg: Message = {
+			id: crypto.randomUUID(),
+			role: "user",
+			content: message,
+		}
+		const assistantMsg: Message = {
+			id: crypto.randomUUID(),
+			role: "assistant",
+			content: "Got it. Working on a response now.",
+		}
+		setChats((prev) =>
+			prev.map((c) =>
+				c.id === chatId
+					? { ...c, messages: [...c.messages, userMsg, assistantMsg] }
+					: c,
+			),
+		)
+	}
+
+	// ── Panel collapse ────────────────────────────────────────────────────────
+
 	function toggleChat() {
 		const panel = chatPanelRef.current
 		if (!panel) return
@@ -1294,6 +1829,8 @@ function WorkspacePage() {
 				<AppSidebar
 					assets={assets}
 					openTabIds={openTabIds}
+					chats={chats}
+					openChatIds={openChatIds}
 					projects={projects}
 					projectsLoading={projectsLoading}
 					currentProjectId={currentProjectId}
@@ -1301,6 +1838,9 @@ function WorkspacePage() {
 					onEdit={(id) => setAssetSheet({ mode: "edit", assetId: id })}
 					onAddArtifact={addArtifact}
 					onAddSource={addSource}
+					onOpenChat={openChat}
+					onNewChat={newChat}
+					onEditChat={(id) => setChatSheet({ mode: "edit", chatId: id })}
 					onManageProjects={() => setProjectsOpen(true)}
 					onAuthOpen={() => setAuthOpen(true)}
 					onSettingsOpen={() => setSettingsOpen(true)}
@@ -1326,7 +1866,10 @@ function WorkspacePage() {
 								chatCollapsed={chatCollapsed}
 							/>
 						</ResizablePanel>
-						<ResizableHandle withHandle className="w-[3px] before:absolute before:inset-x-0 before:top-0 before:h-10 before:bg-muted before:content-['']" />
+						<ResizableHandle
+							withHandle
+							className="w-[3px] before:absolute before:inset-x-0 before:top-0 before:h-10 before:bg-muted before:content-['']"
+						/>
 						<ResizablePanel
 							panelRef={chatPanelRef}
 							defaultSize="32%"
@@ -1336,7 +1879,18 @@ function WorkspacePage() {
 							collapsedSize="0%"
 							style={{ transition: "flex 150ms ease" }}
 						>
-							<Chat openAssets={openAssets} onRemoveAsset={closeTab} />
+							<ChatPanel
+								chats={chats}
+								openChatIds={openChatIds}
+								activeChatId={activeChatId}
+								openAssets={openAssets}
+								onNewChat={newChat}
+								onCloseChat={closeChat}
+								onSetActiveChat={setActiveChatId}
+								onSendToChat={sendToChat}
+								onSendInAgentPat={sendInAgentPat}
+								onRemoveAsset={closeTab}
+							/>
 						</ResizablePanel>
 					</ResizablePanelGroup>
 				</SidebarInset>
@@ -1356,7 +1910,11 @@ function WorkspacePage() {
 			<SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
 			<AssetMetaSheet
 				state={assetSheet}
-				asset={assetSheet.mode === "edit" ? assets.find((a) => a.id === assetSheet.assetId) : undefined}
+				asset={
+					assetSheet.mode === "edit"
+						? assets.find((a) => a.id === assetSheet.assetId)
+						: undefined
+				}
 				projectId={currentProjectId}
 				onClose={() => setAssetSheet({ mode: "closed" })}
 				onCreated={(asset) => {
@@ -1367,6 +1925,17 @@ function WorkspacePage() {
 					setAssets((prev) => prev.map((a) => (a.id === asset.id ? asset : a)))
 				}}
 				onDeleted={deleteAsset}
+			/>
+			<ChatMetaSheet
+				state={chatSheet}
+				chat={
+					chatSheet.mode === "edit"
+						? chats.find((c) => c.id === chatSheet.chatId)
+						: undefined
+				}
+				onClose={() => setChatSheet({ mode: "closed" })}
+				onUpdated={updateChat}
+				onDeleted={deleteChat}
 			/>
 		</>
 	)
