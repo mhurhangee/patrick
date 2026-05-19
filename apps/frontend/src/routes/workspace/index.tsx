@@ -1,19 +1,26 @@
 import type { AssetKind, AssetType } from "@patrickos/db"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import {
+	BookOpen,
 	CalendarDays,
 	Check,
-	ChevronDown,
-	CloudUpload,
+	ChevronLeft,
+	ChevronRight,
+	ChevronsUpDown,
+	Clock,
 	Columns3,
-	File,
-	FilePen,
-	FilePlus,
 	FolderOpen,
-	PanelRight,
+	FolderPlus,
+	Gavel,
+	Lightbulb,
+	ListChecks,
+	type LucideIcon,
 	Pencil,
 	Plus,
+	Reply,
+	Search,
 	Settings,
+	Sparkles,
 	Trash2,
 	UserCircle,
 	X,
@@ -33,6 +40,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -40,6 +48,14 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -73,17 +89,24 @@ import {
 	SidebarContent,
 	SidebarFooter,
 	SidebarGroup,
+	SidebarGroupAction,
 	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarInset,
 	SidebarMenu,
+	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
 	SidebarProvider,
+	SidebarSeparator,
 	SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Textarea } from "@/components/ui/textarea"
 import { type ApiAsset, api } from "@/lib/api"
+import { formatDisplayDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/workspace/")({
@@ -105,14 +128,56 @@ interface Project {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const ASSET_TYPES: { id: AssetType; label: string }[] = [
-	{ id: "inventor-disclosure", label: "Inventor Disclosures" },
-	{ id: "office-action", label: "Office Actions" },
-	{ id: "patent-spec", label: "Patent Specification" },
-	{ id: "prior-art", label: "Prior Art" },
-	{ id: "claims-draft", label: "Claims Drafts" },
-	{ id: "response-draft", label: "Response Drafts" },
-]
+const ASSET_TYPES: {
+	id: AssetType
+	kind: AssetKind
+	label: string
+	icon: LucideIcon
+	color: string
+}[] = [
+		{
+			id: "inventor-disclosure",
+			kind: "source",
+			label: "Inventor Disclosures",
+			icon: Lightbulb,
+			color: "text-amber-500",
+		},
+		{
+			id: "office-action",
+			kind: "source",
+			label: "Office Actions",
+			icon: Gavel,
+			color: "text-red-500",
+		},
+		{
+			id: "prior-art",
+			kind: "source",
+			label: "Prior Art",
+			icon: Search,
+			color: "text-slate-500",
+		},
+		{
+			id: "patent-spec",
+			kind: "artifact",
+			label: "Patent Specifications",
+			icon: BookOpen,
+			color: "text-blue-500",
+		},
+		{
+			id: "claims-draft",
+			kind: "artifact",
+			label: "Claims Drafts",
+			icon: ListChecks,
+			color: "text-green-500",
+		},
+		{
+			id: "response-draft",
+			kind: "artifact",
+			label: "Response Drafts",
+			icon: Reply,
+			color: "text-violet-500",
+		},
+	]
 
 const INITIAL_MESSAGES: Message[] = [
 	{
@@ -140,48 +205,53 @@ const INITIAL_MESSAGES: Message[] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function groupAssetsByType(assets: ApiAsset[]) {
-	const groups: { type: AssetType; label: string; assets: ApiAsset[] }[] = []
-	for (const { id, label } of ASSET_TYPES) {
-		const typeAssets = assets
-			.filter((a) => a.type === id)
-			.sort((a, b) => a.date.localeCompare(b.date))
-		if (typeAssets.length > 0)
-			groups.push({ type: id, label, assets: typeAssets })
+const KIND_LABELS: Record<AssetKind, string> = {
+	source: "Sources",
+	artifact: "Artifacts",
+}
+
+function groupAssetsByKindAndType(assets: ApiAsset[]) {
+	const result: {
+		kind: AssetKind
+		label: string
+		types: {
+			type: AssetType
+			label: string
+			icon: LucideIcon
+			color: string
+			assets: ApiAsset[]
+		}[]
+	}[] = []
+	for (const kind of ["source", "artifact"] as AssetKind[]) {
+		const types: {
+			type: AssetType
+			label: string
+			icon: LucideIcon
+			color: string
+			assets: ApiAsset[]
+		}[] = []
+		for (const { id, label, icon, color } of ASSET_TYPES) {
+			const typeAssets = assets
+				.filter((a) => a.kind === kind && a.type === id)
+				.sort((a, b) => a.date.localeCompare(b.date))
+			if (typeAssets.length > 0)
+				types.push({ type: id, label, icon, color, assets: typeAssets })
+		}
+		result.push({ kind, label: KIND_LABELS[kind], types })
 	}
-	return groups
+	return result
 }
 
-function formatShortDate(date: string): string {
-	if (!date) return ""
-	const d = new Date(`${date}T00:00:00`)
-	const month = d.toLocaleDateString("en-US", { month: "short" })
-	const year = d.toLocaleDateString("en-US", { year: "2-digit" })
-	return `${month} '${year}`
-}
-
-function formatDisplayDate(date: string): string {
-	if (!date) return "Pick a date"
-	const d = new Date(`${date}T00:00:00`)
-	return d.toLocaleDateString("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	})
-}
-
-// ─── Asset kind icon ───────────────────────────────────────────────────────────
-
-function AssetKindIcon({
-	kind,
+function AssetTypeIcon({
+	type,
 	size = 13,
 }: {
-	kind: AssetKind
+	type: AssetType
 	size?: number
 }) {
-	if (kind === "source")
-		return <File size={size} className="shrink-0 text-red-500" />
-	return <FilePen size={size} className="shrink-0 text-amber-500" />
+	const entry = ASSET_TYPES.find((t) => t.id === type)
+	if (!entry) return null
+	return <entry.icon size={size} className={cn("shrink-0", entry.color)} />
 }
 
 // ─── Projects sheet ───────────────────────────────────────────────────────────
@@ -221,14 +291,37 @@ function ProjectsSheet({
 				<SheetHeader>
 					<SheetTitle>Projects</SheetTitle>
 					<SheetDescription>
-						Here you can change, create, and delete your projects.
+						Switch, create, rename, or delete projects.
 					</SheetDescription>
 				</SheetHeader>
 
 				<div className="flex flex-col gap-1 px-4 pt-4">
-					{loading && <p className="text-xs text-muted-foreground">Loading…</p>}
+					{loading && (
+						<p className="text-sm text-muted-foreground px-2">Loading…</p>
+					)}
 					{!loading && projects.length === 0 && (
-						<p className="text-xs text-muted-foreground">No projects yet.</p>
+						<Empty className="border-dashed py-8">
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<FolderOpen />
+								</EmptyMedia>
+								<EmptyTitle>No projects yet</EmptyTitle>
+								<EmptyDescription>
+									Create your first project to get started.
+								</EmptyDescription>
+							</EmptyHeader>
+							<EmptyContent>
+								<Button
+									variant="outline"
+									size="sm"
+									className="gap-2"
+									onClick={onCreate}
+								>
+									<Plus size={13} />
+									Create project
+								</Button>
+							</EmptyContent>
+						</Empty>
 					)}
 					{projects.map((p) => (
 						<div key={p.id} className="group flex items-center gap-1">
@@ -242,7 +335,7 @@ function ProjectsSheet({
 										if (e.key === "Escape") setEditingId(null)
 									}}
 									autoFocus
-									className="h-7 flex-1 text-xs"
+									className="flex-1"
 								/>
 							) : (
 								<Button
@@ -251,7 +344,7 @@ function ProjectsSheet({
 										onSelect(p.id)
 										onOpenChange(false)
 									}}
-									className="flex flex-1 items-center gap-2 justify-start px-2 py-1.5 h-auto text-sm"
+									className="flex flex-1 items-center gap-2 justify-start h-auto"
 								>
 									{p.id === currentId ? (
 										<Check size={13} className="shrink-0 text-primary" />
@@ -270,7 +363,7 @@ function ProjectsSheet({
 										setEditingName(p.name)
 									}}
 								>
-									<Pencil size={12} />
+									<Pencil />
 								</Button>
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
@@ -305,17 +398,20 @@ function ProjectsSheet({
 						</div>
 					))}
 				</div>
-				<div className="px-4 pt-4">
-					<Button
-						variant="outline"
-						size="sm"
-						className="w-full gap-2"
-						onClick={onCreate}
-					>
-						<Plus size={13} />
-						New project
-					</Button>
-				</div>
+
+				{projects.length > 0 && (
+					<div className="px-4 pt-3">
+						<Button
+							variant="outline"
+							size="sm"
+							className="w-full gap-2"
+							onClick={onCreate}
+						>
+							<Plus size={13} />
+							New project
+						</Button>
+					</div>
+				)}
 			</SheetContent>
 		</Sheet>
 	)
@@ -335,7 +431,7 @@ function AuthSheet({
 			<SheetContent side="left">
 				<SheetHeader>
 					<SheetTitle>Account</SheetTitle>
-					<SheetDescription>Here you can manage your account.</SheetDescription>
+					<SheetDescription>Manage your account.</SheetDescription>
 				</SheetHeader>
 				<div className="flex flex-col gap-4 px-4 pt-4">
 					<div className="flex items-center gap-3">
@@ -344,11 +440,11 @@ function AuthSheet({
 						</div>
 						<div>
 							<p className="text-sm font-medium">Demo User</p>
-							<p className="text-xs text-muted-foreground">user@firm.com</p>
+							<p className="text-sm text-muted-foreground">user@firm.com</p>
 						</div>
 					</div>
 					<Separator />
-					<p className="text-xs text-muted-foreground">
+					<p className="text-sm text-muted-foreground">
 						Authentication is available in cloud and self-hosted deployments.
 					</p>
 					<Button variant="outline" size="sm" disabled>
@@ -361,9 +457,6 @@ function AuthSheet({
 }
 
 // ─── Settings sheet ───────────────────────────────────────────────────────────
-
-const LABEL_CLASS_SHEET =
-	"text-[10px] uppercase tracking-widest text-muted-foreground"
 
 function SettingsSheet({
 	open,
@@ -379,63 +472,51 @@ function SettingsSheet({
 			<SheetContent side="left">
 				<SheetHeader>
 					<SheetTitle>Settings</SheetTitle>
-					<SheetDescription>
-						Here you can manage your settings.
-					</SheetDescription>
+					<SheetDescription>Manage your settings.</SheetDescription>
 				</SheetHeader>
 				<div className="flex flex-col gap-5 px-4 pt-4">
 					<div className="flex flex-col gap-2">
-						<span className={LABEL_CLASS_SHEET}>Appearance</span>
+						<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+							Appearance
+						</p>
 						<Select
 							value={theme}
 							onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}
 						>
-							<SelectTrigger size="sm" className="h-7 text-xs">
+							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="light" className="text-xs">
-									Light
-								</SelectItem>
-								<SelectItem value="dark" className="text-xs">
-									Dark
-								</SelectItem>
-								<SelectItem value="system" className="text-xs">
-									System
-								</SelectItem>
+								<SelectItem value="light">Light</SelectItem>
+								<SelectItem value="dark">Dark</SelectItem>
+								<SelectItem value="system">System</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
 					<div className="flex flex-col gap-2">
-						<span className={LABEL_CLASS_SHEET}>API URL</span>
-						<Input
-							placeholder="http://localhost:3000"
-							className="h-7 text-xs"
-							disabled
-						/>
-						<p className="text-[10px] text-muted-foreground">
+						<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+							API URL
+						</p>
+						<Input placeholder="http://localhost:3000" disabled />
+						<p className="text-xs text-muted-foreground">
 							Configurable in local and self-hosted deployments.
 						</p>
 					</div>
 					<div className="flex flex-col gap-2">
-						<span className={LABEL_CLASS_SHEET}>AI Model</span>
+						<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+							AI Model
+						</p>
 						<Select disabled>
-							<SelectTrigger size="sm" className="h-7 text-xs">
+							<SelectTrigger>
 								<SelectValue placeholder="Ollama (local)" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="ollama" className="text-xs">
-									Ollama (local)
-								</SelectItem>
-								<SelectItem value="anthropic" className="text-xs">
-									Anthropic
-								</SelectItem>
-								<SelectItem value="openai" className="text-xs">
-									OpenAI
-								</SelectItem>
+								<SelectItem value="ollama">Ollama (local)</SelectItem>
+								<SelectItem value="anthropic">Anthropic</SelectItem>
+								<SelectItem value="openai">OpenAI</SelectItem>
 							</SelectContent>
 						</Select>
-						<p className="text-[10px] text-muted-foreground">
+						<p className="text-xs text-muted-foreground">
 							Model selection available in future releases.
 						</p>
 					</div>
@@ -454,6 +535,7 @@ function AppSidebar({
 	projectsLoading,
 	currentProjectId,
 	onOpen,
+	onEdit,
 	onAddArtifact,
 	onAddSource,
 	onManageProjects,
@@ -466,6 +548,7 @@ function AppSidebar({
 	projectsLoading: boolean
 	currentProjectId: string
 	onOpen: (id: string) => void
+	onEdit: (id: string) => void
 	onAddArtifact: () => void
 	onAddSource: () => void
 	onManageProjects: () => void
@@ -473,51 +556,117 @@ function AppSidebar({
 	onSettingsOpen: () => void
 }) {
 	const openSet = new Set(openTabIds)
-	const groups = groupAssetsByType(assets)
+	const kindGroups = groupAssetsByKindAndType(assets)
 	const currentProject = projects.find((p) => p.id === currentProjectId)
 
 	return (
-		<Sidebar collapsible="icon">
-			<SidebarHeader className="h-9 px-3">
-				<div className="flex items-center gap-2">
-					<div className="shrink-0">
+		<Sidebar variant="inset">
+			<SidebarHeader className="px-3 py-2 gap-0">
+				<div className="flex items-center justify-between py-1">
+					<Link to="/" className="flex items-center gap-2">
 						<Logo size={20} />
-					</div>
-					<Button
-						onClick={onManageProjects}
-						variant="ghost"
-						className="group-data-[collapsible=icon]:hidden"
-					>
-						<FolderOpen size={12} className="shrink-0 text-muted-foreground" />
-						<span className="flex-1 truncate text-left text-muted-foreground">
-							{projectsLoading
-								? "Loading…"
-								: (currentProject?.name ?? "Projects")}
+						<span className="font-heading font-semibold tracking-tight text-xl">
+							PatrickOS
 						</span>
-					</Button>
+					</Link>
+					<a
+						href="https://github.com/mhurhangee/patrickos"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						<Badge variant="secondary">Open Source</Badge>
+					</a>
 				</div>
+				<div className="px-2 pb-2">
+					<Separator className="my-1" />
+				</div>
+
+				<Button
+					onClick={onManageProjects}
+					variant="ghost"
+					size="sm"
+					className="w-full justify-between px-2 text-sm font-medium"
+				>
+					<span className="flex items-center gap-1">
+						{currentProject ? (
+							<FolderOpen size={13} className="text-muted-foreground shrink-0" />
+						) : (
+							<FolderPlus size={13} className="text-muted-foreground shrink-0" />
+						)}
+						{projectsLoading ? "Loading…" : (currentProject?.name ?? "Select project")}
+					</span>
+					<ChevronsUpDown size={11} className="text-muted-foreground shrink-0" />
+				</Button>
+
 			</SidebarHeader>
 
 			<SidebarContent>
-				{groups.map((group) => (
-					<SidebarGroup key={group.type}>
-						<SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+				{kindGroups.map((kindGroup) => (
+					<SidebarGroup key={kindGroup.kind}>
+						<SidebarGroupLabel>{kindGroup.label}</SidebarGroupLabel>
+						<SidebarGroupAction
+							title={kindGroup.kind === "source" ? "Add source" : "New artifact"}
+							onClick={kindGroup.kind === "source" ? onAddSource : onAddArtifact}
+						>
+							<Plus />
+							<span className="sr-only">
+								{kindGroup.kind === "source" ? "Add source" : "New artifact"}
+							</span>
+						</SidebarGroupAction>
 						<SidebarMenu>
-							{group.assets.map((asset) => (
-								<SidebarMenuItem key={asset.id}>
-									<SidebarMenuButton
-										onClick={() => onOpen(asset.id)}
-										isActive={openSet.has(asset.id)}
-										className="gap-2 text-xs"
-										tooltip={asset.title}
-									>
-										<AssetKindIcon kind={asset.kind} />
-										<span className="truncate">{asset.title}</span>
-										<span className="ml-auto shrink-0 text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
-											{formatShortDate(asset.date)}
-										</span>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
+							{kindGroup.types.length === 0 && (
+								<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+									No {kindGroup.label.toLowerCase()} yet.
+								</p>
+							)}
+							{kindGroup.types.map((typeGroup) => (
+								<Collapsible
+									key={typeGroup.type}
+									asChild
+									defaultOpen
+									className="group/collapsible"
+								>
+									<SidebarMenuItem>
+										<CollapsibleTrigger asChild>
+											<SidebarMenuButton
+												className="text-xs"
+												tooltip={typeGroup.label}
+											>
+												<typeGroup.icon
+													size={13}
+													className={cn("shrink-0", typeGroup.color)}
+												/>
+												<span className="uppercase tracking-widest">{typeGroup.label}</span>
+												<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+											</SidebarMenuButton>
+										</CollapsibleTrigger>
+										<CollapsibleContent>
+											<SidebarMenuSub>
+												{typeGroup.assets.map((asset) => (
+													<SidebarMenuSubItem key={asset.id}>
+														<SidebarMenuSubButton
+															onClick={() => onOpen(asset.id)}
+															isActive={openSet.has(asset.id)}
+															className="gap-1.5"
+														>
+															<span className="truncate">{asset.title}</span>
+														</SidebarMenuSubButton>
+														<SidebarMenuAction
+															className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
+															onClick={(e) => {
+																e.stopPropagation()
+																onEdit(asset.id)
+															}}
+														>
+															<Pencil size={12} />
+															<span className="sr-only">Edit asset</span>
+														</SidebarMenuAction>
+													</SidebarMenuSubItem>
+												))}
+											</SidebarMenuSub>
+										</CollapsibleContent>
+									</SidebarMenuItem>
+								</Collapsible>
 							))}
 						</SidebarMenu>
 					</SidebarGroup>
@@ -526,26 +675,6 @@ function AppSidebar({
 
 			<SidebarFooter className="p-2">
 				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							onClick={onAddArtifact}
-							className="gap-2 text-xs text-muted-foreground"
-							tooltip="New artifact"
-						>
-							<FilePlus size={14} />
-							<span>New artifact</span>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							onClick={onAddSource}
-							className="gap-2 text-xs text-muted-foreground"
-							tooltip="Add source"
-						>
-							<CloudUpload size={14} />
-							<span>Add source</span>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<div className="flex items-center gap-1">
 							<SidebarMenuButton
@@ -574,139 +703,210 @@ function AppSidebar({
 
 // ─── Asset pane ────────────────────────────────────────────────────────────────
 
-const LABEL_CLASS =
-	"text-[10px] uppercase tracking-widest text-muted-foreground font-normal"
+function AssetPane({ asset }: { asset: ApiAsset }) {
+	return (
+		<ScrollArea className="h-full w-full">
+			<div className="mx-auto max-w-2xl px-8 py-6">
+				<div className="flex items-center gap-2 mb-6">
+					<AssetTypeIcon type={asset.type} size={15} />
+					<h1 className="font-medium truncate">{asset.title}</h1>
+					{asset.date && (
+						<span className="text-xs ml-auto text-muted-foreground">
+							{asset.date}
+						</span>
+					)}
+				</div>
+				<div className="h-96 rounded-lg bg-muted" />
+			</div>
+		</ScrollArea>
+	)
+}
 
-function AssetPane({
+// ─── Asset meta sheet ──────────────────────────────────────────────────────────
+
+type AssetSheetState =
+	| { mode: "closed" }
+	| { mode: "create"; kind: AssetKind }
+	| { mode: "edit"; assetId: string }
+
+function AssetMetaSheet({
+	state,
 	asset,
-	isNew,
-	onUpdate,
-	onDelete,
+	projectId,
+	onClose,
+	onCreated,
+	onUpdated,
+	onDeleted,
 }: {
-	asset: ApiAsset
-	isNew: boolean
-	onUpdate: (
-		id: string,
-		changes: Parameters<typeof api.assets.update>[1],
-	) => void
-	onDelete: (id: string) => void
+	state: AssetSheetState
+	asset: ApiAsset | undefined
+	projectId: string
+	onClose: () => void
+	onCreated: (asset: ApiAsset) => void
+	onUpdated: (asset: ApiAsset) => void
+	onDeleted: (id: string) => void
 }) {
-	const [open, setOpen] = React.useState(isNew)
-	const [title, setTitle] = React.useState(asset.title)
-	const [type, setType] = React.useState<AssetType>(asset.type)
-	const [date, setDate] = React.useState(asset.date)
-	const [notes, setNotes] = React.useState(asset.notes)
+	const kind =
+		state.mode === "create"
+			? state.kind
+			: state.mode === "edit" && asset
+				? asset.kind
+				: "artifact"
+	const defaultType =
+		ASSET_TYPES.find((t) => t.kind === kind)?.id ?? "claims-draft"
+
+	const [title, setTitle] = React.useState("")
+	const [type, setType] = React.useState<AssetType>(defaultType)
+	const [date, setDate] = React.useState("")
+	const [notes, setNotes] = React.useState("")
+	const [saving, setSaving] = React.useState(false)
+
+	const stateKey =
+		state.mode === "edit" ? state.assetId : state.mode === "create" ? `create-${state.kind}` : null
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only sync on open/switch
+	React.useEffect(() => {
+		if (state.mode === "closed") return
+		if (state.mode === "create") {
+			setTitle("")
+			setType(defaultType)
+			setDate("")
+			setNotes("")
+		} else if (asset) {
+			setTitle(asset.title)
+			setType(asset.type)
+			setDate(asset.date)
+			setNotes(asset.notes)
+		}
+	}, [stateKey])
+
+	async function handleSave() {
+		setSaving(true)
+		try {
+			if (state.mode === "create") {
+				const created = await api.assets.create({
+					projectId,
+					title: title.trim() || "Untitled",
+					kind,
+					type,
+					date,
+					notes,
+				})
+				onCreated(created)
+			} else if (state.mode === "edit" && asset) {
+				const updated = await api.assets.update(asset.id, {
+					title: title.trim() || "Untitled",
+					type,
+					date,
+					notes,
+				})
+				onUpdated(updated)
+			}
+			onClose()
+		} finally {
+			setSaving(false)
+		}
+	}
 
 	const selectedDate = date ? new Date(`${date}T00:00:00`) : undefined
 
 	return (
-		<ScrollArea className="h-full w-full">
-			<div className="mx-auto max-w-2xl px-8 py-6">
-				<Collapsible open={open} onOpenChange={setOpen}>
-					<CollapsibleTrigger asChild>
-						<Button
-							variant="ghost"
-							className="flex w-full items-center gap-2 px-2 py-1.5 h-auto text-xs justify-start"
-						>
-							<AssetKindIcon kind={asset.kind} size={13} />
-							<span className="flex-1 truncate text-left font-medium">
-								{title}
-							</span>
-							<ChevronDown
-								size={13}
-								className={cn(
-									"shrink-0 text-muted-foreground transition-transform",
-									open && "rotate-180",
-								)}
+		<Sheet open={state.mode !== "closed"} onOpenChange={(v) => { if (!v) onClose() }}>
+			<SheetContent side="left">
+				<SheetHeader>
+					<SheetTitle>
+						{state.mode === "create"
+							? `New ${kind === "source" ? "Source" : "Artifact"}`
+							: (asset?.title ?? "")}
+					</SheetTitle>
+					<SheetDescription>
+						{state.mode === "create"
+							? "Configure your new asset, then save."
+							: "Edit asset details, then save."}
+					</SheetDescription>
+				</SheetHeader>
+				<div className="flex flex-col gap-5 px-4 pt-4">
+					<FieldGroup className="gap-3">
+						<Field>
+							<FieldLabel className="text-xs font-medium text-muted-foreground">
+								Title
+							</FieldLabel>
+							<Input
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								placeholder="Untitled"
 							/>
-						</Button>
-					</CollapsibleTrigger>
-					<CollapsibleContent>
-						<div className="mt-2 rounded-md border bg-muted/30 p-4">
-							<FieldGroup className="gap-3">
-								<Field>
-									<FieldLabel className={LABEL_CLASS}>Title</FieldLabel>
-									<Input
-										value={title}
-										onChange={(e) => setTitle(e.target.value)}
-										onBlur={() => onUpdate(asset.id, { title })}
-										className="h-7 text-xs"
-									/>
-								</Field>
-								<Field>
-									<FieldLabel className={LABEL_CLASS}>Type</FieldLabel>
-									<Select
-										value={type}
-										onValueChange={(v) => {
-											const t = v as AssetType
-											setType(t)
-											onUpdate(asset.id, { type: t })
-										}}
+						</Field>
+						<Field>
+							<FieldLabel className="text-xs font-medium text-muted-foreground">
+								Type
+							</FieldLabel>
+							<Select
+								value={type}
+								onValueChange={(v) => setType(v as AssetType)}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{ASSET_TYPES.filter((at) => at.kind === kind).map((at) => (
+										<SelectItem key={at.id} value={at.id}>
+											{at.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</Field>
+						<Field>
+							<FieldLabel className="text-xs font-medium text-muted-foreground">
+								Date
+							</FieldLabel>
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										className="w-full justify-start font-normal"
 									>
-										<SelectTrigger
-											size="sm"
-											className="h-7 w-full rounded-md text-xs"
-										>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{ASSET_TYPES.map((at) => (
-												<SelectItem
-													key={at.id}
-													value={at.id}
-													className="py-1.5 text-xs focus:bg-muted focus:text-foreground"
-												>
-													{at.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</Field>
-								<Field>
-									<FieldLabel className={LABEL_CLASS}>Date</FieldLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<Button
-												variant="outline"
-												size="sm"
-												className="h-7 w-full justify-start rounded-md text-xs font-normal"
-											>
-												<CalendarDays className="mr-1 text-muted-foreground" />
-												{formatDisplayDate(date)}
-											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={selectedDate}
-												onSelect={(d) => {
-													if (!d) return
-													const iso = d.toISOString().split("T")[0]
-													setDate(iso)
-													onUpdate(asset.id, { date: iso })
-												}}
-											/>
-										</PopoverContent>
-									</Popover>
-								</Field>
-								<Field>
-									<FieldLabel className={LABEL_CLASS}>Notes</FieldLabel>
-									<Textarea
-										value={notes}
-										onChange={(e) => setNotes(e.target.value)}
-										onBlur={() => onUpdate(asset.id, { notes })}
-										className="min-h-[60px] resize-none text-xs"
-										placeholder="Add notes…"
+										<CalendarDays className="mr-1 text-muted-foreground" />
+										{formatDisplayDate(date)}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<Calendar
+										mode="single"
+										selected={selectedDate}
+										onSelect={(d) => {
+											if (!d) return
+											setDate(d.toISOString().split("T")[0])
+										}}
 									/>
-								</Field>
-							</FieldGroup>
+								</PopoverContent>
+							</Popover>
+						</Field>
+						<Field>
+							<FieldLabel className="text-xs font-medium text-muted-foreground">
+								Notes
+							</FieldLabel>
+							<Textarea
+								value={notes}
+								onChange={(e) => setNotes(e.target.value)}
+								className="resize-none"
+								placeholder="Add notes…"
+							/>
+						</Field>
+					</FieldGroup>
 
-							<Separator className="my-3" />
+					<Button onClick={handleSave} disabled={saving}>
+						{saving ? "Saving…" : "Save"}
+					</Button>
 
+					{state.mode === "edit" && asset && (
+						<>
+							<Separator />
 							<AlertDialog>
 								<AlertDialogTrigger asChild>
-									<Button variant="destructive" size="xs" className="gap-1.5">
-										<Trash2 />
+									<Button variant="destructive" size="sm" className="gap-1.5">
+										<Trash2 size={14} />
 										Delete asset
 									</Button>
 								</AlertDialogTrigger>
@@ -714,59 +914,53 @@ function AssetPane({
 									<AlertDialogHeader>
 										<AlertDialogTitle>Delete asset?</AlertDialogTitle>
 										<AlertDialogDescription>
-											"{title}" will be permanently removed.
+											"{asset.title}" will be permanently removed.
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
 										<AlertDialogCancel>Cancel</AlertDialogCancel>
 										<AlertDialogAction
 											variant="destructive"
-											onClick={() => onDelete(asset.id)}
+											onClick={() => {
+												onDeleted(asset.id)
+												onClose()
+											}}
 										>
 											Delete
 										</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
 							</AlertDialog>
-						</div>
-					</CollapsibleContent>
-				</Collapsible>
-
-				<div className="mt-6 h-96 rounded-md bg-muted" />
-			</div>
-		</ScrollArea>
+						</>
+					)}
+				</div>
+			</SheetContent>
+		</Sheet>
 	)
 }
 
-// ─── Doc viewer ───────────────────────────────────────────────────────────────
+// ─── Asset viewer ─────────────────────────────────────────────────────────────
 
-function DocViewer({
+function AssetViewer({
 	assets,
 	openTabIds,
 	activeTab,
-	newAssetId,
 	splitView,
 	onTabClick,
 	onTabClose,
 	onSplitToggle,
 	onChatToggle,
-	onUpdateAsset,
-	onDeleteAsset,
+	chatCollapsed,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
 	activeTab: string
-	newAssetId: string | null
 	splitView: boolean
 	onTabClick: (id: string) => void
 	onTabClose: (id: string) => void
 	onSplitToggle: () => void
 	onChatToggle: () => void
-	onUpdateAsset: (
-		id: string,
-		changes: Parameters<typeof api.assets.update>[1],
-	) => void
-	onDeleteAsset: (id: string) => void
+	chatCollapsed: boolean
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -776,8 +970,9 @@ function DocViewer({
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<div className="relative flex h-9 shrink-0 items-end bg-muted/30">
-				<div className="absolute inset-x-0 bottom-0 h-px bg-border" />
+			<div className="relative flex h-10 shrink-0 items-end bg-muted">
+				{/* border line — tabs with z-10 render on top of it */}
+				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
 				<div className="relative z-10 flex shrink-0 items-center self-stretch px-2">
 					<SidebarTrigger className="h-6 w-6" />
 				</div>
@@ -786,7 +981,7 @@ function DocViewer({
 						<div
 							key={asset.id}
 							className={cn(
-								"group flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
+								"relative group flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
 								!splitView && activeTab === asset.id
 									? "z-10 border-border bg-background text-foreground"
 									: "border-transparent text-muted-foreground hover:text-foreground",
@@ -798,7 +993,7 @@ function DocViewer({
 								onClick={() => onTabClick(asset.id)}
 								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
 							>
-								<AssetKindIcon kind={asset.kind} />
+								<AssetTypeIcon type={asset.type} />
 								<span className="max-w-[120px] truncate">{asset.title}</span>
 							</Button>
 							<Button
@@ -811,34 +1006,46 @@ function DocViewer({
 							</Button>
 						</div>
 					))}
-					<div
-						className={cn(
-							"relative flex items-center rounded-t-md border border-b-0 text-xs transition-colors",
-							splitView
-								? "z-10 border-border bg-background text-foreground"
-								: "border-transparent text-muted-foreground hover:text-foreground",
-						)}
-					>
-						<Button
-							variant="ghost"
-							size="xs"
-							onClick={onSplitToggle}
-							disabled={openAssets.length < 2}
+					{openAssets.length >= 1 && (
+						<div
+							className={cn(
+								"relative flex items-center rounded-t-md border border-b-0 text-xs transition-colors",
+								splitView
+									? "z-10 border-border bg-background text-foreground"
+									: "border-transparent text-muted-foreground hover:text-foreground",
+							)}
 						>
-							<Columns3 /> Split
-						</Button>
-					</div>
+							<Button
+								variant="ghost"
+								size="xs"
+								onClick={onSplitToggle}
+								disabled={openAssets.length < 2}
+							>
+								<Columns3 /> Split
+							</Button>
+						</div>
+					)}
 				</div>
-				<div className="flex shrink-0 items-end self-stretch px-1">
+				<div className="relative z-10 flex shrink-0 items-center self-stretch">
 					<Button variant="ghost" size="icon" onClick={onChatToggle}>
-						<PanelRight />
+						{chatCollapsed ? <ChevronLeft /> : <ChevronRight />}
 					</Button>
 				</div>
 			</div>
 
 			{openAssets.length === 0 ? (
-				<div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-					Open an asset from the sidebar
+				<div className="flex flex-1 items-center justify-center">
+					<Empty className="max-w-xs border-0">
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<FolderOpen />
+							</EmptyMedia>
+							<EmptyTitle>Nothing open</EmptyTitle>
+							<EmptyDescription>
+								Select an asset from the sidebar to open it here.
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
 				</div>
 			) : splitView && openAssets.length > 1 ? (
 				<ResizablePanelGroup orientation="horizontal" className="flex-1">
@@ -851,13 +1058,7 @@ function DocViewer({
 								collapsedSize="0%"
 								minSize="10%"
 							>
-								<AssetPane
-									key={asset.id}
-									asset={asset}
-									isNew={asset.id === newAssetId}
-									onUpdate={onUpdateAsset}
-									onDelete={onDeleteAsset}
-								/>
+								<AssetPane key={asset.id} asset={asset} />
 							</ResizablePanel>
 						</React.Fragment>
 					))}
@@ -865,13 +1066,7 @@ function DocViewer({
 			) : (
 				<div className="flex-1 overflow-hidden">
 					{activeAsset && (
-						<AssetPane
-							key={activeAsset.id}
-							asset={activeAsset}
-							isNew={activeAsset.id === newAssetId}
-							onUpdate={onUpdateAsset}
-							onDelete={onDeleteAsset}
-						/>
+						<AssetPane key={activeAsset.id} asset={activeAsset} />
 					)}
 				</div>
 			)}
@@ -901,11 +1096,20 @@ function Chat({
 	}
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden border-l border-border">
-			<div className="flex h-9 shrink-0 items-center px-3">
-				<span className="text-sm font-medium">Assistant</span>
+		<div className="flex h-full flex-col overflow-hidden">
+			<div className="relative flex h-10 shrink-0 items-end bg-muted px-1">
+				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
+				<div className="relative z-10 flex items-center gap-1.5 rounded-t-md border border-b-0 border-border bg-background px-2.5 py-1.5 text-xs font-medium">
+					<Sparkles size={12} className="text-primary" />
+					AgentPat
+				</div>
+				<div className="relative z-10 ml-auto flex items-center self-stretch">
+					<Button variant="ghost" size="icon-xs">
+						<Plus />
+					</Button>
+				</div>
 			</div>
-			<ScrollArea className="flex-1 bg-muted/20 px-3 py-3">
+			<ScrollArea className="flex-1 px-3 py-3">
 				<div className="space-y-4">
 					{messages.map((msg) => (
 						<div
@@ -917,8 +1121,10 @@ function Chat({
 						>
 							<div
 								className={cn(
-									"max-w-[88%] rounded-lg px-3 py-2 text-sm leading-relaxed text-foreground",
-									msg.role === "user" && "bg-primary/10",
+									"max-w-[88%] rounded-lg px-3 py-2 text-sm",
+									msg.role === "user"
+										? "bg-primary/10 text-foreground"
+										: "text-foreground",
 								)}
 							>
 								{msg.content}
@@ -930,13 +1136,13 @@ function Chat({
 			<div className="shrink-0 space-y-2 p-3">
 				{openAssets.length > 0 && (
 					<div className="flex flex-wrap items-center gap-1">
-						<span className="shrink-0 text-[10px] text-muted-foreground">
+						<span className="shrink-0 text-xs text-muted-foreground">
 							In context:
 						</span>
 						{openAssets.map((asset) => (
 							<span
 								key={asset.id}
-								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
 							>
 								{asset.title}
 								<Button
@@ -951,7 +1157,7 @@ function Chat({
 						))}
 					</div>
 				)}
-				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
+				<div className="rounded-lg border focus-within:ring-1 focus-within:ring-ring">
 					<Textarea
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
@@ -962,10 +1168,10 @@ function Chat({
 							}
 						}}
 						placeholder="Ask about open assets…"
-						className="min-h-[64px] resize-none border-0 bg-transparent p-3 text-xs shadow-none focus-visible:ring-0"
+						className="min-h-[64px] resize-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0"
 					/>
 					<div className="flex justify-end px-3 pb-2">
-						<Button size="sm" className="h-7 text-xs" onClick={send}>
+						<Button size="sm" onClick={send}>
 							Send
 						</Button>
 					</div>
@@ -981,7 +1187,7 @@ function WorkspacePage() {
 	const [assets, setAssets] = React.useState<ApiAsset[]>([])
 	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
 	const [activeTab, setActiveTab] = React.useState("")
-	const [newAssetId, setNewAssetId] = React.useState<string | null>(null)
+
 	const [splitView, setSplitView] = React.useState(false)
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
 	const [projects, setProjects] = React.useState<Project[]>([])
@@ -990,9 +1196,9 @@ function WorkspacePage() {
 	const [projectsOpen, setProjectsOpen] = React.useState(false)
 	const [authOpen, setAuthOpen] = React.useState(false)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
+	const [assetSheet, setAssetSheet] = React.useState<AssetSheetState>({ mode: "closed" })
 	const chatPanelRef = usePanelRef()
 
-	// Load projects on mount
 	React.useEffect(() => {
 		api.projects
 			.list()
@@ -1003,7 +1209,6 @@ function WorkspacePage() {
 			.finally(() => setProjectsLoading(false))
 	}, [])
 
-	// Load assets when project changes
 	React.useEffect(() => {
 		if (!currentProjectId) return
 		setAssets([])
@@ -1026,44 +1231,20 @@ function WorkspacePage() {
 		})
 	}
 
-	async function updateAsset(
-		id: string,
-		changes: Parameters<typeof api.assets.update>[1],
-	) {
-		const updated = await api.assets.update(id, changes)
-		setAssets((prev) => prev.map((a) => (a.id === id ? updated : a)))
-	}
-
 	async function deleteAsset(id: string) {
 		await api.assets.delete(id)
 		closeTab(id)
 		setAssets((prev) => prev.filter((a) => a.id !== id))
 	}
 
-	async function addArtifact() {
+	function addArtifact() {
 		if (!currentProjectId) return
-		const asset = await api.assets.create({
-			projectId: currentProjectId,
-			title: "New Artifact",
-			type: "claims-draft",
-			kind: "artifact",
-		})
-		setAssets((prev) => [...prev, asset])
-		setNewAssetId(asset.id)
-		openAsset(asset.id)
+		setAssetSheet({ mode: "create", kind: "artifact" })
 	}
 
-	async function addSource() {
+	function addSource() {
 		if (!currentProjectId) return
-		const asset = await api.assets.create({
-			projectId: currentProjectId,
-			title: "New Source",
-			type: "inventor-disclosure",
-			kind: "source",
-		})
-		setAssets((prev) => [...prev, asset])
-		setNewAssetId(asset.id)
-		openAsset(asset.id)
+		setAssetSheet({ mode: "create", kind: "source" })
 	}
 
 	async function createProject() {
@@ -1117,6 +1298,7 @@ function WorkspacePage() {
 					projectsLoading={projectsLoading}
 					currentProjectId={currentProjectId}
 					onOpen={openAsset}
+					onEdit={(id) => setAssetSheet({ mode: "edit", assetId: id })}
 					onAddArtifact={addArtifact}
 					onAddSource={addSource}
 					onManageProjects={() => setProjectsOpen(true)}
@@ -1129,11 +1311,10 @@ function WorkspacePage() {
 						className="flex-1 overflow-hidden"
 					>
 						<ResizablePanel defaultSize="68%" minSize="30%">
-							<DocViewer
+							<AssetViewer
 								assets={assets}
 								openTabIds={openTabIds}
 								activeTab={activeTab}
-								newAssetId={newAssetId}
 								splitView={splitView}
 								onTabClick={(id) => {
 									setActiveTab(id)
@@ -1142,11 +1323,10 @@ function WorkspacePage() {
 								onTabClose={closeTab}
 								onSplitToggle={() => setSplitView((v) => !v)}
 								onChatToggle={toggleChat}
-								onUpdateAsset={updateAsset}
-								onDeleteAsset={deleteAsset}
+								chatCollapsed={chatCollapsed}
 							/>
 						</ResizablePanel>
-						<ResizableHandle withHandle />
+						<ResizableHandle withHandle className="w-[3px] before:absolute before:inset-x-0 before:top-0 before:h-10 before:bg-muted before:content-['']" />
 						<ResizablePanel
 							panelRef={chatPanelRef}
 							defaultSize="32%"
@@ -1174,6 +1354,20 @@ function WorkspacePage() {
 			/>
 			<AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
 			<SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+			<AssetMetaSheet
+				state={assetSheet}
+				asset={assetSheet.mode === "edit" ? assets.find((a) => a.id === assetSheet.assetId) : undefined}
+				projectId={currentProjectId}
+				onClose={() => setAssetSheet({ mode: "closed" })}
+				onCreated={(asset) => {
+					setAssets((prev) => [...prev, asset])
+					openAsset(asset.id)
+				}}
+				onUpdated={(asset) => {
+					setAssets((prev) => prev.map((a) => (a.id === asset.id ? asset : a)))
+				}}
+				onDeleted={deleteAsset}
+			/>
 		</>
 	)
 }
