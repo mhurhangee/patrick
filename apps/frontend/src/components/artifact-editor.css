@@ -1,0 +1,57 @@
+.tiptap.ProseMirror {
+	outline: none;
+}
+
+.tiptap.ProseMirror p.is-editor-empty:first-child::before {
+	content: attr(data-placeholder);
+	float: left;
+	color: var(--color-muted-foreground);
+	pointer-events: none;
+	height: 0;
+}
+
+/* Drag handle */
+.drag-handle {
+	position: fixed;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.25rem;
+	height: 1.25rem;
+	border-radius: 0.25rem;
+	cursor: grab;
+	opacity: 0;
+	transition: opacity 100ms ease;
+}
+
+.drag-handle:hover,
+.drag-handle.is-dragging {
+	opacity: 1;
+	background-color: var(--color-muted);
+}
+
+/* Tables */
+.tiptap table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1rem 0;
+	table-layout: fixed;
+}
+
+.tiptap th,
+.tiptap td {
+	border: 1px solid var(--color-border);
+	padding: 0.5rem 0.75rem;
+	vertical-align: top;
+	min-width: 4rem;
+}
+
+.tiptap th {
+	background-color: var(--color-muted);
+	font-weight: 600;
+	text-align: left;
+}
+
+.tiptap .selectedCell {
+	background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
+}

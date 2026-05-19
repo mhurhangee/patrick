@@ -29,6 +29,7 @@ import {
 } from "lucide-react"
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
+import { ArtifactEditor } from "@/components/artifact-editor"
 import { Logo } from "@/components/logo"
 import { SourceViewer } from "@/components/source-viewer"
 import { useTheme } from "@/components/theme-provider"
@@ -875,27 +876,18 @@ function AppSidebar({
 
 // ─── Asset pane ────────────────────────────────────────────────────────────────
 
-function AssetPane({ asset }: { asset: ApiAsset }) {
+function AssetPane({
+	asset,
+	onAssetUpdate,
+}: {
+	asset: ApiAsset
+	onAssetUpdate: (updated: ApiAsset) => void
+}) {
 	if (asset.kind === "source") {
 		return <SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
 	}
 
-	return (
-		<ScrollArea className="h-full w-full">
-			<div className="mx-auto max-w-2xl px-8 py-6">
-				<div className="flex items-center gap-2 mb-6">
-					<AssetTypeIcon type={asset.type} size={15} />
-					<h1 className="font-medium truncate">{asset.title}</h1>
-					{asset.date && (
-						<span className="text-xs ml-auto text-muted-foreground">
-							{asset.date}
-						</span>
-					)}
-				</div>
-				<div className="h-96 rounded-lg bg-muted" />
-			</div>
-		</ScrollArea>
-	)
+	return <ArtifactEditor asset={asset} onSaved={onAssetUpdate} />
 }
 
 // ─── Asset meta sheet ──────────────────────────────────────────────────────────
@@ -1168,6 +1160,7 @@ function AssetViewer({
 	onTabClose,
 	onSplitToggle,
 	onChatToggle,
+	onAssetUpdate,
 	chatCollapsed,
 }: {
 	assets: ApiAsset[]
@@ -1178,6 +1171,7 @@ function AssetViewer({
 	onTabClose: (id: string) => void
 	onSplitToggle: () => void
 	onChatToggle: () => void
+	onAssetUpdate: (updated: ApiAsset) => void
 	chatCollapsed: boolean
 }) {
 	const openAssets = openTabIds
@@ -1276,7 +1270,11 @@ function AssetViewer({
 								collapsedSize="0%"
 								minSize="10%"
 							>
-								<AssetPane key={asset.id} asset={asset} />
+								<AssetPane
+									key={asset.id}
+									asset={asset}
+									onAssetUpdate={onAssetUpdate}
+								/>
 							</ResizablePanel>
 						</React.Fragment>
 					))}
@@ -1284,7 +1282,11 @@ function AssetViewer({
 			) : (
 				<div className="flex-1 overflow-hidden">
 					{activeAsset && (
-						<AssetPane key={activeAsset.id} asset={activeAsset} />
+						<AssetPane
+							key={activeAsset.id}
+							asset={activeAsset}
+							onAssetUpdate={onAssetUpdate}
+						/>
 					)}
 				</div>
 			)}
@@ -1883,7 +1885,7 @@ function WorkspacePage() {
 
 	return (
 		<>
-			<SidebarProvider>
+			<SidebarProvider className="h-full">
 				<AppSidebar
 					assets={assets}
 					openTabIds={openTabIds}
@@ -1921,6 +1923,11 @@ function WorkspacePage() {
 								onTabClose={closeTab}
 								onSplitToggle={() => setSplitView((v) => !v)}
 								onChatToggle={toggleChat}
+								onAssetUpdate={(updated) =>
+									setAssets((prev) =>
+										prev.map((a) => (a.id === updated.id ? updated : a)),
+									)
+								}
 								chatCollapsed={chatCollapsed}
 							/>
 						</ResizablePanel>
