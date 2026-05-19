@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
@@ -114,7 +112,7 @@ function SheetTitle({
     <SheetPrimitive.Title
       data-slot="sheet-title"
       className={cn(
-        "font-heading text-3xl text-foreground font-semibold tracking-tight",
+        "font-heading text-2xl font-semibold tracking-tight text-foreground",
         className
       )}
       {...props}

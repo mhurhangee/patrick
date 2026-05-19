@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import {
   DayPicker,
@@ -38,7 +40,7 @@ function Calendar({
       locale={locale}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString((locale as { code?: string } | undefined)?.code, { month: "short" }),
+          date.toLocaleString(locale?.code, { month: "short" }),
         ...formatters,
       }}
       classNames={{
@@ -85,6 +87,7 @@ function Calendar({
             : "flex items-center gap-1 rounded-(--cell-radius) text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
           defaultClassNames.caption_label
         ),
+        table: "w-full border-collapse",
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
           "flex-1 rounded-(--cell-radius) text-[0.8rem] font-normal text-muted-foreground select-none",
@@ -196,7 +199,7 @@ function CalendarDayButton({
       ref={ref}
       variant="ghost"
       size="icon"
-      data-day={day.date.toLocaleDateString((locale as { code?: string } | undefined)?.code)}
+      data-day={day.date.toLocaleDateString(locale?.code)}
       data-selected-single={
         modifiers.selected &&
         !modifiers.range_start &&
