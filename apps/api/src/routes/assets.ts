@@ -5,24 +5,93 @@ import { db } from "../lib/db"
 
 export const assetsRouter = new Hono()
 
+// Never send the data blob in list/get responses
+const safeColumns = {
+	id: assets.id,
+	projectId: assets.projectId,
+	title: assets.title,
+	content: assets.content,
+	type: assets.type,
+	kind: assets.kind,
+	date: assets.date,
+	notes: assets.notes,
+	metadata: assets.metadata,
+	createdAt: assets.createdAt,
+	updatedAt: assets.updatedAt,
+}
+
 assetsRouter.get("/", async (c) => {
 	const projectId = c.req.query("projectId")
 	const rows = projectId
-		? await db.select().from(assets).where(eq(assets.projectId, projectId))
-		: await db.select().from(assets)
+		? await db
+				.select(safeColumns)
+				.from(assets)
+				.where(eq(assets.projectId, projectId))
+		: await db.select(safeColumns).from(assets)
 	return c.json(rows)
 })
 
 assetsRouter.get("/:id", async (c) => {
 	const [row] = await db
-		.select()
+		.select(safeColumns)
 		.from(assets)
 		.where(eq(assets.id, c.req.param("id")))
 	if (!row) return c.json({ error: "Not found" }, 404)
 	return c.json(row)
 })
 
+assetsRouter.get("/:id/file", async (c) => {
+	const [row] = await db
+		.select({ data: assets.data })
+		.from(assets)
+		.where(eq(assets.id, c.req.param("id")))
+	if (!row?.data) return c.json({ error: "Not found" }, 404)
+	return new Response(row.data as BodyInit, {
+		headers: {
+			"Content-Type": "application/pdf",
+			"Cache-Control": "private, max-age=3600",
+		},
+	})
+})
+
 assetsRouter.post("/", async (c) => {
+	const contentType = c.req.header("content-type") ?? ""
+	const now = new Date()
+
+	if (contentType.includes("multipart/form-data")) {
+		const form = await c.req.formData()
+		const file = form.get("file")
+		const projectId = form.get("projectId") as string
+		const title = form.get("title") as string
+		const type = (form.get("type") as AssetType) ?? "inventor-disclosure"
+		const date = (form.get("date") as string) ?? ""
+		const notes = (form.get("notes") as string) ?? ""
+
+		const data =
+			file instanceof File ? Buffer.from(await file.arrayBuffer()) : null
+
+		const [row] = await db
+			.insert(assets)
+			.values({
+				id: crypto.randomUUID(),
+				projectId,
+				title: title || "Untitled",
+				content: "",
+				type,
+				kind: "source",
+				date,
+				notes,
+				data,
+				metadata: "{}",
+				createdAt: now,
+				updatedAt: now,
+			})
+			.returning()
+
+		const { data: _, ...safe } = row
+		return c.json(safe, 201)
+	}
+
 	const {
 		projectId,
 		title,
@@ -40,7 +109,7 @@ assetsRouter.post("/", async (c) => {
 		date?: string
 		notes?: string
 	}>()
-	const now = new Date()
+
 	const [row] = await db
 		.insert(assets)
 		.values({
@@ -52,11 +121,15 @@ assetsRouter.post("/", async (c) => {
 			kind,
 			date,
 			notes,
+			data: null,
+			metadata: "{}",
 			createdAt: now,
 			updatedAt: now,
 		})
 		.returning()
-	return c.json(row, 201)
+
+	const { data: _, ...safe } = row
+	return c.json(safe, 201)
 })
 
 assetsRouter.put("/:id", async (c) => {
@@ -67,6 +140,7 @@ assetsRouter.put("/:id", async (c) => {
 		kind?: string
 		date?: string
 		notes?: string
+		metadata?: string
 	}>()
 	const patch = Object.fromEntries(
 		Object.entries(body).filter(([, v]) => v !== undefined),
@@ -77,7 +151,8 @@ assetsRouter.put("/:id", async (c) => {
 		.where(eq(assets.id, c.req.param("id")))
 		.returning()
 	if (!row) return c.json({ error: "Not found" }, 404)
-	return c.json(row)
+	const { data: _, ...safe } = row
+	return c.json(safe)
 })
 
 assetsRouter.delete("/:id", async (c) => {

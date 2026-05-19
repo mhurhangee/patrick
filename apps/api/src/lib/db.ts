@@ -26,6 +26,8 @@ sqlite.exec(`CREATE TABLE IF NOT EXISTS assets (
 	kind TEXT NOT NULL DEFAULT 'artifact',
 	date TEXT NOT NULL DEFAULT '',
 	notes TEXT NOT NULL DEFAULT '',
+	data BLOB,
+	metadata TEXT NOT NULL DEFAULT '{}',
 	created_at INTEGER NOT NULL,
 	updated_at INTEGER NOT NULL
 )`)

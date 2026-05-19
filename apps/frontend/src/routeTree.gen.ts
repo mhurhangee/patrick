@@ -18,6 +18,7 @@ import { Route as DocsDesktopRouteImport } from './routes/docs/desktop'
 import { Route as DocsDatabaseRouteImport } from './routes/docs/database'
 import { Route as DocsArchitectureRouteImport } from './routes/docs/architecture'
 import { Route as DocsApiRouteImport } from './routes/docs/api'
+import { Route as DocsAiRouteImport } from './routes/docs/ai'
 
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
@@ -64,10 +65,16 @@ const DocsApiRoute = DocsApiRouteImport.update({
   path: '/api',
   getParentRoute: () => DocsRoute,
 } as any)
+const DocsAiRoute = DocsAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => DocsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/docs': typeof DocsRouteWithChildren
+  '/docs/ai': typeof DocsAiRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/database': typeof DocsDatabaseRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/docs/ai': typeof DocsAiRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/database': typeof DocsDatabaseRoute
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/docs': typeof DocsRouteWithChildren
+  '/docs/ai': typeof DocsAiRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/database': typeof DocsDatabaseRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/docs'
+    | '/docs/ai'
     | '/docs/api'
     | '/docs/architecture'
     | '/docs/database'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/docs/ai'
     | '/docs/api'
     | '/docs/architecture'
     | '/docs/database'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/docs'
+    | '/docs/ai'
     | '/docs/api'
     | '/docs/architecture'
     | '/docs/database'
@@ -204,10 +216,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsApiRouteImport
       parentRoute: typeof DocsRoute
     }
+    '/docs/ai': {
+      id: '/docs/ai'
+      path: '/ai'
+      fullPath: '/docs/ai'
+      preLoaderRoute: typeof DocsAiRouteImport
+      parentRoute: typeof DocsRoute
+    }
   }
 }
 
 interface DocsRouteChildren {
+  DocsAiRoute: typeof DocsAiRoute
   DocsApiRoute: typeof DocsApiRoute
   DocsArchitectureRoute: typeof DocsArchitectureRoute
   DocsDatabaseRoute: typeof DocsDatabaseRoute
@@ -217,6 +237,7 @@ interface DocsRouteChildren {
 }
 
 const DocsRouteChildren: DocsRouteChildren = {
+  DocsAiRoute: DocsAiRoute,
   DocsApiRoute: DocsApiRoute,
   DocsArchitectureRoute: DocsArchitectureRoute,
   DocsDatabaseRoute: DocsDatabaseRoute,

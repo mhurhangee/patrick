@@ -13,6 +13,7 @@ import {
 	Gavel,
 	Lightbulb,
 	ListChecks,
+	Loader2,
 	type LucideIcon,
 	MessageSquare,
 	Pencil,
@@ -29,6 +30,7 @@ import {
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { Logo } from "@/components/logo"
+import { SourceViewer } from "@/components/source-viewer"
 import { useTheme } from "@/components/theme-provider"
 import {
 	AlertDialog,
@@ -102,11 +104,11 @@ import {
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 	SidebarProvider,
-	SidebarSeparator,
 	SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { type ApiAsset, api } from "@/lib/api"
+import { type ApiAsset, api, BASE_URL } from "@/lib/api"
 import { formatDisplayDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 
@@ -143,49 +145,49 @@ const ASSET_TYPES: {
 	icon: LucideIcon
 	color: string
 }[] = [
-		{
-			id: "inventor-disclosure",
-			kind: "source",
-			label: "Inventor Disclosures",
-			icon: Lightbulb,
-			color: "text-amber-500",
-		},
-		{
-			id: "office-action",
-			kind: "source",
-			label: "Office Actions",
-			icon: Gavel,
-			color: "text-red-500",
-		},
-		{
-			id: "prior-art",
-			kind: "source",
-			label: "Prior Art",
-			icon: Search,
-			color: "text-slate-500",
-		},
-		{
-			id: "patent-spec",
-			kind: "artifact",
-			label: "Patent Specifications",
-			icon: BookOpen,
-			color: "text-blue-500",
-		},
-		{
-			id: "claims-draft",
-			kind: "artifact",
-			label: "Claims Drafts",
-			icon: ListChecks,
-			color: "text-green-500",
-		},
-		{
-			id: "response-draft",
-			kind: "artifact",
-			label: "Response Drafts",
-			icon: Reply,
-			color: "text-violet-500",
-		},
-	]
+	{
+		id: "inventor-disclosure",
+		kind: "source",
+		label: "Inventor Disclosures",
+		icon: Lightbulb,
+		color: "text-amber-500",
+	},
+	{
+		id: "office-action",
+		kind: "source",
+		label: "Office Actions",
+		icon: Gavel,
+		color: "text-red-500",
+	},
+	{
+		id: "prior-art",
+		kind: "source",
+		label: "Prior Art",
+		icon: Search,
+		color: "text-slate-500",
+	},
+	{
+		id: "patent-spec",
+		kind: "artifact",
+		label: "Patent Specifications",
+		icon: BookOpen,
+		color: "text-blue-500",
+	},
+	{
+		id: "claims-draft",
+		kind: "artifact",
+		label: "Claims Drafts",
+		icon: ListChecks,
+		color: "text-green-500",
+	},
+	{
+		id: "response-draft",
+		kind: "artifact",
+		label: "Response Drafts",
+		icon: Reply,
+		color: "text-violet-500",
+	},
+]
 
 const AGENTPAT_SUGGESTIONS = [
 	"Draft a §103 response",
@@ -670,16 +672,21 @@ function AppSidebar({
 					size="sm"
 					className="w-full justify-between px-2 text-sm font-medium"
 				>
-					<span className="flex items-center gap-1">
-						{currentProject ? (
+					<span className="flex items-center gap-1.5">
+						{projectsLoading ? (
+							<Loader2
+								size={13}
+								className="shrink-0 animate-spin text-muted-foreground"
+							/>
+						) : currentProject ? (
 							<FolderOpen
 								size={13}
-								className="text-muted-foreground shrink-0"
+								className="shrink-0 text-muted-foreground"
 							/>
 						) : (
 							<FolderPlus
 								size={13}
-								className="text-muted-foreground shrink-0"
+								className="shrink-0 text-muted-foreground"
 							/>
 						)}
 						{projectsLoading
@@ -712,10 +719,17 @@ function AppSidebar({
 							</span>
 						</SidebarGroupAction>
 						<SidebarMenu>
-							{kindGroup.types.length === 0 && (
-								<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-									No {kindGroup.label.toLowerCase()} yet.
-								</p>
+							{projectsLoading ? (
+								<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
+									<Skeleton className="h-3 w-3/4" />
+									<Skeleton className="h-3 w-1/2" />
+								</div>
+							) : (
+								kindGroup.types.length === 0 && (
+									<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+										No {kindGroup.label.toLowerCase()} yet.
+									</p>
+								)
 							)}
 							{kindGroup.types.map((typeGroup) => (
 								<Collapsible
@@ -772,7 +786,6 @@ function AppSidebar({
 					</SidebarGroup>
 				))}
 
-
 				{/* Chats */}
 				<SidebarGroup>
 					<SidebarGroupLabel>Chats</SidebarGroupLabel>
@@ -781,10 +794,18 @@ function AppSidebar({
 						<span className="sr-only">New chat</span>
 					</SidebarGroupAction>
 					<SidebarMenu>
-						{sortedChats.length === 0 && (
-							<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-								No chats yet.
-							</p>
+						{projectsLoading ? (
+							<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
+								<Skeleton className="h-3 w-2/3" />
+								<Skeleton className="h-3 w-1/2" />
+								<Skeleton className="h-3 w-3/5" />
+							</div>
+						) : (
+							sortedChats.length === 0 && (
+								<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+									No chats yet.
+								</p>
+							)
 						)}
 						<SidebarMenuSub>
 							{visibleChats.map((chat) => (
@@ -855,6 +876,10 @@ function AppSidebar({
 // ─── Asset pane ────────────────────────────────────────────────────────────────
 
 function AssetPane({ asset }: { asset: ApiAsset }) {
+	if (asset.kind === "source") {
+		return <SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
+	}
+
 	return (
 		<ScrollArea className="h-full w-full">
 			<div className="mx-auto max-w-2xl px-8 py-6">
@@ -910,6 +935,7 @@ function AssetMetaSheet({
 	const [type, setType] = React.useState<AssetType>(defaultType)
 	const [date, setDate] = React.useState("")
 	const [notes, setNotes] = React.useState("")
+	const [file, setFile] = React.useState<File | null>(null)
 	const [saving, setSaving] = React.useState(false)
 
 	const stateKey =
@@ -927,6 +953,7 @@ function AssetMetaSheet({
 			setType(defaultType)
 			setDate("")
 			setNotes("")
+			setFile(null)
 		} else if (asset) {
 			setTitle(asset.title)
 			setType(asset.type)
@@ -939,14 +966,29 @@ function AssetMetaSheet({
 		setSaving(true)
 		try {
 			if (state.mode === "create") {
-				const created = await api.assets.create({
-					projectId,
-					title: title.trim() || "Untitled",
-					kind,
-					type,
-					date,
-					notes,
-				})
+				let created: ApiAsset
+				if (kind === "source") {
+					const formData = new FormData()
+					if (file) formData.append("file", file)
+					formData.append("projectId", projectId)
+					formData.append(
+						"title",
+						title.trim() || file?.name.replace(/\.pdf$/i, "") || "Untitled",
+					)
+					formData.append("type", type)
+					formData.append("date", date)
+					formData.append("notes", notes)
+					created = await api.assets.createSource(formData)
+				} else {
+					created = await api.assets.create({
+						projectId,
+						title: title.trim() || "Untitled",
+						kind,
+						type,
+						date,
+						notes,
+					})
+				}
 				onCreated(created)
 			} else if (state.mode === "edit" && asset) {
 				const updated = await api.assets.update(asset.id, {
@@ -987,6 +1029,22 @@ function AssetMetaSheet({
 				</SheetHeader>
 				<div className="flex flex-col gap-5 px-4 pt-4">
 					<FieldGroup className="gap-3">
+						{state.mode === "create" && kind === "source" && (
+							<Field>
+								<FieldLabel className="text-xs font-medium text-muted-foreground">
+									PDF File
+								</FieldLabel>
+								<Input
+									type="file"
+									accept=".pdf,application/pdf"
+									onChange={(e) => {
+										const f = e.target.files?.[0] ?? null
+										setFile(f)
+										if (f && !title) setTitle(f.name.replace(/\.pdf$/i, ""))
+									}}
+								/>
+							</Field>
+						)}
 						<Field>
 							<FieldLabel className="text-xs font-medium text-muted-foreground">
 								Title

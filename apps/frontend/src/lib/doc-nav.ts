@@ -10,4 +10,5 @@ export const DOC_NAV = [
 	{ to: "/docs/api" as const, label: "API", icon: Server },
 	{ to: "/docs/database" as const, label: "Database", icon: Database },
 	{ to: "/docs/desktop" as const, label: "Desktop", icon: Monitor },
+	{ to: "/docs/ai" as const, label: "AI", icon: Code },
 ]

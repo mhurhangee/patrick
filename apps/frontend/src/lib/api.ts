@@ -1,6 +1,6 @@
 import type { AssetKind, AssetType } from "@patrickos/db"
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
+export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
 export type ApiProject = {
 	id: string
@@ -18,6 +18,7 @@ export type ApiAsset = {
 	kind: AssetKind
 	date: string
 	notes: string
+	metadata: string
 	createdAt: string
 	updatedAt: string
 }
@@ -53,6 +54,8 @@ export const api = {
 			data: Pick<ApiAsset, "projectId" | "title" | "type" | "kind"> &
 				Partial<Pick<ApiAsset, "content" | "date" | "notes">>,
 		) => request<ApiAsset>("/assets", json(data, { method: "POST" })),
+		createSource: (formData: FormData) =>
+			request<ApiAsset>("/assets", { method: "POST", body: formData }),
 		update: (
 			id: string,
 			patch: Partial<

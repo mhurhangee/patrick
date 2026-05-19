@@ -1,4 +1,4 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core"
+import { blob, int, sqliteTable, text } from "drizzle-orm/sqlite-core"
 
 export type AssetType =
 	| "inventor-disclosure"
@@ -28,6 +28,8 @@ export const assets = sqliteTable("assets", {
 	kind: text("kind").$type<AssetKind>().notNull().default("artifact"),
 	date: text("date").notNull().default(""),
 	notes: text("notes").notNull().default(""),
+	data: blob("data"),
+	metadata: text("metadata").notNull().default("{}"),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })
