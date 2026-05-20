@@ -12,9 +12,9 @@ import {
 	AlignRightIcon,
 	ArrowDownToLineIcon,
 	ArrowUpToLineIcon,
+	Clover,
 	CopyIcon,
 	IndentIcon,
-	SparklesIcon,
 	Trash2Icon,
 } from "lucide-react"
 import { KEYS, PathApi } from "platejs"
@@ -142,9 +142,12 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 					}}
 				>
 					<ContextMenuGroup>
-						<ContextMenuItem onClick={() => setValue("askAI")}>
-							<SparklesIcon />
-							Ask AI
+						<ContextMenuItem
+							onClick={() => setValue("askAI")}
+							className="text-primary-foreground bg-primary hover:bg-primary/90"
+						>
+							<Clover />
+							AskPat
 						</ContextMenuItem>
 					</ContextMenuGroup>
 

@@ -18,7 +18,7 @@ import {
 	PenIcon,
 	Redo2Icon,
 	Undo2Icon,
-	WandSparklesIcon,
+	Clover,
 } from "lucide-react"
 import type { SlatePlugin } from "platejs"
 import { createSlateEditor } from "platejs"
@@ -30,7 +30,6 @@ import {
 	usePluginOption,
 } from "platejs/react"
 import { getEditorDOMFromHtmlString, serializeHtml } from "platejs/static"
-import * as React from "react"
 import { useFilePicker } from "use-file-picker"
 
 import { BaseEditorKit } from "@/components/editor/editor-base-kit"
@@ -247,18 +246,7 @@ export function EditorMenubar() {
 			</Menubar>
 
 			<div className="flex items-center gap-0.5">
-				{!readOnly && (
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 gap-1.5 px-2 text-sm"
-						onMouseDown={(e) => e.preventDefault()}
-						onClick={() => aiApi.aiChat.show()}
-					>
-						<WandSparklesIcon className="size-4" />
-						<span className="hidden lg:inline">Ask AI</span>
-					</Button>
-				)}
+
 				<Button
 					variant="ghost"
 					size="sm"
@@ -268,6 +256,18 @@ export function EditorMenubar() {
 				>
 					<MessageSquareTextIcon className="size-4" />
 				</Button>
+				{!readOnly && (
+					<Button
+						variant="default"
+						size="sm"
+						className="h-7 gap-1.5 px-2 text-sm cursor-pointer hover:bg-primary/90"
+						onMouseDown={(e) => e.preventDefault()}
+						onClick={() => aiApi.aiChat.show()}
+					>
+						<Clover className="size-4" />
+						<span className="hidden lg:inline">AskPat</span>
+					</Button>
+				)}
 			</div>
 		</div>
 	)

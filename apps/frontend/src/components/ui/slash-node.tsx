@@ -4,6 +4,7 @@ import { AIChatPlugin } from "@platejs/ai/react"
 import {
 	CalendarIcon,
 	ChevronRightIcon,
+	Clover,
 	Code2,
 	Columns3Icon,
 	Heading1Icon,
@@ -16,7 +17,6 @@ import {
 	PilcrowIcon,
 	Quote,
 	RadicalIcon,
-	SparklesIcon,
 	Square,
 	SuperscriptIcon,
 	Table,
@@ -61,8 +61,10 @@ const groups: Group[] = [
 		items: [
 			{
 				focusEditor: false,
-				icon: <SparklesIcon />,
-				value: "AI",
+				icon: <Clover />,
+				keywords: ["ai", "askpat"],
+				className: "bg-primary text-primary-foreground",
+				value: "AskPat",
 				onSelect: (editor) => {
 					editor.getApi(AIChatPlugin).aiChat.show()
 				},
@@ -234,7 +236,7 @@ export function SlashInputElement(
 							<InlineComboboxGroupLabel>{group}</InlineComboboxGroupLabel>
 
 							{items.map(
-								({ focusEditor, icon, keywords, label, value, onSelect }) => (
+								({ focusEditor, icon, keywords, label, value, onSelect, className }) => (
 									<InlineComboboxItem
 										key={value}
 										value={value}
@@ -243,8 +245,9 @@ export function SlashInputElement(
 										focusEditor={focusEditor}
 										group={group}
 										keywords={keywords}
+										className={className}
 									>
-										<div className="mr-2 text-muted-foreground">{icon}</div>
+										<div className="mr-2">{icon}</div>
 										{label ?? value}
 									</InlineComboboxItem>
 								),

@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowUpToLineIcon, WandSparklesIcon } from "lucide-react"
+import { ArrowUpToLineIcon, Clover } from "lucide-react"
 import { useEditorReadOnly } from "platejs/react"
 
 import { AIToolbarButton } from "./ai-toolbar-button"
@@ -24,8 +24,8 @@ export function FixedToolbarButtons() {
 					</ToolbarGroup>
 
 					<ToolbarGroup>
-						<AIToolbarButton tooltip="AI commands">
-							<WandSparklesIcon />
+						<AIToolbarButton tooltip="AI commands" variant="default">
+							<Clover />
 						</AIToolbarButton>
 					</ToolbarGroup>
 

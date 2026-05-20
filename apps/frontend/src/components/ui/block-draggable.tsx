@@ -7,10 +7,10 @@ import { BlockSelectionPlugin } from "@platejs/selection/react"
 import {
 	ArrowDownToLineIcon,
 	ArrowUpToLineIcon,
+	Clover,
 	CopyIcon,
 	EllipsisIcon,
 	GripVertical,
-	SparklesIcon,
 	Trash2Icon,
 } from "lucide-react"
 import { getPluginByType, isType, KEYS, PathApi, type Path, type TElement } from "platejs"
@@ -403,9 +403,9 @@ function GutterMenu({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent side="right" align="start" className="w-48">
 				<DropdownMenuGroup>
-					<DropdownMenuItem onSelect={() => aiApi.aiChat.show()}>
-						<SparklesIcon />
-						Ask AI
+					<DropdownMenuItem onSelect={() => aiApi.aiChat.show()} className="text-primary-foreground bg-primary">
+						<Clover />
+						AskPat
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 

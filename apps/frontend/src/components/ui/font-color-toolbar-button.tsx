@@ -357,14 +357,14 @@ function ColorCustom({
     () =>
       customColor
         ? [
-            ...customColors,
-            {
-              isBrightColor: computeIsBrightColor(customColor),
-              name: customColor,
-              value: customColor,
-            },
-            ...fullCustomColors,
-          ]
+          ...customColors,
+          {
+            isBrightColor: computeIsBrightColor(customColor),
+            name: customColor,
+            value: customColor,
+          },
+          ...fullCustomColors,
+        ]
         : [...customColors, ...fullCustomColors],
     [customColor, fullCustomColors, customColors]
   );

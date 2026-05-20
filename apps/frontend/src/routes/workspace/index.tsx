@@ -7,6 +7,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	ChevronsUpDown,
+	Clover,
 	Columns3,
 	FolderOpen,
 	FolderPlus,
@@ -147,49 +148,49 @@ const ASSET_TYPES: {
 	icon: LucideIcon
 	color: string
 }[] = [
-	{
-		id: "inventor-disclosure",
-		kind: "source",
-		label: "Inventor Disclosures",
-		icon: Lightbulb,
-		color: "text-amber-500",
-	},
-	{
-		id: "office-action",
-		kind: "source",
-		label: "Office Actions",
-		icon: Gavel,
-		color: "text-red-500",
-	},
-	{
-		id: "prior-art",
-		kind: "source",
-		label: "Prior Art",
-		icon: Search,
-		color: "text-slate-500",
-	},
-	{
-		id: "patent-spec",
-		kind: "artifact",
-		label: "Patent Specifications",
-		icon: BookOpen,
-		color: "text-blue-500",
-	},
-	{
-		id: "claims-draft",
-		kind: "artifact",
-		label: "Claims Drafts",
-		icon: ListChecks,
-		color: "text-green-500",
-	},
-	{
-		id: "response-draft",
-		kind: "artifact",
-		label: "Response Drafts",
-		icon: Reply,
-		color: "text-violet-500",
-	},
-]
+		{
+			id: "inventor-disclosure",
+			kind: "source",
+			label: "Inventor Disclosures",
+			icon: Lightbulb,
+			color: "text-amber-500",
+		},
+		{
+			id: "office-action",
+			kind: "source",
+			label: "Office Actions",
+			icon: Gavel,
+			color: "text-red-500",
+		},
+		{
+			id: "prior-art",
+			kind: "source",
+			label: "Prior Art",
+			icon: Search,
+			color: "text-slate-500",
+		},
+		{
+			id: "patent-spec",
+			kind: "artifact",
+			label: "Patent Specifications",
+			icon: BookOpen,
+			color: "text-blue-500",
+		},
+		{
+			id: "claims-draft",
+			kind: "artifact",
+			label: "Claims Drafts",
+			icon: ListChecks,
+			color: "text-green-500",
+		},
+		{
+			id: "response-draft",
+			kind: "artifact",
+			label: "Response Drafts",
+			icon: Reply,
+			color: "text-violet-500",
+		},
+	]
 
 const AGENTPAT_SUGGESTIONS = [
 	"Draft a §103 response",
@@ -1371,7 +1372,7 @@ function AgentPatPane({ onSend }: { onSend: (message: string) => void }) {
 				<div className="mx-auto max-w-sm px-6 py-10 text-center">
 					<div className="mb-4 flex justify-center">
 						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-							<Sparkles size={22} className="text-primary" />
+							<Clover className="size-8 text-primary" />
 						</div>
 					</div>
 					<h2 className="mb-1 font-heading text-lg font-semibold">AgentPat</h2>
@@ -1572,7 +1573,7 @@ function ChatPanel({
 						onClick={() => onSetActiveChat("agentpat")}
 						className="gap-1.5"
 					>
-						<Sparkles size={12} className="shrink-0 text-primary" />
+						<Clover className="size-4 shrink-0 text-primary" />
 						{openChatIds.length === 0 && <span>AgentPat</span>}
 					</Button>
 				</div>

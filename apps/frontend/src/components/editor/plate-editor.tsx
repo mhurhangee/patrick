@@ -4,7 +4,6 @@ import type { Value } from "platejs"
 import { Plate, usePlateEditor } from "platejs/react"
 
 import { EditorKit } from "@/components/editor/editor-kit"
-import { SettingsDialog } from "@/components/editor/settings-dialog"
 import { Editor, EditorContainer } from "@/components/ui/editor"
 
 const EMPTY_VALUE: Value = [{ type: "p", children: [{ text: "" }] }]
@@ -26,7 +25,6 @@ export function PlateEditor({
 			<EditorContainer>
 				<Editor variant="default" placeholder="Start writing…" />
 			</EditorContainer>
-			<SettingsDialog />
 		</Plate>
 	)
 }

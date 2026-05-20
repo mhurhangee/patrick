@@ -11,7 +11,7 @@ import {
 	SubscriptIcon,
 	SuperscriptIcon,
 	UnderlineIcon,
-	WandSparklesIcon,
+	Clover,
 } from "lucide-react"
 import { KEYS } from "platejs"
 import { useEditorReadOnly, useEditorRef } from "platejs/react"
@@ -33,12 +33,11 @@ export function FloatingToolbarButtons() {
 			{!readOnly && (
 				<>
 					<ToolbarGroup>
-						<AIToolbarButton tooltip="AI commands">
-							<WandSparklesIcon />
-							Ask AI
+						<AIToolbarButton className="bg-primary text-primary-foreground">
+							<Clover />
+							AskPat
 						</AIToolbarButton>
 					</ToolbarGroup>
-
 					<ToolbarGroup>
 						<MarkToolbarButton nodeType={KEYS.bold} tooltip="Bold (⌘+B)">
 							<BoldIcon />
@@ -52,10 +51,10 @@ export function FloatingToolbarButtons() {
 						<MarkToolbarButton nodeType={KEYS.strikethrough} tooltip="Strikethrough (⌘+⇧+M)">
 							<StrikethroughIcon />
 						</MarkToolbarButton>
-						<MarkToolbarButton nodeType={KEYS.subscript} tooltip="Subscript (⌘+,)">
+						<MarkToolbarButton nodeType={KEYS.sub} tooltip="Subscript (⌘+,)">
 							<SubscriptIcon />
 						</MarkToolbarButton>
-						<MarkToolbarButton nodeType={KEYS.superscript} tooltip="Superscript (⌘+.)">
+						<MarkToolbarButton nodeType={KEYS.sup} tooltip="Superscript (⌘+.)">
 							<SuperscriptIcon />
 						</MarkToolbarButton>
 						<MarkToolbarButton nodeType={KEYS.code} tooltip="Code (⌘+E)">
