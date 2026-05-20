@@ -12,6 +12,7 @@ import {
 	LightbulbIcon,
 	ListIcon,
 	ListOrdered,
+	MinusIcon,
 	PilcrowIcon,
 	Quote,
 	RadicalIcon,
@@ -142,6 +143,12 @@ const groups: Group[] = [
 				keywords: ["note"],
 				label: "Callout",
 				value: KEYS.callout,
+			},
+			{
+				icon: <MinusIcon />,
+				keywords: ["divider", "hr", "horizontal rule", "---"],
+				label: "Divider",
+				value: KEYS.hr,
 			},
 		].map((item) => ({
 			...item,

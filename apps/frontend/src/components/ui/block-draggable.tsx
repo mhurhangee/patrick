@@ -1,15 +1,25 @@
 "use client"
 
+import { AIChatPlugin } from "@platejs/ai/react"
 import { DndPlugin, useDraggable, useDropLine } from "@platejs/dnd"
 import { expandListItemsWithChildren } from "@platejs/list"
 import { BlockSelectionPlugin } from "@platejs/selection/react"
-import { GripVertical } from "lucide-react"
-import { getPluginByType, isType, KEYS, type TElement } from "platejs"
+import {
+	ArrowDownToLineIcon,
+	ArrowUpToLineIcon,
+	CopyIcon,
+	EllipsisIcon,
+	GripVertical,
+	SparklesIcon,
+	Trash2Icon,
+} from "lucide-react"
+import { getPluginByType, isType, KEYS, PathApi, type Path, type TElement } from "platejs"
 import {
 	MemoizedChildren,
 	type PlateEditor,
 	type PlateElementProps,
 	type RenderNodeWrapper,
+	useEditorPlugin,
 	useEditorRef,
 	useElement,
 	usePluginOption,
@@ -18,6 +28,19 @@ import {
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { setBlockType } from "@/components/editor/transforms"
+import { turnIntoItems } from "@/components/ui/turn-into-toolbar-button"
 import { cn } from "@/lib/utils"
 
 const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td]
@@ -135,16 +158,21 @@ function Draggable(props: PlateElementProps) {
 					>
 						<div
 							className={cn(
-								"slate-blockToolbar relative w-4.5",
+								"slate-blockToolbar relative w-9",
 								"pointer-events-auto mr-1 flex items-center",
 								isInColumn && "mr-1.5",
 							)}
 						>
+							<GutterMenu
+								element={element}
+								path={path}
+								top={dragButtonTop + 3}
+							/>
 							<Button
 								ref={handleRef}
 								variant="ghost"
-								className="-left-0 absolute h-6 w-full cursor-grab p-0 active:cursor-grabbing"
-								style={{ top: `${dragButtonTop + 3}px` }}
+								className="absolute h-6 w-[1.125rem] cursor-grab p-0 active:cursor-grabbing"
+								style={{ top: `${dragButtonTop + 3}px`, left: "1.125rem" }}
 								data-plate-prevent-deselect
 							>
 								<DragHandle
@@ -344,6 +372,109 @@ const DropLine = React.memo(function DropLine({
 		/>
 	)
 })
+
+function GutterMenu({
+	element,
+	path,
+	top,
+}: {
+	element: TElement
+	path: Path
+	top: number
+}) {
+	const editor = useEditorRef()
+	const { api: aiApi } = useEditorPlugin(AIChatPlugin)
+
+	const select = () => {
+		editor.getApi(BlockSelectionPlugin).blockSelection.set([element.id as string])
+	}
+
+	return (
+		<DropdownMenu modal={false} onOpenChange={(open) => { if (open) select() }}>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					className="absolute left-0 h-6 w-[1.125rem] p-0"
+					style={{ top: `${top}px` }}
+					data-plate-prevent-deselect
+				>
+					<EllipsisIcon className="size-3 text-muted-foreground" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent side="right" align="start" className="w-48">
+				<DropdownMenuGroup>
+					<DropdownMenuItem onSelect={() => aiApi.aiChat.show()}>
+						<SparklesIcon />
+						Ask AI
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+
+				<DropdownMenuSeparator />
+
+				<DropdownMenuGroup>
+					<DropdownMenuItem
+						onSelect={() =>
+							editor.tf.insertNodes(editor.api.create.block({ type: KEYS.p }), {
+								at: path,
+								select: true,
+							})
+						}
+					>
+						<ArrowUpToLineIcon />
+						Insert above
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						onSelect={() =>
+							editor.tf.insertNodes(editor.api.create.block({ type: KEYS.p }), {
+								at: PathApi.next(path),
+								select: true,
+							})
+						}
+					>
+						<ArrowDownToLineIcon />
+						Insert below
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						onSelect={() =>
+							editor.getTransforms(BlockSelectionPlugin).blockSelection.duplicate()
+						}
+					>
+						<CopyIcon />
+						Duplicate
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						onSelect={() => {
+							editor.tf.removeNodes({ at: path })
+							editor.tf.focus()
+						}}
+					>
+						<Trash2Icon />
+						Delete
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+
+				<DropdownMenuSeparator />
+
+				<DropdownMenuGroup>
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger>Turn into</DropdownMenuSubTrigger>
+						<DropdownMenuSubContent className="w-48">
+							{turnIntoItems.map(({ icon, label, value: type }) => (
+								<DropdownMenuItem
+									key={type}
+									onSelect={() => setBlockType(editor, type, { at: path })}
+								>
+									{icon}
+									{label}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuSubContent>
+					</DropdownMenuSub>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	)
+}
 
 const createDragPreviewElements = (
 	editor: PlateEditor,
