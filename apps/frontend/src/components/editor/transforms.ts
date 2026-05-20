@@ -70,11 +70,6 @@ const insertBlockMap: Record<
 			select: true,
 			type: KEYS.img,
 		}),
-	[KEYS.mediaEmbed]: (editor) =>
-		insertMedia(editor, {
-			select: true,
-			type: KEYS.mediaEmbed,
-		}),
 	[KEYS.table]: (editor) =>
 		editor.getTransforms(TablePlugin).insert.table({}, { select: true }),
 	[KEYS.toc]: (editor) => insertToc(editor, { select: true }),

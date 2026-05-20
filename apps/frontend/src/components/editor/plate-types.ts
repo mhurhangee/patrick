@@ -14,7 +14,6 @@ import type {
 	TLineHeightProps,
 	TLinkElement,
 	TListProps,
-	TMediaEmbedElement,
 	TMentionElement,
 	TResizableProps,
 	TTableElement,
@@ -97,15 +96,6 @@ export interface MyLinkElement extends TLinkElement {
 	type: typeof KEYS.link
 }
 
-export interface MyMediaEmbedElement
-	extends MyBlockElement,
-		TCaptionProps,
-		TMediaEmbedElement,
-		TResizableProps {
-	children: [EmptyText]
-	type: typeof KEYS.mediaEmbed
-}
-
 export interface MyMentionElement extends TMentionElement {
 	children: [EmptyText]
 	type: typeof KEYS.mention
@@ -156,7 +146,6 @@ export type MyValue = (
 	| MyH6Element
 	| MyHrElement
 	| MyImageElement
-	| MyMediaEmbedElement
 	| MyParagraphElement
 	| MyTableElement
 	| MyToggleElement
