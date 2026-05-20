@@ -9,6 +9,8 @@
 			"!node_modules",
 			"!src/index.css",
 			"!src/routeTree.gen.ts",
+			"!src/components/ui/*",
+			"!src/components/editor/*",
 			"!public"
 		]
 	}
