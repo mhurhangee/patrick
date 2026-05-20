@@ -30,6 +30,7 @@ import {
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { ArtifactEditor } from "@/components/artifact-editor"
+import { BlockNoteEditor } from "@/components/block-note-editor"
 import { Logo } from "@/components/logo"
 import { SourceViewer } from "@/components/source-viewer"
 import { useTheme } from "@/components/theme-provider"
@@ -876,6 +877,8 @@ function AppSidebar({
 
 // ─── Asset pane ────────────────────────────────────────────────────────────────
 
+type EditorType = "tiptap" | "blocknote"
+
 function AssetPane({
 	asset,
 	onAssetUpdate,
@@ -883,11 +886,57 @@ function AssetPane({
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
 }) {
+	const storageKey = `editor-type-${asset.id}`
+	const [editorType, setEditorType] = React.useState<EditorType>(
+		() => (localStorage.getItem(storageKey) as EditorType) ?? "tiptap",
+	)
+
+	function toggleEditor(type: EditorType) {
+		localStorage.setItem(storageKey, type)
+		setEditorType(type)
+	}
+
 	if (asset.kind === "source") {
 		return <SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
 	}
 
-	return <ArtifactEditor asset={asset} onSaved={onAssetUpdate} />
+	return (
+		<div className="flex h-full flex-col overflow-hidden">
+			{/* Trial toggle — remove once editor is chosen */}
+			<div className="flex shrink-0 items-center gap-1 border-b bg-muted/40 px-2 py-0.5">
+				<span className="text-[10px] text-muted-foreground uppercase tracking-widest mr-1">
+					Trial
+				</span>
+				<Button
+					variant="ghost"
+					size="xs"
+					onClick={() => toggleEditor("tiptap")}
+					className={cn(
+						"h-5 text-[10px]",
+						editorType === "tiptap" && "bg-background shadow-sm",
+					)}
+				>
+					Tiptap
+				</Button>
+				<Button
+					variant="ghost"
+					size="xs"
+					onClick={() => toggleEditor("blocknote")}
+					className={cn(
+						"h-5 text-[10px]",
+						editorType === "blocknote" && "bg-background shadow-sm",
+					)}
+				>
+					BlockNote
+				</Button>
+			</div>
+			{editorType === "tiptap" ? (
+				<ArtifactEditor asset={asset} onSaved={onAssetUpdate} />
+			) : (
+				<BlockNoteEditor asset={asset} onSaved={onAssetUpdate} />
+			)}
+		</div>
+	)
 }
 
 // ─── Asset meta sheet ──────────────────────────────────────────────────────────
