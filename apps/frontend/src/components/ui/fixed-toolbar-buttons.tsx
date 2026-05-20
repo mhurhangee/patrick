@@ -2,12 +2,10 @@
 
 import {
 	ArrowUpToLineIcon,
-	BaselineIcon,
 	BoldIcon,
 	Code2Icon,
 	HighlighterIcon,
 	ItalicIcon,
-	PaintBucketIcon,
 	StrikethroughIcon,
 	UnderlineIcon,
 	WandSparklesIcon,
@@ -20,8 +18,6 @@ import { AIToolbarButton } from "./ai-toolbar-button"
 import { AlignToolbarButton } from "./align-toolbar-button"
 import { CommentToolbarButton } from "./comment-toolbar-button"
 import { ExportToolbarButton } from "./export-toolbar-button"
-import { FontColorToolbarButton } from "./font-color-toolbar-button"
-import { FontSizeToolbarButton } from "./font-size-toolbar-button"
 import { RedoToolbarButton, UndoToolbarButton } from "./history-toolbar-button"
 import { ImportToolbarButton } from "./import-toolbar-button"
 import {
@@ -74,7 +70,6 @@ export function FixedToolbarButtons() {
 					<ToolbarGroup>
 						<InsertToolbarButton />
 						<TurnIntoToolbarButton />
-						<FontSizeToolbarButton />
 					</ToolbarGroup>
 
 					<ToolbarGroup>
@@ -104,16 +99,6 @@ export function FixedToolbarButtons() {
 							<Code2Icon />
 						</MarkToolbarButton>
 
-						<FontColorToolbarButton nodeType={KEYS.color} tooltip="Text color">
-							<BaselineIcon />
-						</FontColorToolbarButton>
-
-						<FontColorToolbarButton
-							nodeType={KEYS.backgroundColor}
-							tooltip="Background color"
-						>
-							<PaintBucketIcon />
-						</FontColorToolbarButton>
 					</ToolbarGroup>
 
 					<ToolbarGroup>
