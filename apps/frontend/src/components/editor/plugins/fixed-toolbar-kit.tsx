@@ -2,18 +2,13 @@
 
 import { createPlatePlugin } from "platejs/react"
 
-import { FixedToolbar } from "@/components/ui/fixed-toolbar"
-import { FixedToolbarButtons } from "@/components/ui/fixed-toolbar-buttons"
+import { EditorMenubar } from "@/components/ui/editor-menubar"
 
 export const FixedToolbarKit = [
 	createPlatePlugin({
 		key: "fixed-toolbar",
 		render: {
-			beforeEditable: () => (
-				<FixedToolbar>
-					<FixedToolbarButtons />
-				</FixedToolbar>
-			),
+			beforeEditable: () => <EditorMenubar />,
 		},
 	}),
 ]
