@@ -7,6 +7,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	ChevronsUpDown,
+	Clover,
 	Columns3,
 	FolderOpen,
 	FolderPlus,
@@ -27,8 +28,10 @@ import {
 	UserCircle,
 	X,
 } from "lucide-react"
+import type { Value } from "platejs"
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
+import { PlateEditor } from "@/components/editor/plate-editor"
 import { Logo } from "@/components/logo"
 import { SourceViewer } from "@/components/source-viewer"
 import { useTheme } from "@/components/theme-provider"
@@ -145,49 +148,49 @@ const ASSET_TYPES: {
 	icon: LucideIcon
 	color: string
 }[] = [
-	{
-		id: "inventor-disclosure",
-		kind: "source",
-		label: "Inventor Disclosures",
-		icon: Lightbulb,
-		color: "text-amber-500",
-	},
-	{
-		id: "office-action",
-		kind: "source",
-		label: "Office Actions",
-		icon: Gavel,
-		color: "text-red-500",
-	},
-	{
-		id: "prior-art",
-		kind: "source",
-		label: "Prior Art",
-		icon: Search,
-		color: "text-slate-500",
-	},
-	{
-		id: "patent-spec",
-		kind: "artifact",
-		label: "Patent Specifications",
-		icon: BookOpen,
-		color: "text-blue-500",
-	},
-	{
-		id: "claims-draft",
-		kind: "artifact",
-		label: "Claims Drafts",
-		icon: ListChecks,
-		color: "text-green-500",
-	},
-	{
-		id: "response-draft",
-		kind: "artifact",
-		label: "Response Drafts",
-		icon: Reply,
-		color: "text-violet-500",
-	},
-]
+		{
+			id: "inventor-disclosure",
+			kind: "source",
+			label: "Inventor Disclosures",
+			icon: Lightbulb,
+			color: "text-amber-500",
+		},
+		{
+			id: "office-action",
+			kind: "source",
+			label: "Office Actions",
+			icon: Gavel,
+			color: "text-red-500",
+		},
+		{
+			id: "prior-art",
+			kind: "source",
+			label: "Prior Art",
+			icon: Search,
+			color: "text-slate-500",
+		},
+		{
+			id: "patent-spec",
+			kind: "artifact",
+			label: "Patent Specifications",
+			icon: BookOpen,
+			color: "text-blue-500",
+		},
+		{
+			id: "claims-draft",
+			kind: "artifact",
+			label: "Claims Drafts",
+			icon: ListChecks,
+			color: "text-green-500",
+		},
+		{
+			id: "response-draft",
+			kind: "artifact",
+			label: "Response Drafts",
+			icon: Reply,
+			color: "text-violet-500",
+		},
+	]
 
 const AGENTPAT_SUGGESTIONS = [
 	"Draft a §103 response",
@@ -875,9 +878,61 @@ function AppSidebar({
 
 // ─── Asset pane ────────────────────────────────────────────────────────────────
 
+function ArtifactEditor({
+	asset,
+	onAssetUpdate,
+}: {
+	asset: ApiAsset
+	onAssetUpdate: (updated: ApiAsset) => void
+}) {
+	const saveTimer = React.useRef<ReturnType<typeof setTimeout>>(null)
+	const latestValue = React.useRef<Value | null>(null)
+	const isDirty = React.useRef(false)
+
+	function save(value: Value) {
+		api.assets
+			.update(asset.id, { content: JSON.stringify(value) })
+			.then(onAssetUpdate)
+	}
+
+	function handleChange(value: Value) {
+		latestValue.current = value
+		isDirty.current = true
+		if (saveTimer.current) clearTimeout(saveTimer.current)
+		saveTimer.current = setTimeout(() => {
+			save(value)
+			isDirty.current = false
+		}, 500)
+	}
+
+	// Flush on unmount (tab switch, close) — intentionally no deps, save is stable for asset lifetime
+	// biome-ignore lint/correctness/useExhaustiveDependencies: unmount-only flush, save recreated each render
+	React.useEffect(() => {
+		return () => {
+			if (saveTimer.current) clearTimeout(saveTimer.current)
+			if (isDirty.current && latestValue.current) {
+				save(latestValue.current)
+			}
+		}
+	}, [])
+
+	let initialValue: Value | undefined
+	try {
+		if (asset.content) initialValue = JSON.parse(asset.content) as Value
+	} catch {
+		// malformed content — start empty
+	}
+
+	return (
+		<div className="h-full overflow-hidden">
+			<PlateEditor initialValue={initialValue} onChange={handleChange} />
+		</div>
+	)
+}
+
 function AssetPane({
 	asset,
-	onAssetUpdate: _onAssetUpdate,
+	onAssetUpdate,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
@@ -886,11 +941,12 @@ function AssetPane({
 		return <SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
 	}
 
-	// Plate editor coming soon
 	return (
-		<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-			Editor loading…
-		</div>
+		<ArtifactEditor
+			key={asset.id}
+			asset={asset}
+			onAssetUpdate={onAssetUpdate}
+		/>
 	)
 }
 
@@ -1316,7 +1372,7 @@ function AgentPatPane({ onSend }: { onSend: (message: string) => void }) {
 				<div className="mx-auto max-w-sm px-6 py-10 text-center">
 					<div className="mb-4 flex justify-center">
 						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-							<Sparkles size={22} className="text-primary" />
+							<Clover className="size-8 text-primary" />
 						</div>
 					</div>
 					<h2 className="mb-1 font-heading text-lg font-semibold">AgentPat</h2>
@@ -1517,7 +1573,7 @@ function ChatPanel({
 						onClick={() => onSetActiveChat("agentpat")}
 						className="gap-1.5"
 					>
-						<Sparkles size={12} className="shrink-0 text-primary" />
+						<Clover className="size-4 shrink-0 text-primary" />
 						{openChatIds.length === 0 && <span>AgentPat</span>}
 					</Button>
 				</div>
