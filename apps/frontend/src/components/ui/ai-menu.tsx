@@ -23,7 +23,6 @@ import {
 	Loader2Icon,
 	PauseIcon,
 	PenLine,
-	SmileIcon,
 	Wand,
 	X,
 } from "lucide-react"
@@ -135,8 +134,8 @@ export function AIMenu() {
 	useHotkeys("esc", () => {
 		api.aiChat.stop()
 
-		// remove when you implement the route /api/ai/command
-		;(chat as any)._abortFakeStream()
+			// remove when you implement the route /api/ai/command
+			; (chat as any)._abortFakeStream()
 	})
 
 	const isLoading = status === "streaming" || status === "submitted"
@@ -334,18 +333,6 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
 			editor.getApi(AIChatPlugin).aiChat.hide()
 		},
 	},
-	emojify: {
-		icon: <SmileIcon />,
-		label: "Emojify",
-		value: "emojify",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt:
-					"Add a small number of contextually relevant emojis within each block only. You may insert emojis, but do not remove, replace, or rewrite existing text, and do not modify Markdown syntax, links, or line breaks.",
-				toolName: "edit",
-			})
-		},
-	},
 	explain: {
 		icon: <BadgeHelp />,
 		label: "Explain",
@@ -535,7 +522,6 @@ const menuStateItems: Record<
 			items: [
 				aiChatItems.improveWriting,
 				aiChatItems.comment,
-				aiChatItems.emojify,
 				aiChatItems.makeLonger,
 				aiChatItems.makeShorter,
 				aiChatItems.fixSpelling,
@@ -648,8 +634,8 @@ export function AILoadingBar() {
 	useHotkeys("esc", () => {
 		api.aiChat.stop()
 
-		// remove when you implement the route /api/ai/command
-		;(chat as any)._abortFakeStream()
+			// remove when you implement the route /api/ai/command
+			; (chat as any)._abortFakeStream()
 	})
 
 	if (

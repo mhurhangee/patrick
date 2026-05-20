@@ -19,7 +19,6 @@ import * as React from "react"
 import { AIToolbarButton } from "./ai-toolbar-button"
 import { AlignToolbarButton } from "./align-toolbar-button"
 import { CommentToolbarButton } from "./comment-toolbar-button"
-import { EmojiToolbarButton } from "./emoji-toolbar-button"
 import { ExportToolbarButton } from "./export-toolbar-button"
 import { FontColorToolbarButton } from "./font-color-toolbar-button"
 import { FontSizeToolbarButton } from "./font-size-toolbar-button"
@@ -129,7 +128,6 @@ export function FixedToolbarButtons() {
 					<ToolbarGroup>
 						<LinkToolbarButton />
 						<TableToolbarButton />
-						<EmojiToolbarButton />
 					</ToolbarGroup>
 
 					<ToolbarGroup>
