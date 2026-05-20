@@ -1,9 +1,11 @@
 "use client"
 
-import * as ToolbarPrimitive from "@radix-ui/react-toolbar"
 import { cva, type VariantProps } from "class-variance-authority"
 import { ChevronDown } from "lucide-react"
-import { Tooltip as TooltipPrimitive } from "radix-ui"
+import {
+	Toolbar as ToolbarPrimitive,
+	Tooltip as TooltipPrimitive,
+} from "radix-ui"
 import * as React from "react"
 
 import {
