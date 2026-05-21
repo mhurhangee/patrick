@@ -9,8 +9,6 @@ import {
 	ChevronsUpDown,
 	Clover,
 	Columns3,
-	Eye,
-	EyeOff,
 	FolderOpen,
 	FolderPlus,
 	Gavel,
@@ -34,8 +32,8 @@ import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { PlateEditor } from "@/components/editor/plate-editor"
 import { Logo } from "@/components/logo"
+import { SettingsDialog } from "@/components/settings-dialog"
 import { SourceViewer } from "@/components/source-viewer"
-import { useTheme } from "@/components/theme-provider"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -111,13 +109,10 @@ import {
 	SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import {
-	CURATED_MODELS,
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
-	type GatewayModel,
 	type Provider,
 } from "@/lib/ai-models"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
@@ -159,49 +154,49 @@ const ASSET_TYPES: {
 	icon: LucideIcon
 	color: string
 }[] = [
-		{
-			id: "inventor-disclosure",
-			kind: "source",
-			label: "Inventor Disclosures",
-			icon: Lightbulb,
-			color: "text-amber-500",
-		},
-		{
-			id: "office-action",
-			kind: "source",
-			label: "Office Actions",
-			icon: Gavel,
-			color: "text-red-500",
-		},
-		{
-			id: "prior-art",
-			kind: "source",
-			label: "Prior Art",
-			icon: Search,
-			color: "text-slate-500",
-		},
-		{
-			id: "patent-spec",
-			kind: "artifact",
-			label: "Patent Specifications",
-			icon: BookOpen,
-			color: "text-blue-500",
-		},
-		{
-			id: "claims-draft",
-			kind: "artifact",
-			label: "Claims Drafts",
-			icon: ListChecks,
-			color: "text-green-500",
-		},
-		{
-			id: "response-draft",
-			kind: "artifact",
-			label: "Response Drafts",
-			icon: Reply,
-			color: "text-violet-500",
-		},
-	]
+	{
+		id: "inventor-disclosure",
+		kind: "source",
+		label: "Inventor Disclosures",
+		icon: Lightbulb,
+		color: "text-amber-500",
+	},
+	{
+		id: "office-action",
+		kind: "source",
+		label: "Office Actions",
+		icon: Gavel,
+		color: "text-red-500",
+	},
+	{
+		id: "prior-art",
+		kind: "source",
+		label: "Prior Art",
+		icon: Search,
+		color: "text-slate-500",
+	},
+	{
+		id: "patent-spec",
+		kind: "artifact",
+		label: "Patent Specifications",
+		icon: BookOpen,
+		color: "text-blue-500",
+	},
+	{
+		id: "claims-draft",
+		kind: "artifact",
+		label: "Claims Drafts",
+		icon: ListChecks,
+		color: "text-green-500",
+	},
+	{
+		id: "response-draft",
+		kind: "artifact",
+		label: "Response Drafts",
+		icon: Reply,
+		color: "text-violet-500",
+	},
+]
 
 const AGENTPAT_SUGGESTIONS = [
 	"Draft a §103 response",
@@ -530,425 +525,6 @@ function AuthSheet({
 						Sign out
 					</Button>
 				</div>
-			</SheetContent>
-		</Sheet>
-	)
-}
-
-// ─── Settings sheet ───────────────────────────────────────────────────────────
-
-function SettingsSheet({
-	open,
-	onOpenChange,
-	savedProvider,
-	keyStatus,
-	savedQuickModel,
-	savedDetailedModel,
-	onVerify,
-	onSave,
-	onClear,
-}: {
-	open: boolean
-	onOpenChange: (v: boolean) => void
-	savedProvider: Provider
-	keyStatus: KeyStatus
-	savedQuickModel: string
-	savedDetailedModel: string
-	onVerify: (provider: Provider, key: string) => void
-	onSave: (
-		provider: Provider,
-		key: string,
-		quickModel: string,
-		detailedModel: string,
-	) => void
-	onClear: () => void
-}) {
-	const { theme, setTheme } = useTheme()
-	const [tempProvider, setTempProvider] = React.useState<Provider>(savedProvider)
-	const [tempKeys, setTempKeys] = React.useState<Record<Provider, string>>({
-		gateway: "",
-		anthropic: "",
-		openai: "",
-	})
-	const [tempQuickModel, setTempQuickModel] = React.useState(savedQuickModel)
-	const [tempDetailedModel, setTempDetailedModel] =
-		React.useState(savedDetailedModel)
-	const [showKey, setShowKey] = React.useState(false)
-	const [gatewayModels, setGatewayModels] = React.useState<GatewayModel[]>([])
-	const [modelsLoading, setModelsLoading] = React.useState(false)
-
-	React.useEffect(() => {
-		if (open) {
-			setTempProvider(savedProvider)
-			setTempKeys({
-				gateway: localStorage.getItem("ai-gateway-key") ?? "",
-				anthropic: localStorage.getItem("ai-anthropic-key") ?? "",
-				openai: localStorage.getItem("ai-openai-key") ?? "",
-			})
-			setTempQuickModel(savedQuickModel)
-			setTempDetailedModel(savedDetailedModel)
-		}
-	}, [open, savedProvider, savedQuickModel, savedDetailedModel])
-
-	function handleProviderChange(p: Provider) {
-		setTempProvider(p)
-		if (p !== "gateway") {
-			const models = CURATED_MODELS[p]
-			if (!models.some((m) => m.id === tempQuickModel)) {
-				setTempQuickModel(DEFAULT_QUICK_MODEL[p])
-			}
-			if (!models.some((m) => m.id === tempDetailedModel)) {
-				setTempDetailedModel(DEFAULT_DETAILED_MODEL[p])
-			}
-		}
-	}
-
-	async function handleVerify() {
-		const key = tempKeys[tempProvider]
-		await onVerify(tempProvider, key)
-		if (tempProvider === "gateway" && key) {
-			await loadGatewayModels(key)
-		}
-	}
-
-	async function loadGatewayModels(key: string) {
-		if (!key) return
-		setModelsLoading(true)
-		try {
-			const result = await api.ai.getModels(key)
-			setGatewayModels(result.models)
-		} catch {
-			// silently fail
-		} finally {
-			setModelsLoading(false)
-		}
-	}
-
-	function handleSave() {
-		const key = tempKeys[tempProvider]
-		onSave(tempProvider, key, tempQuickModel, tempDetailedModel)
-		onOpenChange(false)
-	}
-
-	const currentKey = tempKeys[tempProvider]
-
-	const modelOptions =
-		tempProvider === "gateway"
-			? gatewayModels.map((m) => ({
-					value: m.id,
-					label: m.name,
-					pricingPerM: m.pricing
-						? {
-								input: parseFloat(m.pricing.input) * 1_000_000,
-								output: parseFloat(m.pricing.output) * 1_000_000,
-							}
-						: undefined,
-				}))
-			: CURATED_MODELS[tempProvider].map((m) => ({
-					value: m.id,
-					label: m.name,
-					pricingPerM: m.pricingPerM,
-				}))
-
-	const PROVIDER_INFO: Record<
-		Provider,
-		{ description: string; placeholder: string }
-	> = {
-		anthropic: {
-			description:
-				"Direct Anthropic API access. Bring your own key, pay Anthropic directly.",
-			placeholder: "sk-ant-...",
-		},
-		openai: {
-			description:
-				"Direct OpenAI API access. Bring your own key, pay OpenAI directly.",
-			placeholder: "sk-...",
-		},
-		gateway: {
-			description:
-				"Route multiple providers via Vercel AI Gateway. Requires a gateway key.",
-			placeholder: "aig_...",
-		},
-	}
-
-	const providerInfo = PROVIDER_INFO[tempProvider]
-
-	return (
-		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="left" className="flex flex-col gap-0 p-0">
-				<SheetHeader className="px-4 pt-4 pb-2">
-					<SheetTitle>Settings</SheetTitle>
-					<SheetDescription>Configure PatrickOS.</SheetDescription>
-				</SheetHeader>
-				<Tabs
-					defaultValue="byok"
-					className="flex flex-1 flex-col overflow-hidden"
-				>
-					<TabsList className="mx-4 mb-2 grid w-auto grid-cols-4">
-						<TabsTrigger value="general">General</TabsTrigger>
-						<TabsTrigger value="byok">BYOK</TabsTrigger>
-						<TabsTrigger value="local" disabled>
-							Local
-						</TabsTrigger>
-						<TabsTrigger value="cloud" disabled>
-							Cloud
-						</TabsTrigger>
-					</TabsList>
-
-					{/* ── General tab ──────────────────────────────────────────── */}
-					<TabsContent value="general" className="flex-1 overflow-y-auto">
-						<div className="flex flex-col gap-5 px-4 pb-4">
-							<div className="flex flex-col gap-2">
-								<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-									Appearance
-								</p>
-								<Select
-									value={theme}
-									onValueChange={(v) =>
-										setTheme(v as "light" | "dark" | "system")
-									}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="light">Light</SelectItem>
-										<SelectItem value="dark">Dark</SelectItem>
-										<SelectItem value="system">System</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="flex flex-col gap-2">
-								<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-									API URL
-								</p>
-								<Input placeholder="http://localhost:3000" disabled />
-								<p className="text-xs text-muted-foreground">
-									Configurable in local and self-hosted deployments.
-								</p>
-							</div>
-						</div>
-					</TabsContent>
-
-					{/* ── BYOK tab ─────────────────────────────────────────────── */}
-					<TabsContent value="byok" className="flex-1 overflow-y-auto">
-						<div className="flex flex-col gap-5 px-4 pb-4">
-							<Tabs
-								value={tempProvider}
-								onValueChange={(v) => handleProviderChange(v as Provider)}
-							>
-								<TabsList className="grid w-full grid-cols-3">
-									<TabsTrigger value="anthropic">Anthropic</TabsTrigger>
-									<TabsTrigger value="openai">OpenAI</TabsTrigger>
-									<TabsTrigger value="gateway">AI Gateway</TabsTrigger>
-								</TabsList>
-							</Tabs>
-
-							<p className="text-xs text-muted-foreground leading-relaxed">
-								{providerInfo.description}
-							</p>
-
-							<div className="flex flex-col gap-1.5">
-								<p className="text-xs font-medium">API Key</p>
-								<div className="flex gap-1.5">
-									<div className="relative flex-1">
-										<Input
-											type={showKey ? "text" : "password"}
-											value={currentKey}
-											onChange={(e) =>
-												setTempKeys((prev) => ({
-													...prev,
-													[tempProvider]: e.target.value,
-												}))
-											}
-											placeholder={providerInfo.placeholder}
-											className="pr-8"
-										/>
-										<Button
-											variant="ghost"
-											size="icon-xs"
-											type="button"
-											className="absolute right-1 top-1/2 -translate-y-1/2"
-											onClick={() => setShowKey((v) => !v)}
-										>
-											{showKey ? <EyeOff size={12} /> : <Eye size={12} />}
-										</Button>
-									</div>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={handleVerify}
-										disabled={!currentKey || keyStatus === "verifying"}
-									>
-										{keyStatus === "verifying" ? (
-											<Loader2 size={12} className="animate-spin" />
-										) : (
-											"Verify"
-										)}
-									</Button>
-									{currentKey && (
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => {
-												setTempKeys((prev) => ({
-													...prev,
-													[tempProvider]: "",
-												}))
-												setGatewayModels([])
-												onClear()
-											}}
-											className="text-destructive hover:text-destructive"
-										>
-											Clear
-										</Button>
-									)}
-								</div>
-								{keyStatus !== "idle" && (
-									<p
-										className={cn(
-											"text-xs",
-											keyStatus === "valid" && "text-green-600",
-											keyStatus === "invalid" && "text-destructive",
-											keyStatus === "verifying" && "text-muted-foreground",
-										)}
-									>
-										{keyStatus === "valid" && "✓ Connected"}
-										{keyStatus === "invalid" &&
-											"Invalid key — check and try again"}
-										{keyStatus === "verifying" && "Verifying…"}
-									</p>
-								)}
-								<p className="text-xs text-muted-foreground">
-									Stored in your browser only. Never sent to our servers.
-								</p>
-							</div>
-
-							<Separator />
-
-							<div className="flex flex-col gap-4">
-								<div className="flex items-center justify-between">
-									<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-										Models
-									</p>
-									{tempProvider === "gateway" && (
-										<Button
-											variant="ghost"
-											size="xs"
-											onClick={() => loadGatewayModels(currentKey)}
-											disabled={!currentKey || modelsLoading}
-										>
-											{modelsLoading ? (
-												<Loader2 size={11} className="animate-spin" />
-											) : (
-												"Refresh"
-											)}
-										</Button>
-									)}
-								</div>
-
-								{tempProvider === "gateway" &&
-									gatewayModels.length === 0 &&
-									!modelsLoading && (
-										<p className="text-xs text-muted-foreground">
-											Verify your key to load available models.
-										</p>
-									)}
-
-								{(tempProvider !== "gateway" || modelOptions.length > 0) && (
-									<>
-										<div className="flex flex-col gap-1.5">
-											<p className="text-xs font-medium">Quick Model</p>
-											<p className="text-xs text-muted-foreground">
-												AskPat and ExtractPat — fast and cheap.
-											</p>
-											<Select
-												value={tempQuickModel}
-												onValueChange={setTempQuickModel}
-											>
-												<SelectTrigger>
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{modelOptions.map((m) => (
-														<SelectItem key={m.value} value={m.value}>
-															{m.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											{(() => {
-												const m = modelOptions.find(
-													(m) => m.value === tempQuickModel,
-												)
-												return m?.pricingPerM ? (
-													<p className="text-xs text-muted-foreground tabular-nums">
-														${m.pricingPerM.input.toFixed(2)} in ·{" "}
-														${m.pricingPerM.output.toFixed(2)} out per M tokens
-													</p>
-												) : null
-											})()}
-										</div>
-										<div className="flex flex-col gap-1.5">
-											<p className="text-xs font-medium">Detailed Model</p>
-											<p className="text-xs text-muted-foreground">
-												AgentPat — thorough, best reasoning.
-											</p>
-											<Select
-												value={tempDetailedModel}
-												onValueChange={setTempDetailedModel}
-											>
-												<SelectTrigger>
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{modelOptions.map((m) => (
-														<SelectItem key={m.value} value={m.value}>
-															{m.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											{(() => {
-												const m = modelOptions.find(
-													(m) => m.value === tempDetailedModel,
-												)
-												return m?.pricingPerM ? (
-													<p className="text-xs text-muted-foreground tabular-nums">
-														${m.pricingPerM.input.toFixed(2)} in ·{" "}
-														${m.pricingPerM.output.toFixed(2)} out per M tokens
-													</p>
-												) : null
-											})()}
-										</div>
-									</>
-								)}
-							</div>
-
-							<Button onClick={handleSave}>Save</Button>
-						</div>
-					</TabsContent>
-
-					{/* ── Local tab (placeholder) ───────────────────────────────── */}
-					<TabsContent
-						value="local"
-						className="flex-1 overflow-y-auto px-4 pb-4"
-					>
-						<p className="text-sm text-muted-foreground">
-							Local model support via Ollama — coming soon.
-						</p>
-					</TabsContent>
-
-					{/* ── Cloud tab (placeholder) ──────────────────────────────── */}
-					<TabsContent
-						value="cloud"
-						className="flex-1 overflow-y-auto px-4 pb-4"
-					>
-						<p className="text-sm text-muted-foreground">
-							Buy credits directly from PatrickOS — coming soon.
-						</p>
-					</TabsContent>
-				</Tabs>
 			</SheetContent>
 		</Sheet>
 	)
@@ -2147,7 +1723,7 @@ function WorkspacePage() {
 	const [provider, setProvider] = React.useState<Provider>(
 		() => (localStorage.getItem("ai-provider") as Provider) ?? "anthropic",
 	)
-	const [apiKey, setApiKey] = React.useState(() => {
+	const [_apiKey, setApiKey] = React.useState(() => {
 		const p = (localStorage.getItem("ai-provider") as Provider) ?? "anthropic"
 		return localStorage.getItem(`ai-${p}-key`) ?? ""
 	})
@@ -2469,7 +2045,7 @@ function WorkspacePage() {
 				onDelete={deleteProject}
 			/>
 			<AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
-			<SettingsSheet
+			<SettingsDialog
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
 				savedProvider={provider}
