@@ -39,10 +39,10 @@ function json(body: unknown, init?: RequestInit): RequestInit {
 
 export const api = {
 	ai: {
-		verifyKey: (apiKey: string) =>
+		verifyKey: (provider: string, apiKey: string) =>
 			request<{ valid: boolean; error?: string }>(
 				"/ai/verify",
-				json({ apiKey }, { method: "POST" }),
+				json({ provider, apiKey }, { method: "POST" }),
 			),
 		getModels: (apiKey: string) =>
 			request<{

@@ -114,9 +114,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import {
+	CURATED_MODELS,
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
 	type GatewayModel,
+	type Provider,
 } from "@/lib/ai-models"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
 import { formatDisplayDate } from "@/lib/dates"
@@ -538,7 +540,7 @@ function AuthSheet({
 function SettingsSheet({
 	open,
 	onOpenChange,
-	savedApiKey,
+	savedProvider,
 	keyStatus,
 	savedQuickModel,
 	savedDetailedModel,
@@ -548,60 +550,128 @@ function SettingsSheet({
 }: {
 	open: boolean
 	onOpenChange: (v: boolean) => void
-	savedApiKey: string
+	savedProvider: Provider
 	keyStatus: KeyStatus
 	savedQuickModel: string
 	savedDetailedModel: string
-	onVerify: (key: string) => void
-	onSave: (key: string, quickModel: string, detailedModel: string) => void
+	onVerify: (provider: Provider, key: string) => void
+	onSave: (
+		provider: Provider,
+		key: string,
+		quickModel: string,
+		detailedModel: string,
+	) => void
 	onClear: () => void
 }) {
 	const { theme, setTheme } = useTheme()
-	const [tempKey, setTempKey] = React.useState(savedApiKey)
+	const [tempProvider, setTempProvider] = React.useState<Provider>(savedProvider)
+	const [tempKeys, setTempKeys] = React.useState<Record<Provider, string>>({
+		gateway: "",
+		anthropic: "",
+		openai: "",
+	})
 	const [tempQuickModel, setTempQuickModel] = React.useState(savedQuickModel)
 	const [tempDetailedModel, setTempDetailedModel] =
 		React.useState(savedDetailedModel)
 	const [showKey, setShowKey] = React.useState(false)
-	const [models, setModels] = React.useState<GatewayModel[]>([])
+	const [gatewayModels, setGatewayModels] = React.useState<GatewayModel[]>([])
 	const [modelsLoading, setModelsLoading] = React.useState(false)
 
 	React.useEffect(() => {
 		if (open) {
-			setTempKey(savedApiKey)
+			setTempProvider(savedProvider)
+			setTempKeys({
+				gateway: localStorage.getItem("ai-gateway-key") ?? "",
+				anthropic: localStorage.getItem("ai-anthropic-key") ?? "",
+				openai: localStorage.getItem("ai-openai-key") ?? "",
+			})
 			setTempQuickModel(savedQuickModel)
 			setTempDetailedModel(savedDetailedModel)
 		}
-	}, [open, savedApiKey, savedQuickModel, savedDetailedModel])
+	}, [open, savedProvider, savedQuickModel, savedDetailedModel])
 
-	async function loadModels(key: string) {
+	function handleProviderChange(p: Provider) {
+		setTempProvider(p)
+		if (p !== "gateway") {
+			const models = CURATED_MODELS[p]
+			if (!models.some((m) => m.id === tempQuickModel)) {
+				setTempQuickModel(DEFAULT_QUICK_MODEL[p])
+			}
+			if (!models.some((m) => m.id === tempDetailedModel)) {
+				setTempDetailedModel(DEFAULT_DETAILED_MODEL[p])
+			}
+		}
+	}
+
+	async function handleVerify() {
+		const key = tempKeys[tempProvider]
+		await onVerify(tempProvider, key)
+		if (tempProvider === "gateway" && key) {
+			await loadGatewayModels(key)
+		}
+	}
+
+	async function loadGatewayModels(key: string) {
 		if (!key) return
 		setModelsLoading(true)
 		try {
 			const result = await api.ai.getModels(key)
-			setModels(result.models)
+			setGatewayModels(result.models)
 		} catch {
-			// silently fail — user can retry
+			// silently fail
 		} finally {
 			setModelsLoading(false)
 		}
 	}
 
-	async function handleVerify() {
-		await onVerify(tempKey)
-		await loadModels(tempKey)
-	}
-
 	function handleSave() {
-		onSave(tempKey, tempQuickModel, tempDetailedModel)
+		const key = tempKeys[tempProvider]
+		onSave(tempProvider, key, tempQuickModel, tempDetailedModel)
 		onOpenChange(false)
 	}
 
-	const modelOptions = models.map((m) => ({
-		value: m.id,
-		label: m.name,
-		pricing: m.pricing,
-		provider: m.specification.provider,
-	}))
+	const currentKey = tempKeys[tempProvider]
+
+	const modelOptions =
+		tempProvider === "gateway"
+			? gatewayModels.map((m) => ({
+					value: m.id,
+					label: m.name,
+					pricingPerM: m.pricing
+						? {
+								input: parseFloat(m.pricing.input) * 1_000_000,
+								output: parseFloat(m.pricing.output) * 1_000_000,
+							}
+						: undefined,
+				}))
+			: CURATED_MODELS[tempProvider].map((m) => ({
+					value: m.id,
+					label: m.name,
+					pricingPerM: m.pricingPerM,
+				}))
+
+	const PROVIDER_INFO: Record<
+		Provider,
+		{ description: string; placeholder: string }
+	> = {
+		anthropic: {
+			description:
+				"Direct Anthropic API access. Bring your own key, pay Anthropic directly.",
+			placeholder: "sk-ant-...",
+		},
+		openai: {
+			description:
+				"Direct OpenAI API access. Bring your own key, pay OpenAI directly.",
+			placeholder: "sk-...",
+		},
+		gateway: {
+			description:
+				"Route multiple providers via Vercel AI Gateway. Requires a gateway key.",
+			placeholder: "aig_...",
+		},
+	}
+
+	const providerInfo = PROVIDER_INFO[tempProvider]
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
@@ -611,17 +681,17 @@ function SettingsSheet({
 					<SheetDescription>Configure PatrickOS.</SheetDescription>
 				</SheetHeader>
 				<Tabs
-					defaultValue="ai-gateway"
+					defaultValue="byok"
 					className="flex flex-1 flex-col overflow-hidden"
 				>
 					<TabsList className="mx-4 mb-2 grid w-auto grid-cols-4">
 						<TabsTrigger value="general">General</TabsTrigger>
-						<TabsTrigger value="ai-gateway">AI Gateway</TabsTrigger>
+						<TabsTrigger value="byok">BYOK</TabsTrigger>
 						<TabsTrigger value="local" disabled>
 							Local
 						</TabsTrigger>
-						<TabsTrigger value="custom" disabled>
-							Custom
+						<TabsTrigger value="cloud" disabled>
+							Cloud
 						</TabsTrigger>
 					</TabsList>
 
@@ -660,25 +730,23 @@ function SettingsSheet({
 						</div>
 					</TabsContent>
 
-					{/* ── AI Gateway tab ────────────────────────────────────────── */}
-					<TabsContent value="ai-gateway" className="flex-1 overflow-y-auto">
+					{/* ── BYOK tab ─────────────────────────────────────────────── */}
+					<TabsContent value="byok" className="flex-1 overflow-y-auto">
 						<div className="flex flex-col gap-5 px-4 pb-4">
-							<div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
-								<p className="font-medium text-foreground mb-1">
-									Vercel AI Gateway
-								</p>
-								<p>
-									Single API key to access OpenAI, Anthropic, Google, and more.{" "}
-									<a
-										href="https://vercel.com/docs/ai-gateway"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-primary underline underline-offset-2"
-									>
-										Get a key →
-									</a>
-								</p>
-							</div>
+							<Tabs
+								value={tempProvider}
+								onValueChange={(v) => handleProviderChange(v as Provider)}
+							>
+								<TabsList className="grid w-full grid-cols-3">
+									<TabsTrigger value="anthropic">Anthropic</TabsTrigger>
+									<TabsTrigger value="openai">OpenAI</TabsTrigger>
+									<TabsTrigger value="gateway">AI Gateway</TabsTrigger>
+								</TabsList>
+							</Tabs>
+
+							<p className="text-xs text-muted-foreground leading-relaxed">
+								{providerInfo.description}
+							</p>
 
 							<div className="flex flex-col gap-1.5">
 								<p className="text-xs font-medium">API Key</p>
@@ -686,9 +754,14 @@ function SettingsSheet({
 									<div className="relative flex-1">
 										<Input
 											type={showKey ? "text" : "password"}
-											value={tempKey}
-											onChange={(e) => setTempKey(e.target.value)}
-											placeholder="aig_..."
+											value={currentKey}
+											onChange={(e) =>
+												setTempKeys((prev) => ({
+													...prev,
+													[tempProvider]: e.target.value,
+												}))
+											}
+											placeholder={providerInfo.placeholder}
 											className="pr-8"
 										/>
 										<Button
@@ -705,7 +778,7 @@ function SettingsSheet({
 										variant="outline"
 										size="sm"
 										onClick={handleVerify}
-										disabled={!tempKey || keyStatus === "verifying"}
+										disabled={!currentKey || keyStatus === "verifying"}
 									>
 										{keyStatus === "verifying" ? (
 											<Loader2 size={12} className="animate-spin" />
@@ -713,13 +786,16 @@ function SettingsSheet({
 											"Verify"
 										)}
 									</Button>
-									{tempKey && (
+									{currentKey && (
 										<Button
 											variant="ghost"
 											size="sm"
 											onClick={() => {
-												setTempKey("")
-												setModels([])
+												setTempKeys((prev) => ({
+													...prev,
+													[tempProvider]: "",
+												}))
+												setGatewayModels([])
 												onClear()
 											}}
 											className="text-destructive hover:text-destructive"
@@ -727,7 +803,6 @@ function SettingsSheet({
 											Clear
 										</Button>
 									)}
-
 								</div>
 								{keyStatus !== "idle" && (
 									<p
@@ -756,34 +831,41 @@ function SettingsSheet({
 									<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
 										Models
 									</p>
-									<Button
-										variant="ghost"
-										size="xs"
-										onClick={() => loadModels(tempKey)}
-										disabled={!tempKey || modelsLoading}
-									>
-										{modelsLoading ? (
-											<Loader2 size={11} className="animate-spin" />
-										) : (
-											"Refresh"
-										)}
-									</Button>
+									{tempProvider === "gateway" && (
+										<Button
+											variant="ghost"
+											size="xs"
+											onClick={() => loadGatewayModels(currentKey)}
+											disabled={!currentKey || modelsLoading}
+										>
+											{modelsLoading ? (
+												<Loader2 size={11} className="animate-spin" />
+											) : (
+												"Refresh"
+											)}
+										</Button>
+									)}
 								</div>
 
-								{models.length === 0 && !modelsLoading && (
-									<p className="text-xs text-muted-foreground">
-										Verify your key to load available models.
-									</p>
-								)}
+								{tempProvider === "gateway" &&
+									gatewayModels.length === 0 &&
+									!modelsLoading && (
+										<p className="text-xs text-muted-foreground">
+											Verify your key to load available models.
+										</p>
+									)}
 
-								{models.length > 0 && (
+								{(tempProvider !== "gateway" || modelOptions.length > 0) && (
 									<>
 										<div className="flex flex-col gap-1.5">
 											<p className="text-xs font-medium">Quick Model</p>
 											<p className="text-xs text-muted-foreground">
-												Used by AskPat and ExtractPat — fast and cheap.
+												AskPat and ExtractPat — fast and cheap.
 											</p>
-											<Select value={tempQuickModel} onValueChange={setTempQuickModel}>
+											<Select
+												value={tempQuickModel}
+												onValueChange={setTempQuickModel}
+											>
 												<SelectTrigger>
 													<SelectValue />
 												</SelectTrigger>
@@ -796,10 +878,13 @@ function SettingsSheet({
 												</SelectContent>
 											</Select>
 											{(() => {
-												const m = modelOptions.find((m) => m.value === tempQuickModel)
-												return m?.pricing ? (
+												const m = modelOptions.find(
+													(m) => m.value === tempQuickModel,
+												)
+												return m?.pricingPerM ? (
 													<p className="text-xs text-muted-foreground tabular-nums">
-														${(parseFloat(m.pricing.input) * 1_000_000).toFixed(2)} in · ${(parseFloat(m.pricing.output) * 1_000_000).toFixed(2)} out per M tokens
+														${m.pricingPerM.input.toFixed(2)} in ·{" "}
+														${m.pricingPerM.output.toFixed(2)} out per M tokens
 													</p>
 												) : null
 											})()}
@@ -807,9 +892,12 @@ function SettingsSheet({
 										<div className="flex flex-col gap-1.5">
 											<p className="text-xs font-medium">Detailed Model</p>
 											<p className="text-xs text-muted-foreground">
-												Used by AgentPat — thorough, best reasoning.
+												AgentPat — thorough, best reasoning.
 											</p>
-											<Select value={tempDetailedModel} onValueChange={setTempDetailedModel}>
+											<Select
+												value={tempDetailedModel}
+												onValueChange={setTempDetailedModel}
+											>
 												<SelectTrigger>
 													<SelectValue />
 												</SelectTrigger>
@@ -822,10 +910,13 @@ function SettingsSheet({
 												</SelectContent>
 											</Select>
 											{(() => {
-												const m = modelOptions.find((m) => m.value === tempDetailedModel)
-												return m?.pricing ? (
+												const m = modelOptions.find(
+													(m) => m.value === tempDetailedModel,
+												)
+												return m?.pricingPerM ? (
 													<p className="text-xs text-muted-foreground tabular-nums">
-														${(parseFloat(m.pricing.input) * 1_000_000).toFixed(2)} in · ${(parseFloat(m.pricing.output) * 1_000_000).toFixed(2)} out per M tokens
+														${m.pricingPerM.input.toFixed(2)} in ·{" "}
+														${m.pricingPerM.output.toFixed(2)} out per M tokens
 													</p>
 												) : null
 											})()}
@@ -848,13 +939,13 @@ function SettingsSheet({
 						</p>
 					</TabsContent>
 
-					{/* ── Custom tab (placeholder) ──────────────────────────────── */}
+					{/* ── Cloud tab (placeholder) ──────────────────────────────── */}
 					<TabsContent
-						value="custom"
+						value="cloud"
 						className="flex-1 overflow-y-auto px-4 pb-4"
 					>
 						<p className="text-sm text-muted-foreground">
-							Custom API endpoint — coming soon.
+							Buy credits directly from PatrickOS — coming soon.
 						</p>
 					</TabsContent>
 				</Tabs>
@@ -2053,17 +2144,22 @@ function WorkspacePage() {
 	})
 
 	// AI settings
-	const [apiKey, setApiKey] = React.useState(
-		() => localStorage.getItem("ai-gateway-key") ?? "",
+	const [provider, setProvider] = React.useState<Provider>(
+		() => (localStorage.getItem("ai-provider") as Provider) ?? "anthropic",
 	)
+	const [apiKey, setApiKey] = React.useState(() => {
+		const p = (localStorage.getItem("ai-provider") as Provider) ?? "anthropic"
+		return localStorage.getItem(`ai-${p}-key`) ?? ""
+	})
 	const [keyStatus, setKeyStatus] = React.useState<KeyStatus>("idle")
 	const [quickModel, setQuickModel] = React.useState(
-		() => localStorage.getItem("ai-gateway-quick-model") ?? DEFAULT_QUICK_MODEL,
+		() =>
+			localStorage.getItem("ai-quick-model") ?? DEFAULT_QUICK_MODEL.anthropic,
 	)
 	const [detailedModel, setDetailedModel] = React.useState(
 		() =>
-			localStorage.getItem("ai-gateway-detailed-model") ??
-			DEFAULT_DETAILED_MODEL,
+			localStorage.getItem("ai-detailed-model") ??
+			DEFAULT_DETAILED_MODEL.anthropic,
 	)
 
 	// Projects / UI
@@ -2097,14 +2193,14 @@ function WorkspacePage() {
 
 	// ── AI settings handlers ──────────────────────────────────────────────────
 
-	async function verifyKey(key: string) {
+	async function verifyKey(prov: Provider, key: string) {
 		if (!key) {
 			setKeyStatus("idle")
 			return
 		}
 		setKeyStatus("verifying")
 		try {
-			const result = await api.ai.verifyKey(key)
+			const result = await api.ai.verifyKey(prov, key)
 			setKeyStatus(result.valid ? "valid" : "invalid")
 		} catch {
 			setKeyStatus("invalid")
@@ -2112,15 +2208,22 @@ function WorkspacePage() {
 	}
 
 	function clearApiKey() {
-		localStorage.removeItem("ai-gateway-key")
+		localStorage.removeItem(`ai-${provider}-key`)
 		setApiKey("")
 		setKeyStatus("idle")
 	}
 
-	function saveAiSettings(key: string, quick: string, detailed: string) {
-		localStorage.setItem("ai-gateway-key", key)
-		localStorage.setItem("ai-gateway-quick-model", quick)
-		localStorage.setItem("ai-gateway-detailed-model", detailed)
+	function saveAiSettings(
+		prov: Provider,
+		key: string,
+		quick: string,
+		detailed: string,
+	) {
+		localStorage.setItem("ai-provider", prov)
+		localStorage.setItem(`ai-${prov}-key`, key)
+		localStorage.setItem("ai-quick-model", quick)
+		localStorage.setItem("ai-detailed-model", detailed)
+		setProvider(prov)
 		setApiKey(key)
 		setQuickModel(quick)
 		setDetailedModel(detailed)
@@ -2369,7 +2472,7 @@ function WorkspacePage() {
 			<SettingsSheet
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
-				savedApiKey={apiKey}
+				savedProvider={provider}
 				keyStatus={keyStatus}
 				savedQuickModel={quickModel}
 				savedDetailedModel={detailedModel}
