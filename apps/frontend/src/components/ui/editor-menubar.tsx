@@ -1,10 +1,11 @@
 "use client"
 
+import { AIChatPlugin } from "@platejs/ai/react"
 import { exportToDocx, importDocx } from "@platejs/docx-io"
 import { MarkdownPlugin } from "@platejs/markdown"
 import { SuggestionPlugin } from "@platejs/suggestion/react"
-import { AIChatPlugin } from "@platejs/ai/react"
 import {
+	Clover,
 	Code2Icon,
 	EyeIcon,
 	FileIcon,
@@ -18,7 +19,6 @@ import {
 	PenIcon,
 	Redo2Icon,
 	Undo2Icon,
-	Clover,
 } from "lucide-react"
 import type { SlatePlugin } from "platejs"
 import { createSlateEditor } from "platejs"
@@ -33,8 +33,8 @@ import { getEditorDOMFromHtmlString, serializeHtml } from "platejs/static"
 import { useFilePicker } from "use-file-picker"
 
 import { BaseEditorKit } from "@/components/editor/editor-base-kit"
-import { DocxExportKit } from "@/components/editor/plugins/docx-export-kit"
 import { commentPlugin } from "@/components/editor/plugins/comment-kit"
+import { DocxExportKit } from "@/components/editor/plugins/docx-export-kit"
 import { Button } from "@/components/ui/button"
 import {
 	Menubar,
@@ -52,12 +52,22 @@ import { EditorStatic } from "./editor-static"
 export function EditorMenubar() {
 	const editor = useEditorRef()
 	const readOnly = useEditorReadOnly()
-	const undoDisabled = useEditorSelector((e) => e.history.undos.length === 0, [])
-	const redoDisabled = useEditorSelector((e) => e.history.redos.length === 0, [])
+	const undoDisabled = useEditorSelector(
+		(e) => e.history.undos.length === 0,
+		[],
+	)
+	const redoDisabled = useEditorSelector(
+		(e) => e.history.redos.length === 0,
+		[],
+	)
 	const { api: aiApi } = useEditorPlugin(AIChatPlugin)
 	const isSuggesting = usePluginOption(SuggestionPlugin, "isSuggesting")
 
-	const currentMode = readOnly ? "viewing" : isSuggesting ? "suggestion" : "editing"
+	const currentMode = readOnly
+		? "viewing"
+		: isSuggesting
+			? "suggestion"
+			: "editing"
 
 	const handleModeChange = (value: string) => {
 		if (value === "viewing") {
@@ -116,18 +126,27 @@ export function EditorMenubar() {
 	}
 
 	const exportToHtml = async () => {
-		const editorStatic = createSlateEditor({ plugins: BaseEditorKit, value: editor.children })
+		const editorStatic = createSlateEditor({
+			plugins: BaseEditorKit,
+			value: editor.children,
+		})
 		const editorHtml = await serializeHtml(editorStatic, {
 			editorComponent: EditorStatic,
 			props: { style: { padding: "0 calc(50% - 350px)", paddingBottom: "" } },
 		})
 		const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head><body>${editorHtml}</body></html>`
-		await downloadFile(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`, "document.html")
+		await downloadFile(
+			`data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
+			"document.html",
+		)
 	}
 
 	const exportToMarkdown = async () => {
 		const md = editor.getApi(MarkdownPlugin).markdown.serialize()
-		await downloadFile(`data:text/markdown;charset=utf-8,${encodeURIComponent(md)}`, "document.md")
+		await downloadFile(
+			`data:text/markdown;charset=utf-8,${encodeURIComponent(md)}`,
+			"document.md",
+		)
 	}
 
 	const exportToWord = async () => {
@@ -206,12 +225,18 @@ export function EditorMenubar() {
 								Edit
 							</MenubarTrigger>
 							<MenubarContent>
-								<MenubarItem disabled={undoDisabled} onSelect={() => editor.undo()}>
+								<MenubarItem
+									disabled={undoDisabled}
+									onSelect={() => editor.undo()}
+								>
 									<Undo2Icon />
 									Undo
 									<MenubarShortcut>⌘Z</MenubarShortcut>
 								</MenubarItem>
-								<MenubarItem disabled={redoDisabled} onSelect={() => editor.redo()}>
+								<MenubarItem
+									disabled={redoDisabled}
+									onSelect={() => editor.redo()}
+								>
 									<Redo2Icon />
 									Redo
 									<MenubarShortcut>⌘⇧Z</MenubarShortcut>
@@ -227,7 +252,10 @@ export function EditorMenubar() {
 						View
 					</MenubarTrigger>
 					<MenubarContent>
-						<MenubarRadioGroup value={currentMode} onValueChange={handleModeChange}>
+						<MenubarRadioGroup
+							value={currentMode}
+							onValueChange={handleModeChange}
+						>
 							<MenubarRadioItem value="editing">
 								<PenIcon />
 								Editing
@@ -246,7 +274,6 @@ export function EditorMenubar() {
 			</Menubar>
 
 			<div className="flex items-center gap-0.5">
-
 				<Button
 					variant="ghost"
 					size="sm"

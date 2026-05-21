@@ -1,5 +1,4 @@
-import { assets, projects } from "@patrickos/db"
-import { eq } from "drizzle-orm"
+import { assets, eq, projects } from "@patrickos/db"
 import { Hono } from "hono"
 import { db } from "../lib/db"
 

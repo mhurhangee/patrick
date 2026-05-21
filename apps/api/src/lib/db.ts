@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite"
 import * as schema from "@patrickos/db"
-import { drizzle } from "drizzle-orm/bun-sqlite"
+import { drizzleBunSqlite } from "@patrickos/db"
 
 // Strip "file:" prefix — bun:sqlite takes a plain path, not a libsql URL
 const dbPath = (
@@ -46,4 +46,4 @@ sqlite.exec(`CREATE TABLE IF NOT EXISTS settings (
 	prompt_extractpat TEXT NOT NULL DEFAULT ''
 )`)
 
-export const db = drizzle(sqlite, { schema })
+export const db = drizzleBunSqlite(sqlite, { schema })

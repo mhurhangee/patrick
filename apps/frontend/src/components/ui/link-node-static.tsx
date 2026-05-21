@@ -3,7 +3,6 @@ import { getLinkAttributes } from "@platejs/link"
 import type { TLinkElement } from "platejs"
 import type { SlateElementProps } from "platejs/static"
 import { SlateElement } from "platejs/static"
-import * as React from "react"
 import { inlineSuggestionVariants } from "@/lib/suggestion"
 import { cn } from "@/lib/utils"
 

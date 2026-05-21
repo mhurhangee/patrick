@@ -5,7 +5,6 @@ import {
 	SlateLeaf,
 	type SlateLeafProps,
 } from "platejs/static"
-import * as React from "react"
 
 export function CodeBlockElementStatic(
 	props: SlateElementProps<TCodeBlockElement>,

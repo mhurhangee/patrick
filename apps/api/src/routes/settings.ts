@@ -1,5 +1,4 @@
-import { settings } from "@patrickos/db"
-import { eq } from "drizzle-orm"
+import { eq, settings } from "@patrickos/db"
 import { Hono } from "hono"
 import { db } from "../lib/db"
 

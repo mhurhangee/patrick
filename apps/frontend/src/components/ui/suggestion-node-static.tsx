@@ -4,7 +4,6 @@ import { cva } from "class-variance-authority"
 import type { TElement, TSuggestionText } from "platejs"
 import type { SlateLeafProps } from "platejs/static"
 import { SlateLeaf } from "platejs/static"
-import * as React from "react"
 
 import { cn } from "@/lib/utils"
 

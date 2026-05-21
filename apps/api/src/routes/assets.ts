@@ -1,5 +1,4 @@
-import { type AssetKind, type AssetType, assets } from "@patrickos/db"
-import { eq } from "drizzle-orm"
+import { type AssetKind, type AssetType, assets, eq } from "@patrickos/db"
 import { Hono } from "hono"
 import { db } from "../lib/db"
 

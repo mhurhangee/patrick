@@ -1,7 +1,6 @@
 import type { TColumnElement } from "platejs"
 import type { SlateElementProps } from "platejs/static"
 import { SlateElement } from "platejs/static"
-import * as React from "react"
 
 export function ColumnElementStatic(props: SlateElementProps<TColumnElement>) {
 	const { width } = props.element

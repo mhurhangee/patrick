@@ -4,6 +4,7 @@ import { insertDate } from "@platejs/date"
 import {
 	BoldIcon,
 	CalendarIcon,
+	Clover,
 	Code2Icon,
 	HighlighterIcon,
 	ItalicIcon,
@@ -11,7 +12,6 @@ import {
 	SubscriptIcon,
 	SuperscriptIcon,
 	UnderlineIcon,
-	Clover,
 } from "lucide-react"
 import { KEYS } from "platejs"
 import { useEditorReadOnly, useEditorRef } from "platejs/react"
@@ -45,10 +45,16 @@ export function FloatingToolbarButtons() {
 						<MarkToolbarButton nodeType={KEYS.italic} tooltip="Italic (⌘+I)">
 							<ItalicIcon />
 						</MarkToolbarButton>
-						<MarkToolbarButton nodeType={KEYS.underline} tooltip="Underline (⌘+U)">
+						<MarkToolbarButton
+							nodeType={KEYS.underline}
+							tooltip="Underline (⌘+U)"
+						>
 							<UnderlineIcon />
 						</MarkToolbarButton>
-						<MarkToolbarButton nodeType={KEYS.strikethrough} tooltip="Strikethrough (⌘+⇧+M)">
+						<MarkToolbarButton
+							nodeType={KEYS.strikethrough}
+							tooltip="Strikethrough (⌘+⇧+M)"
+						>
 							<StrikethroughIcon />
 						</MarkToolbarButton>
 						<MarkToolbarButton nodeType={KEYS.sub} tooltip="Subscript (⌘+,)">

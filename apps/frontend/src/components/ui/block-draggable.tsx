@@ -13,7 +13,14 @@ import {
 	GripVertical,
 	Trash2Icon,
 } from "lucide-react"
-import { getPluginByType, isType, KEYS, PathApi, type Path, type TElement } from "platejs"
+import {
+	getPluginByType,
+	isType,
+	KEYS,
+	type Path,
+	PathApi,
+	type TElement,
+} from "platejs"
 import {
 	MemoizedChildren,
 	type PlateEditor,
@@ -26,7 +33,7 @@ import {
 	useSelected,
 } from "platejs/react"
 import * as React from "react"
-
+import { setBlockType } from "@/components/editor/transforms"
 import { Button } from "@/components/ui/button"
 import {
 	DropdownMenu,
@@ -39,7 +46,6 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { setBlockType } from "@/components/editor/transforms"
 import { turnIntoItems } from "@/components/ui/turn-into-toolbar-button"
 import { cn } from "@/lib/utils"
 
@@ -284,10 +290,9 @@ const DragHandle = React.memo(function DragHandle({
 				}
 
 				// Process selection nodes to include list children
-				const blocks = expandListItemsWithChildren(
-					editor,
-					selectionNodes,
-				).map(([node]) => node)
+				const blocks = expandListItemsWithChildren(editor, selectionNodes).map(
+					([node]) => node,
+				)
 
 				if (blockSelection.length === 0) {
 					editor.tf.blur()
@@ -386,11 +391,18 @@ function GutterMenu({
 	const { api: aiApi } = useEditorPlugin(AIChatPlugin)
 
 	const select = () => {
-		editor.getApi(BlockSelectionPlugin).blockSelection.set([element.id as string])
+		editor
+			.getApi(BlockSelectionPlugin)
+			.blockSelection.set([element.id as string])
 	}
 
 	return (
-		<DropdownMenu modal={false} onOpenChange={(open) => { if (open) select() }}>
+		<DropdownMenu
+			modal={false}
+			onOpenChange={(open) => {
+				if (open) select()
+			}}
+		>
 			<DropdownMenuTrigger asChild>
 				<Button
 					variant="ghost"
@@ -403,7 +415,10 @@ function GutterMenu({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent side="right" align="start" className="w-48">
 				<DropdownMenuGroup>
-					<DropdownMenuItem onSelect={() => aiApi.aiChat.show()} className="text-primary-foreground bg-primary">
+					<DropdownMenuItem
+						onSelect={() => aiApi.aiChat.show()}
+						className="text-primary-foreground bg-primary"
+					>
 						<Clover />
 						AskPat
 					</DropdownMenuItem>
@@ -436,7 +451,9 @@ function GutterMenu({
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						onSelect={() =>
-							editor.getTransforms(BlockSelectionPlugin).blockSelection.duplicate()
+							editor
+								.getTransforms(BlockSelectionPlugin)
+								.blockSelection.duplicate()
 						}
 					>
 						<CopyIcon />

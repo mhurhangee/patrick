@@ -236,7 +236,15 @@ export function SlashInputElement(
 							<InlineComboboxGroupLabel>{group}</InlineComboboxGroupLabel>
 
 							{items.map(
-								({ focusEditor, icon, keywords, label, value, onSelect, className }) => (
+								({
+									focusEditor,
+									icon,
+									keywords,
+									label,
+									value,
+									onSelect,
+									className,
+								}) => (
 									<InlineComboboxItem
 										key={value}
 										value={value}

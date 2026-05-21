@@ -25,7 +25,6 @@ import {
 } from "platejs/react"
 import * as React from "react"
 import { setBlockType } from "@/components/editor/transforms"
-import { turnIntoItems } from "@/components/ui/turn-into-toolbar-button"
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -37,6 +36,7 @@ import {
 	ContextMenuSubTrigger,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu"
+import { turnIntoItems } from "@/components/ui/turn-into-toolbar-button"
 import { useIsTouchDevice } from "@/hooks/use-is-touch-device"
 
 type Value = "askAI" | null
@@ -192,7 +192,10 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 							<ContextMenuSubTrigger>Turn into</ContextMenuSubTrigger>
 							<ContextMenuSubContent className="w-48">
 								{turnIntoItems.map(({ icon, label, value: type }) => (
-									<ContextMenuItem key={type} onClick={() => handleTurnInto(type)}>
+									<ContextMenuItem
+										key={type}
+										onClick={() => handleTurnInto(type)}
+									>
 										{icon}
 										{label}
 									</ContextMenuItem>
