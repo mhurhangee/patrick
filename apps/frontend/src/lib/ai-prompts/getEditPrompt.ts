@@ -1,7 +1,7 @@
 import dedent from "dedent"
 import type { SlateEditor } from "platejs"
 import type { ChatMessage } from "@/components/editor/use-chat"
-
+import { commonEditRules } from "./common"
 import {
 	addSelection,
 	buildStructuredPrompt,
@@ -9,11 +9,7 @@ import {
 	getLastUserInstruction,
 	getMarkdownWithSelection,
 	isMultiBlocks,
-	isSelectionInTable,
-	isSingleCellSelection,
-} from "../utils"
-import { commonEditRules } from "./common"
-import { buildEditTableMultiCellPrompt } from "./getEditTablePrompt"
+} from "./utils"
 
 function buildEditMultiBlockPrompt(
 	editor: SlateEditor,
@@ -221,19 +217,13 @@ function buildEditSelectionPrompt(
 export function getEditPrompt(
 	editor: SlateEditor,
 	{ isSelecting, messages }: { isSelecting: boolean; messages: ChatMessage[] },
-): [string, "table" | "multi-block" | "selection"] {
+): [string, "multi-block" | "selection"] {
 	if (!isSelecting)
 		throw new Error("Edit tool is only available when selecting")
 
-	// Handle selection inside table cell
-	if (isSelectionInTable(editor) && !isSingleCellSelection(editor)) {
-		return [buildEditTableMultiCellPrompt(editor, messages), "table"]
-	}
-	// Handle multi-block selection
 	if (isMultiBlocks(editor)) {
 		return [buildEditMultiBlockPrompt(editor, messages), "multi-block"]
 	}
 
-	// Handle single block with selection
 	return [buildEditSelectionPrompt(editor, messages), "selection"]
 }

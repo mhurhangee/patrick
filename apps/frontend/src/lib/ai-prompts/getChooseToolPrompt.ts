@@ -5,7 +5,7 @@ import {
 	buildStructuredPrompt,
 	formatTextFromMessages,
 	getLastUserInstruction,
-} from "../utils"
+} from "./utils"
 
 export function getChooseToolPrompt({
 	isSelecting,

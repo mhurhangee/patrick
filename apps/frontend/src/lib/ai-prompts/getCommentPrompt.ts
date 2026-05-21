@@ -7,7 +7,7 @@ import {
 	buildStructuredPrompt,
 	formatTextFromMessages,
 	getLastUserInstruction,
-} from "../utils"
+} from "./utils"
 
 export function getCommentPrompt(
 	editor: SlateEditor,
@@ -24,7 +24,6 @@ export function getCommentPrompt(
 	return buildStructuredPrompt({
 		context: selectingMarkdown,
 		examples: [
-			// 1) Basic single-block comment
 			dedent`
         <instruction>
         Review this paragraph.
@@ -45,7 +44,6 @@ export function getCommentPrompt(
         </output>
       `,
 
-			// 2) Multiple comments within one long block
 			dedent`
         <instruction>
         Add comments for this section.
@@ -71,7 +69,6 @@ export function getCommentPrompt(
         </output>
       `,
 
-			// 3) Multi-block comment (span across two related paragraphs)
 			dedent`
         <instruction>
         Provide comments.
@@ -93,7 +90,6 @@ export function getCommentPrompt(
         </output>
       `,
 
-			// 4) With <Selection> – user highlighted part of a sentence
 			dedent`
         <instruction>
         Give feedback on this highlighted phrase.
@@ -114,7 +110,6 @@ export function getCommentPrompt(
         </output>
       `,
 
-			// 5) With long <Selection> → multiple comments
 			dedent`
         <instruction>
         Review the highlighted section.

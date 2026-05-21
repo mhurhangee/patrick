@@ -58,33 +58,6 @@ export type StructuredPromptSections = {
 	tone?: string
 }
 
-/**
- * Build a structured prompt following best practices for AI interactions.
- *
- * @example
- *   https://imgur.com/carbon-Db5tDUh
- *   1. Task context - You will be acting as an AI career coach named Joe created by the company
- *   AdAstra Careers. Your goal is to give career advice to users. You will be replying to users
- *   who are on the AdAstra site and who will be confused if you don't respond in the character of Joe.
- *   2. Tone context - You should maintain a friendly customer service tone.
- *   3. Background data - Here is the career guidance document you should reference when answering the user: <guide>{DOCUMENT}</guide>
- *   3b. Tools - Available tool descriptions
- *   4. Rules - Here are some important rules for the interaction:
- *   - Always stay in character, as Joe, an AI from AdAstra careers
- *   - If you are unsure how to respond, say "Sorry, I didn't understand that. Could you repeat the question?"
- *   - If someone asks something irrelevant, say, "Sorry, I am Joe and I give career advice..."
- *   5. Examples - Here is an example of how to respond in a standard interaction:
- *   <example>
- *   User: Hi, how were you created and what do you do?
- *   Joe: Hello! My name is Joe, and I was created by AdAstra Careers to give career advice...
- *   </example>
- *   6. Conversation history - Here is the conversation history (between the user and you) prior to the question. <history>{HISTORY}</history>
- *   6b. Question - Here is the user's question: <question>{QUESTION}</question>
- *   7. Immediate task - How do you respond to the user's question?
- *   8. Thinking - Think about your answer first before you respond.
- *   9. Output formatting - Put your response in <response></response> tags.
- *   11. Prefilled response - Optional response starter
- */
 export const buildStructuredPrompt = ({
 	context,
 	examples,
@@ -101,7 +74,6 @@ export const buildStructuredPrompt = ({
 	const formattedExamples = Array.isArray(examples)
 		? examples
 				.map((example) => {
-					// Indent content inside example tag (4 spaces)
 					const indentedContent = example
 						.split("\n")
 						.map((line) => (line ? `    ${line}` : ""))
@@ -142,11 +114,8 @@ export const buildStructuredPrompt = ({
         ${tag("history", history)}
       `,
 
-		// or <reasoningSteps>
 		thinking && tag("thinking", thinking),
-		// Not needed with structured output
 		outputFormatting && tag("outputFormatting", outputFormatting),
-		// Not needed with structured output
 		(prefilledResponse ?? null) !== null &&
 			tag("prefilledResponse", prefilledResponse ?? ""),
 	])
@@ -159,15 +128,10 @@ export function getTextFromMessage(message: UIMessage): string {
 		.join("")
 }
 
-/**
- * Format conversation history for prompts. Extracts text from messages and
- * formats as ROLE: text. Returns empty string if only one message (no history needed).
- */
 export function formatTextFromMessages(
 	messages: ChatMessage[],
 	options?: { limit?: number },
 ): string {
-	// No history needed if no messages or only one message
 	if (!messages || messages.length <= 1) return ""
 
 	const historyMessages = options?.limit
@@ -188,9 +152,6 @@ export function formatTextFromMessages(
 		.join("\n")
 }
 
-/**
- * Get the last user message text from messages array.
- */
 export function getLastUserInstruction(messages: ChatMessage[]): string {
 	if (!messages || messages.length === 0) return ""
 
@@ -226,9 +187,8 @@ const removeEscapeSelection = (editor: SlateEditor, text: string) => {
 		.replace(`\\${SELECTION_START}`, SELECTION_START)
 		.replace(`\\${SELECTION_END}`, SELECTION_END)
 
-	// If the selection is on a void element, inserting the placeholder will fail, and the string must be replaced manually.
 	if (!newText.includes(SELECTION_END)) {
-		// biome-ignore lint/style/noNonNullAssertion: will delete soon
+		// biome-ignore lint/style/noNonNullAssertion: selection checked above
 		const [_, end] = RangeApi.edges(editor.selection!)
 
 		const node = editor.api.block({ at: end.path })
@@ -252,18 +212,15 @@ const removeEscapeSelection = (editor: SlateEditor, text: string) => {
 	return newText
 }
 
-/** Check if the current selection fully covers all top-level blocks. */
 export const isMultiBlocks = (editor: SlateEditor) => {
 	const blocks = editor.api.blocks({ mode: "lowest" })
 
 	return blocks.length > 1
 }
 
-/** Get markdown with selection markers */
 export const getMarkdownWithSelection = (editor: SlateEditor) =>
 	removeEscapeSelection(editor, getMarkdown(editor, { type: "block" }))
 
-/** Check if the current selection is inside a table cell */
 export const isSelectionInTable = (editor: SlateEditor): boolean => {
 	if (!editor.selection) return false
 
@@ -275,11 +232,9 @@ export const isSelectionInTable = (editor: SlateEditor): boolean => {
 	return !!tableEntry
 }
 
-/** Check if selection is within a single table cell */
 export const isSingleCellSelection = (editor: SlateEditor): boolean => {
 	if (!editor.selection) return false
 
-	// Get all td blocks in selection
 	const cells = Array.from(
 		editor.api.nodes({
 			at: editor.selection,

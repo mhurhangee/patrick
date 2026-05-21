@@ -1,7 +1,7 @@
 import dedent from "dedent"
 import type { SlateEditor } from "platejs"
 import type { ChatMessage } from "@/components/editor/use-chat"
-
+import { commonGenerateRules } from "./common"
 import {
 	addSelection,
 	buildStructuredPrompt,
@@ -9,8 +9,7 @@ import {
 	getLastUserInstruction,
 	getMarkdownWithSelection,
 	isMultiBlocks,
-} from "../utils"
-import { commonGenerateRules } from "./common"
+} from "./utils"
 
 function buildGenerateFreeformPrompt(messages: ChatMessage[]) {
 	return buildStructuredPrompt({
@@ -149,10 +148,8 @@ export function getGeneratePrompt(
 	editor: SlateEditor,
 	{ isSelecting, messages }: { isSelecting: boolean; messages: ChatMessage[] },
 ) {
-	// Freeform generation: open-ended creation without context
 	if (!isSelecting) {
 		return buildGenerateFreeformPrompt(messages)
 	}
-	// Context-based generation: use selected text as context
 	return buildGenerateContextPrompt(editor, messages)
 }

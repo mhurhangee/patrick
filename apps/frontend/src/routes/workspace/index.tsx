@@ -836,9 +836,13 @@ function AppSidebar({
 function ArtifactEditor({
 	asset,
 	onAssetUpdate,
+	aiProvider,
+	aiQuickModel,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
+	aiProvider?: string
+	aiQuickModel?: string
 }) {
 	const saveTimer = React.useRef<ReturnType<typeof setTimeout>>(null)
 	const latestValue = React.useRef<Value | null>(null)
@@ -880,7 +884,12 @@ function ArtifactEditor({
 
 	return (
 		<div className="h-full overflow-hidden">
-			<PlateEditor initialValue={initialValue} onChange={handleChange} />
+			<PlateEditor
+				initialValue={initialValue}
+				onChange={handleChange}
+				aiProvider={aiProvider}
+				aiQuickModel={aiQuickModel}
+			/>
 		</div>
 	)
 }
@@ -888,9 +897,13 @@ function ArtifactEditor({
 function AssetPane({
 	asset,
 	onAssetUpdate,
+	aiProvider,
+	aiQuickModel,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
+	aiProvider?: string
+	aiQuickModel?: string
 }) {
 	if (asset.kind === "source") {
 		return <SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
@@ -901,6 +914,8 @@ function AssetPane({
 			key={asset.id}
 			asset={asset}
 			onAssetUpdate={onAssetUpdate}
+			aiProvider={aiProvider}
+			aiQuickModel={aiQuickModel}
 		/>
 	)
 }
@@ -1177,6 +1192,8 @@ function AssetViewer({
 	onChatToggle,
 	onAssetUpdate,
 	chatCollapsed,
+	aiProvider,
+	aiQuickModel,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -1188,6 +1205,8 @@ function AssetViewer({
 	onChatToggle: () => void
 	onAssetUpdate: (updated: ApiAsset) => void
 	chatCollapsed: boolean
+	aiProvider?: string
+	aiQuickModel?: string
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -1289,6 +1308,8 @@ function AssetViewer({
 									key={asset.id}
 									asset={asset}
 									onAssetUpdate={onAssetUpdate}
+									aiProvider={aiProvider}
+									aiQuickModel={aiQuickModel}
 								/>
 							</ResizablePanel>
 						</React.Fragment>
@@ -1301,6 +1322,8 @@ function AssetViewer({
 							key={activeAsset.id}
 							asset={activeAsset}
 							onAssetUpdate={onAssetUpdate}
+							aiProvider={aiProvider}
+							aiQuickModel={aiQuickModel}
 						/>
 					)}
 				</div>
@@ -1744,11 +1767,15 @@ function WorkspacePage() {
 	React.useEffect(() => {
 		api.settings.get().then((s) => {
 			const p = (s.aiProvider as Provider) || "anthropic"
+			const quick = s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic
 			setProvider(p)
-			setQuickModel(s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic)
+			setQuickModel(quick)
 			setDetailedModel(s.aiDetailedModel || DEFAULT_DETAILED_MODEL.anthropic)
 			const key = localStorage.getItem(`ai-${p}-key`) ?? ""
 			setApiKey(key)
+			// Sync provider/model to localStorage so copilot fetch can read them
+			localStorage.setItem("askpat-provider", p)
+			localStorage.setItem("askpat-quick-model", quick)
 		})
 	}, [])
 
@@ -1799,6 +1826,8 @@ function WorkspacePage() {
 		detailed: string,
 	) {
 		localStorage.setItem(`ai-${prov}-key`, key)
+		localStorage.setItem("askpat-provider", prov)
+		localStorage.setItem("askpat-quick-model", quick)
 		setProvider(prov)
 		setApiKey(key)
 		setQuickModel(quick)
@@ -2007,6 +2036,8 @@ function WorkspacePage() {
 									)
 								}
 								chatCollapsed={chatCollapsed}
+								aiProvider={provider}
+								aiQuickModel={quickModel}
 							/>
 						</ResizablePanel>
 						<ResizableHandle

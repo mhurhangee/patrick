@@ -15,6 +15,7 @@ import { usePluginOption } from "platejs/react"
 
 import { AILoadingBar, AIMenu } from "@/components/ui/ai-menu"
 import { AIAnchorElement, AILeaf } from "@/components/ui/ai-node"
+import { BASE_URL } from "@/lib/api"
 
 import { useChat } from "../use-chat"
 import { CursorOverlayKit } from "./cursor-overlay-kit"
@@ -23,7 +24,7 @@ import { MarkdownKit } from "./markdown-kit"
 export const aiChatPlugin = AIChatPlugin.extend({
 	options: {
 		chatOptions: {
-			api: "/api/ai/command",
+			api: `${BASE_URL}/ai/askpat/command`,
 			body: {},
 		},
 	},

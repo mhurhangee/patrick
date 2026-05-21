@@ -1,11 +1,11 @@
 "use client"
 
-import { faker } from "@faker-js/faker"
 import { CopilotPlugin } from "@platejs/ai/react"
 import { serializeMd, stripMarkdown } from "@platejs/markdown"
 import type { TElement } from "platejs"
 
 import { GhostText } from "@/components/ui/ghost-text"
+import { BASE_URL } from "@/lib/api"
 
 import { MarkdownKit } from "./markdown-kit"
 
@@ -14,26 +14,28 @@ export const CopilotKit = [
 	CopilotPlugin.configure(({ api }) => ({
 		options: {
 			completeOptions: {
-				api: "/api/ai/copilot",
+				api: `${BASE_URL}/ai/askpat/copilot`,
 				body: {
-					system: `You are an advanced AI writing assistant, similar to VSCode Copilot but for general text. Your task is to predict and generate the next part of the text based on the given context.
-  
-  Rules:
-  - Continue the text naturally up to the next punctuation mark (., ,, ;, :, ?, or !).
-  - Maintain style and tone. Don't repeat given text.
-  - For unclear context, provide the most likely continuation.
-  - Handle code snippets, lists, or structured text if needed.
-  - Don't include """ in your response.
-  - CRITICAL: Always end with a punctuation mark.
-  - CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc. The suggestion should continue in the same block as the context.
-  - If no context is provided or you can't generate a continuation, return "0" without explanation.`,
+					system: `You are an AI writing assistant for patent attorneys. Continue the text naturally up to the next punctuation mark.
+
+Rules:
+- Maintain the formal, precise style of patent documents.
+- Do not repeat given text. Continue seamlessly from where it ends.
+- CRITICAL: Always end with a punctuation mark.
+- CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc.
+- If no context is provided or you can't generate a continuation, return "0" without explanation.`,
 				},
-				onError: () => {
-					// Mock the API response. Remove it when you implement the route /api/ai/copilot
-					api.copilot.setBlockSuggestion({
-						text: stripMarkdown(faker.lorem.sentence()),
+				fetch: (async (input, init) => {
+					// Inject AI settings (BYOK — keys never stored server-side)
+					const initBody = JSON.parse((init?.body as string) ?? "{}")
+					const provider = localStorage.getItem("askpat-provider") || "anthropic"
+					const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
+					const model = localStorage.getItem("askpat-quick-model") || ""
+					return fetch(input, {
+						...init,
+						body: JSON.stringify({ ...initBody, provider, apiKey, model }),
 					})
-				},
+				}) as typeof fetch,
 				onFinish: (_, completion) => {
 					if (completion === "0") return
 
