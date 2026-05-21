@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { cors } from "hono/cors"
+import { aiRouter } from "./routes/ai"
 import { assetsRouter } from "./routes/assets"
 import { projectsRouter } from "./routes/projects"
 
@@ -10,6 +11,7 @@ app.use("*", cors())
 app.get("/health", (c) => c.json({ ok: true }))
 app.route("/projects", projectsRouter)
 app.route("/assets", assetsRouter)
+app.route("/ai", aiRouter)
 
 export default {
 	port: Number(process.env.PORT) || 3000,

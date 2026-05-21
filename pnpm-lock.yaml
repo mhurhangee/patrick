@@ -23,12 +23,18 @@ importers:
       '@patrickos/db':
         specifier: workspace:*
         version: link:../../packages/db
+      ai:
+        specifier: ^6.0.185
+        version: 6.0.185(zod@4.4.3)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@libsql/client@0.17.3)(@opentelemetry/api@1.9.1)(bun-types@1.3.14)
       hono:
         specifier: ^4.12.19
         version: 4.12.19
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@types/bun':
         specifier: ^1.3.14

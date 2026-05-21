@@ -9,6 +9,8 @@ import {
 	ChevronsUpDown,
 	Clover,
 	Columns3,
+	Eye,
+	EyeOff,
 	FolderOpen,
 	FolderPlus,
 	Gavel,
@@ -23,7 +25,6 @@ import {
 	Search,
 	Send,
 	Settings,
-	Sparkles,
 	Trash2,
 	UserCircle,
 	X,
@@ -110,7 +111,13 @@ import {
 	SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import {
+	DEFAULT_DETAILED_MODEL,
+	DEFAULT_QUICK_MODEL,
+	type GatewayModel,
+} from "@/lib/ai-models"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
 import { formatDisplayDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
@@ -120,6 +127,8 @@ export const Route = createFileRoute("/workspace/")({
 })
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+type KeyStatus = "idle" | "verifying" | "valid" | "invalid"
 
 interface Message {
 	id: string
@@ -529,66 +538,326 @@ function AuthSheet({
 function SettingsSheet({
 	open,
 	onOpenChange,
+	savedApiKey,
+	keyStatus,
+	savedQuickModel,
+	savedDetailedModel,
+	onVerify,
+	onSave,
+	onClear,
 }: {
 	open: boolean
 	onOpenChange: (v: boolean) => void
+	savedApiKey: string
+	keyStatus: KeyStatus
+	savedQuickModel: string
+	savedDetailedModel: string
+	onVerify: (key: string) => void
+	onSave: (key: string, quickModel: string, detailedModel: string) => void
+	onClear: () => void
 }) {
 	const { theme, setTheme } = useTheme()
+	const [tempKey, setTempKey] = React.useState(savedApiKey)
+	const [tempQuickModel, setTempQuickModel] = React.useState(savedQuickModel)
+	const [tempDetailedModel, setTempDetailedModel] =
+		React.useState(savedDetailedModel)
+	const [showKey, setShowKey] = React.useState(false)
+	const [models, setModels] = React.useState<GatewayModel[]>([])
+	const [modelsLoading, setModelsLoading] = React.useState(false)
+
+	React.useEffect(() => {
+		if (open) {
+			setTempKey(savedApiKey)
+			setTempQuickModel(savedQuickModel)
+			setTempDetailedModel(savedDetailedModel)
+		}
+	}, [open, savedApiKey, savedQuickModel, savedDetailedModel])
+
+	async function loadModels(key: string) {
+		if (!key) return
+		setModelsLoading(true)
+		try {
+			const result = await api.ai.getModels(key)
+			setModels(result.models)
+		} catch {
+			// silently fail — user can retry
+		} finally {
+			setModelsLoading(false)
+		}
+	}
+
+	async function handleVerify() {
+		await onVerify(tempKey)
+		await loadModels(tempKey)
+	}
+
+	function handleSave() {
+		onSave(tempKey, tempQuickModel, tempDetailedModel)
+		onOpenChange(false)
+	}
+
+	const modelOptions = models.map((m) => ({
+		value: m.id,
+		label: m.name,
+		pricing: m.pricing,
+		provider: m.specification.provider,
+	}))
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="left">
-				<SheetHeader>
+			<SheetContent side="left" className="flex flex-col gap-0 p-0">
+				<SheetHeader className="px-4 pt-4 pb-2">
 					<SheetTitle>Settings</SheetTitle>
-					<SheetDescription>Manage your settings.</SheetDescription>
+					<SheetDescription>Configure PatrickOS.</SheetDescription>
 				</SheetHeader>
-				<div className="flex flex-col gap-5 px-4 pt-4">
-					<div className="flex flex-col gap-2">
-						<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-							Appearance
+				<Tabs
+					defaultValue="ai-gateway"
+					className="flex flex-1 flex-col overflow-hidden"
+				>
+					<TabsList className="mx-4 mb-2 grid w-auto grid-cols-4">
+						<TabsTrigger value="general">General</TabsTrigger>
+						<TabsTrigger value="ai-gateway">AI Gateway</TabsTrigger>
+						<TabsTrigger value="local" disabled>
+							Local
+						</TabsTrigger>
+						<TabsTrigger value="custom" disabled>
+							Custom
+						</TabsTrigger>
+					</TabsList>
+
+					{/* ── General tab ──────────────────────────────────────────── */}
+					<TabsContent value="general" className="flex-1 overflow-y-auto">
+						<div className="flex flex-col gap-5 px-4 pb-4">
+							<div className="flex flex-col gap-2">
+								<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+									Appearance
+								</p>
+								<Select
+									value={theme}
+									onValueChange={(v) =>
+										setTheme(v as "light" | "dark" | "system")
+									}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="light">Light</SelectItem>
+										<SelectItem value="dark">Dark</SelectItem>
+										<SelectItem value="system">System</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex flex-col gap-2">
+								<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+									API URL
+								</p>
+								<Input placeholder="http://localhost:3000" disabled />
+								<p className="text-xs text-muted-foreground">
+									Configurable in local and self-hosted deployments.
+								</p>
+							</div>
+						</div>
+					</TabsContent>
+
+					{/* ── AI Gateway tab ────────────────────────────────────────── */}
+					<TabsContent value="ai-gateway" className="flex-1 overflow-y-auto">
+						<div className="flex flex-col gap-5 px-4 pb-4">
+							<div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
+								<p className="font-medium text-foreground mb-1">
+									Vercel AI Gateway
+								</p>
+								<p>
+									Single API key to access OpenAI, Anthropic, Google, and more.{" "}
+									<a
+										href="https://vercel.com/docs/ai-gateway"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-primary underline underline-offset-2"
+									>
+										Get a key →
+									</a>
+								</p>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<p className="text-xs font-medium">API Key</p>
+								<div className="flex gap-1.5">
+									<div className="relative flex-1">
+										<Input
+											type={showKey ? "text" : "password"}
+											value={tempKey}
+											onChange={(e) => setTempKey(e.target.value)}
+											placeholder="aig_..."
+											className="pr-8"
+										/>
+										<Button
+											variant="ghost"
+											size="icon-xs"
+											type="button"
+											className="absolute right-1 top-1/2 -translate-y-1/2"
+											onClick={() => setShowKey((v) => !v)}
+										>
+											{showKey ? <EyeOff size={12} /> : <Eye size={12} />}
+										</Button>
+									</div>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={handleVerify}
+										disabled={!tempKey || keyStatus === "verifying"}
+									>
+										{keyStatus === "verifying" ? (
+											<Loader2 size={12} className="animate-spin" />
+										) : (
+											"Verify"
+										)}
+									</Button>
+									{tempKey && (
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												setTempKey("")
+												setModels([])
+												onClear()
+											}}
+											className="text-destructive hover:text-destructive"
+										>
+											Clear
+										</Button>
+									)}
+
+								</div>
+								{keyStatus !== "idle" && (
+									<p
+										className={cn(
+											"text-xs",
+											keyStatus === "valid" && "text-green-600",
+											keyStatus === "invalid" && "text-destructive",
+											keyStatus === "verifying" && "text-muted-foreground",
+										)}
+									>
+										{keyStatus === "valid" && "✓ Connected"}
+										{keyStatus === "invalid" &&
+											"Invalid key — check and try again"}
+										{keyStatus === "verifying" && "Verifying…"}
+									</p>
+								)}
+								<p className="text-xs text-muted-foreground">
+									Stored in your browser only. Never sent to our servers.
+								</p>
+							</div>
+
+							<Separator />
+
+							<div className="flex flex-col gap-4">
+								<div className="flex items-center justify-between">
+									<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+										Models
+									</p>
+									<Button
+										variant="ghost"
+										size="xs"
+										onClick={() => loadModels(tempKey)}
+										disabled={!tempKey || modelsLoading}
+									>
+										{modelsLoading ? (
+											<Loader2 size={11} className="animate-spin" />
+										) : (
+											"Refresh"
+										)}
+									</Button>
+								</div>
+
+								{models.length === 0 && !modelsLoading && (
+									<p className="text-xs text-muted-foreground">
+										Verify your key to load available models.
+									</p>
+								)}
+
+								{models.length > 0 && (
+									<>
+										<div className="flex flex-col gap-1.5">
+											<p className="text-xs font-medium">Quick Model</p>
+											<p className="text-xs text-muted-foreground">
+												Used by AskPat and ExtractPat — fast and cheap.
+											</p>
+											<Select value={tempQuickModel} onValueChange={setTempQuickModel}>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													{modelOptions.map((m) => (
+														<SelectItem key={m.value} value={m.value}>
+															{m.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											{(() => {
+												const m = modelOptions.find((m) => m.value === tempQuickModel)
+												return m?.pricing ? (
+													<p className="text-xs text-muted-foreground tabular-nums">
+														${(parseFloat(m.pricing.input) * 1_000_000).toFixed(2)} in · ${(parseFloat(m.pricing.output) * 1_000_000).toFixed(2)} out per M tokens
+													</p>
+												) : null
+											})()}
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<p className="text-xs font-medium">Detailed Model</p>
+											<p className="text-xs text-muted-foreground">
+												Used by AgentPat — thorough, best reasoning.
+											</p>
+											<Select value={tempDetailedModel} onValueChange={setTempDetailedModel}>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													{modelOptions.map((m) => (
+														<SelectItem key={m.value} value={m.value}>
+															{m.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											{(() => {
+												const m = modelOptions.find((m) => m.value === tempDetailedModel)
+												return m?.pricing ? (
+													<p className="text-xs text-muted-foreground tabular-nums">
+														${(parseFloat(m.pricing.input) * 1_000_000).toFixed(2)} in · ${(parseFloat(m.pricing.output) * 1_000_000).toFixed(2)} out per M tokens
+													</p>
+												) : null
+											})()}
+										</div>
+									</>
+								)}
+							</div>
+
+							<Button onClick={handleSave}>Save</Button>
+						</div>
+					</TabsContent>
+
+					{/* ── Local tab (placeholder) ───────────────────────────────── */}
+					<TabsContent
+						value="local"
+						className="flex-1 overflow-y-auto px-4 pb-4"
+					>
+						<p className="text-sm text-muted-foreground">
+							Local model support via Ollama — coming soon.
 						</p>
-						<Select
-							value={theme}
-							onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}
-						>
-							<SelectTrigger>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="light">Light</SelectItem>
-								<SelectItem value="dark">Dark</SelectItem>
-								<SelectItem value="system">System</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-					<div className="flex flex-col gap-2">
-						<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-							API URL
+					</TabsContent>
+
+					{/* ── Custom tab (placeholder) ──────────────────────────────── */}
+					<TabsContent
+						value="custom"
+						className="flex-1 overflow-y-auto px-4 pb-4"
+					>
+						<p className="text-sm text-muted-foreground">
+							Custom API endpoint — coming soon.
 						</p>
-						<Input placeholder="http://localhost:3000" disabled />
-						<p className="text-xs text-muted-foreground">
-							Configurable in local and self-hosted deployments.
-						</p>
-					</div>
-					<div className="flex flex-col gap-2">
-						<p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
-							AI Model
-						</p>
-						<Select disabled>
-							<SelectTrigger>
-								<SelectValue placeholder="Ollama (local)" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="ollama">Ollama (local)</SelectItem>
-								<SelectItem value="anthropic">Anthropic</SelectItem>
-								<SelectItem value="openai">OpenAI</SelectItem>
-							</SelectContent>
-						</Select>
-						<p className="text-xs text-muted-foreground">
-							Model selection available in future releases.
-						</p>
-					</div>
-				</div>
+					</TabsContent>
+				</Tabs>
 			</SheetContent>
 		</Sheet>
 	)
@@ -614,6 +883,7 @@ function AppSidebar({
 	onManageProjects,
 	onAuthOpen,
 	onSettingsOpen,
+	keyStatus,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -632,6 +902,7 @@ function AppSidebar({
 	onManageProjects: () => void
 	onAuthOpen: () => void
 	onSettingsOpen: () => void
+	keyStatus: KeyStatus
 }) {
 	const CHAT_LIMIT = 5
 	const [showAllChats, setShowAllChats] = React.useState(false)
@@ -864,9 +1135,26 @@ function AppSidebar({
 								variant="ghost"
 								size="icon-xs"
 								onClick={onSettingsOpen}
-								className="shrink-0 group-data-[collapsible=icon]:hidden"
+								className={cn(
+									"shrink-0 group-data-[collapsible=icon]:hidden",
+									keyStatus === "valid" && "text-green-600",
+									keyStatus === "invalid" && "text-destructive",
+								)}
+								title={
+									keyStatus === "valid"
+										? "AI connected"
+										: keyStatus === "verifying"
+											? "Verifying…"
+											: keyStatus === "invalid"
+												? "Invalid API key — click to fix"
+												: "Settings"
+								}
 							>
-								<Settings size={14} />
+								{keyStatus === "verifying" ? (
+									<Loader2 size={14} className="animate-spin" />
+								) : (
+									<Settings size={14} />
+								)}
 							</Button>
 						</div>
 					</SidebarMenuItem>
@@ -1764,6 +2052,20 @@ function WorkspacePage() {
 		mode: "closed",
 	})
 
+	// AI settings
+	const [apiKey, setApiKey] = React.useState(
+		() => localStorage.getItem("ai-gateway-key") ?? "",
+	)
+	const [keyStatus, setKeyStatus] = React.useState<KeyStatus>("idle")
+	const [quickModel, setQuickModel] = React.useState(
+		() => localStorage.getItem("ai-gateway-quick-model") ?? DEFAULT_QUICK_MODEL,
+	)
+	const [detailedModel, setDetailedModel] = React.useState(
+		() =>
+			localStorage.getItem("ai-gateway-detailed-model") ??
+			DEFAULT_DETAILED_MODEL,
+	)
+
 	// Projects / UI
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
 	const [projects, setProjects] = React.useState<Project[]>([])
@@ -1792,6 +2094,37 @@ function WorkspacePage() {
 		setActiveTab("")
 		api.assets.list(currentProjectId).then(setAssets)
 	}, [currentProjectId])
+
+	// ── AI settings handlers ──────────────────────────────────────────────────
+
+	async function verifyKey(key: string) {
+		if (!key) {
+			setKeyStatus("idle")
+			return
+		}
+		setKeyStatus("verifying")
+		try {
+			const result = await api.ai.verifyKey(key)
+			setKeyStatus(result.valid ? "valid" : "invalid")
+		} catch {
+			setKeyStatus("invalid")
+		}
+	}
+
+	function clearApiKey() {
+		localStorage.removeItem("ai-gateway-key")
+		setApiKey("")
+		setKeyStatus("idle")
+	}
+
+	function saveAiSettings(key: string, quick: string, detailed: string) {
+		localStorage.setItem("ai-gateway-key", key)
+		localStorage.setItem("ai-gateway-quick-model", quick)
+		localStorage.setItem("ai-gateway-detailed-model", detailed)
+		setApiKey(key)
+		setQuickModel(quick)
+		setDetailedModel(detailed)
+	}
 
 	// ── Asset handlers ────────────────────────────────────────────────────────
 
@@ -1964,6 +2297,7 @@ function WorkspacePage() {
 					onManageProjects={() => setProjectsOpen(true)}
 					onAuthOpen={() => setAuthOpen(true)}
 					onSettingsOpen={() => setSettingsOpen(true)}
+					keyStatus={keyStatus}
 				/>
 				<SidebarInset className="flex flex-col overflow-hidden">
 					<ResizablePanelGroup
@@ -2032,7 +2366,17 @@ function WorkspacePage() {
 				onDelete={deleteProject}
 			/>
 			<AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
-			<SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+			<SettingsSheet
+				open={settingsOpen}
+				onOpenChange={setSettingsOpen}
+				savedApiKey={apiKey}
+				keyStatus={keyStatus}
+				savedQuickModel={quickModel}
+				savedDetailedModel={detailedModel}
+				onVerify={verifyKey}
+				onSave={saveAiSettings}
+				onClear={clearApiKey}
+			/>
 			<AssetMetaSheet
 				state={assetSheet}
 				asset={

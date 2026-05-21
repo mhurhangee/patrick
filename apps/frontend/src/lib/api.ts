@@ -38,6 +38,23 @@ function json(body: unknown, init?: RequestInit): RequestInit {
 }
 
 export const api = {
+	ai: {
+		verifyKey: (apiKey: string) =>
+			request<{ valid: boolean; error?: string }>(
+				"/ai/verify",
+				json({ apiKey }, { method: "POST" }),
+			),
+		getModels: (apiKey: string) =>
+			request<{
+				models: {
+					id: string
+					name: string
+					description?: string | null
+					pricing?: { input: string; output: string } | null
+					specification: { provider: string; modelId: string }
+				}[]
+			}>("/ai/models", json({ apiKey }, { method: "POST" })),
+	},
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
 		create: (name: string) =>
