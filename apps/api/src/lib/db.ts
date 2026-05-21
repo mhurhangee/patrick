@@ -31,5 +31,19 @@ sqlite.exec(`CREATE TABLE IF NOT EXISTS assets (
 	created_at INTEGER NOT NULL,
 	updated_at INTEGER NOT NULL
 )`)
+sqlite.exec(`CREATE TABLE IF NOT EXISTS settings (
+	id TEXT PRIMARY KEY,
+	name TEXT NOT NULL DEFAULT '',
+	firm TEXT NOT NULL DEFAULT '',
+	role TEXT NOT NULL DEFAULT '',
+	jurisdiction TEXT NOT NULL DEFAULT '',
+	ai_provider TEXT NOT NULL DEFAULT 'anthropic',
+	ai_quick_model TEXT NOT NULL DEFAULT '',
+	ai_detailed_model TEXT NOT NULL DEFAULT '',
+	prompt_context TEXT NOT NULL DEFAULT '',
+	prompt_askpat TEXT NOT NULL DEFAULT '',
+	prompt_agentpat TEXT NOT NULL DEFAULT '',
+	prompt_extractpat TEXT NOT NULL DEFAULT ''
+)`)
 
 export const db = drizzle(sqlite, { schema })

@@ -1720,22 +1720,14 @@ function WorkspacePage() {
 	})
 
 	// AI settings
-	const [provider, setProvider] = React.useState<Provider>(
-		() => (localStorage.getItem("ai-provider") as Provider) ?? "anthropic",
-	)
-	const [_apiKey, setApiKey] = React.useState(() => {
-		const p = (localStorage.getItem("ai-provider") as Provider) ?? "anthropic"
-		return localStorage.getItem(`ai-${p}-key`) ?? ""
-	})
+	const [provider, setProvider] = React.useState<Provider>("anthropic")
+	const [_apiKey, setApiKey] = React.useState("")
 	const [keyStatus, setKeyStatus] = React.useState<KeyStatus>("idle")
 	const [quickModel, setQuickModel] = React.useState(
-		() =>
-			localStorage.getItem("ai-quick-model") ?? DEFAULT_QUICK_MODEL.anthropic,
+		DEFAULT_QUICK_MODEL.anthropic,
 	)
 	const [detailedModel, setDetailedModel] = React.useState(
-		() =>
-			localStorage.getItem("ai-detailed-model") ??
-			DEFAULT_DETAILED_MODEL.anthropic,
+		DEFAULT_DETAILED_MODEL.anthropic,
 	)
 
 	// Projects / UI
@@ -1748,6 +1740,17 @@ function WorkspacePage() {
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
 
 	const chatPanelRef = usePanelRef()
+
+	React.useEffect(() => {
+		api.settings.get().then((s) => {
+			const p = (s.aiProvider as Provider) || "anthropic"
+			setProvider(p)
+			setQuickModel(s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic)
+			setDetailedModel(s.aiDetailedModel || DEFAULT_DETAILED_MODEL.anthropic)
+			const key = localStorage.getItem(`ai-${p}-key`) ?? ""
+			setApiKey(key)
+		})
+	}, [])
 
 	React.useEffect(() => {
 		api.projects
@@ -1795,14 +1798,16 @@ function WorkspacePage() {
 		quick: string,
 		detailed: string,
 	) {
-		localStorage.setItem("ai-provider", prov)
 		localStorage.setItem(`ai-${prov}-key`, key)
-		localStorage.setItem("ai-quick-model", quick)
-		localStorage.setItem("ai-detailed-model", detailed)
 		setProvider(prov)
 		setApiKey(key)
 		setQuickModel(quick)
 		setDetailedModel(detailed)
+		api.settings.update({
+			aiProvider: prov,
+			aiQuickModel: quick,
+			aiDetailedModel: detailed,
+		})
 	}
 
 	// ── Asset handlers ────────────────────────────────────────────────────────

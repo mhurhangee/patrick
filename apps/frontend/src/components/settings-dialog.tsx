@@ -5,11 +5,22 @@ import {
 	EyeOff,
 	Loader2,
 	MessageSquare,
+	RotateCcw,
 	Sparkles,
 	User,
 } from "lucide-react"
 import * as React from "react"
 import { useTheme } from "@/components/theme-provider"
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -58,6 +69,62 @@ import {
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
+// ─── Default prompts ──────────────────────────────────────────────────────────
+
+const DEFAULT_PROMPT_CONTEXT = `## Jurisdiction
+[e.g. USPTO, EPO, IPO]
+
+## Firm Specialisations
+[e.g. mechanical, software, life sciences]
+
+## Claim Style Preferences
+[e.g. independent claim first, means-plus-function, Jepson format]
+
+## Client Preferences
+[e.g. conservative prosecution, broad first filing]`
+
+const DEFAULT_PROMPT_ASKPAT = `## Role
+You are AskPat, a patent attorney writing assistant embedded in the document editor. You help draft, refine, and improve patent documents.
+
+## Do
+- Use precise, unambiguous claim language
+- Follow USPTO/EPO claim drafting conventions
+- Maintain consistency with existing claim terminology
+- Flag potential 35 USC §112 issues
+
+## Don't
+- Add functional language without structural support
+- Broaden claims beyond the disclosed embodiments
+- Use trade names or jargon without definition`
+
+const DEFAULT_PROMPT_AGENTPAT = `## Role
+You are AgentPat, a project-aware patent attorney assistant. You have access to the full matter including sources and artifacts.
+
+## Do
+- Reason across all available documents before responding
+- Cite specific passages when making arguments
+- Structure responses as an experienced patent attorney would
+- Flag deadlines and procedural risks
+
+## Don't
+- Make legal conclusions without citing supporting documents
+- Overlook prior art references in the matter
+- Give generic advice when matter-specific context is available`
+
+const DEFAULT_PROMPT_EXTRACTPAT = `## Role
+You are ExtractPat, a document analysis specialist. You extract structured metadata from patent documents.
+
+## Do
+- Extract exact dates, numbers, and identifiers as they appear in the document
+- Classify document type accurately (office action, prior art, disclosure, etc.)
+- Identify the primary inventor, applicant, and examiner where present
+- Note key claim elements and rejection grounds
+
+## Don't
+- Infer or guess values not explicitly stated in the document
+- Summarise when exact extraction is possible
+- Conflate related but distinct fields`
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Section =
@@ -86,7 +153,7 @@ type NavItem = {
 }
 
 const NAV: NavItem[] = [
-	{ id: "account", label: "Account", icon: User },
+	{ id: "account", label: "You", icon: User },
 	{
 		id: "ai-provider",
 		label: "AI Provider",
@@ -151,6 +218,7 @@ function getBreadcrumb(section: Section): {
 			parent: { label: "AI Instructions", id: "ai-instructions" },
 			current: "ExtractPat",
 		}
+	if (section === "account") return { current: "You" }
 	const item = NAV.find((n) => n.id === section)
 	return { current: item?.label ?? "" }
 }
@@ -210,12 +278,10 @@ export function SettingsDialog({
 	const [activeSection, setActiveSection] = React.useState<Section>("account")
 
 	// ── Account state ──────────────────────────────────────────────────────────
-	const [name, setName] = React.useState(
-		() => localStorage.getItem("account-name") ?? "",
-	)
-	const [firm, setFirm] = React.useState(
-		() => localStorage.getItem("account-firm") ?? "",
-	)
+	const [name, setName] = React.useState("")
+	const [firm, setFirm] = React.useState("")
+	const [role, setRole] = React.useState("")
+	const [jurisdiction, setJurisdiction] = React.useState("")
 
 	// ── AI Provider state ──────────────────────────────────────────────────────
 	const [tempProvider, setTempProvider] =
@@ -241,22 +307,29 @@ export function SettingsDialog({
 	// ── Sync on open ──────────────────────────────────────────────────────────
 	React.useEffect(() => {
 		if (!open) return
+		// Set keys from localStorage immediately; set provider/models from props as defaults
 		setTempProvider(savedProvider)
+		setTempQuickModel(savedQuickModel)
+		setTempDetailedModel(savedDetailedModel)
 		setTempKeys({
 			gateway: localStorage.getItem("ai-gateway-key") ?? "",
 			anthropic: localStorage.getItem("ai-anthropic-key") ?? "",
 			openai: localStorage.getItem("ai-openai-key") ?? "",
 		})
-		setTempQuickModel(savedQuickModel)
-		setTempDetailedModel(savedDetailedModel)
-		setName(localStorage.getItem("account-name") ?? "")
-		setFirm(localStorage.getItem("account-firm") ?? "")
-		setPracticeContext(localStorage.getItem("instructions-context") ?? "")
-		setAskPatInstructions(localStorage.getItem("instructions-askpat") ?? "")
-		setAgentPatInstructions(localStorage.getItem("instructions-agentpat") ?? "")
-		setExtractPatInstructions(
-			localStorage.getItem("instructions-extractpat") ?? "",
-		)
+		// Load everything else from the API (overrides prop defaults when resolved)
+		api.settings.get().then((s) => {
+			setName(s.name)
+			setFirm(s.firm)
+			setRole(s.role)
+			setJurisdiction(s.jurisdiction)
+			if (s.aiProvider) setTempProvider(s.aiProvider as Provider)
+			if (s.aiQuickModel) setTempQuickModel(s.aiQuickModel)
+			if (s.aiDetailedModel) setTempDetailedModel(s.aiDetailedModel)
+			setPracticeContext(s.promptContext)
+			setAskPatInstructions(s.promptAskpat)
+			setAgentPatInstructions(s.promptAgentpat)
+			setExtractPatInstructions(s.promptExtractpat)
+		})
 	}, [open, savedProvider, savedQuickModel, savedDetailedModel])
 
 	// ── AI Provider handlers ───────────────────────────────────────────────────
@@ -314,19 +387,32 @@ export function SettingsDialog({
 	// ── Save handlers ─────────────────────────────────────────────────────────
 
 	function saveAccount() {
-		localStorage.setItem("account-name", name)
-		localStorage.setItem("account-firm", firm)
+		api.settings.update({ name, firm, role, jurisdiction })
 	}
 
 	function saveProvider() {
 		onSave(tempProvider, currentKey, tempQuickModel, tempDetailedModel)
+		api.settings.update({
+			aiProvider: tempProvider,
+			aiQuickModel: tempQuickModel,
+			aiDetailedModel: tempDetailedModel,
+		})
 	}
 
-	function saveInstructions() {
-		localStorage.setItem("instructions-context", practiceContext)
-		localStorage.setItem("instructions-askpat", askPatInstructions)
-		localStorage.setItem("instructions-agentpat", agentPatInstructions)
-		localStorage.setItem("instructions-extractpat", extractPatInstructions)
+	async function saveContext() {
+		await api.settings.update({ promptContext: practiceContext })
+	}
+
+	async function saveAskPat() {
+		await api.settings.update({ promptAskpat: askPatInstructions })
+	}
+
+	async function saveAgentPat() {
+		await api.settings.update({ promptAgentpat: agentPatInstructions })
+	}
+
+	async function saveExtractPat() {
+		await api.settings.update({ promptExtractpat: extractPatInstructions })
 	}
 
 	const breadcrumb = getBreadcrumb(activeSection)
@@ -427,9 +513,13 @@ export function SettingsDialog({
 								<AccountSection
 									name={name}
 									firm={firm}
+									role={role}
+									jurisdiction={jurisdiction}
 									theme={theme}
 									onNameChange={setName}
 									onFirmChange={setFirm}
+									onRoleChange={setRole}
+									onJurisdictionChange={setJurisdiction}
 									onThemeChange={setTheme}
 									onSave={saveAccount}
 								/>
@@ -477,39 +567,43 @@ export function SettingsDialog({
 								<PromptSection
 									title="Practice Context"
 									description="Jurisdiction, firm specialisations, and preferred claim style. Included in every AI call."
+									defaultPrompt={DEFAULT_PROMPT_CONTEXT}
 									value={practiceContext}
 									onChange={setPracticeContext}
-									onSave={saveInstructions}
+									onSave={saveContext}
 								/>
 							)}
 							{activeSection === "ai-instructions-askpat" && (
 								<PromptSection
 									title="AskPat"
 									description="In-editor writing assistant. Helps draft and refine claim language, responses, and specifications directly in the document."
-									storageKey="prompt-askpat"
+									defaultPrompt={DEFAULT_PROMPT_ASKPAT}
 									value={askPatInstructions}
 									onChange={setAskPatInstructions}
-									onSave={saveInstructions}
+									onSave={saveAskPat}
+									showAlert
 								/>
 							)}
 							{activeSection === "ai-instructions-agentpat" && (
 								<PromptSection
 									title="AgentPat"
 									description="Project-aware chat assistant. Has access to your sources and artifacts and can reason across the full matter."
-									storageKey="prompt-agentpat"
+									defaultPrompt={DEFAULT_PROMPT_AGENTPAT}
 									value={agentPatInstructions}
 									onChange={setAgentPatInstructions}
-									onSave={saveInstructions}
+									onSave={saveAgentPat}
+									showAlert
 								/>
 							)}
 							{activeSection === "ai-instructions-extractpat" && (
 								<PromptSection
 									title="ExtractPat"
 									description="PDF metadata extraction. Runs automatically when a source is uploaded to pull key fields from office actions, prior art, and disclosures."
-									storageKey="prompt-extractpat"
+									defaultPrompt={DEFAULT_PROMPT_EXTRACTPAT}
 									value={extractPatInstructions}
 									onChange={setExtractPatInstructions}
-									onSave={saveInstructions}
+									onSave={saveExtractPat}
+									showAlert
 								/>
 							)}
 							{activeSection === "storage" && <StorageSection />}
@@ -527,24 +621,32 @@ export function SettingsDialog({
 function AccountSection({
 	name,
 	firm,
+	role,
+	jurisdiction,
 	theme,
 	onNameChange,
 	onFirmChange,
+	onRoleChange,
+	onJurisdictionChange,
 	onThemeChange,
 	onSave,
 }: {
 	name: string
 	firm: string
+	role: string
+	jurisdiction: string
 	theme: string
 	onNameChange: (v: string) => void
 	onFirmChange: (v: string) => void
+	onRoleChange: (v: string) => void
+	onJurisdictionChange: (v: string) => void
 	onThemeChange: (v: "light" | "dark" | "system") => void
 	onSave: () => void
 }) {
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">
-				<h2 className="text-sm font-semibold">Account</h2>
+				<h2 className="text-sm font-semibold">You</h2>
 				<p className="text-xs text-muted-foreground">
 					Your profile and appearance settings.
 				</p>
@@ -567,6 +669,24 @@ function AccountSection({
 						value={firm}
 						onChange={(e) => onFirmChange(e.target.value)}
 						placeholder="Smith & Associates IP"
+					/>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<Label htmlFor="role">Role / Job Title</Label>
+					<Input
+						id="role"
+						value={role}
+						onChange={(e) => onRoleChange(e.target.value)}
+						placeholder="Patent Attorney, IP Paralegal…"
+					/>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<Label htmlFor="jurisdiction">Jurisdiction / Region</Label>
+					<Input
+						id="jurisdiction"
+						value={jurisdiction}
+						onChange={(e) => onJurisdictionChange(e.target.value)}
+						placeholder="USPTO, EPO, IPO…"
 					/>
 				</div>
 				<div className="flex flex-col gap-1.5">
@@ -1023,38 +1143,115 @@ function AiInstructionsOverview({
 function PromptSection({
 	title,
 	description,
+	defaultPrompt,
 	value,
 	onChange,
 	onSave,
+	showAlert = false,
 }: {
 	title: string
 	description: string
+	defaultPrompt?: string
 	value: string
 	onChange: (v: string) => void
 	onSave: () => void
+	showAlert?: boolean
 }) {
+	const [alertOpen, setAlertOpen] = React.useState(false)
+
+	function handleSaveClick() {
+		if (showAlert) {
+			setAlertOpen(true)
+		} else {
+			onSave()
+		}
+	}
+
+	const displayValue = value || defaultPrompt || ""
+
 	return (
-		<div className="flex flex-col gap-6">
-			<div className="flex flex-col gap-1">
-				<h2 className="text-sm font-semibold">{title}</h2>
-				<p className="text-xs text-muted-foreground">{description}</p>
+		<>
+			<div className="flex flex-col gap-6">
+				<div className="flex flex-col gap-1">
+					<h2 className="text-sm font-semibold">{title}</h2>
+					<p className="text-xs text-muted-foreground">{description}</p>
+				</div>
+				<Separator />
+				<div className="flex flex-col gap-1.5">
+					<Label>System prompt</Label>
+					<Textarea
+						value={displayValue}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder="Enter custom instructions…"
+						className="min-h-[220px] font-mono text-xs"
+					/>
+				</div>
+				<div className="flex items-center justify-between">
+					{defaultPrompt ? (
+						<Button
+							variant="ghost"
+							size="sm"
+							className="gap-1.5 text-muted-foreground"
+							onClick={() => onChange("")}
+						>
+							<RotateCcw size={12} />
+							Reset to default
+						</Button>
+					) : (
+						<span />
+					)}
+					<Button size="sm" onClick={handleSaveClick}>
+						Save
+					</Button>
+				</div>
 			</div>
-			<Separator />
-			<div className="flex flex-col gap-1.5">
-				<Label>System prompt</Label>
-				<Textarea
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					placeholder="Enter custom instructions…"
-					className="min-h-[220px] font-mono text-xs"
-				/>
-			</div>
-			<div className="flex justify-end">
-				<Button size="sm" onClick={onSave}>
-					Save
-				</Button>
-			</div>
-		</div>
+
+			{showAlert && (
+				<AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>
+								Changing AI persona instructions
+							</AlertDialogTitle>
+							<AlertDialogDescription>
+								Editing the system prompt can materially change how this AI
+								persona behaves. Poorly structured instructions may degrade
+								response quality.{" "}
+								<a
+									href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview"
+									className="underline hover:opacity-80"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									Anthropic prompt engineering
+								</a>{" "}
+								&amp;{" "}
+								<a
+									href="https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api"
+									className="underline hover:opacity-80"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									OpenAI best practices
+								</a>
+								.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>Cancel</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={() => {
+									onSave()
+									setAlertOpen(false)
+								}}
+							>
+								Save anyway
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			)}
+		</>
 	)
 }
 

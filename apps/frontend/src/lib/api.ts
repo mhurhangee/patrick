@@ -2,6 +2,21 @@ import type { AssetKind, AssetType } from "@patrickos/db"
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
+export type ApiSettings = {
+	id: string
+	name: string
+	firm: string
+	role: string
+	jurisdiction: string
+	aiProvider: string
+	aiQuickModel: string
+	aiDetailedModel: string
+	promptContext: string
+	promptAskpat: string
+	promptAgentpat: string
+	promptExtractpat: string
+}
+
 export type ApiProject = {
 	id: string
 	name: string
@@ -38,6 +53,11 @@ function json(body: unknown, init?: RequestInit): RequestInit {
 }
 
 export const api = {
+	settings: {
+		get: () => request<ApiSettings>("/settings"),
+		update: (patch: Partial<Omit<ApiSettings, "id">>) =>
+			request<ApiSettings>("/settings", json(patch, { method: "PUT" })),
+	},
 	ai: {
 		verifyKey: (provider: string, apiKey: string) =>
 			request<{ valid: boolean; error?: string }>(
