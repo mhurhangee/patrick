@@ -6,21 +6,15 @@ import {
 	aiCommentToRange,
 } from "@platejs/ai/react"
 import { getCommentKey, getTransientCommentKey } from "@platejs/comment"
-import { deserializeMd } from "@platejs/markdown"
+import { deserializeMd, serializeMd } from "@platejs/markdown"
 import { BlockSelectionPlugin } from "@platejs/selection/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
-import { KEYS, NodeApi, nanoid, TextApi, type TNode } from "platejs"
+import { KEYS, NodeApi, nanoid, TextApi, type TElement, type TNode } from "platejs"
 import { useEditorRef, usePluginOption } from "platejs/react"
 import * as React from "react"
 import { createSlateEditor } from "platejs"
 import { aiChatPlugin } from "@/components/editor/plugins/ai-kit"
 import { BaseEditorKit } from "@/components/editor/editor-base-kit"
-import {
-	getChooseToolPrompt,
-	getCommentPrompt,
-	getEditPrompt,
-	getGeneratePrompt,
-} from "@/lib/ai-prompts"
 import { discussionPlugin } from "./plugins/discussion-kit"
 
 export type ToolName = "comment" | "edit" | "generate"
@@ -40,8 +34,18 @@ export type MessageDataPart = {
 }
 
 export type Chat = UseChatHelpers<ChatMessage>
-
 export type ChatMessage = UIMessage<{}, MessageDataPart>
+
+function getLastInstruction(messages: ChatMessage[]): string {
+	const last = [...messages].reverse().find((m) => m.role === "user")
+	if (!last) return ""
+	return last.parts
+		.filter((p) => p.type === "text")
+		// biome-ignore lint/suspicious/noExplicitAny: UIMessage part type is a discriminated union
+		.map((p) => (p as any).text as string)
+		.join("")
+		.trim()
+}
 
 function createChatTransport({ api }: { api: string }) {
 	return new DefaultChatTransport({
@@ -52,8 +56,7 @@ function createChatTransport({ api }: { api: string }) {
 				const { messages, ctx } = initBody
 				const { children, selection, toolName: toolNameParam } = ctx ?? {}
 
-				// Create a temporary ephemeral editor for prompt computation
-				// Mutations (addSelection) are safe on this editor — it's never rendered
+				// Ephemeral editor for serializing document content — never rendered
 				const tempEditor = createSlateEditor({
 					plugins: BaseEditorKit,
 					selection,
@@ -62,46 +65,41 @@ function createChatTransport({ api }: { api: string }) {
 
 				const isSelecting = tempEditor.api.isExpanded()
 
-				// Compute all prompts client-side
-				const choosePrompt = getChooseToolPrompt({ isSelecting, messages })
-				const generatePrompt = getGeneratePrompt(tempEditor, { isSelecting, messages })
-				const commentPrompt = getCommentPrompt(tempEditor, { messages })
-
-				let editPrompt: string | null = null
-				let editType: "multi-block" | "selection" | null = null
+				// Serialize the highlighted selection (blocks under cursor/selection)
+				let selectedMarkdown: string | null = null
 				if (isSelecting) {
-					try {
-						const [ep, et] = getEditPrompt(tempEditor, { isSelecting, messages })
-						editPrompt = ep
-						editType = et
-					} catch (e) {
-						console.warn("[use-chat] getEditPrompt failed:", e)
+					const selectedBlocks = tempEditor.api.blocks({ mode: "highest" })
+					if (selectedBlocks.length > 0) {
+						selectedMarkdown = serializeMd(tempEditor, {
+							value: selectedBlocks.map(([node]) => node as TElement),
+						})
 					}
 				}
 
-				// AI settings from localStorage (BYOK — same keys as copilot-kit)
+				// Full document as markdown — gives the API context for generation
+				const documentMarkdown = serializeMd(tempEditor, {
+					value: tempEditor.children as TElement[],
+				})
+
 				const provider = localStorage.getItem("askpat-provider") || "anthropic"
 				const model = localStorage.getItem("askpat-quick-model") || ""
 				const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
 				const assetType = localStorage.getItem("askpat-asset-type") || undefined
 
-				const body = {
-					toolMode: toolNameParam ?? null,
-					isSelecting,
-					assetType,
-					prompts: {
-						choose: choosePrompt,
-						generate: generatePrompt,
-						edit: editPrompt,
-						editType,
-						comment: commentPrompt,
-					},
-					provider,
-					apiKey,
-					model,
-				}
-
-				return fetch(input, { ...init, body: JSON.stringify(body) })
+				return fetch(input, {
+					...init,
+					body: JSON.stringify({
+						toolName: toolNameParam ?? null,
+						instruction: getLastInstruction(messages),
+						isSelecting,
+						selectedMarkdown,
+						documentMarkdown,
+						assetType,
+						provider,
+						apiKey,
+						model,
+					}),
+				})
 			} catch (err) {
 				console.error("[use-chat] fetch error:", err)
 				throw err
@@ -132,7 +130,6 @@ export const useChat = () => {
 
 				if (commentData.status === "finished") {
 					editor.getApi(BlockSelectionPlugin).blockSelection.deselect()
-
 					return
 				}
 
@@ -141,9 +138,7 @@ export const useChat = () => {
 
 				if (!range) return console.warn("No range found for AI comment")
 
-				const discussions =
-					editor.getOption(discussionPlugin, "discussions") || []
-
+				const discussions = editor.getOption(discussionPlugin, "discussions") || []
 				const discussionId = nanoid()
 
 				const newComment = {
@@ -166,8 +161,7 @@ export const useChat = () => {
 					userId: editor.getOption(discussionPlugin, "currentUserId"),
 				}
 
-				const updatedDiscussions = [...discussions, newDiscussion]
-				editor.setOption(discussionPlugin, "discussions", updatedDiscussions)
+				editor.setOption(discussionPlugin, "discussions", [...discussions, newDiscussion])
 
 				editor.tf.withMerging(() => {
 					editor.tf.setNodes(

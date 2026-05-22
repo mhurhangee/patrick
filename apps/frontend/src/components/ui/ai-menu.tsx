@@ -11,15 +11,11 @@ import { BlockSelectionPlugin, useIsSelecting } from "@platejs/selection/react"
 import { getTransientSuggestionKey } from "@platejs/suggestion"
 import { Command as CommandPrimitive } from "cmdk"
 import {
-	Album,
-	BadgeHelp,
 	BookOpenCheck,
 	Check,
 	CornerUpLeft,
 	FeatherIcon,
-	ListEnd,
 	ListMinus,
-	ListPlus,
 	Loader2Icon,
 	PauseIcon,
 	PenLine,
@@ -29,7 +25,6 @@ import {
 import {
 	isHotkey,
 	KEYS,
-	NodeApi,
 	type NodeEntry,
 	type SlateEditor,
 	TextApi,
@@ -264,78 +259,20 @@ type EditorChatState =
 	| "selectionCommand"
 	| "selectionSuggestion"
 
-const AICommentIcon = () => (
-	<svg
-		fill="none"
-		height="24"
-		stroke="currentColor"
-		strokeLinecap="round"
-		strokeLinejoin="round"
-		strokeWidth="2"
-		viewBox="0 0 24 24"
-		width="24"
-		xmlns="http://www.w3.org/2000/svg"
-	>
-		<path d="M0 0h24v24H0z" fill="none" stroke="none" />
-		<path d="M8 9h8" />
-		<path d="M8 13h4.5" />
-		<path d="M10 19l-1 -1h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v4.5" />
-		<path d="M17.8 20.817l-2.172 1.138a.392 .392 0 0 1 -.568 -.41l.415 -2.411l-1.757 -1.707a.389 .389 0 0 1 .217 -.665l2.428 -.352l1.086 -2.193a.392 .392 0 0 1 .702 0l1.086 2.193l2.428 .352a.39 .39 0 0 1 .217 .665l-1.757 1.707l.414 2.41a.39 .39 0 0 1 -.567 .411l-2.172 -1.138z" />
-	</svg>
-)
 
 const aiChatItems = {
+	// ── Suggestion-state actions (shared) ──────────────────────────────────────
 	accept: {
 		icon: <Check />,
 		label: "Accept",
 		value: "accept",
 		onSelect: ({ aiEditor, editor }) => {
 			const { mode, toolName } = editor.getOptions(AIChatPlugin)
-
 			if (mode === "chat" && toolName === "generate") {
-				return editor
-					.getTransforms(AIChatPlugin)
-					.aiChat.replaceSelection(aiEditor)
+				return editor.getTransforms(AIChatPlugin).aiChat.replaceSelection(aiEditor)
 			}
-
 			editor.getTransforms(AIChatPlugin).aiChat.accept()
 			editor.tf.focus({ edge: "end" })
-		},
-	},
-	comment: {
-		icon: <AICommentIcon />,
-		label: "Comment",
-		value: "comment",
-		onSelect: ({ editor, input }) => {
-			editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				mode: "insert",
-				prompt:
-					"Please comment on the following content and provide reasonable and meaningful feedback.",
-				toolName: "comment",
-			})
-		},
-	},
-	continueWrite: {
-		icon: <PenLine />,
-		label: "Continue writing",
-		value: "continueWrite",
-		onSelect: ({ editor, input }) => {
-			const ancestorNode = editor.api.block({ highest: true })
-
-			if (!ancestorNode) return
-
-			const isEmpty = NodeApi.string(ancestorNode[0]).trim().length === 0
-
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				mode: "insert",
-				prompt: isEmpty
-					? `<Document>
-{editor}
-</Document>
-Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
-					: "Continue writing AFTER <Block> ONLY ONE SENTENCE. DONT REPEAT THE TEXT.",
-				toolName: "generate",
-			})
 		},
 	},
 	discard: {
@@ -348,136 +285,6 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
 			editor.getApi(AIChatPlugin).aiChat.hide()
 		},
 	},
-	explain: {
-		icon: <BadgeHelp />,
-		label: "Explain",
-		value: "explain",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt: {
-					default: "Explain {editor}",
-					selecting: "Explain",
-				},
-				toolName: "generate",
-			})
-		},
-	},
-	fixSpelling: {
-		icon: <Check />,
-		label: "Fix spelling & grammar",
-		value: "fixSpelling",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt:
-					"Fix spelling, grammar, and punctuation errors within each block only, without changing meaning, tone, or adding new information.",
-				toolName: "edit",
-			})
-		},
-	},
-	generateMarkdownSample: {
-		icon: <BookOpenCheck />,
-		label: "Generate Markdown sample",
-		value: "generateMarkdownSample",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt: "Generate a markdown sample",
-				toolName: "generate",
-			})
-		},
-	},
-	generateMdxSample: {
-		icon: <BookOpenCheck />,
-		label: "Generate MDX sample",
-		value: "generateMdxSample",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt: "Generate a mdx sample",
-				toolName: "generate",
-			})
-		},
-	},
-	improveWriting: {
-		icon: <Wand />,
-		label: "Improve writing",
-		value: "improveWriting",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt:
-					"Improve the writing for clarity and flow, without changing meaning or adding new information.",
-				toolName: "edit",
-			})
-		},
-	},
-	insertBelow: {
-		icon: <ListEnd />,
-		label: "Insert below",
-		value: "insertBelow",
-		onSelect: ({ aiEditor, editor }) => {
-			/** Format: 'none' Fix insert table */
-			void editor
-				.getTransforms(AIChatPlugin)
-				.aiChat.insertBelow(aiEditor, { format: "none" })
-		},
-	},
-	makeLonger: {
-		icon: <ListPlus />,
-		label: "Make longer",
-		value: "makeLonger",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt:
-					"Make the content longer by elaborating on existing ideas within each block only, without changing meaning or adding new information.",
-				toolName: "edit",
-			})
-		},
-	},
-	makeShorter: {
-		icon: <ListMinus />,
-		label: "Make shorter",
-		value: "makeShorter",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt:
-					"Make the content shorter by reducing verbosity within each block only, without changing meaning or removing essential information.",
-				toolName: "edit",
-			})
-		},
-	},
-	replace: {
-		icon: <Check />,
-		label: "Replace selection",
-		value: "replace",
-		onSelect: ({ aiEditor, editor }) => {
-			void editor.getTransforms(AIChatPlugin).aiChat.replaceSelection(aiEditor)
-		},
-	},
-	simplifyLanguage: {
-		icon: <FeatherIcon />,
-		label: "Simplify language",
-		value: "simplifyLanguage",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				prompt:
-					"Simplify the language by using clearer and more straightforward wording within each block only, without changing meaning or adding new information.",
-				toolName: "edit",
-			})
-		},
-	},
-	summarize: {
-		icon: <Album />,
-		label: "Add a summary",
-		value: "summarize",
-		onSelect: ({ editor, input }) => {
-			void editor.getApi(AIChatPlugin).aiChat.submit(input, {
-				mode: "insert",
-				prompt: {
-					default: "Summarize {editor}",
-					selecting: "Summarize",
-				},
-				toolName: "generate",
-			})
-		},
-	},
 	tryAgain: {
 		icon: <CornerUpLeft />,
 		label: "Try again",
@@ -486,15 +293,95 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
 			void editor.getApi(AIChatPlugin).aiChat.reload()
 		},
 	},
+
+	// ── Cursor commands (no selection) ─────────────────────────────────────────
+	continueWriting: {
+		icon: <PenLine />,
+		label: "Continue writing",
+		value: "continueWriting",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				mode: "insert",
+				prompt: "Continue writing from the current position with one to two sentences.",
+				toolName: "generate",
+			})
+		},
+	},
+	draftArgument: {
+		icon: <FeatherIcon />,
+		label: "Draft next argument",
+		value: "draftArgument",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				mode: "insert",
+				prompt: "Draft the next argument section responding to the outstanding rejection.",
+				toolName: "generate",
+			})
+		},
+	},
+
+	// ── Selection commands ──────────────────────────────────────────────────────
+	strengthenArgument: {
+		icon: <Wand />,
+		label: "Strengthen argument",
+		value: "strengthenArgument",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				prompt: "Strengthen this argument to be more persuasive and legally precise",
+				toolName: "edit",
+			})
+		},
+	},
+	makeConcise: {
+		icon: <ListMinus />,
+		label: "Make concise",
+		value: "makeConcise",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				prompt: "Make this more concise without losing substance",
+				toolName: "edit",
+			})
+		},
+	},
+	formalLanguage: {
+		icon: <BookOpenCheck />,
+		label: "Formal USPTO language",
+		value: "formalLanguage",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				prompt: "Rewrite in formal USPTO correspondence language",
+				toolName: "edit",
+			})
+		},
+	},
+	fixGrammar: {
+		icon: <Check />,
+		label: "Fix grammar",
+		value: "fixGrammar",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				prompt: "Fix spelling and grammar only, do not change substance",
+				toolName: "edit",
+			})
+		},
+	},
+	amendClaim: {
+		icon: <PenLine />,
+		label: "Propose claim amendment",
+		value: "amendClaim",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				prompt: "Propose a narrowing amendment to distinguish from the cited prior art",
+				toolName: "edit",
+			})
+		},
+	},
 } satisfies Record<
 	string,
 	{
 		icon: React.ReactNode
 		label: string
 		value: string
-		component?: React.ComponentType<{ menuState: EditorChatState }>
-		filterItems?: boolean
-		items?: { label: string; value: string }[]
 		shortcut?: string
 		onSelect?: ({
 			aiEditor,
@@ -517,14 +404,7 @@ const menuStateItems: Record<
 > = {
 	cursorCommand: [
 		{
-			items: [
-				aiChatItems.comment,
-				aiChatItems.generateMdxSample,
-				aiChatItems.generateMarkdownSample,
-				aiChatItems.continueWrite,
-				aiChatItems.summarize,
-				aiChatItems.explain,
-			],
+			items: [aiChatItems.continueWriting, aiChatItems.draftArgument],
 		},
 	],
 	cursorSuggestion: [
@@ -534,24 +414,19 @@ const menuStateItems: Record<
 	],
 	selectionCommand: [
 		{
+			heading: "Edit",
 			items: [
-				aiChatItems.improveWriting,
-				aiChatItems.comment,
-				aiChatItems.makeLonger,
-				aiChatItems.makeShorter,
-				aiChatItems.fixSpelling,
-				aiChatItems.simplifyLanguage,
+				aiChatItems.strengthenArgument,
+				aiChatItems.makeConcise,
+				aiChatItems.formalLanguage,
+				aiChatItems.fixGrammar,
+				aiChatItems.amendClaim,
 			],
 		},
 	],
 	selectionSuggestion: [
 		{
-			items: [
-				aiChatItems.accept,
-				aiChatItems.discard,
-				aiChatItems.insertBelow,
-				aiChatItems.tryAgain,
-			],
+			items: [aiChatItems.accept, aiChatItems.discard, aiChatItems.tryAgain],
 		},
 	],
 }
