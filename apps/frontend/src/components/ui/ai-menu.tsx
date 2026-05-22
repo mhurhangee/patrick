@@ -96,6 +96,8 @@ export function AIMenu() {
 		if (open) {
 			api.aiChat.show()
 		} else {
+			// Don't auto-dismiss (e.g. pointer-outside) when AI content is pending acceptance
+			if (messages.length > 0) return
 			api.aiChat.hide()
 		}
 	}
@@ -132,10 +134,12 @@ export function AIMenu() {
 	})
 
 	useHotkeys("esc", () => {
-		api.aiChat.stop()
-
-		// remove when you implement the route /api/ai/command
-		;(chat as any)._abortFakeStream()
+		if (status !== "streaming" && status !== "submitted" && messages.length > 0) {
+			api.aiChat.hide()
+		} else {
+			api.aiChat.stop()
+			;(chat as any)._abortFakeStream()
+		}
 	})
 
 	const isLoading = status === "streaming" || status === "submitted"
@@ -161,6 +165,17 @@ export function AIMenu() {
 		const block = editor.api.block({ at: anchorNode[1] })
 		// eslint-disable-next-line react-hooks/set-state-in-effect -- Position the popover from editor DOM after the edit stream completes.
 		setAnchorElement(editor.api.toDOMNode(block![0]!)!)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isLoading])
+
+	// After insert-mode streaming ends the component remounts (it returned null during streaming).
+	// Re-anchor the popover to the current block so Radix doesn't treat every click as "outside".
+	React.useEffect(() => {
+		if (mode !== "insert" || isLoading || !open || messages.length === 0) return
+		const block = editor.api.block({ highest: true })
+		if (!block) return
+		const dom = editor.api.toDOMNode(block[0])
+		if (dom) setAnchorElement(dom)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoading])
 

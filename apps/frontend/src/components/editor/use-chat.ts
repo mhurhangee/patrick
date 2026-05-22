@@ -10,7 +10,7 @@ import { deserializeMd } from "@platejs/markdown"
 import { BlockSelectionPlugin } from "@platejs/selection/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
 import { KEYS, NodeApi, nanoid, TextApi, type TNode } from "platejs"
-import { type PlateEditor, useEditorRef, usePluginOption } from "platejs/react"
+import { useEditorRef, usePluginOption } from "platejs/react"
 import * as React from "react"
 import { createSlateEditor } from "platejs"
 import { aiChatPlugin } from "@/components/editor/plugins/ai-kit"
@@ -43,69 +43,67 @@ export type Chat = UseChatHelpers<ChatMessage>
 
 export type ChatMessage = UIMessage<{}, MessageDataPart>
 
-function createChatTransport({
-	api,
-	editor,
-}: {
-	api: string
-	editor: PlateEditor
-}) {
+function createChatTransport({ api }: { api: string }) {
 	return new DefaultChatTransport({
 		api,
 		fetch: (async (input, init) => {
-			const initBody = JSON.parse(init?.body as string)
-			const { messages, ctx } = initBody
-			const { children, selection, toolName: toolNameParam } = ctx ?? {}
+			try {
+				const initBody = JSON.parse(init?.body as string)
+				const { messages, ctx } = initBody
+				const { children, selection, toolName: toolNameParam } = ctx ?? {}
 
-			// Create a temporary ephemeral editor for prompt computation
-			// Mutations (addSelection) are safe on this editor — it's never rendered
-			const tempEditor = createSlateEditor({
-				plugins: BaseEditorKit,
-				selection,
-				value: children,
-			})
+				// Create a temporary ephemeral editor for prompt computation
+				// Mutations (addSelection) are safe on this editor — it's never rendered
+				const tempEditor = createSlateEditor({
+					plugins: BaseEditorKit,
+					selection,
+					value: children ?? [{ type: "p", children: [{ text: "" }] }],
+				})
 
-			const isSelecting = tempEditor.api.isExpanded()
+				const isSelecting = tempEditor.api.isExpanded()
 
-			// Compute all prompts client-side
-			const choosePrompt = getChooseToolPrompt({ isSelecting, messages })
-			const generatePrompt = getGeneratePrompt(tempEditor, { isSelecting, messages })
-			const commentPrompt = getCommentPrompt(tempEditor, { messages })
+				// Compute all prompts client-side
+				const choosePrompt = getChooseToolPrompt({ isSelecting, messages })
+				const generatePrompt = getGeneratePrompt(tempEditor, { isSelecting, messages })
+				const commentPrompt = getCommentPrompt(tempEditor, { messages })
 
-			let editPrompt: string | null = null
-			let editType: "multi-block" | "selection" | null = null
-			if (isSelecting) {
-				try {
-					const [ep, et] = getEditPrompt(tempEditor, { isSelecting, messages })
-					editPrompt = ep
-					editType = et
-				} catch {
-					// no-op — not selecting or table (skipped)
+				let editPrompt: string | null = null
+				let editType: "multi-block" | "selection" | null = null
+				if (isSelecting) {
+					try {
+						const [ep, et] = getEditPrompt(tempEditor, { isSelecting, messages })
+						editPrompt = ep
+						editType = et
+					} catch (e) {
+						console.warn("[use-chat] getEditPrompt failed:", e)
+					}
 				}
+
+				// AI settings from localStorage (BYOK — same keys as copilot-kit)
+				const provider = localStorage.getItem("askpat-provider") || "anthropic"
+				const model = localStorage.getItem("askpat-quick-model") || ""
+				const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
+
+				const body = {
+					toolMode: toolNameParam ?? null,
+					isSelecting,
+					prompts: {
+						choose: choosePrompt,
+						generate: generatePrompt,
+						edit: editPrompt,
+						editType,
+						comment: commentPrompt,
+					},
+					provider,
+					apiKey,
+					model,
+				}
+
+				return fetch(input, { ...init, body: JSON.stringify(body) })
+			} catch (err) {
+				console.error("[use-chat] fetch error:", err)
+				throw err
 			}
-
-			// AI settings: provider/model from plugin body options, apiKey from localStorage (BYOK)
-			const bodyOptions = editor.getOptions(aiChatPlugin).chatOptions?.body
-			const provider = (bodyOptions as any)?.provider || "anthropic"
-			const model = (bodyOptions as any)?.model || ""
-			const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
-
-			const body = {
-				toolMode: toolNameParam ?? null,
-				isSelecting,
-				prompts: {
-					choose: choosePrompt,
-					generate: generatePrompt,
-					edit: editPrompt,
-					editType,
-					comment: commentPrompt,
-				},
-				provider,
-				apiKey,
-				model,
-			}
-
-			return fetch(input, { ...init, body: JSON.stringify(body) })
 		}) as typeof fetch,
 	})
 }
@@ -115,12 +113,8 @@ export const useChat = () => {
 	const options = usePluginOption(aiChatPlugin, "chatOptions")
 
 	const transport = React.useMemo(
-		() =>
-			createChatTransport({
-				api: options.api || "/ai/askpat/command",
-				editor,
-			}),
-		[editor, options.api],
+		() => createChatTransport({ api: options.api || "/ai/askpat/command" }),
+		[options.api],
 	)
 
 	const baseChat = useBaseChat<ChatMessage>({
@@ -195,7 +189,6 @@ export const useChat = () => {
 
 	const chat = {
 		...baseChat,
-		// Keep _abortFakeStream for compatibility with ai-menu.tsx
 		_abortFakeStream: baseChat.stop,
 	}
 
