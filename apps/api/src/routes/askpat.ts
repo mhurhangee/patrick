@@ -141,7 +141,8 @@ askpatRouter.post("/copilot", async (c) => {
 
 	const model = createModel(provider, apiKey, modelId)
 
-	const result = streamText({
+	// Plate's callCompletionApi expects `res.json()` with a `text` field
+	const result = await generateText({
 		model,
 		system,
 		prompt,
@@ -149,5 +150,5 @@ askpatRouter.post("/copilot", async (c) => {
 		temperature: 0.7,
 	})
 
-	return result.toTextStreamResponse()
+	return c.json({ text: result.text })
 })
