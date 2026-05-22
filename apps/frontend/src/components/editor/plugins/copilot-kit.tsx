@@ -2,7 +2,7 @@
 
 import { CopilotPlugin } from "@platejs/ai/react"
 import { serializeMd, stripMarkdown } from "@platejs/markdown"
-import type { TElement } from "platejs"
+import { NodeApi, type TElement } from "platejs"
 
 import { GhostText } from "@/components/ui/ghost-text"
 import { BASE_URL } from "@/lib/api"
@@ -44,6 +44,21 @@ Rules:
 					})
 				},
 			},
+			// Cancel any pending trigger when the user continues typing past a space.
+			// Without this, the debounce from a space keypress fires mid-word because
+			// autoTriggerQuery only ADDS triggers (when last char is space) but never
+			// cancels them when the user keeps typing.
+			autoTriggerQuery: ({ editor }) => {
+				if (editor.getOptions(CopilotPlugin).suggestionText) return false
+				if (editor.api.isEmpty(editor.selection, { block: true })) return false
+				const blockAbove = editor.api.block()
+				if (!blockAbove) return false
+				if (NodeApi.string(blockAbove[0]).at(-1) !== " ") {
+					;(api.copilot.triggerSuggestion as any)?.cancel?.()
+					return false
+				}
+				return true
+			},
 			debounceDelay: 500,
 			renderGhostText: GhostText,
 			getPrompt: ({ editor }) => {
@@ -51,14 +66,42 @@ Rules:
 
 				if (!contextEntry) return ""
 
-				const prompt = serializeMd(editor, {
-					value: [contextEntry[0] as TElement],
+				const [currentBlock, currentPath] = contextEntry
+				const currentIndex = currentPath[0] as number
+
+				// Include up to 4 preceding blocks so the model has cross-block context
+				const precedingBlocks = (editor.children as TElement[]).slice(
+					Math.max(0, currentIndex - 4),
+					currentIndex,
+				)
+
+				const precedingText =
+					precedingBlocks.length > 0
+						? serializeMd(editor, { value: precedingBlocks })
+						: null
+
+				const currentText = serializeMd(editor, {
+					value: [currentBlock as TElement],
 				})
 
+				if (precedingText) {
+					return `Continue the text up to the next punctuation mark. Use the preceding context to stay on topic.
+
+Preceding context:
+"""
+${precedingText}
+"""
+
+Continue this:
+"""
+${currentText}
+"""`
+				}
+
 				return `Continue the text up to the next punctuation mark:
-  """
-  ${prompt}
-  """`
+"""
+${currentText}
+"""`
 			},
 		},
 		shortcuts: {
