@@ -83,10 +83,12 @@ function createChatTransport({ api }: { api: string }) {
 				const provider = localStorage.getItem("askpat-provider") || "anthropic"
 				const model = localStorage.getItem("askpat-quick-model") || ""
 				const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
+				const assetType = localStorage.getItem("askpat-asset-type") || undefined
 
 				const body = {
 					toolMode: toolNameParam ?? null,
 					isSelecting,
+					assetType,
 					prompts: {
 						choose: choosePrompt,
 						generate: generatePrompt,

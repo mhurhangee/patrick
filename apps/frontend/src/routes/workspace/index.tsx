@@ -860,6 +860,11 @@ function ArtifactEditor({
 		}, 500)
 	}
 
+	// Tell the AI transport what kind of document is open so prompts can be doc-type-aware
+	React.useEffect(() => {
+		localStorage.setItem("askpat-asset-type", asset.type)
+	}, [asset.type])
+
 	// Flush on unmount (tab switch, close) — intentionally no deps, save is stable for asset lifetime
 	// biome-ignore lint/correctness/useExhaustiveDependencies: unmount-only flush, save recreated each render
 	React.useEffect(() => {
