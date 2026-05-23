@@ -30,6 +30,7 @@ import type { Value } from "platejs"
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { PlateEditor } from "@/components/editor/plate-editor"
+import { AddSourceDialog } from "@/components/add-source-dialog"
 import { Logo } from "@/components/logo"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsDialog } from "@/components/settings-dialog"
@@ -1550,6 +1551,7 @@ function WorkspacePage() {
 	const [assetSheet, setAssetSheet] = React.useState<AssetSheetState>({
 		mode: "closed",
 	})
+	const [addSourceOpen, setAddSourceOpen] = React.useState(false)
 
 	// Chats
 	const [chats, setChats] = React.useState<Chat[]>(MOCK_CHATS)
@@ -1685,7 +1687,7 @@ function WorkspacePage() {
 
 	function addSource() {
 		if (!currentProjectId) return
-		setAssetSheet({ mode: "create", kind: "source" })
+		setAddSourceOpen(true)
 	}
 
 	// ── Project handlers ──────────────────────────────────────────────────────
@@ -1910,6 +1912,18 @@ function WorkspacePage() {
 				onVerify={verifyKey}
 				onSave={saveAiSettings}
 				onClear={clearApiKey}
+			/>
+			<AddSourceDialog
+				open={addSourceOpen}
+				onOpenChange={setAddSourceOpen}
+				projectId={currentProjectId}
+				provider={provider}
+				apiKey={localStorage.getItem(`ai-${provider}-key`) ?? ""}
+				model={detailedModel}
+				onCreated={(asset) => {
+					setAssets((prev) => [...prev, asset])
+					openAsset(asset.id)
+				}}
 			/>
 			<AssetMetaSheet
 				state={assetSheet}
