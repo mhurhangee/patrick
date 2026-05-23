@@ -15,6 +15,7 @@ const safeColumns = {
 	date: assets.date,
 	notes: assets.notes,
 	metadata: assets.metadata,
+	extractedData: assets.extractedData,
 	createdAt: assets.createdAt,
 	updatedAt: assets.updatedAt,
 }

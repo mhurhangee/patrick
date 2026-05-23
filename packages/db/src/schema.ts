@@ -15,6 +15,13 @@ export const settings = sqliteTable("settings", {
 	promptExtractpat: text("prompt_extractpat").notNull().default(""),
 })
 
+export type ProjectType =
+	| "office-action-response"
+	| "new-application"
+	| "appeal"
+	| "inventor-disclosure"
+	| "general"
+
 export type AssetType =
 	| "inventor-disclosure"
 	| "office-action"
@@ -28,6 +35,10 @@ export type AssetKind = "source" | "artifact"
 export const projects = sqliteTable("projects", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
+	type: text("type")
+		.$type<ProjectType>()
+		.notNull()
+		.default("office-action-response"),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })
@@ -45,6 +56,7 @@ export const assets = sqliteTable("assets", {
 	notes: text("notes").notNull().default(""),
 	data: blob("data"),
 	metadata: text("metadata").notNull().default("{}"),
+	extractedData: text("extracted_data"),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })

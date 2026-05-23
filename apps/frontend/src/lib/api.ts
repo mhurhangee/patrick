@@ -1,4 +1,4 @@
-import type { AssetKind, AssetType } from "@patrickos/db"
+import type { AssetKind, AssetType, ProjectType } from "@patrickos/db"
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
@@ -20,6 +20,7 @@ export type ApiSettings = {
 export type ApiProject = {
 	id: string
 	name: string
+	type: ProjectType
 	createdAt: string
 	updatedAt: string
 }
@@ -34,6 +35,7 @@ export type ApiAsset = {
 	date: string
 	notes: string
 	metadata: string
+	extractedData: string | null
 	createdAt: string
 	updatedAt: string
 }
@@ -77,10 +79,10 @@ export const api = {
 	},
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
-		create: (name: string) =>
-			request<ApiProject>("/projects", json({ name }, { method: "POST" })),
-		rename: (id: string, name: string) =>
-			request<ApiProject>(`/projects/${id}`, json({ name }, { method: "PUT" })),
+		create: (name: string, type: ProjectType = "office-action-response") =>
+			request<ApiProject>("/projects", json({ name, type }, { method: "POST" })),
+		update: (id: string, patch: { name?: string; type?: ProjectType }) =>
+			request<ApiProject>(`/projects/${id}`, json(patch, { method: "PUT" })),
 		delete: (id: string) =>
 			request<{ ok: boolean }>(`/projects/${id}`, { method: "DELETE" }),
 	},
@@ -96,7 +98,10 @@ export const api = {
 		update: (
 			id: string,
 			patch: Partial<
-				Pick<ApiAsset, "title" | "content" | "type" | "kind" | "date" | "notes">
+				Pick<
+					ApiAsset,
+					"title" | "content" | "type" | "kind" | "date" | "notes" | "extractedData"
+				>
 			>,
 		) => request<ApiAsset>(`/assets/${id}`, json(patch, { method: "PUT" })),
 		delete: (id: string) =>

@@ -1862,7 +1862,7 @@ function WorkspacePage() {
 	}
 
 	async function renameProject(id: string, name: string) {
-		const updated = await api.projects.rename(id, name)
+		const updated = await api.projects.update(id, { name })
 		setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)))
 	}
 
