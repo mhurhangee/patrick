@@ -47,3 +47,4 @@ _temp/
 **/dist/
 apps/api/bin/
 **/.tanstack/
+IDEAS.md

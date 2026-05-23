@@ -99,7 +99,12 @@ askpatRouter.post("/command", async (c) => {
 
 	const model = createModel(provider, apiKey, modelId)
 	const systemPrompt = await loadSystemPrompt(assetType)
-	const prompt = buildPrompt(toolName, instruction, selectedMarkdown, documentMarkdown)
+	const prompt = buildPrompt(
+		toolName,
+		instruction,
+		selectedMarkdown,
+		documentMarkdown,
+	)
 
 	const stream = createUIMessageStream({
 		execute: async ({ writer }) => {

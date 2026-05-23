@@ -1,6 +1,7 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
+import { Toaster } from "sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { routeTree } from "./routeTree.gen"
@@ -20,6 +21,7 @@ createRoot(document.getElementById("root")!).render(
 		<ThemeProvider>
 			<TooltipProvider>
 				<RouterProvider router={router} />
+				<Toaster richColors position="bottom-right" />
 			</TooltipProvider>
 		</ThemeProvider>
 	</StrictMode>,
