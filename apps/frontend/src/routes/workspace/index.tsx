@@ -2,7 +2,6 @@ import type { AssetKind, AssetType, ProjectType } from "@patrickos/db"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
 	BookOpen,
-	CalendarDays,
 	ChevronLeft,
 	ChevronRight,
 	ChevronsUpDown,
@@ -29,8 +28,10 @@ import {
 import type { Value } from "platejs"
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
-import { PlateEditor } from "@/components/editor/plate-editor"
+import { AddArtifactDialog } from "@/components/add-artifact-dialog"
 import { AddSourceDialog } from "@/components/add-source-dialog"
+import { EditAssetDialog } from "@/components/edit-asset-dialog"
+import { PlateEditor } from "@/components/editor/plate-editor"
 import { Logo } from "@/components/logo"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsDialog } from "@/components/settings-dialog"
@@ -48,7 +49,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -64,23 +64,11 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover"
-import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
 	Sheet,
@@ -116,7 +104,6 @@ import {
 	type Provider,
 } from "@/lib/ai-models"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
-import { formatDisplayDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/workspace/")({
@@ -746,265 +733,6 @@ function AssetPane({
 	)
 }
 
-// ─── Asset meta sheet ──────────────────────────────────────────────────────────
-
-type AssetSheetState =
-	| { mode: "closed" }
-	| { mode: "create"; kind: AssetKind }
-	| { mode: "edit"; assetId: string }
-
-function AssetMetaSheet({
-	state,
-	asset,
-	projectId,
-	onClose,
-	onCreated,
-	onUpdated,
-	onDeleted,
-}: {
-	state: AssetSheetState
-	asset: ApiAsset | undefined
-	projectId: string
-	onClose: () => void
-	onCreated: (asset: ApiAsset) => void
-	onUpdated: (asset: ApiAsset) => void
-	onDeleted: (id: string) => void
-}) {
-	const kind =
-		state.mode === "create"
-			? state.kind
-			: state.mode === "edit" && asset
-				? asset.kind
-				: "artifact"
-	const defaultType =
-		ASSET_TYPES.find((t) => t.kind === kind)?.id ?? "claims-draft"
-
-	const [title, setTitle] = React.useState("")
-	const [type, setType] = React.useState<AssetType>(defaultType)
-	const [date, setDate] = React.useState("")
-	const [notes, setNotes] = React.useState("")
-	const [file, setFile] = React.useState<File | null>(null)
-	const [saving, setSaving] = React.useState(false)
-
-	const stateKey =
-		state.mode === "edit"
-			? state.assetId
-			: state.mode === "create"
-				? `create-${state.kind}`
-				: null
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only sync on open/switch
-	React.useEffect(() => {
-		if (state.mode === "closed") return
-		if (state.mode === "create") {
-			setTitle("")
-			setType(defaultType)
-			setDate("")
-			setNotes("")
-			setFile(null)
-		} else if (asset) {
-			setTitle(asset.title)
-			setType(asset.type)
-			setDate(asset.date)
-			setNotes(asset.notes)
-		}
-	}, [stateKey])
-
-	async function handleSave() {
-		setSaving(true)
-		try {
-			if (state.mode === "create") {
-				let created: ApiAsset
-				if (kind === "source") {
-					const formData = new FormData()
-					if (file) formData.append("file", file)
-					formData.append("projectId", projectId)
-					formData.append(
-						"title",
-						title.trim() || file?.name.replace(/\.pdf$/i, "") || "Untitled",
-					)
-					formData.append("type", type)
-					formData.append("date", date)
-					formData.append("notes", notes)
-					created = await api.assets.createSource(formData)
-				} else {
-					created = await api.assets.create({
-						projectId,
-						title: title.trim() || "Untitled",
-						kind,
-						type,
-						date,
-						notes,
-					})
-				}
-				onCreated(created)
-			} else if (state.mode === "edit" && asset) {
-				const updated = await api.assets.update(asset.id, {
-					title: title.trim() || "Untitled",
-					type,
-					date,
-					notes,
-				})
-				onUpdated(updated)
-			}
-			onClose()
-		} finally {
-			setSaving(false)
-		}
-	}
-
-	const selectedDate = date ? new Date(`${date}T00:00:00`) : undefined
-
-	return (
-		<Sheet
-			open={state.mode !== "closed"}
-			onOpenChange={(v) => {
-				if (!v) onClose()
-			}}
-		>
-			<SheetContent side="left">
-				<SheetHeader>
-					<SheetTitle>
-						{state.mode === "create"
-							? `New ${kind === "source" ? "Source" : "Artifact"}`
-							: (asset?.title ?? "")}
-					</SheetTitle>
-					<SheetDescription>
-						{state.mode === "create"
-							? "Configure your new asset, then save."
-							: "Edit asset details, then save."}
-					</SheetDescription>
-				</SheetHeader>
-				<div className="flex flex-col gap-5 px-4 pt-4">
-					<FieldGroup className="gap-3">
-						{state.mode === "create" && kind === "source" && (
-							<Field>
-								<FieldLabel className="text-xs font-medium text-muted-foreground">
-									PDF File
-								</FieldLabel>
-								<Input
-									type="file"
-									accept=".pdf,application/pdf"
-									onChange={(e) => {
-										const f = e.target.files?.[0] ?? null
-										setFile(f)
-										if (f && !title) setTitle(f.name.replace(/\.pdf$/i, ""))
-									}}
-								/>
-							</Field>
-						)}
-						<Field>
-							<FieldLabel className="text-xs font-medium text-muted-foreground">
-								Title
-							</FieldLabel>
-							<Input
-								value={title}
-								onChange={(e) => setTitle(e.target.value)}
-								placeholder="Untitled"
-							/>
-						</Field>
-						<Field>
-							<FieldLabel className="text-xs font-medium text-muted-foreground">
-								Type
-							</FieldLabel>
-							<Select
-								value={type}
-								onValueChange={(v) => setType(v as AssetType)}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{ASSET_TYPES.filter((at) => at.kind === kind).map((at) => (
-										<SelectItem key={at.id} value={at.id}>
-											{at.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
-						<Field>
-							<FieldLabel className="text-xs font-medium text-muted-foreground">
-								Date
-							</FieldLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										className="w-full justify-start font-normal"
-									>
-										<CalendarDays className="mr-1 text-muted-foreground" />
-										{formatDisplayDate(date)}
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-									<Calendar
-										mode="single"
-										selected={selectedDate}
-										onSelect={(d) => {
-											if (!d) return
-											setDate(d.toISOString().split("T")[0])
-										}}
-									/>
-								</PopoverContent>
-							</Popover>
-						</Field>
-						<Field>
-							<FieldLabel className="text-xs font-medium text-muted-foreground">
-								Notes
-							</FieldLabel>
-							<Textarea
-								value={notes}
-								onChange={(e) => setNotes(e.target.value)}
-								className="resize-none"
-								placeholder="Add notes…"
-							/>
-						</Field>
-					</FieldGroup>
-
-					<Button onClick={handleSave} disabled={saving}>
-						{saving ? "Saving…" : "Save"}
-					</Button>
-
-					{state.mode === "edit" && asset && (
-						<>
-							<Separator />
-							<AlertDialog>
-								<AlertDialogTrigger asChild>
-									<Button variant="destructive" size="sm" className="gap-1.5">
-										<Trash2 size={14} />
-										Delete asset
-									</Button>
-								</AlertDialogTrigger>
-								<AlertDialogContent size="sm">
-									<AlertDialogHeader>
-										<AlertDialogTitle>Delete asset?</AlertDialogTitle>
-										<AlertDialogDescription>
-											"{asset.title}" will be permanently removed.
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<AlertDialogFooter>
-										<AlertDialogCancel>Cancel</AlertDialogCancel>
-										<AlertDialogAction
-											variant="destructive"
-											onClick={() => {
-												onDeleted(asset.id)
-												onClose()
-											}}
-										>
-											Delete
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-						</>
-					)}
-				</div>
-			</SheetContent>
-		</Sheet>
-	)
-}
-
 // ─── Asset viewer ─────────────────────────────────────────────────────────────
 
 function AssetViewer({
@@ -1548,10 +1276,9 @@ function WorkspacePage() {
 	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
 	const [activeTab, setActiveTab] = React.useState("")
 	const [splitView, setSplitView] = React.useState(false)
-	const [assetSheet, setAssetSheet] = React.useState<AssetSheetState>({
-		mode: "closed",
-	})
 	const [addSourceOpen, setAddSourceOpen] = React.useState(false)
+	const [addArtifactOpen, setAddArtifactOpen] = React.useState(false)
+	const [editAssetId, setEditAssetId] = React.useState<string | null>(null)
 
 	// Chats
 	const [chats, setChats] = React.useState<Chat[]>(MOCK_CHATS)
@@ -1682,7 +1409,7 @@ function WorkspacePage() {
 
 	function addArtifact() {
 		if (!currentProjectId) return
-		setAssetSheet({ mode: "create", kind: "artifact" })
+		setAddArtifactOpen(true)
 	}
 
 	function addSource() {
@@ -1825,7 +1552,7 @@ function WorkspacePage() {
 					projectsLoading={projectsLoading}
 					currentProjectId={currentProjectId}
 					onOpen={openAsset}
-					onEdit={(id) => setAssetSheet({ mode: "edit", assetId: id })}
+					onEdit={(id) => setEditAssetId(id)}
 					onAddArtifact={addArtifact}
 					onAddSource={addSource}
 					onOpenChat={openChat}
@@ -1925,18 +1652,20 @@ function WorkspacePage() {
 					openAsset(asset.id)
 				}}
 			/>
-			<AssetMetaSheet
-				state={assetSheet}
-				asset={
-					assetSheet.mode === "edit"
-						? assets.find((a) => a.id === assetSheet.assetId)
-						: undefined
-				}
+			<AddArtifactDialog
+				open={addArtifactOpen}
+				onOpenChange={setAddArtifactOpen}
 				projectId={currentProjectId}
-				onClose={() => setAssetSheet({ mode: "closed" })}
 				onCreated={(asset) => {
 					setAssets((prev) => [...prev, asset])
 					openAsset(asset.id)
+				}}
+			/>
+			<EditAssetDialog
+				asset={editAssetId ? assets.find((a) => a.id === editAssetId) : undefined}
+				open={editAssetId !== null}
+				onOpenChange={(v) => {
+					if (!v) setEditAssetId(null)
 				}}
 				onUpdated={(asset) => {
 					setAssets((prev) => prev.map((a) => (a.id === asset.id ? asset : a)))
