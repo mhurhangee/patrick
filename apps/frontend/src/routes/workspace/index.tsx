@@ -1,9 +1,8 @@
-import type { AssetKind, AssetType } from "@patrickos/db"
+import type { AssetKind, AssetType, ProjectType } from "@patrickos/db"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
 	BookOpen,
 	CalendarDays,
-	Check,
 	ChevronLeft,
 	ChevronRight,
 	ChevronsUpDown,
@@ -32,6 +31,7 @@ import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { PlateEditor } from "@/components/editor/plate-editor"
 import { Logo } from "@/components/logo"
+import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { SourceViewer } from "@/components/source-viewer"
 import {
@@ -55,7 +55,6 @@ import {
 } from "@/components/ui/collapsible"
 import {
 	Empty,
-	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
@@ -133,10 +132,7 @@ interface Message {
 	content: string
 }
 
-interface Project {
-	id: string
-	name: string
-}
+type Project = import("@/lib/api").ApiProject
 
 interface Chat {
 	id: string
@@ -329,167 +325,6 @@ function AssetTypeIcon({
 }
 
 // ─── Projects sheet ───────────────────────────────────────────────────────────
-
-function ProjectsSheet({
-	open,
-	onOpenChange,
-	projects,
-	currentId,
-	loading,
-	onSelect,
-	onCreate,
-	onRename,
-	onDelete,
-}: {
-	open: boolean
-	onOpenChange: (v: boolean) => void
-	projects: Project[]
-	currentId: string
-	loading: boolean
-	onSelect: (id: string) => void
-	onCreate: () => void
-	onRename: (id: string, name: string) => void
-	onDelete: (id: string) => void
-}) {
-	const [editingId, setEditingId] = React.useState<string | null>(null)
-	const [editingName, setEditingName] = React.useState("")
-
-	function commitRename() {
-		if (editingId && editingName.trim()) onRename(editingId, editingName.trim())
-		setEditingId(null)
-	}
-
-	return (
-		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="left">
-				<SheetHeader>
-					<SheetTitle>Projects</SheetTitle>
-					<SheetDescription>
-						Switch, create, rename, or delete projects.
-					</SheetDescription>
-				</SheetHeader>
-
-				<div className="flex flex-col gap-1 px-4 pt-4">
-					{loading && (
-						<p className="text-sm text-muted-foreground px-2">Loading…</p>
-					)}
-					{!loading && projects.length === 0 && (
-						<Empty className="border-dashed py-8">
-							<EmptyHeader>
-								<EmptyMedia variant="icon">
-									<FolderOpen />
-								</EmptyMedia>
-								<EmptyTitle>No projects yet</EmptyTitle>
-								<EmptyDescription>
-									Create your first project to get started.
-								</EmptyDescription>
-							</EmptyHeader>
-							<EmptyContent>
-								<Button
-									variant="outline"
-									size="sm"
-									className="gap-2"
-									onClick={onCreate}
-								>
-									<Plus size={13} />
-									Create project
-								</Button>
-							</EmptyContent>
-						</Empty>
-					)}
-					{projects.map((p) => (
-						<div key={p.id} className="group flex items-center gap-1">
-							{editingId === p.id ? (
-								<Input
-									value={editingName}
-									onChange={(e) => setEditingName(e.target.value)}
-									onBlur={commitRename}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") commitRename()
-										if (e.key === "Escape") setEditingId(null)
-									}}
-									autoFocus
-									className="flex-1"
-								/>
-							) : (
-								<Button
-									variant="ghost"
-									onClick={() => {
-										onSelect(p.id)
-										onOpenChange(false)
-									}}
-									className="flex flex-1 items-center gap-2 justify-start h-auto"
-								>
-									{p.id === currentId ? (
-										<Check size={13} className="shrink-0 text-primary" />
-									) : (
-										<span className="size-[13px] shrink-0" />
-									)}
-									<span className="truncate">{p.name}</span>
-								</Button>
-							)}
-							<div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									onClick={() => {
-										setEditingId(p.id)
-										setEditingName(p.name)
-									}}
-								>
-									<Pencil />
-								</Button>
-								<AlertDialog>
-									<AlertDialogTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-xs"
-											className="text-destructive hover:text-destructive"
-										>
-											<Trash2 size={12} />
-										</Button>
-									</AlertDialogTrigger>
-									<AlertDialogContent size="sm">
-										<AlertDialogHeader>
-											<AlertDialogTitle>Delete project?</AlertDialogTitle>
-											<AlertDialogDescription>
-												"{p.name}" and all its assets will be permanently
-												deleted.
-											</AlertDialogDescription>
-										</AlertDialogHeader>
-										<AlertDialogFooter>
-											<AlertDialogCancel>Cancel</AlertDialogCancel>
-											<AlertDialogAction
-												variant="destructive"
-												onClick={() => onDelete(p.id)}
-											>
-												Delete
-											</AlertDialogAction>
-										</AlertDialogFooter>
-									</AlertDialogContent>
-								</AlertDialog>
-							</div>
-						</div>
-					))}
-				</div>
-
-				{projects.length > 0 && (
-					<div className="px-4 pt-3">
-						<Button
-							variant="outline"
-							size="sm"
-							className="w-full gap-2"
-							onClick={onCreate}
-						>
-							<Plus size={13} />
-							New project
-						</Button>
-					</div>
-				)}
-			</SheetContent>
-		</Sheet>
-	)
-}
 
 // ─── Auth sheet ───────────────────────────────────────────────────────────────
 
@@ -1855,15 +1690,20 @@ function WorkspacePage() {
 
 	// ── Project handlers ──────────────────────────────────────────────────────
 
-	async function createProject() {
-		const project = await api.projects.create("New Project")
+	async function createProject(name: string, type: ProjectType) {
+		const project = await api.projects.create(name, type)
 		setProjects((prev) => [...prev, project])
 		setCurrentProjectId(project.id)
+		return project
 	}
 
-	async function renameProject(id: string, name: string) {
-		const updated = await api.projects.update(id, { name })
+	async function updateProject(
+		id: string,
+		patch: { name?: string; type?: ProjectType },
+	) {
+		const updated = await api.projects.update(id, patch)
 		setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)))
+		return updated
 	}
 
 	async function deleteProject(id: string) {
@@ -2049,15 +1889,14 @@ function WorkspacePage() {
 					</ResizablePanelGroup>
 				</SidebarInset>
 			</SidebarProvider>
-			<ProjectsSheet
+			<ProjectManagerDialog
 				open={projectsOpen}
 				onOpenChange={setProjectsOpen}
 				projects={projects}
-				currentId={currentProjectId}
-				loading={projectsLoading}
+				currentProjectId={currentProjectId}
 				onSelect={setCurrentProjectId}
 				onCreate={createProject}
-				onRename={renameProject}
+				onUpdate={updateProject}
 				onDelete={deleteProject}
 			/>
 			<AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
