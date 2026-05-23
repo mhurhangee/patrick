@@ -60,6 +60,13 @@ export const api = {
 		update: (patch: Partial<Omit<ApiSettings, "id">>) =>
 			request<ApiSettings>("/settings", json(patch, { method: "PUT" })),
 	},
+	extractpat: {
+		extract: (assetId: string, provider: string, apiKey: string, model: string) =>
+			request<{ extracted: Record<string, unknown>; assetType: string }>(
+				"/ai/extractpat/extract",
+				json({ assetId, provider, apiKey, model }, { method: "POST" }),
+			),
+	},
 	ai: {
 		verifyKey: (provider: string, apiKey: string) =>
 			request<{ valid: boolean; error?: string }>(

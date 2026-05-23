@@ -3,6 +3,7 @@ import { cors } from "hono/cors"
 import { aiRouter } from "./routes/ai"
 import { askpatRouter } from "./routes/askpat"
 import { assetsRouter } from "./routes/assets"
+import { extractpatRouter } from "./routes/extractpat"
 import { projectsRouter } from "./routes/projects"
 import { settingsRouter } from "./routes/settings"
 
@@ -15,6 +16,7 @@ app.route("/projects", projectsRouter)
 app.route("/assets", assetsRouter)
 app.route("/ai", aiRouter)
 app.route("/ai/askpat", askpatRouter)
+app.route("/ai/extractpat", extractpatRouter)
 app.route("/settings", settingsRouter)
 
 export default {
