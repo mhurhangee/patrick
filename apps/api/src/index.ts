@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { aiRouter } from "./routes/ai"
+import { askpatRouter } from "./routes/askpat"
 import { assetsRouter } from "./routes/assets"
 import { projectsRouter } from "./routes/projects"
 import { settingsRouter } from "./routes/settings"
@@ -13,6 +14,7 @@ app.get("/health", (c) => c.json({ ok: true }))
 app.route("/projects", projectsRouter)
 app.route("/assets", assetsRouter)
 app.route("/ai", aiRouter)
+app.route("/ai/askpat", askpatRouter)
 app.route("/settings", settingsRouter)
 
 export default {

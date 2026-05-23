@@ -1,4 +1,5 @@
 import {
+	Check,
 	CreditCard,
 	Database,
 	Eye,
@@ -63,7 +64,8 @@ import {
 	CURATED_MODELS,
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
-	type GatewayModel,
+	GATEWAY_DETAILED_MODELS,
+	GATEWAY_QUICK_MODELS,
 	type Provider,
 } from "@/lib/ai-models"
 import { api } from "@/lib/api"
@@ -142,6 +144,68 @@ type Section =
 	| "billing"
 
 type KeyStatus = "idle" | "verifying" | "valid" | "invalid"
+
+type SaveStatus = "idle" | "saving" | "saved"
+
+// ─── useSaveButton ────────────────────────────────────────────────────────────
+
+function useSaveButton() {
+	const [status, setStatus] = React.useState<SaveStatus>("idle")
+	const timerRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+
+	React.useEffect(() => {
+		return () => {
+			if (timerRef.current) clearTimeout(timerRef.current)
+		}
+	}, [])
+
+	async function wrap(fn: () => void | Promise<void>) {
+		setStatus("saving")
+		try {
+			await fn()
+			setStatus("saved")
+			timerRef.current = setTimeout(() => setStatus("idle"), 2000)
+		} catch {
+			setStatus("idle")
+		}
+	}
+
+	return { status, wrap }
+}
+
+// ─── SaveButton ───────────────────────────────────────────────────────────────
+
+function SaveButton({
+	status,
+	isDirty,
+	onClick,
+}: {
+	status: SaveStatus
+	isDirty: boolean
+	onClick: () => void
+}) {
+	return (
+		<Button
+			size="sm"
+			onClick={onClick}
+			disabled={!isDirty || status === "saving"}
+		>
+			{status === "saving" ? (
+				<>
+					<Loader2 size={12} className="animate-spin" />
+					Saving…
+				</>
+			) : status === "saved" ? (
+				<>
+					<Check size={12} />
+					Saved
+				</>
+			) : (
+				"Save"
+			)}
+		</Button>
+	)
+}
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 
@@ -283,6 +347,14 @@ export function SettingsDialog({
 	const [role, setRole] = React.useState("")
 	const [jurisdiction, setJurisdiction] = React.useState("")
 
+	// ── Account saved snapshot (for dirty tracking) ────────────────────────────
+	const [savedAccount, setSavedAccount] = React.useState({
+		name: "",
+		firm: "",
+		role: "",
+		jurisdiction: "",
+	})
+
 	// ── AI Provider state ──────────────────────────────────────────────────────
 	const [tempProvider, setTempProvider] =
 		React.useState<Provider>(savedProvider)
@@ -295,8 +367,19 @@ export function SettingsDialog({
 	const [tempDetailedModel, setTempDetailedModel] =
 		React.useState(savedDetailedModel)
 	const [showKey, setShowKey] = React.useState(false)
-	const [gatewayModels, setGatewayModels] = React.useState<GatewayModel[]>([])
-	const [modelsLoading, setModelsLoading] = React.useState(false)
+
+	// ── Provider saved snapshot (for dirty tracking) ───────────────────────────
+	const [savedProviderSnap, setSavedProviderSnap] = React.useState<{
+		provider: Provider
+		quickModel: string
+		detailedModel: string
+		key: string
+	}>({
+		provider: savedProvider,
+		quickModel: savedQuickModel,
+		detailedModel: savedDetailedModel,
+		key: "",
+	})
 
 	// ── AI Instructions state ──────────────────────────────────────────────────
 	const [practiceContext, setPracticeContext] = React.useState("")
@@ -304,31 +387,64 @@ export function SettingsDialog({
 	const [agentPatInstructions, setAgentPatInstructions] = React.useState("")
 	const [extractPatInstructions, setExtractPatInstructions] = React.useState("")
 
+	// ── Prompt saved snapshots (for dirty tracking) ────────────────────────────
+	const [savedPracticeContext, setSavedPracticeContext] = React.useState("")
+	const [savedAskPat, setSavedAskPat] = React.useState("")
+	const [savedAgentPat, setSavedAgentPat] = React.useState("")
+	const [savedExtractPat, setSavedExtractPat] = React.useState("")
+
 	// ── Sync on open ──────────────────────────────────────────────────────────
 	React.useEffect(() => {
 		if (!open) return
-		// Set keys from localStorage immediately; set provider/models from props as defaults
 		setTempProvider(savedProvider)
 		setTempQuickModel(savedQuickModel)
 		setTempDetailedModel(savedDetailedModel)
-		setTempKeys({
+		const keys = {
 			gateway: localStorage.getItem("ai-gateway-key") ?? "",
 			anthropic: localStorage.getItem("ai-anthropic-key") ?? "",
 			openai: localStorage.getItem("ai-openai-key") ?? "",
+		}
+		setTempKeys(keys)
+		setSavedProviderSnap({
+			provider: savedProvider,
+			quickModel: savedQuickModel,
+			detailedModel: savedDetailedModel,
+			key: keys[savedProvider],
 		})
-		// Load everything else from the API (overrides prop defaults when resolved)
+
 		api.settings.get().then((s) => {
 			setName(s.name)
 			setFirm(s.firm)
 			setRole(s.role)
 			setJurisdiction(s.jurisdiction)
-			if (s.aiProvider) setTempProvider(s.aiProvider as Provider)
-			if (s.aiQuickModel) setTempQuickModel(s.aiQuickModel)
-			if (s.aiDetailedModel) setTempDetailedModel(s.aiDetailedModel)
+			setSavedAccount({
+				name: s.name,
+				firm: s.firm,
+				role: s.role,
+				jurisdiction: s.jurisdiction,
+			})
+
+			const resolvedProvider = (s.aiProvider as Provider) ?? savedProvider
+			const resolvedQuick = s.aiQuickModel ?? savedQuickModel
+			const resolvedDetailed = s.aiDetailedModel ?? savedDetailedModel
+			if (s.aiProvider) setTempProvider(resolvedProvider)
+			if (s.aiQuickModel) setTempQuickModel(resolvedQuick)
+			if (s.aiDetailedModel) setTempDetailedModel(resolvedDetailed)
+			setSavedProviderSnap({
+				provider: resolvedProvider,
+				quickModel: resolvedQuick,
+				detailedModel: resolvedDetailed,
+				key: keys[resolvedProvider],
+			})
+
 			setPracticeContext(s.promptContext)
+			setSavedPracticeContext(s.promptContext)
 			setAskPatInstructions(s.promptAskpat)
+			setSavedAskPat(s.promptAskpat)
 			setAgentPatInstructions(s.promptAgentpat)
+			setSavedAgentPat(s.promptAgentpat)
 			setExtractPatInstructions(s.promptExtractpat)
+			setSavedExtractPat(s.promptExtractpat)
 		})
 	}, [open, savedProvider, savedQuickModel, savedDetailedModel])
 
@@ -336,83 +452,89 @@ export function SettingsDialog({
 
 	function handleProviderChange(p: Provider) {
 		setTempProvider(p)
-		if (p !== "gateway") {
-			const models = CURATED_MODELS[p]
-			if (!models.some((m) => m.id === tempQuickModel))
-				setTempQuickModel(DEFAULT_QUICK_MODEL[p])
-			if (!models.some((m) => m.id === tempDetailedModel))
-				setTempDetailedModel(DEFAULT_DETAILED_MODEL[p])
-		}
+		const quickModels =
+			p === "gateway" ? GATEWAY_QUICK_MODELS : CURATED_MODELS[p]
+		const detailedModels =
+			p === "gateway" ? GATEWAY_DETAILED_MODELS : CURATED_MODELS[p]
+		if (!quickModels.some((m) => m.id === tempQuickModel))
+			setTempQuickModel(DEFAULT_QUICK_MODEL[p])
+		if (!detailedModels.some((m) => m.id === tempDetailedModel))
+			setTempDetailedModel(DEFAULT_DETAILED_MODEL[p])
 	}
 
 	async function handleVerify() {
 		const key = tempKeys[tempProvider]
 		await onVerify(tempProvider, key)
-		if (tempProvider === "gateway" && key) await loadGatewayModels(key)
-	}
-
-	async function loadGatewayModels(key: string) {
-		if (!key) return
-		setModelsLoading(true)
-		try {
-			const result = await api.ai.getModels(key)
-			setGatewayModels(result.models)
-		} catch {
-			// silently fail
-		} finally {
-			setModelsLoading(false)
-		}
 	}
 
 	const currentKey = tempKeys[tempProvider]
 
-	const modelOptions =
+	const quickModelOptions = (
 		tempProvider === "gateway"
-			? gatewayModels.map((m) => ({
-					value: m.id,
-					label: m.name,
-					pricingPerM: m.pricing
-						? {
-								input: parseFloat(m.pricing.input) * 1_000_000,
-								output: parseFloat(m.pricing.output) * 1_000_000,
-							}
-						: undefined,
-				}))
-			: CURATED_MODELS[tempProvider].map((m) => ({
-					value: m.id,
-					label: m.name,
-					pricingPerM: m.pricingPerM,
-				}))
+			? GATEWAY_QUICK_MODELS
+			: CURATED_MODELS[tempProvider]
+	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
+
+	const detailedModelOptions = (
+		tempProvider === "gateway"
+			? GATEWAY_DETAILED_MODELS
+			: CURATED_MODELS[tempProvider]
+	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
+
+	// ── Dirty flags ───────────────────────────────────────────────────────────
+
+	const isAccountDirty =
+		name !== savedAccount.name ||
+		firm !== savedAccount.firm ||
+		role !== savedAccount.role ||
+		jurisdiction !== savedAccount.jurisdiction
+
+	const isProviderDirty =
+		tempProvider !== savedProviderSnap.provider ||
+		tempQuickModel !== savedProviderSnap.quickModel ||
+		tempDetailedModel !== savedProviderSnap.detailedModel ||
+		currentKey !== savedProviderSnap.key
 
 	// ── Save handlers ─────────────────────────────────────────────────────────
 
-	function saveAccount() {
-		api.settings.update({ name, firm, role, jurisdiction })
+	async function saveAccount() {
+		await api.settings.update({ name, firm, role, jurisdiction })
+		setSavedAccount({ name, firm, role, jurisdiction })
 	}
 
-	function saveProvider() {
+	async function saveProvider() {
 		onSave(tempProvider, currentKey, tempQuickModel, tempDetailedModel)
-		api.settings.update({
+		await api.settings.update({
 			aiProvider: tempProvider,
 			aiQuickModel: tempQuickModel,
 			aiDetailedModel: tempDetailedModel,
+		})
+		setSavedProviderSnap({
+			provider: tempProvider,
+			quickModel: tempQuickModel,
+			detailedModel: tempDetailedModel,
+			key: currentKey,
 		})
 	}
 
 	async function saveContext() {
 		await api.settings.update({ promptContext: practiceContext })
+		setSavedPracticeContext(practiceContext)
 	}
 
 	async function saveAskPat() {
 		await api.settings.update({ promptAskpat: askPatInstructions })
+		setSavedAskPat(askPatInstructions)
 	}
 
 	async function saveAgentPat() {
 		await api.settings.update({ promptAgentpat: agentPatInstructions })
+		setSavedAgentPat(agentPatInstructions)
 	}
 
 	async function saveExtractPat() {
 		await api.settings.update({ promptExtractpat: extractPatInstructions })
+		setSavedExtractPat(extractPatInstructions)
 	}
 
 	const breadcrumb = getBreadcrumb(activeSection)
@@ -516,6 +638,7 @@ export function SettingsDialog({
 									role={role}
 									jurisdiction={jurisdiction}
 									theme={theme}
+									isDirty={isAccountDirty}
 									onNameChange={setName}
 									onFirmChange={setFirm}
 									onRoleChange={setRole}
@@ -538,8 +661,9 @@ export function SettingsDialog({
 									keyStatus={keyStatus}
 									tempQuickModel={tempQuickModel}
 									tempDetailedModel={tempDetailedModel}
-									modelOptions={modelOptions}
-									modelsLoading={modelsLoading}
+									quickModelOptions={quickModelOptions}
+									detailedModelOptions={detailedModelOptions}
+									isDirty={isProviderDirty}
 									onProviderChange={handleProviderChange}
 									onKeyChange={(v) =>
 										setTempKeys((prev) => ({ ...prev, [tempProvider]: v }))
@@ -548,10 +672,8 @@ export function SettingsDialog({
 									onVerify={handleVerify}
 									onClear={() => {
 										setTempKeys((prev) => ({ ...prev, [tempProvider]: "" }))
-										setGatewayModels([])
 										onClear()
 									}}
-									onRefreshModels={() => loadGatewayModels(currentKey)}
 									onQuickModelChange={setTempQuickModel}
 									onDetailedModelChange={setTempDetailedModel}
 									onSave={saveProvider}
@@ -569,6 +691,7 @@ export function SettingsDialog({
 									description="Jurisdiction, firm specialisations, and preferred claim style. Included in every AI call."
 									defaultPrompt={DEFAULT_PROMPT_CONTEXT}
 									value={practiceContext}
+									savedValue={savedPracticeContext}
 									onChange={setPracticeContext}
 									onSave={saveContext}
 								/>
@@ -579,6 +702,7 @@ export function SettingsDialog({
 									description="In-editor writing assistant. Helps draft and refine claim language, responses, and specifications directly in the document."
 									defaultPrompt={DEFAULT_PROMPT_ASKPAT}
 									value={askPatInstructions}
+									savedValue={savedAskPat}
 									onChange={setAskPatInstructions}
 									onSave={saveAskPat}
 									showAlert
@@ -590,6 +714,7 @@ export function SettingsDialog({
 									description="Project-aware chat assistant. Has access to your sources and artifacts and can reason across the full matter."
 									defaultPrompt={DEFAULT_PROMPT_AGENTPAT}
 									value={agentPatInstructions}
+									savedValue={savedAgentPat}
 									onChange={setAgentPatInstructions}
 									onSave={saveAgentPat}
 									showAlert
@@ -601,6 +726,7 @@ export function SettingsDialog({
 									description="PDF metadata extraction. Runs automatically when a source is uploaded to pull key fields from office actions, prior art, and disclosures."
 									defaultPrompt={DEFAULT_PROMPT_EXTRACTPAT}
 									value={extractPatInstructions}
+									savedValue={savedExtractPat}
 									onChange={setExtractPatInstructions}
 									onSave={saveExtractPat}
 									showAlert
@@ -624,6 +750,7 @@ function AccountSection({
 	role,
 	jurisdiction,
 	theme,
+	isDirty,
 	onNameChange,
 	onFirmChange,
 	onRoleChange,
@@ -636,13 +763,16 @@ function AccountSection({
 	role: string
 	jurisdiction: string
 	theme: string
+	isDirty: boolean
 	onNameChange: (v: string) => void
 	onFirmChange: (v: string) => void
 	onRoleChange: (v: string) => void
 	onJurisdictionChange: (v: string) => void
 	onThemeChange: (v: "light" | "dark" | "system") => void
-	onSave: () => void
+	onSave: () => Promise<void>
 }) {
+	const { status, wrap } = useSaveButton()
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">
@@ -709,9 +839,11 @@ function AccountSection({
 				</div>
 			</div>
 			<div className="flex justify-end">
-				<Button size="sm" onClick={onSave}>
-					Save
-				</Button>
+				<SaveButton
+					status={status}
+					isDirty={isDirty}
+					onClick={() => wrap(onSave)}
+				/>
 			</div>
 		</div>
 	)
@@ -823,14 +955,14 @@ function AiProviderByokSection({
 	keyStatus,
 	tempQuickModel,
 	tempDetailedModel,
-	modelOptions,
-	modelsLoading,
+	quickModelOptions,
+	detailedModelOptions,
+	isDirty,
 	onProviderChange,
 	onKeyChange,
 	onShowKeyToggle,
 	onVerify,
 	onClear,
-	onRefreshModels,
 	onQuickModelChange,
 	onDetailedModelChange,
 	onSave,
@@ -841,22 +973,28 @@ function AiProviderByokSection({
 	keyStatus: KeyStatus
 	tempQuickModel: string
 	tempDetailedModel: string
-	modelOptions: {
+	quickModelOptions: {
 		value: string
 		label: string
 		pricingPerM?: { input: number; output: number }
 	}[]
-	modelsLoading: boolean
+	detailedModelOptions: {
+		value: string
+		label: string
+		pricingPerM?: { input: number; output: number }
+	}[]
+	isDirty: boolean
 	onProviderChange: (p: Provider) => void
 	onKeyChange: (v: string) => void
 	onShowKeyToggle: () => void
 	onVerify: () => void
 	onClear: () => void
-	onRefreshModels: () => void
 	onQuickModelChange: (v: string) => void
 	onDetailedModelChange: (v: string) => void
-	onSave: () => void
+	onSave: () => Promise<void>
 }) {
+	const { status, wrap } = useSaveButton()
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">
@@ -952,58 +1090,33 @@ function AiProviderByokSection({
 
 			{/* Models */}
 			<div className="flex flex-col gap-4">
-				<div className="flex items-center justify-between">
-					<p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-						Models
-					</p>
-					{tempProvider === "gateway" && (
-						<Button
-							variant="ghost"
-							size="xs"
-							onClick={onRefreshModels}
-							disabled={!currentKey || modelsLoading}
-						>
-							{modelsLoading ? (
-								<Loader2 size={11} className="animate-spin" />
-							) : (
-								"Refresh"
-							)}
-						</Button>
-					)}
+				<p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+					Models
+				</p>
+				<div className="grid grid-cols-2 gap-4">
+					<ModelSelect
+						label="Quick Model"
+						description="AskPat and ExtractPat — fast and cheap."
+						value={tempQuickModel}
+						options={quickModelOptions}
+						onChange={onQuickModelChange}
+					/>
+					<ModelSelect
+						label="Detailed Model"
+						description="AgentPat — thorough, best reasoning."
+						value={tempDetailedModel}
+						options={detailedModelOptions}
+						onChange={onDetailedModelChange}
+					/>
 				</div>
-
-				{tempProvider === "gateway" &&
-					modelOptions.length === 0 &&
-					!modelsLoading && (
-						<p className="text-xs text-muted-foreground">
-							Verify your key to load available models.
-						</p>
-					)}
-
-				{(tempProvider !== "gateway" || modelOptions.length > 0) && (
-					<div className="grid grid-cols-2 gap-4">
-						<ModelSelect
-							label="Quick Model"
-							description="AskPat and ExtractPat — fast and cheap."
-							value={tempQuickModel}
-							options={modelOptions}
-							onChange={onQuickModelChange}
-						/>
-						<ModelSelect
-							label="Detailed Model"
-							description="AgentPat — thorough, best reasoning."
-							value={tempDetailedModel}
-							options={modelOptions}
-							onChange={onDetailedModelChange}
-						/>
-					</div>
-				)}
 			</div>
 
 			<div className="flex justify-end">
-				<Button size="sm" onClick={onSave}>
-					Save
-				</Button>
+				<SaveButton
+					status={status}
+					isDirty={isDirty}
+					onClick={() => wrap(onSave)}
+				/>
 			</div>
 		</div>
 	)
@@ -1145,6 +1258,7 @@ function PromptSection({
 	description,
 	defaultPrompt,
 	value,
+	savedValue,
 	onChange,
 	onSave,
 	showAlert = false,
@@ -1153,21 +1267,25 @@ function PromptSection({
 	description: string
 	defaultPrompt?: string
 	value: string
+	savedValue: string
 	onChange: (v: string) => void
-	onSave: () => void
+	onSave: () => Promise<void>
 	showAlert?: boolean
 }) {
 	const [alertOpen, setAlertOpen] = React.useState(false)
+	const { status, wrap } = useSaveButton()
+
+	const displayValue = value || defaultPrompt || ""
+	const savedDisplayValue = savedValue || defaultPrompt || ""
+	const isDirty = displayValue !== savedDisplayValue
 
 	function handleSaveClick() {
 		if (showAlert) {
 			setAlertOpen(true)
 		} else {
-			onSave()
+			wrap(onSave)
 		}
 	}
-
-	const displayValue = value || defaultPrompt || ""
 
 	return (
 		<>
@@ -1200,9 +1318,11 @@ function PromptSection({
 					) : (
 						<span />
 					)}
-					<Button size="sm" onClick={handleSaveClick}>
-						Save
-					</Button>
+					<SaveButton
+						status={status}
+						isDirty={isDirty}
+						onClick={handleSaveClick}
+					/>
 				</div>
 			</div>
 
@@ -1241,8 +1361,8 @@ function PromptSection({
 							<AlertDialogCancel>Cancel</AlertDialogCancel>
 							<AlertDialogAction
 								onClick={() => {
-									onSave()
 									setAlertOpen(false)
+									wrap(onSave)
 								}}
 							>
 								Save anyway

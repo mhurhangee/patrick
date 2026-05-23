@@ -1,11 +1,11 @@
 "use client"
 
-import { faker } from "@faker-js/faker"
 import { CopilotPlugin } from "@platejs/ai/react"
 import { serializeMd, stripMarkdown } from "@platejs/markdown"
-import type { TElement } from "platejs"
+import { NodeApi, type TElement } from "platejs"
 
 import { GhostText } from "@/components/ui/ghost-text"
+import { BASE_URL } from "@/lib/api"
 
 import { MarkdownKit } from "./markdown-kit"
 
@@ -14,26 +14,28 @@ export const CopilotKit = [
 	CopilotPlugin.configure(({ api }) => ({
 		options: {
 			completeOptions: {
-				api: "/api/ai/copilot",
+				api: `${BASE_URL}/ai/askpat/copilot`,
 				body: {
-					system: `You are an advanced AI writing assistant, similar to VSCode Copilot but for general text. Your task is to predict and generate the next part of the text based on the given context.
-  
-  Rules:
-  - Continue the text naturally up to the next punctuation mark (., ,, ;, :, ?, or !).
-  - Maintain style and tone. Don't repeat given text.
-  - For unclear context, provide the most likely continuation.
-  - Handle code snippets, lists, or structured text if needed.
-  - Don't include """ in your response.
-  - CRITICAL: Always end with a punctuation mark.
-  - CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc. The suggestion should continue in the same block as the context.
-  - If no context is provided or you can't generate a continuation, return "0" without explanation.`,
+					system: `You are an AI writing assistant for patent attorneys. Continue the text naturally up to the next punctuation mark.
+
+Rules:
+- Maintain the formal, precise style of patent documents.
+- Do not repeat given text. Continue seamlessly from where it ends.
+- CRITICAL: Always end with a punctuation mark.
+- CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc.
+- If no context is provided or you can't generate a continuation, return "0" without explanation.`,
 				},
-				onError: () => {
-					// Mock the API response. Remove it when you implement the route /api/ai/copilot
-					api.copilot.setBlockSuggestion({
-						text: stripMarkdown(faker.lorem.sentence()),
+				fetch: (async (input, init) => {
+					// Inject AI settings (BYOK — keys never stored server-side)
+					const initBody = JSON.parse((init?.body as string) ?? "{}")
+					const provider = localStorage.getItem("askpat-provider") || "anthropic"
+					const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
+					const model = localStorage.getItem("askpat-quick-model") || ""
+					return fetch(input, {
+						...init,
+						body: JSON.stringify({ ...initBody, provider, apiKey, model }),
 					})
-				},
+				}) as typeof fetch,
 				onFinish: (_, completion) => {
 					if (completion === "0") return
 
@@ -42,6 +44,21 @@ export const CopilotKit = [
 					})
 				},
 			},
+			// Cancel any pending trigger when the user continues typing past a space.
+			// Without this, the debounce from a space keypress fires mid-word because
+			// autoTriggerQuery only ADDS triggers (when last char is space) but never
+			// cancels them when the user keeps typing.
+			autoTriggerQuery: ({ editor }) => {
+				if (editor.getOptions(CopilotPlugin).suggestionText) return false
+				if (editor.api.isEmpty(editor.selection, { block: true })) return false
+				const blockAbove = editor.api.block()
+				if (!blockAbove) return false
+				if (NodeApi.string(blockAbove[0]).at(-1) !== " ") {
+					;(api.copilot.triggerSuggestion as any)?.cancel?.()
+					return false
+				}
+				return true
+			},
 			debounceDelay: 500,
 			renderGhostText: GhostText,
 			getPrompt: ({ editor }) => {
@@ -49,14 +66,42 @@ export const CopilotKit = [
 
 				if (!contextEntry) return ""
 
-				const prompt = serializeMd(editor, {
-					value: [contextEntry[0] as TElement],
+				const [currentBlock, currentPath] = contextEntry
+				const currentIndex = currentPath[0] as number
+
+				// Include up to 4 preceding blocks so the model has cross-block context
+				const precedingBlocks = (editor.children as TElement[]).slice(
+					Math.max(0, currentIndex - 4),
+					currentIndex,
+				)
+
+				const precedingText =
+					precedingBlocks.length > 0
+						? serializeMd(editor, { value: precedingBlocks })
+						: null
+
+				const currentText = serializeMd(editor, {
+					value: [currentBlock as TElement],
 				})
 
+				if (precedingText) {
+					return `Continue the text up to the next punctuation mark. Use the preceding context to stay on topic.
+
+Preceding context:
+"""
+${precedingText}
+"""
+
+Continue this:
+"""
+${currentText}
+"""`
+				}
+
 				return `Continue the text up to the next punctuation mark:
-  """
-  ${prompt}
-  """`
+"""
+${currentText}
+"""`
 			},
 		},
 		shortcuts: {

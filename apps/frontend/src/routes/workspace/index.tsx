@@ -860,6 +860,11 @@ function ArtifactEditor({
 		}, 500)
 	}
 
+	// Tell the AI transport what kind of document is open so prompts can be doc-type-aware
+	React.useEffect(() => {
+		localStorage.setItem("askpat-asset-type", asset.type)
+	}, [asset.type])
+
 	// Flush on unmount (tab switch, close) — intentionally no deps, save is stable for asset lifetime
 	// biome-ignore lint/correctness/useExhaustiveDependencies: unmount-only flush, save recreated each render
 	React.useEffect(() => {
@@ -1744,11 +1749,15 @@ function WorkspacePage() {
 	React.useEffect(() => {
 		api.settings.get().then((s) => {
 			const p = (s.aiProvider as Provider) || "anthropic"
+			const quick = s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic
 			setProvider(p)
-			setQuickModel(s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic)
+			setQuickModel(quick)
 			setDetailedModel(s.aiDetailedModel || DEFAULT_DETAILED_MODEL.anthropic)
 			const key = localStorage.getItem(`ai-${p}-key`) ?? ""
 			setApiKey(key)
+			// Sync provider/model to localStorage so copilot fetch can read them
+			localStorage.setItem("askpat-provider", p)
+			localStorage.setItem("askpat-quick-model", quick)
 		})
 	}, [])
 
@@ -1799,6 +1808,8 @@ function WorkspacePage() {
 		detailed: string,
 	) {
 		localStorage.setItem(`ai-${prov}-key`, key)
+		localStorage.setItem("askpat-provider", prov)
+		localStorage.setItem("askpat-quick-model", quick)
 		setProvider(prov)
 		setApiKey(key)
 		setQuickModel(quick)
