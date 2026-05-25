@@ -211,10 +211,7 @@ function NewProjectPanel({
 				</div>
 				<div className="flex flex-col gap-1.5">
 					<Label htmlFor="new-project-type">Type</Label>
-					<Select
-						value={type}
-						onValueChange={(v) => setType(v as ProjectType)}
-					>
+					<Select value={type} onValueChange={(v) => setType(v as ProjectType)}>
 						<SelectTrigger id="new-project-type">
 							<SelectValue />
 						</SelectTrigger>
@@ -327,10 +324,7 @@ function EditProjectPanel({
 				</div>
 				<div className="flex flex-col gap-1.5">
 					<Label htmlFor="edit-project-type">Type</Label>
-					<Select
-						value={type}
-						onValueChange={(v) => setType(v as ProjectType)}
-					>
+					<Select value={type} onValueChange={(v) => setType(v as ProjectType)}>
 						<SelectTrigger id="edit-project-type">
 							<SelectValue />
 						</SelectTrigger>
@@ -466,7 +460,11 @@ export function ProjectManagerDialog({
 					style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
 				>
 					{/* Left — project list */}
-					<Sidebar collapsible="none" className="flex">
+					<Sidebar
+						collapsible="none"
+						className="flex"
+						style={{ height: "560px" }}
+					>
 						<SidebarContent>
 							<div className="px-3 pt-3 pb-1">
 								<div className="relative">
@@ -496,9 +494,7 @@ export function ProjectManagerDialog({
 												<SidebarMenuItem key={project.id}>
 													<SidebarMenuButton
 														isActive={isSelected}
-														onClick={() =>
-															setPanelState({ id: project.id })
-														}
+														onClick={() => setPanelState({ id: project.id })}
 														className="gap-2 h-auto py-2"
 													>
 														<cfg.icon
@@ -527,7 +523,7 @@ export function ProjectManagerDialog({
 								</SidebarGroupContent>
 							</SidebarGroup>
 						</SidebarContent>
-						<SidebarFooter className="p-3">
+						<SidebarFooter>
 							<Button
 								variant={panelState === "new" ? "secondary" : "outline"}
 								size="sm"

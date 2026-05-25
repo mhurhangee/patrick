@@ -477,6 +477,7 @@ function AppSidebar({
 								kindGroup.kind === "source" ? onAddSource : onAddArtifact
 							}
 							disabled={!currentProjectId}
+							className={!currentProjectId ? "opacity-40 cursor-not-allowed" : undefined}
 						>
 							<Plus />
 							<span className="sr-only">
