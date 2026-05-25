@@ -51,6 +51,7 @@ import {
 	SidebarContent,
 	SidebarGroup,
 	SidebarGroupContent,
+	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
@@ -460,6 +461,8 @@ export function SettingsDialog({
 			setTempQuickModel(DEFAULT_QUICK_MODEL[p])
 		if (!detailedModels.some((m) => m.id === tempDetailedModel))
 			setTempDetailedModel(DEFAULT_DETAILED_MODEL[p])
+		// Reset key status: verify new provider's key (or reset to idle if none)
+		onVerify(p, tempKeys[p])
 	}
 
 	async function handleVerify() {
@@ -554,6 +557,9 @@ export function SettingsDialog({
 					style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
 				>
 					<Sidebar collapsible="none" className="hidden md:flex">
+						<SidebarHeader>
+							<h2 className="text-lg font-semibold font-heading">Settings</h2>
+						</SidebarHeader>
 						<SidebarContent>
 							<SidebarGroup>
 								<SidebarGroupContent>
@@ -776,7 +782,9 @@ function AccountSection({
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">
-				<h2 className="text-sm font-semibold">You</h2>
+				<h2 className="text-sm font-semibold flex items-center gap-1">
+					<User className="w- h-5" /> You
+				</h2>
 				<p className="text-xs text-muted-foreground">
 					Your profile and appearance settings.
 				</p>

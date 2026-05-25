@@ -476,6 +476,7 @@ function AppSidebar({
 							onClick={
 								kindGroup.kind === "source" ? onAddSource : onAddArtifact
 							}
+							disabled={!currentProjectId}
 						>
 							<Plus />
 							<span className="sr-only">

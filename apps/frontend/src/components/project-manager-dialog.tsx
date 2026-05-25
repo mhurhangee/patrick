@@ -466,7 +466,7 @@ export function ProjectManagerDialog({
 					style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
 				>
 					{/* Left — project list */}
-					<Sidebar collapsible="none" className="hidden md:flex">
+					<Sidebar collapsible="none" className="flex">
 						<SidebarContent>
 							<div className="px-3 pt-3 pb-1">
 								<div className="relative">
