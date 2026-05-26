@@ -10,7 +10,7 @@ import {
 	FolderOpen,
 	FolderPlus,
 	Gavel,
-	Lightbulb,
+	Globe,
 	ListChecks,
 	Loader2,
 	type LucideIcon,
@@ -18,7 +18,6 @@ import {
 	Pencil,
 	Plus,
 	Reply,
-	Search,
 	Send,
 	Settings,
 	Trash2,
@@ -28,13 +27,12 @@ import {
 import type { Value } from "platejs"
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
-import { AddArtifactDialog } from "@/components/add-artifact-dialog"
-import { AddSourceDialog } from "@/components/add-source-dialog"
-import { EditAssetDialog } from "@/components/edit-asset-dialog"
+import { ArtifactDialog } from "@/components/artifact-dialog"
 import { PlateEditor } from "@/components/editor/plate-editor"
 import { Logo } from "@/components/logo"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsDialog } from "@/components/settings-dialog"
+import { SourceDialog } from "@/components/source-dialog"
 import { SourceViewer } from "@/components/source-viewer"
 import {
 	AlertDialog,
@@ -139,13 +137,6 @@ const ASSET_TYPES: {
 	color: string
 }[] = [
 	{
-		id: "inventor-disclosure",
-		kind: "source",
-		label: "Inventor Disclosures",
-		icon: Lightbulb,
-		color: "text-amber-500",
-	},
-	{
 		id: "office-action",
 		kind: "source",
 		label: "Office Actions",
@@ -153,11 +144,11 @@ const ASSET_TYPES: {
 		color: "text-red-500",
 	},
 	{
-		id: "prior-art",
+		id: "epo-examination-report",
 		kind: "source",
-		label: "Prior Art",
-		icon: Search,
-		color: "text-slate-500",
+		label: "EPO Examination Reports",
+		icon: Globe,
+		color: "text-blue-400",
 	},
 	{
 		id: "patent-spec",
@@ -1277,9 +1268,14 @@ function WorkspacePage() {
 	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
 	const [activeTab, setActiveTab] = React.useState("")
 	const [splitView, setSplitView] = React.useState(false)
-	const [addSourceOpen, setAddSourceOpen] = React.useState(false)
-	const [addArtifactOpen, setAddArtifactOpen] = React.useState(false)
-	const [editAssetId, setEditAssetId] = React.useState<string | null>(null)
+	const [sourceDialogOpen, setSourceDialogOpen] = React.useState(false)
+	const [sourceDialogAsset, setSourceDialogAsset] = React.useState<
+		ApiAsset | undefined
+	>(undefined)
+	const [artifactDialogOpen, setArtifactDialogOpen] = React.useState(false)
+	const [artifactDialogAsset, setArtifactDialogAsset] = React.useState<
+		ApiAsset | undefined
+	>(undefined)
 
 	// Chats
 	const [chats, setChats] = React.useState<Chat[]>(MOCK_CHATS)
@@ -1408,14 +1404,28 @@ function WorkspacePage() {
 		setAssets((prev) => prev.filter((a) => a.id !== id))
 	}
 
-	function addArtifact() {
-		if (!currentProjectId) return
-		setAddArtifactOpen(true)
-	}
-
 	function addSource() {
 		if (!currentProjectId) return
-		setAddSourceOpen(true)
+		setSourceDialogAsset(undefined)
+		setSourceDialogOpen(true)
+	}
+
+	function addArtifact() {
+		if (!currentProjectId) return
+		setArtifactDialogAsset(undefined)
+		setArtifactDialogOpen(true)
+	}
+
+	function editAsset(id: string) {
+		const a = assets.find((asset) => asset.id === id)
+		if (!a) return
+		if (a.kind === "source") {
+			setSourceDialogAsset(a)
+			setSourceDialogOpen(true)
+		} else {
+			setArtifactDialogAsset(a)
+			setArtifactDialogOpen(true)
+		}
 	}
 
 	// ── Project handlers ──────────────────────────────────────────────────────
@@ -1553,7 +1563,7 @@ function WorkspacePage() {
 					projectsLoading={projectsLoading}
 					currentProjectId={currentProjectId}
 					onOpen={openAsset}
-					onEdit={(id) => setEditAssetId(id)}
+					onEdit={editAsset}
 					onAddArtifact={addArtifact}
 					onAddSource={addSource}
 					onOpenChat={openChat}
@@ -1641,35 +1651,38 @@ function WorkspacePage() {
 				onSave={saveAiSettings}
 				onClear={clearApiKey}
 			/>
-			<AddSourceDialog
-				open={addSourceOpen}
-				onOpenChange={setAddSourceOpen}
+			<SourceDialog
+				asset={sourceDialogAsset}
+				open={sourceDialogOpen}
+				onOpenChange={setSourceDialogOpen}
 				projectId={currentProjectId}
 				provider={provider}
 				apiKey={localStorage.getItem(`ai-${provider}-key`) ?? ""}
 				model={detailedModel}
-				onCreated={(asset) => {
-					setAssets((prev) => [...prev, asset])
-					openAsset(asset.id)
+				onSaved={(asset) => {
+					setAssets((prev) => {
+						const exists = prev.some((a) => a.id === asset.id)
+						return exists
+							? prev.map((a) => (a.id === asset.id ? asset : a))
+							: [...prev, asset]
+					})
+					if (!sourceDialogAsset) openAsset(asset.id)
 				}}
+				onDeleted={deleteAsset}
 			/>
-			<AddArtifactDialog
-				open={addArtifactOpen}
-				onOpenChange={setAddArtifactOpen}
+			<ArtifactDialog
+				asset={artifactDialogAsset}
+				open={artifactDialogOpen}
+				onOpenChange={setArtifactDialogOpen}
 				projectId={currentProjectId}
-				onCreated={(asset) => {
-					setAssets((prev) => [...prev, asset])
-					openAsset(asset.id)
-				}}
-			/>
-			<EditAssetDialog
-				asset={editAssetId ? assets.find((a) => a.id === editAssetId) : undefined}
-				open={editAssetId !== null}
-				onOpenChange={(v) => {
-					if (!v) setEditAssetId(null)
-				}}
-				onUpdated={(asset) => {
-					setAssets((prev) => prev.map((a) => (a.id === asset.id ? asset : a)))
+				onSaved={(asset) => {
+					setAssets((prev) => {
+						const exists = prev.some((a) => a.id === asset.id)
+						return exists
+							? prev.map((a) => (a.id === asset.id ? asset : a))
+							: [...prev, asset]
+					})
+					if (!artifactDialogAsset) openAsset(asset.id)
 				}}
 				onDeleted={deleteAsset}
 			/>

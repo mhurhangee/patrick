@@ -35,7 +35,7 @@ export type ApiAsset = {
 	date: string
 	notes: string
 	metadata: string
-	extractedData: string | null
+	details: string | null
 	createdAt: string
 	updatedAt: string
 }
@@ -61,7 +61,12 @@ export const api = {
 			request<ApiSettings>("/settings", json(patch, { method: "PUT" })),
 	},
 	extractpat: {
-		extract: (assetId: string, provider: string, apiKey: string, model: string) =>
+		extract: (
+			assetId: string,
+			provider: string,
+			apiKey: string,
+			model: string,
+		) =>
 			request<{ extracted: Record<string, unknown>; assetType: string }>(
 				"/ai/extractpat/extract",
 				json({ assetId, provider, apiKey, model }, { method: "POST" }),
@@ -87,7 +92,10 @@ export const api = {
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
 		create: (name: string, type: ProjectType = "office-action-response") =>
-			request<ApiProject>("/projects", json({ name, type }, { method: "POST" })),
+			request<ApiProject>(
+				"/projects",
+				json({ name, type }, { method: "POST" }),
+			),
 		update: (id: string, patch: { name?: string; type?: ProjectType }) =>
 			request<ApiProject>(`/projects/${id}`, json(patch, { method: "PUT" })),
 		delete: (id: string) =>
@@ -107,7 +115,7 @@ export const api = {
 			patch: Partial<
 				Pick<
 					ApiAsset,
-					"title" | "content" | "type" | "kind" | "date" | "notes" | "extractedData"
+					"title" | "content" | "type" | "kind" | "date" | "notes" | "details"
 				>
 			>,
 		) => request<ApiAsset>(`/assets/${id}`, json(patch, { method: "PUT" })),

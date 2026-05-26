@@ -343,52 +343,51 @@ function EditProjectPanel({
 			</div>
 
 			<div className="flex items-center justify-between">
-				<SaveButton
-					status={status}
-					isDirty={isDirty}
-					onClick={() => wrap(handleSave)}
-				/>
-				<Button
-					size="sm"
-					variant={isCurrent ? "secondary" : "default"}
-					onClick={onOpen}
-				>
-					{isCurrent ? "Current project" : "Open project"}
-				</Button>
-			</div>
-
-			<Separator />
-
-			<AlertDialog>
-				<AlertDialogTrigger asChild>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="w-fit gap-1.5 text-destructive hover:text-destructive"
-					>
-						<Trash2 size={13} />
-						Delete project
-					</Button>
-				</AlertDialogTrigger>
-				<AlertDialogContent size="sm">
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete project?</AlertDialogTitle>
-						<AlertDialogDescription>
-							"{project.name}" and all its sources and artifacts will be
-							permanently deleted. This cannot be undone.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							variant="destructive"
-							onClick={() => onDelete(project.id)}
+				<AlertDialog>
+					<AlertDialogTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="w-fit gap-1.5 text-destructive hover:text-destructive"
 						>
-							Delete
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+							<Trash2 size={13} />
+							Delete project
+						</Button>
+					</AlertDialogTrigger>
+					<AlertDialogContent size="sm">
+						<AlertDialogHeader>
+							<AlertDialogTitle>Delete project?</AlertDialogTitle>
+							<AlertDialogDescription>
+								"{project.name}" and all its sources and artifacts will be
+								permanently deleted. This cannot be undone.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>Cancel</AlertDialogCancel>
+							<AlertDialogAction
+								variant="destructive"
+								onClick={() => onDelete(project.id)}
+							>
+								Delete
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+				<div className="flex items-center gap-2">
+					<SaveButton
+						status={status}
+						isDirty={isDirty}
+						onClick={() => wrap(handleSave)}
+					/>
+					<Button
+						size="sm"
+						variant={isCurrent ? "secondary" : "default"}
+						onClick={onOpen}
+					>
+						{isCurrent ? "Current project" : "Open project"}
+					</Button>
+				</div>
+			</div>
 		</div>
 	)
 }

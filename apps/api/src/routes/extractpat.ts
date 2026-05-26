@@ -20,9 +20,11 @@ function createModel(provider: string, apiKey: string, modelId: string) {
 // ─── Per-type extraction schemas ──────────────────────────────────────────────
 
 const officeActionSchema = z.object({
+	title: z.string().describe("Subject line or brief title of the office action"),
+	date: z.string().describe("Date the office action was mailed (YYYY-MM-DD)"),
+	notes: z.string().describe("Notable context, urgency, or overall summary"),
 	applicationNumber: z.string().describe("Patent application number"),
-	filingDate: z.string().describe("Application filing date"),
-	mailingDate: z.string().describe("Date the office action was mailed"),
+	filingDate: z.string().describe("Application filing date (YYYY-MM-DD)"),
 	examinerName: z.string().describe("Examiner full name"),
 	artUnit: z.string().describe("USPTO Art Unit number"),
 	rejections: z
@@ -49,74 +51,46 @@ const officeActionSchema = z.object({
 		.describe("Non-rejection objections raised (e.g. to drawings or specification)"),
 })
 
-const priorArtSchema = z.object({
-	documentNumber: z.string().describe("Patent or publication number"),
-	title: z.string().describe("Title of the document"),
-	inventors: z.array(z.string()).describe("Inventor names"),
-	assignee: z.string().describe("Assignee or applicant organisation"),
-	filingDate: z.string().describe("Filing date"),
-	publicationDate: z.string().describe("Publication or grant date"),
-	abstract: z.string().describe("Summary of the document"),
-	relevantSections: z
-		.array(z.string())
-		.describe(
-			"Column, paragraph, or figure references to technically relevant disclosures",
-		),
-})
-
-const inventorDisclosureSchema = z.object({
-	inventionTitle: z.string().describe("Title or short name for the invention"),
-	inventors: z
+const epoExaminationReportSchema = z.object({
+	title: z.string().describe("Subject line or brief title of the examination report"),
+	date: z.string().describe("Date of the examination report (YYYY-MM-DD)"),
+	notes: z.string().describe("Notable context, urgency, or overall summary"),
+	applicationNumber: z.string().describe("European patent application number"),
+	filingDate: z.string().describe("Application filing date (YYYY-MM-DD)"),
+	examiningDivision: z.string().describe("EPO examining division or primary examiner name"),
+	objections: z
 		.array(
 			z.object({
-				name: z.string(),
-				role: z.string().describe("Role or department, if stated"),
+				article: z
+					.string()
+					.describe("EPC article or rule raised (e.g. Art. 56, Art. 84, Rule 43(2))"),
+				claimsAffected: z
+					.array(z.string())
+					.describe("Claims affected by this objection"),
+				citedDocuments: z
+					.array(z.string())
+					.describe("Documents cited in support of this objection"),
+				grounds: z.string().describe("Brief summary of the objection rationale"),
 			}),
 		)
-		.describe("Inventors listed in the disclosure"),
-	technicalField: z.string().describe("Technical field of the invention"),
-	problemSolved: z.string().describe("Problem the invention addresses"),
-	keyEmbodiments: z
+		.describe("All objections raised in the examination report"),
+	allowedSubjectMatter: z
 		.array(z.string())
-		.describe("Main embodiments or configurations described"),
-	priorArtKnown: z
-		.array(z.string())
-		.describe("Prior art known to the inventors, as stated in the disclosure"),
-	notes: z
-		.string()
-		.describe("Any urgency, deadlines, or filing recommendations mentioned"),
-})
-
-const patentSpecSchema = z.object({
-	applicationNumber: z.string().describe("Application or publication number"),
-	title: z.string().describe("Title of the invention"),
-	inventors: z.array(z.string()).describe("Listed inventors"),
-	filingDate: z.string().describe("Filing date"),
-	technicalField: z.string().describe("Technical field of the invention"),
-	abstractSummary: z.string().describe("Summary of the abstract"),
-	independentClaims: z
-		.array(z.string())
-		.describe("Full text of each independent claim"),
+		.describe("Claims or subject matter considered allowable, if any"),
 })
 
 const SCHEMAS = {
 	"office-action": officeActionSchema,
-	"prior-art": priorArtSchema,
-	"inventor-disclosure": inventorDisclosureSchema,
-	"patent-spec": patentSpecSchema,
+	"epo-examination-report": epoExaminationReportSchema,
 } as const
 
 type ExtractableType = keyof typeof SCHEMAS
 
 const EXTRACTION_PROMPTS: Record<ExtractableType, string> = {
 	"office-action":
-		"Extract structured data from this USPTO Office Action. Use empty strings for fields not present. Use empty arrays where no items are found.",
-	"prior-art":
-		"Extract structured bibliographic and technical data from this patent or publication document. Use empty strings for fields not present.",
-	"inventor-disclosure":
-		"Extract structured data from this inventor disclosure form. Use empty strings for fields not present. Use empty arrays where no items are found.",
-	"patent-spec":
-		"Extract structured data from this patent specification or application. Use empty strings for fields not present. Use empty arrays where no items are found.",
+		"Extract structured data from this USPTO Office Action. Use empty strings for text fields not present. Use empty arrays where no items are found.",
+	"epo-examination-report":
+		"Extract structured data from this EPO examination report or communication. Use empty strings for text fields not present. Use empty arrays where no items are found.",
 }
 
 async function loadSystemPrompt(): Promise<string | undefined> {
@@ -127,7 +101,12 @@ async function loadSystemPrompt(): Promise<string | undefined> {
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 extractpatRouter.post("/extract", async (c) => {
-	const { assetId, provider, apiKey, model: modelId } = await c.req.json<{
+	const {
+		assetId,
+		provider,
+		apiKey,
+		model: modelId,
+	} = await c.req.json<{
 		assetId: string
 		provider: string
 		apiKey: string
@@ -135,15 +114,15 @@ extractpatRouter.post("/extract", async (c) => {
 	}>()
 
 	// Fetch asset including the raw PDF blob
-	const [asset] = await db
-		.select()
-		.from(assets)
-		.where(eq(assets.id, assetId))
+	const [asset] = await db.select().from(assets).where(eq(assets.id, assetId))
 
 	if (!asset) return c.json({ error: "Asset not found" }, 404)
 	if (!asset.data) return c.json({ error: "Asset has no file data" }, 400)
 	if (!(asset.type in SCHEMAS))
-		return c.json({ error: `No extraction schema for type: ${asset.type}` }, 400)
+		return c.json(
+			{ error: `No extraction schema for type: ${asset.type}` },
+			400,
+		)
 
 	const assetType = asset.type as ExtractableType
 	const schema = SCHEMAS[assetType]

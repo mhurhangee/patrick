@@ -15,7 +15,7 @@ const safeColumns = {
 	date: assets.date,
 	notes: assets.notes,
 	metadata: assets.metadata,
-	extractedData: assets.extractedData,
+	details: assets.details,
 	createdAt: assets.createdAt,
 	updatedAt: assets.updatedAt,
 }
@@ -66,6 +66,7 @@ assetsRouter.post("/", async (c) => {
 		const type = (form.get("type") as AssetType) ?? "inventor-disclosure"
 		const date = (form.get("date") as string) ?? ""
 		const notes = (form.get("notes") as string) ?? ""
+		const details = (form.get("details") as string) || null
 
 		const data =
 			file instanceof File ? Buffer.from(await file.arrayBuffer()) : null
@@ -83,6 +84,7 @@ assetsRouter.post("/", async (c) => {
 				notes,
 				data,
 				metadata: "{}",
+				details,
 				createdAt: now,
 				updatedAt: now,
 			})
@@ -141,6 +143,7 @@ assetsRouter.put("/:id", async (c) => {
 		date?: string
 		notes?: string
 		metadata?: string
+		details?: string | null
 	}>()
 	const patch = Object.fromEntries(
 		Object.entries(body).filter(([, v]) => v !== undefined),

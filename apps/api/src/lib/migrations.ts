@@ -36,7 +36,7 @@ export const migrations: { name: string; sql: string }[] = [
 				notes TEXT NOT NULL DEFAULT '',
 				data BLOB,
 				metadata TEXT NOT NULL DEFAULT '{}',
-				extracted_data TEXT,
+				details TEXT,
 				created_at INTEGER NOT NULL,
 				updated_at INTEGER NOT NULL
 			);

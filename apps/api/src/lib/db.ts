@@ -20,9 +20,9 @@ sqlite.exec(`
 	)
 `)
 const applied = new Set(
-	(sqlite.query("SELECT name FROM __migrations").all() as { name: string }[]).map(
-		(r) => r.name,
-	),
+	(
+		sqlite.query("SELECT name FROM __migrations").all() as { name: string }[]
+	).map((r) => r.name),
 )
 for (const { name, sql } of migrations) {
 	if (!applied.has(name)) {

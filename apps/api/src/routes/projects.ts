@@ -1,4 +1,4 @@
-import { type ProjectType, assets, eq, projects } from "@patrickos/db"
+import { assets, eq, type ProjectType, projects } from "@patrickos/db"
 import { Hono } from "hono"
 import { db } from "../lib/db"
 
@@ -19,14 +19,20 @@ projectsRouter.get("/:id", async (c) => {
 })
 
 projectsRouter.post("/", async (c) => {
-	const {
-		name,
-		type = "office-action-response",
-	} = await c.req.json<{ name: string; type?: ProjectType }>()
+	const { name, type = "office-action-response" } = await c.req.json<{
+		name: string
+		type?: ProjectType
+	}>()
 	const now = new Date()
 	const [row] = await db
 		.insert(projects)
-		.values({ id: crypto.randomUUID(), name, type, createdAt: now, updatedAt: now })
+		.values({
+			id: crypto.randomUUID(),
+			name,
+			type,
+			createdAt: now,
+			updatedAt: now,
+		})
 		.returning()
 	return c.json(row, 201)
 })

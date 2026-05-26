@@ -23,10 +23,9 @@ export type ProjectType =
 	| "general"
 
 export type AssetType =
-	| "inventor-disclosure"
 	| "office-action"
+	| "epo-examination-report"
 	| "patent-spec"
-	| "prior-art"
 	| "claims-draft"
 	| "response-draft"
 
@@ -56,7 +55,7 @@ export const assets = sqliteTable("assets", {
 	notes: text("notes").notNull().default(""),
 	data: blob("data"),
 	metadata: text("metadata").notNull().default("{}"),
-	extractedData: text("extracted_data"),
+	details: text("details"),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })
