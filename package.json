@@ -5,7 +5,7 @@
 	"packageManager": "pnpm@10.26.2",
 	"scripts": {
 		"dev": "pnpm --filter @patrickos/db push && pnpm --filter frontend --filter api --parallel dev",
-		"dev:desktop": "rm -f ~/.local/share/com.patrickos.desktop/patrickos.db && pnpm --filter desktop dev",
+		"dev:desktop": "pnpm --filter desktop dev",
 		"build:api": "pnpm --filter api build && cp apps/api/bin/api apps/desktop/src-tauri/binaries/api-x86_64-unknown-linux-gnu",
 		"typecheck": "pnpm -r --parallel --if-present typecheck",
 		"lint": "biome check .",
