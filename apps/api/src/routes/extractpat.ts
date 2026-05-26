@@ -20,7 +20,9 @@ function createModel(provider: string, apiKey: string, modelId: string) {
 // ─── Per-type extraction schemas ──────────────────────────────────────────────
 
 const officeActionSchema = z.object({
-	title: z.string().describe("Subject line or brief title of the office action"),
+	title: z
+		.string()
+		.describe("Subject line or brief title of the office action"),
 	date: z.string().describe("Date the office action was mailed (YYYY-MM-DD)"),
 	notes: z.string().describe("Notable context, urgency, or overall summary"),
 	applicationNumber: z.string().describe("Patent application number"),
@@ -38,8 +40,12 @@ const officeActionSchema = z.object({
 					.describe("Claim numbers rejected under this ground"),
 				citedReferences: z
 					.array(z.string())
-					.describe("Prior art references cited (patent numbers or author names)"),
-				grounds: z.string().describe("Brief summary of the rejection rationale"),
+					.describe(
+						"Prior art references cited (patent numbers or author names)",
+					),
+				grounds: z
+					.string()
+					.describe("Brief summary of the rejection rationale"),
 			}),
 		)
 		.describe("All rejections in the office action"),
@@ -48,29 +54,39 @@ const officeActionSchema = z.object({
 		.describe("Claim numbers that are allowed, if any"),
 	objections: z
 		.array(z.string())
-		.describe("Non-rejection objections raised (e.g. to drawings or specification)"),
+		.describe(
+			"Non-rejection objections raised (e.g. to drawings or specification)",
+		),
 })
 
 const epoExaminationReportSchema = z.object({
-	title: z.string().describe("Subject line or brief title of the examination report"),
+	title: z
+		.string()
+		.describe("Subject line or brief title of the examination report"),
 	date: z.string().describe("Date of the examination report (YYYY-MM-DD)"),
 	notes: z.string().describe("Notable context, urgency, or overall summary"),
 	applicationNumber: z.string().describe("European patent application number"),
 	filingDate: z.string().describe("Application filing date (YYYY-MM-DD)"),
-	examiningDivision: z.string().describe("EPO examining division or primary examiner name"),
+	examiningDivision: z
+		.string()
+		.describe("EPO examining division or primary examiner name"),
 	objections: z
 		.array(
 			z.object({
 				article: z
 					.string()
-					.describe("EPC article or rule raised (e.g. Art. 56, Art. 84, Rule 43(2))"),
+					.describe(
+						"EPC article or rule raised (e.g. Art. 56, Art. 84, Rule 43(2))",
+					),
 				claimsAffected: z
 					.array(z.string())
 					.describe("Claims affected by this objection"),
 				citedDocuments: z
 					.array(z.string())
 					.describe("Documents cited in support of this objection"),
-				grounds: z.string().describe("Brief summary of the objection rationale"),
+				grounds: z
+					.string()
+					.describe("Brief summary of the objection rationale"),
 			}),
 		)
 		.describe("All objections raised in the examination report"),

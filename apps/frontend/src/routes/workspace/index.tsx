@@ -1,1441 +1,53 @@
-import type { AssetKind, AssetType, ProjectType } from "@patrickos/db"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import {
-	BookOpen,
-	ChevronLeft,
-	ChevronRight,
-	ChevronsUpDown,
-	Clover,
-	Columns3,
-	FolderOpen,
-	FolderPlus,
-	Gavel,
-	Globe,
-	ListChecks,
-	Loader2,
-	type LucideIcon,
-	MessageSquare,
-	Pencil,
-	Plus,
-	Reply,
-	Send,
-	Settings,
-	Trash2,
-	X,
-} from "lucide-react"
-import type { Value } from "platejs"
+import { createFileRoute } from "@tanstack/react-router"
 import * as React from "react"
 import { usePanelRef } from "react-resizable-panels"
+import { AppSidebar } from "@/components/app-sidebar"
 import { ArtifactDialog } from "@/components/artifact-dialog"
-import { PlateEditor } from "@/components/editor/plate-editor"
-import { Logo } from "@/components/logo"
+import { AssetViewer } from "@/components/asset-viewer"
+import { ChatMetaDialog } from "@/components/chat-meta-dialog"
+import { type Chat, ChatPanel } from "@/components/chat-panel"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { SourceDialog } from "@/components/source-dialog"
-import { SourceViewer } from "@/components/source-viewer"
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import {
-	Empty,
-	EmptyDescription,
-	EmptyHeader,
-	EmptyMedia,
-	EmptyTitle,
-} from "@/components/ui/empty"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet"
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarFooter,
-	SidebarGroup,
-	SidebarGroupAction,
-	SidebarGroupLabel,
-	SidebarHeader,
-	SidebarInset,
-	SidebarMenu,
-	SidebarMenuAction,
-	SidebarMenuButton,
-	SidebarMenuItem,
-	SidebarMenuSub,
-	SidebarMenuSubButton,
-	SidebarMenuSubItem,
-	SidebarProvider,
-	SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AIProvider, useAI } from "@/lib/ai-context"
-import {
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
-	type Provider,
-} from "@/lib/ai-models"
-import { type ApiAsset, api, BASE_URL } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { useAssetState } from "@/lib/use-asset-state"
+import { useProjectState } from "@/lib/use-project-state"
 
 export const Route = createFileRoute("/workspace/")({
 	component: WorkspacePage,
 })
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type KeyStatus = "idle" | "verifying" | "valid" | "invalid"
-
-interface Message {
-	id: string
-	role: "user" | "assistant"
-	content: string
-}
-
-type Project = import("@/lib/api").ApiProject
-
-interface Chat {
-	id: string
-	title: string
-	messages: Message[]
-	createdAt: Date
-}
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const ASSET_TYPES: {
-	id: AssetType
-	kind: AssetKind
-	label: string
-	icon: LucideIcon
-	color: string
-}[] = [
-	{
-		id: "office-action",
-		kind: "source",
-		label: "Office Actions",
-		icon: Gavel,
-		color: "text-red-500",
-	},
-	{
-		id: "epo-examination-report",
-		kind: "source",
-		label: "EPO Examination Reports",
-		icon: Globe,
-		color: "text-blue-400",
-	},
-	{
-		id: "patent-spec",
-		kind: "artifact",
-		label: "Patent Specifications",
-		icon: BookOpen,
-		color: "text-blue-500",
-	},
-	{
-		id: "claims-draft",
-		kind: "artifact",
-		label: "Claims Drafts",
-		icon: ListChecks,
-		color: "text-green-500",
-	},
-	{
-		id: "response-draft",
-		kind: "artifact",
-		label: "Response Drafts",
-		icon: Reply,
-		color: "text-violet-500",
-	},
-]
-
-const AGENTPAT_SUGGESTIONS = [
-	"Draft a §103 response",
-	"Search prior art",
-	"Amend claims",
-]
-
-// Dates relative to module load — fine for mock data
-const _now = new Date()
-const _d = (daysAgo: number) =>
-	new Date(
-		_now.getFullYear(),
-		_now.getMonth(),
-		_now.getDate() - daysAgo,
-		10,
-		30,
-	)
-
-const MOCK_CHATS: Chat[] = [
-	{
-		id: "mock-1",
-		title: "§103 rejection response strategy",
-		messages: [
-			{
-				id: "m1",
-				role: "user",
-				content: "Draft a response to the §103 rejection for claims 1–4.",
-			},
-			{
-				id: "m2",
-				role: "assistant",
-				content:
-					"Smith doesn't disclose applying the transformation before transmission — claim 1 is distinguishable on that basis. Want me to draft the traversal argument?",
-			},
-			{
-				id: "m3",
-				role: "user",
-				content: "Yes, and amend claim 3 to narrow the training data.",
-			},
-			{
-				id: "m4",
-				role: "assistant",
-				content:
-					"Drafting now — I'll open the response as a new tab when ready.",
-			},
-		],
-		createdAt: _d(0),
-	},
-	{
-		id: "mock-2",
-		title: "Prior art search for claim 1",
-		messages: [
-			{
-				id: "m5",
-				role: "user",
-				content: "Can you find prior art for the data compression claims?",
-			},
-			{
-				id: "m6",
-				role: "assistant",
-				content:
-					"I'll analyse the key claim elements and suggest relevant search strategies.",
-			},
-		],
-		createdAt: _d(1),
-	},
-	{
-		id: "mock-3",
-		title: "Claims 1–4 amendment draft",
-		messages: [],
-		createdAt: _d(3),
-	},
-	{
-		id: "mock-4",
-		title: "Client response to office action",
-		messages: [],
-		createdAt: _d(10),
-	},
-]
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const KIND_LABELS: Record<AssetKind, string> = {
-	source: "Sources",
-	artifact: "Artifacts",
-}
-
-function groupAssetsByKindAndType(assets: ApiAsset[]) {
-	const result: {
-		kind: AssetKind
-		label: string
-		types: {
-			type: AssetType
-			label: string
-			icon: LucideIcon
-			color: string
-			assets: ApiAsset[]
-		}[]
-	}[] = []
-	for (const kind of ["source", "artifact"] as AssetKind[]) {
-		const types: {
-			type: AssetType
-			label: string
-			icon: LucideIcon
-			color: string
-			assets: ApiAsset[]
-		}[] = []
-		for (const { id, label, icon, color } of ASSET_TYPES) {
-			const typeAssets = assets
-				.filter((a) => a.kind === kind && a.type === id)
-				.sort((a, b) => a.date.localeCompare(b.date))
-			if (typeAssets.length > 0)
-				types.push({ type: id, label, icon, color, assets: typeAssets })
-		}
-		result.push({ kind, label: KIND_LABELS[kind], types })
-	}
-	return result
-}
-
-function AssetTypeIcon({
-	type,
-	size = 13,
-}: {
-	type: AssetType
-	size?: number
-}) {
-	const entry = ASSET_TYPES.find((t) => t.id === type)
-	if (!entry) return null
-	return <entry.icon size={size} className={cn("shrink-0", entry.color)} />
-}
-
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-
-function AppSidebar({
-	assets,
-	openTabIds,
-	chats,
-	openChatIds,
-	projects,
-	projectsLoading,
-	currentProjectId,
-	onOpen,
-	onEdit,
-	onAddArtifact,
-	onAddSource,
-	onOpenChat,
-	onNewChat,
-	onEditChat,
-	onManageProjects,
-	onSettingsOpen,
-	connectedToAI,
-}: {
-	assets: ApiAsset[]
-	openTabIds: string[]
-	chats: Chat[]
-	openChatIds: string[]
-	projects: Project[]
-	projectsLoading: boolean
-	currentProjectId: string
-	onOpen: (id: string) => void
-	onEdit: (id: string) => void
-	onAddArtifact: () => void
-	onAddSource: () => void
-	onOpenChat: (id: string) => void
-	onNewChat: () => void
-	onEditChat: (id: string) => void
-	onManageProjects: () => void
-	onSettingsOpen: () => void
-	connectedToAI: boolean
-}) {
-	const CHAT_LIMIT = 5
-	const [showAllChats, setShowAllChats] = React.useState(false)
-
-	const openSet = new Set(openTabIds)
-	const openChatSet = new Set(openChatIds)
-	const kindGroups = groupAssetsByKindAndType(assets)
-	const sortedChats = [...chats].sort(
-		(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-	)
-	const visibleChats = showAllChats
-		? sortedChats
-		: sortedChats.slice(0, CHAT_LIMIT)
-	const currentProject = projects.find((p) => p.id === currentProjectId)
-
-	return (
-		<Sidebar variant="inset">
-			<SidebarHeader className="px-3 py-2 gap-0">
-				<div className="flex items-center justify-between py-1">
-					<Link to="/" className="flex items-center gap-2">
-						<Logo size={20} />
-						<span className="font-heading font-semibold tracking-tight text-xl">
-							PatrickOS
-						</span>
-					</Link>
-					<a
-						href="https://github.com/mhurhangee/patrickos"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Badge variant="secondary">Open Source</Badge>
-					</a>
-				</div>
-				<div className="px-2 pb-2">
-					<Separator className="my-1" />
-				</div>
-
-				<Button
-					onClick={onManageProjects}
-					variant="ghost"
-					size="sm"
-					className="w-full justify-between px-2 text-sm font-medium"
-				>
-					<span className="flex items-center gap-1.5">
-						{projectsLoading ? (
-							<Loader2
-								size={13}
-								className="shrink-0 animate-spin text-muted-foreground"
-							/>
-						) : currentProject ? (
-							<FolderOpen
-								size={13}
-								className="shrink-0 text-muted-foreground"
-							/>
-						) : (
-							<FolderPlus
-								size={13}
-								className="shrink-0 text-muted-foreground"
-							/>
-						)}
-						{projectsLoading
-							? "Loading…"
-							: (currentProject?.name ?? "Select project")}
-					</span>
-					<ChevronsUpDown
-						size={11}
-						className="text-muted-foreground shrink-0"
-					/>
-				</Button>
-			</SidebarHeader>
-
-			<SidebarContent>
-				{/* Sources + Artifacts */}
-				{kindGroups.map((kindGroup) => (
-					<SidebarGroup key={kindGroup.kind}>
-						<SidebarGroupLabel>{kindGroup.label}</SidebarGroupLabel>
-						<SidebarGroupAction
-							title={
-								kindGroup.kind === "source" ? "Add source" : "New artifact"
-							}
-							onClick={
-								kindGroup.kind === "source" ? onAddSource : onAddArtifact
-							}
-							disabled={!currentProjectId}
-						>
-							<Plus />
-							<span className="sr-only">
-								{kindGroup.kind === "source" ? "Add source" : "New artifact"}
-							</span>
-						</SidebarGroupAction>
-						<SidebarMenu>
-							{projectsLoading ? (
-								<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
-									<Skeleton className="h-3 w-3/4" />
-									<Skeleton className="h-3 w-1/2" />
-								</div>
-							) : (
-								kindGroup.types.length === 0 && (
-									<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-										No {kindGroup.label.toLowerCase()} yet.
-									</p>
-								)
-							)}
-							{kindGroup.types.map((typeGroup) => (
-								<Collapsible
-									key={typeGroup.type}
-									asChild
-									defaultOpen
-									className="group/collapsible"
-								>
-									<SidebarMenuItem>
-										<CollapsibleTrigger asChild>
-											<SidebarMenuButton
-												className="text-xs"
-												tooltip={typeGroup.label}
-											>
-												<typeGroup.icon
-													size={13}
-													className={cn("shrink-0", typeGroup.color)}
-												/>
-												<span className="uppercase tracking-widest">
-													{typeGroup.label}
-												</span>
-												<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-											</SidebarMenuButton>
-										</CollapsibleTrigger>
-										<CollapsibleContent>
-											<SidebarMenuSub>
-												{typeGroup.assets.map((asset) => (
-													<SidebarMenuSubItem key={asset.id}>
-														<SidebarMenuSubButton
-															onClick={() => onOpen(asset.id)}
-															isActive={openSet.has(asset.id)}
-															className="gap-1.5"
-														>
-															<span className="truncate">{asset.title}</span>
-														</SidebarMenuSubButton>
-														<SidebarMenuAction
-															className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
-															onClick={(e) => {
-																e.stopPropagation()
-																onEdit(asset.id)
-															}}
-														>
-															<Pencil size={12} />
-															<span className="sr-only">Edit asset</span>
-														</SidebarMenuAction>
-													</SidebarMenuSubItem>
-												))}
-											</SidebarMenuSub>
-										</CollapsibleContent>
-									</SidebarMenuItem>
-								</Collapsible>
-							))}
-						</SidebarMenu>
-					</SidebarGroup>
-				))}
-
-				{/* Chats */}
-				<SidebarGroup>
-					<SidebarGroupLabel>Chats</SidebarGroupLabel>
-					<SidebarGroupAction title="New chat" onClick={onNewChat}>
-						<Plus />
-						<span className="sr-only">New chat</span>
-					</SidebarGroupAction>
-					<SidebarMenu>
-						{projectsLoading ? (
-							<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
-								<Skeleton className="h-3 w-2/3" />
-								<Skeleton className="h-3 w-1/2" />
-								<Skeleton className="h-3 w-3/5" />
-							</div>
-						) : (
-							sortedChats.length === 0 && (
-								<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-									No chats yet.
-								</p>
-							)
-						)}
-						<SidebarMenuSub>
-							{visibleChats.map((chat) => (
-								<SidebarMenuSubItem key={chat.id}>
-									<SidebarMenuSubButton
-										onClick={() => onOpenChat(chat.id)}
-										isActive={openChatSet.has(chat.id)}
-									>
-										<span className="truncate">{chat.title}</span>
-									</SidebarMenuSubButton>
-									<SidebarMenuAction
-										className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
-										onClick={(e) => {
-											e.stopPropagation()
-											onEditChat(chat.id)
-										}}
-									>
-										<Pencil size={12} />
-										<span className="sr-only">Edit chat</span>
-									</SidebarMenuAction>
-								</SidebarMenuSubItem>
-							))}
-							{sortedChats.length > CHAT_LIMIT && (
-								<SidebarMenuSubItem>
-									<SidebarMenuSubButton
-										onClick={() => setShowAllChats((v) => !v)}
-										className="justify-center text-muted-foreground"
-									>
-										{showAllChats
-											? "Show less"
-											: `${sortedChats.length - CHAT_LIMIT} older…`}
-									</SidebarMenuSubButton>
-								</SidebarMenuSubItem>
-							)}
-						</SidebarMenuSub>
-					</SidebarMenu>
-				</SidebarGroup>
-			</SidebarContent>
-
-			<SidebarFooter className="p-2">
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							onClick={onSettingsOpen}
-							className="gap-2 text-xs text-muted-foreground"
-							tooltip={
-								connectedToAI
-									? "AI connected"
-									: "AI not connected — click to configure"
-							}
-						>
-							<div
-								className={cn(
-									"h-2 w-2 rounded-full shrink-0",
-									connectedToAI ? "bg-green-500" : "bg-muted-foreground/40",
-								)}
-							/>
-							{connectedToAI ? "AI connected" : "AI not connected"}
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-					<SidebarMenuItem>
-						<SidebarMenuButton onClick={onSettingsOpen} className="gap-2">
-							<Settings size={14} />
-							Settings
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
-			</SidebarFooter>
-		</Sidebar>
-	)
-}
-
-// ─── Asset pane ────────────────────────────────────────────────────────────────
-
-function ArtifactEditor({
-	asset,
-	onAssetUpdate,
-}: {
-	asset: ApiAsset
-	onAssetUpdate: (updated: ApiAsset) => void
-}) {
-	const saveTimer = React.useRef<ReturnType<typeof setTimeout>>(null)
-	const latestValue = React.useRef<Value | null>(null)
-	const isDirty = React.useRef(false)
-
-	function save(value: Value) {
-		api.assets
-			.update(asset.id, { content: JSON.stringify(value) })
-			.then(onAssetUpdate)
-	}
-
-	function handleChange(value: Value) {
-		latestValue.current = value
-		isDirty.current = true
-		if (saveTimer.current) clearTimeout(saveTimer.current)
-		saveTimer.current = setTimeout(() => {
-			save(value)
-			isDirty.current = false
-		}, 500)
-	}
-
-	// Tell the AI transport what kind of document is open so prompts can be doc-type-aware
-	React.useEffect(() => {
-		localStorage.setItem("askpat-asset-type", asset.type)
-	}, [asset.type])
-
-	// Flush on unmount (tab switch, close) — intentionally no deps, save is stable for asset lifetime
-	// biome-ignore lint/correctness/useExhaustiveDependencies: unmount-only flush, save recreated each render
-	React.useEffect(() => {
-		return () => {
-			if (saveTimer.current) clearTimeout(saveTimer.current)
-			if (isDirty.current && latestValue.current) {
-				save(latestValue.current)
-			}
-		}
-	}, [])
-
-	let initialValue: Value | undefined
-	try {
-		if (asset.content) initialValue = JSON.parse(asset.content) as Value
-	} catch {
-		// malformed content — start empty
-	}
-
-	return (
-		<div className="h-full overflow-hidden">
-			<PlateEditor initialValue={initialValue} onChange={handleChange} />
-		</div>
-	)
-}
-
-function AssetPane({
-	asset,
-	onAssetUpdate,
-}: {
-	asset: ApiAsset
-	onAssetUpdate: (updated: ApiAsset) => void
-}) {
-	if (asset.kind === "source") {
-		return <SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
-	}
-
-	return (
-		<ArtifactEditor
-			key={asset.id}
-			asset={asset}
-			onAssetUpdate={onAssetUpdate}
-		/>
-	)
-}
-
-// ─── Asset viewer ─────────────────────────────────────────────────────────────
-
-function AssetViewer({
-	assets,
-	openTabIds,
-	activeTab,
-	splitView,
-	onTabClick,
-	onTabClose,
-	onSplitToggle,
-	onChatToggle,
-	onAssetUpdate,
-	chatCollapsed,
-}: {
-	assets: ApiAsset[]
-	openTabIds: string[]
-	activeTab: string
-	splitView: boolean
-	onTabClick: (id: string) => void
-	onTabClose: (id: string) => void
-	onSplitToggle: () => void
-	onChatToggle: () => void
-	onAssetUpdate: (updated: ApiAsset) => void
-	chatCollapsed: boolean
-}) {
-	const openAssets = openTabIds
-		.map((id) => assets.find((a) => a.id === id))
-		.filter(Boolean) as ApiAsset[]
-	const activeAsset =
-		openAssets.find((a) => a.id === activeTab) ?? openAssets[0]
-
-	return (
-		<div className="flex h-full flex-col overflow-hidden">
-			<div className="relative flex h-10 shrink-0 items-end bg-muted">
-				{/* border line — tabs with z-10 render on top of it */}
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
-				<div className="relative z-10 flex shrink-0 items-center self-stretch px-2">
-					<SidebarTrigger className="h-6 w-6" />
-				</div>
-				<div className="flex flex-1 items-end gap-0.5 overflow-x-auto px-1 tab-scroll">
-					{openAssets.map((asset) => (
-						<div
-							key={asset.id}
-							className={cn(
-								"relative group flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
-								!splitView && activeTab === asset.id
-									? "z-10 border-border bg-background text-foreground"
-									: "border-transparent text-muted-foreground hover:text-foreground",
-							)}
-						>
-							<Button
-								variant="ghost"
-								size="xs"
-								onClick={() => onTabClick(asset.id)}
-								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
-							>
-								<AssetTypeIcon type={asset.type} />
-								<span className="max-w-[120px] truncate">{asset.title}</span>
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon-xs"
-								onClick={() => onTabClose(asset.id)}
-								className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-							>
-								<X size={10} />
-							</Button>
-						</div>
-					))}
-					{openAssets.length >= 1 && (
-						<div
-							className={cn(
-								"relative flex items-center rounded-t-md border border-b-0 text-xs transition-colors",
-								splitView
-									? "z-10 border-border bg-background text-foreground"
-									: "border-transparent text-muted-foreground hover:text-foreground",
-							)}
-						>
-							<Button
-								variant="ghost"
-								size="xs"
-								onClick={onSplitToggle}
-								disabled={openAssets.length < 2}
-							>
-								<Columns3 /> Split
-							</Button>
-						</div>
-					)}
-				</div>
-				<div className="relative z-10 flex shrink-0 items-center self-stretch">
-					<Button variant="ghost" size="icon" onClick={onChatToggle}>
-						{chatCollapsed ? <ChevronLeft /> : <ChevronRight />}
-					</Button>
-				</div>
-			</div>
-
-			{openAssets.length === 0 ? (
-				<div className="flex flex-1 items-center justify-center">
-					<Empty className="max-w-xs border-0">
-						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<FolderOpen />
-							</EmptyMedia>
-							<EmptyTitle>Nothing open</EmptyTitle>
-							<EmptyDescription>
-								Select an asset from the sidebar to open it here.
-							</EmptyDescription>
-						</EmptyHeader>
-					</Empty>
-				</div>
-			) : splitView && openAssets.length > 1 ? (
-				<ResizablePanelGroup orientation="horizontal" className="flex-1">
-					{openAssets.map((asset, i) => (
-						<React.Fragment key={asset.id}>
-							{i > 0 && <ResizableHandle withHandle />}
-							<ResizablePanel
-								defaultSize={`${100 / openAssets.length}%`}
-								collapsible
-								collapsedSize="0%"
-								minSize="10%"
-							>
-								<AssetPane
-									key={asset.id}
-									asset={asset}
-									onAssetUpdate={onAssetUpdate}
-								/>
-							</ResizablePanel>
-						</React.Fragment>
-					))}
-				</ResizablePanelGroup>
-			) : (
-				<div className="flex-1 overflow-hidden">
-					{activeAsset && (
-						<AssetPane
-							key={activeAsset.id}
-							asset={activeAsset}
-							onAssetUpdate={onAssetUpdate}
-						/>
-					)}
-				</div>
-			)}
-		</div>
-	)
-}
-
-// ─── AgentPat pane ────────────────────────────────────────────────────────────
-
-function AgentPatPane({
-	onSend,
-	onOpenSettings,
-}: {
-	onSend: (message: string) => void
-	onOpenSettings: () => void
-}) {
-	const { connectedToAI } = useAI()
-	const [input, setInput] = React.useState("")
-
-	function send(message: string) {
-		const trimmed = message.trim()
-		if (!trimmed) return
-		onSend(trimmed)
-		setInput("")
-	}
-
-	if (!connectedToAI) {
-		return (
-			<div className="flex h-full items-center justify-center bg-sidebar">
-				<Empty className="max-w-xs border-0">
-					<EmptyHeader>
-						<EmptyMedia variant="icon">
-							<Clover className="text-muted-foreground/40" />
-						</EmptyMedia>
-						<EmptyTitle>AgentPat</EmptyTitle>
-						<EmptyDescription>
-							Connect an AI provider in Settings to start using AgentPat.
-						</EmptyDescription>
-					</EmptyHeader>
-					<Button size="sm" variant="outline" onClick={onOpenSettings}>
-						Open Settings
-					</Button>
-				</Empty>
-			</div>
-		)
-	}
-
-	return (
-		<div className="flex h-full flex-col overflow-hidden bg-sidebar">
-			<ScrollArea className="flex-1">
-				<div className="mx-auto max-w-sm px-6 py-10 text-center">
-					<div className="mb-4 flex justify-center">
-						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-							<Clover className="size-8 text-primary" />
-						</div>
-					</div>
-					<h2 className="mb-1 font-heading text-lg font-semibold">AgentPat</h2>
-					<p className="text-sm text-muted-foreground">
-						Your AI patent attorney assistant. To get started send a message or
-						pick a suggestion.
-					</p>
-				</div>
-			</ScrollArea>
-			<div className="shrink-0 flex gap-2 overflow-x-auto px-3 tab-scroll">
-				{AGENTPAT_SUGGESTIONS.map((s) => (
-					<Button
-						key={s}
-						variant="secondary"
-						size="sm"
-						className="h-auto rounded-full px-3 py-1.5 text-xs font-normal"
-						onClick={() => send(s)}
-					>
-						{s}
-					</Button>
-				))}
-			</div>
-			<div className="shrink-0 p-3">
-				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
-					<Textarea
-						value={input}
-						onChange={(e) => setInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && !e.shiftKey) {
-								e.preventDefault()
-								send(input)
-							}
-						}}
-						placeholder="Ask AgentPat anything…"
-						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent dark:bg-transparent p-3 text-sm shadow-none focus-visible:ring-0"
-					/>
-					<div className="flex justify-end px-3 pb-2">
-						<Button size="sm" onClick={() => send(input)}>
-							Send <Send />
-						</Button>
-					</div>
-				</div>
-			</div>
-		</div>
-	)
-}
-
-// ─── Chat pane ────────────────────────────────────────────────────────────────
-
-function ChatPane({
-	chat,
-	openAssets,
-	onRemoveAsset,
-	onSend,
-}: {
-	chat: Chat
-	openAssets: ApiAsset[]
-	onRemoveAsset: (id: string) => void
-	onSend: (chatId: string, message: string) => void
-}) {
-	const [input, setInput] = React.useState("")
-
-	function send() {
-		const trimmed = input.trim()
-		if (!trimmed) return
-		onSend(chat.id, trimmed)
-		setInput("")
-	}
-
-	return (
-		<div className="flex h-full flex-col overflow-hidden bg-sidebar">
-			<ScrollArea className="flex-1 px-3 py-3">
-				<div className="space-y-4">
-					{chat.messages.length === 0 ? (
-						<p className="py-12 text-center text-sm text-muted-foreground">
-							No messages yet. Start the conversation below.
-						</p>
-					) : (
-						chat.messages.map((msg) => (
-							<div
-								key={msg.id}
-								className={cn(
-									"flex flex-col gap-1",
-									msg.role === "user" ? "items-end" : "items-start",
-								)}
-							>
-								<div
-									className={cn(
-										"max-w-[88%] rounded-lg px-3 py-2 text-sm",
-										msg.role === "user"
-											? "bg-primary/10 text-foreground"
-											: "text-foreground",
-									)}
-								>
-									{msg.content}
-								</div>
-							</div>
-						))
-					)}
-				</div>
-			</ScrollArea>
-			<div className="shrink-0 space-y-2 p-3">
-				{openAssets.length > 0 && (
-					<div className="flex flex-wrap items-center gap-1">
-						<span className="shrink-0 text-xs text-muted-foreground">
-							In context:
-						</span>
-						{openAssets.map((asset) => (
-							<span
-								key={asset.id}
-								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-							>
-								{asset.title}
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									onClick={() => onRemoveAsset(asset.id)}
-									className="h-auto w-auto p-0 hover:bg-transparent"
-								>
-									<X size={9} />
-								</Button>
-							</span>
-						))}
-					</div>
-				)}
-				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
-					<Textarea
-						value={input}
-						onChange={(e) => setInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && !e.shiftKey) {
-								e.preventDefault()
-								send()
-							}
-						}}
-						placeholder="Ask about open assets…"
-						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent dark:bg-transparent p-3 text-sm shadow-none focus-visible:ring-0"
-					/>
-					<div className="flex justify-end px-3 pb-2">
-						<Button size="sm" onClick={send}>
-							Send
-						</Button>
-					</div>
-				</div>
-			</div>
-		</div>
-	)
-}
-
-// ─── Chat panel ───────────────────────────────────────────────────────────────
-
-function ChatPanel({
-	chats,
-	openChatIds,
-	activeChatId,
-	openAssets,
-	onNewChat,
-	onCloseChat,
-	onSetActiveChat,
-	onSendToChat,
-	onSendInAgentPat,
-	onRemoveAsset,
-	onOpenSettings,
-}: {
-	chats: Chat[]
-	openChatIds: string[]
-	activeChatId: string
-	openAssets: ApiAsset[]
-	onNewChat: () => void
-	onCloseChat: (id: string) => void
-	onSetActiveChat: (id: string) => void
-	onSendToChat: (chatId: string, message: string) => void
-	onSendInAgentPat: (message: string) => void
-	onRemoveAsset: (id: string) => void
-	onOpenSettings: () => void
-}) {
-	const openChats = openChatIds
-		.map((id) => chats.find((c) => c.id === id))
-		.filter(Boolean) as Chat[]
-	const activeChat = openChats.find((c) => c.id === activeChatId)
-
-	return (
-		<div className="flex h-full flex-col overflow-hidden border-l">
-			{/* Tab bar */}
-			<div className="relative flex h-10 shrink-0 items-end bg-muted px-1 gap-0.5">
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
-
-				{/* AgentPat — fixed left, shrinks to icon when other tabs are open */}
-				<div
-					className={cn(
-						"relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
-						activeChatId === "agentpat"
-							? "border-border bg-sidebar text-foreground"
-							: "border-transparent text-muted-foreground hover:text-foreground",
-					)}
-				>
-					<Button
-						variant="ghost"
-						size="xs"
-						onClick={() => onSetActiveChat("agentpat")}
-						className="gap-1.5"
-					>
-						<Clover className="size-4 shrink-0 text-primary" />
-						{openChatIds.length === 0 && <span>AgentPat</span>}
-					</Button>
-				</div>
-
-				{/* Open chat tabs */}
-				<div className="flex flex-1 items-end gap-0.5 overflow-x-auto tab-scroll">
-					{openChats.map((chat) => (
-						<div
-							key={chat.id}
-							className={cn(
-								"relative group flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
-								activeChatId === chat.id
-									? "z-10 border-border bg-sidebar text-foreground"
-									: "border-transparent text-muted-foreground hover:text-foreground",
-							)}
-						>
-							<Button
-								variant="ghost"
-								size="xs"
-								onClick={() => onSetActiveChat(chat.id)}
-								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
-							>
-								<MessageSquare size={12} className="shrink-0" />
-								<span className="max-w-[120px] truncate">{chat.title}</span>
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon-xs"
-								onClick={() => onCloseChat(chat.id)}
-								className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-							>
-								<X size={10} />
-							</Button>
-						</div>
-					))}
-				</div>
-
-				{/* Plus — new chat, styled as a tab */}
-				<div className="relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 border-transparent text-muted-foreground transition-colors hover:text-foreground">
-					<Button
-						variant="ghost"
-						size="xs"
-						onClick={onNewChat}
-						title="New chat"
-					>
-						<Plus size={12} />
-					</Button>
-				</div>
-			</div>
-
-			{/* Content */}
-			{activeChatId === "agentpat" || !activeChat ? (
-				<AgentPatPane
-					onSend={onSendInAgentPat}
-					onOpenSettings={onOpenSettings}
-				/>
-			) : (
-				<ChatPane
-					chat={activeChat}
-					openAssets={openAssets}
-					onRemoveAsset={onRemoveAsset}
-					onSend={onSendToChat}
-				/>
-			)}
-		</div>
-	)
-}
-
-// ─── Chat meta sheet ──────────────────────────────────────────────────────────
-
-type ChatSheetState = { mode: "closed" } | { mode: "edit"; chatId: string }
-
-function ChatMetaSheet({
-	state,
-	chat,
-	onClose,
-	onUpdated,
-	onDeleted,
-}: {
-	state: ChatSheetState
-	chat: Chat | undefined
-	onClose: () => void
-	onUpdated: (id: string, title: string) => void
-	onDeleted: (id: string) => void
-}) {
-	const [title, setTitle] = React.useState("")
-	const [saving, setSaving] = React.useState(false)
-
-	const chatId = state.mode === "edit" ? state.chatId : null
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only sync on open/switch
-	React.useEffect(() => {
-		if (state.mode === "edit" && chat) setTitle(chat.title)
-	}, [chatId])
-
-	function handleSave() {
-		if (state.mode !== "edit" || !chat) return
-		setSaving(true)
-		onUpdated(chat.id, title.trim() || "New Chat")
-		setSaving(false)
-		onClose()
-	}
-
-	return (
-		<Sheet
-			open={state.mode !== "closed"}
-			onOpenChange={(v) => {
-				if (!v) onClose()
-			}}
-		>
-			<SheetContent side="left">
-				<SheetHeader>
-					<SheetTitle>{chat?.title ?? ""}</SheetTitle>
-					<SheetDescription>Rename or delete this chat.</SheetDescription>
-				</SheetHeader>
-				<div className="flex flex-col gap-5 px-4 pt-4">
-					<FieldGroup className="gap-3">
-						<Field>
-							<FieldLabel className="text-xs font-medium text-muted-foreground">
-								Title
-							</FieldLabel>
-							<Input
-								value={title}
-								onChange={(e) => setTitle(e.target.value)}
-								placeholder="New Chat"
-								onKeyDown={(e) => {
-									if (e.key === "Enter") handleSave()
-								}}
-							/>
-						</Field>
-					</FieldGroup>
-					<Button onClick={handleSave} disabled={saving}>
-						{saving ? "Saving…" : "Save"}
-					</Button>
-					{state.mode === "edit" && chat && (
-						<>
-							<Separator />
-							<AlertDialog>
-								<AlertDialogTrigger asChild>
-									<Button variant="destructive" size="sm" className="gap-1.5">
-										<Trash2 size={14} />
-										Delete chat
-									</Button>
-								</AlertDialogTrigger>
-								<AlertDialogContent size="sm">
-									<AlertDialogHeader>
-										<AlertDialogTitle>Delete chat?</AlertDialogTitle>
-										<AlertDialogDescription>
-											"{chat.title}" will be permanently removed.
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<AlertDialogFooter>
-										<AlertDialogCancel>Cancel</AlertDialogCancel>
-										<AlertDialogAction
-											variant="destructive"
-											onClick={() => {
-												onDeleted(chat.id)
-												onClose()
-											}}
-										>
-											Delete
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-						</>
-					)}
-				</div>
-			</SheetContent>
-		</Sheet>
-	)
-}
-
-// ─── Root ─────────────────────────────────────────────────────────────────────
-
 function WorkspacePage() {
-	// Assets
-	const [assets, setAssets] = React.useState<ApiAsset[]>([])
-	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
-	const [activeTab, setActiveTab] = React.useState("")
-	const [splitView, setSplitView] = React.useState(false)
-	const [sourceDialogOpen, setSourceDialogOpen] = React.useState(false)
-	const [sourceDialogAsset, setSourceDialogAsset] = React.useState<
-		ApiAsset | undefined
-	>(undefined)
-	const [artifactDialogOpen, setArtifactDialogOpen] = React.useState(false)
-	const [artifactDialogAsset, setArtifactDialogAsset] = React.useState<
-		ApiAsset | undefined
-	>(undefined)
+	return (
+		<AIProvider>
+			<WorkspaceContent />
+		</AIProvider>
+	)
+}
+
+function WorkspaceContent() {
+	const ai = useAI()
+	const project = useProjectState()
+	const asset = useAssetState(project.currentProjectId)
 
 	// Chats
-	const [chats, setChats] = React.useState<Chat[]>(MOCK_CHATS)
+	const [chats, setChats] = React.useState<Chat[]>([])
 	const [openChatIds, setOpenChatIds] = React.useState<string[]>([])
 	const [activeChatId, setActiveChatId] = React.useState("agentpat")
-	const [chatSheet, setChatSheet] = React.useState<ChatSheetState>({
-		mode: "closed",
-	})
+	const [chatEditId, setChatEditId] = React.useState<string | null>(null)
 
-	// AI settings
-	const [provider, setProvider] = React.useState<Provider>("anthropic")
-	const [apiKey, setApiKey] = React.useState("")
-	const [keyStatus, setKeyStatus] = React.useState<KeyStatus>("idle")
-	const [quickModel, setQuickModel] = React.useState(
-		DEFAULT_QUICK_MODEL.anthropic,
-	)
-	const [detailedModel, setDetailedModel] = React.useState(
-		DEFAULT_DETAILED_MODEL.anthropic,
-	)
-
-	// Projects / UI
+	// UI
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
-	const [projects, setProjects] = React.useState<Project[]>([])
-	const [projectsLoading, setProjectsLoading] = React.useState(true)
-	const [currentProjectId, setCurrentProjectId] = React.useState("")
 	const [projectsOpen, setProjectsOpen] = React.useState(false)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
 
 	const chatPanelRef = usePanelRef()
-
-	React.useEffect(() => {
-		api.settings.get().then((s) => {
-			const p = (s.aiProvider as Provider) || "anthropic"
-			const quick = s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic
-			setProvider(p)
-			setQuickModel(quick)
-			setDetailedModel(s.aiDetailedModel || DEFAULT_DETAILED_MODEL.anthropic)
-			const key = localStorage.getItem(`ai-${p}-key`) ?? ""
-			setApiKey(key)
-			// Sync provider/model to localStorage so copilot fetch can read them
-			localStorage.setItem("askpat-provider", p)
-			localStorage.setItem("askpat-quick-model", quick)
-		})
-	}, [])
-
-	React.useEffect(() => {
-		api.projects
-			.list()
-			.then((data) => {
-				setProjects(data)
-				if (data.length > 0) setCurrentProjectId(data[0].id)
-			})
-			.finally(() => setProjectsLoading(false))
-	}, [])
-
-	React.useEffect(() => {
-		if (!currentProjectId) return
-		setAssets([])
-		setOpenTabIds([])
-		setActiveTab("")
-		api.assets.list(currentProjectId).then(setAssets)
-	}, [currentProjectId])
-
-	// ── AI settings handlers ──────────────────────────────────────────────────
-
-	async function verifyKey(prov: Provider, key: string) {
-		if (!key) {
-			setKeyStatus("idle")
-			return
-		}
-		setKeyStatus("verifying")
-		try {
-			const result = await api.ai.verifyKey(prov, key)
-			setKeyStatus(result.valid ? "valid" : "invalid")
-		} catch {
-			setKeyStatus("invalid")
-		}
-	}
-
-	function clearApiKey() {
-		localStorage.removeItem(`ai-${provider}-key`)
-		setApiKey("")
-		setKeyStatus("idle")
-	}
-
-	function saveAiSettings(
-		prov: Provider,
-		key: string,
-		quick: string,
-		detailed: string,
-	) {
-		localStorage.setItem(`ai-${prov}-key`, key)
-		localStorage.setItem("askpat-provider", prov)
-		localStorage.setItem("askpat-quick-model", quick)
-		setProvider(prov)
-		setApiKey(key)
-		setQuickModel(quick)
-		setDetailedModel(detailed)
-		api.settings.update({
-			aiProvider: prov,
-			aiQuickModel: quick,
-			aiDetailedModel: detailed,
-		})
-	}
-
-	// ── Asset handlers ────────────────────────────────────────────────────────
-
-	function openAsset(id: string) {
-		setOpenTabIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
-		setActiveTab(id)
-	}
-
-	function closeTab(id: string) {
-		setOpenTabIds((prev) => {
-			const next = prev.filter((t) => t !== id)
-			if (activeTab === id) setActiveTab(next[0] ?? "")
-			if (next.length < 2) setSplitView(false)
-			return next
-		})
-	}
-
-	async function deleteAsset(id: string) {
-		await api.assets.delete(id)
-		closeTab(id)
-		setAssets((prev) => prev.filter((a) => a.id !== id))
-	}
-
-	function addSource() {
-		if (!currentProjectId) return
-		setSourceDialogAsset(undefined)
-		setSourceDialogOpen(true)
-	}
-
-	function addArtifact() {
-		if (!currentProjectId) return
-		setArtifactDialogAsset(undefined)
-		setArtifactDialogOpen(true)
-	}
-
-	function editAsset(id: string) {
-		const a = assets.find((asset) => asset.id === id)
-		if (!a) return
-		if (a.kind === "source") {
-			setSourceDialogAsset(a)
-			setSourceDialogOpen(true)
-		} else {
-			setArtifactDialogAsset(a)
-			setArtifactDialogOpen(true)
-		}
-	}
-
-	// ── Project handlers ──────────────────────────────────────────────────────
-
-	async function createProject(name: string, type: ProjectType) {
-		const project = await api.projects.create(name, type)
-		setProjects((prev) => [...prev, project])
-		setCurrentProjectId(project.id)
-		return project
-	}
-
-	async function updateProject(
-		id: string,
-		patch: { name?: string; type?: ProjectType },
-	) {
-		const updated = await api.projects.update(id, patch)
-		setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)))
-		return updated
-	}
-
-	async function deleteProject(id: string) {
-		await api.projects.delete(id)
-		setProjects((prev) => {
-			const next = prev.filter((p) => p.id !== id)
-			if (currentProjectId === id) setCurrentProjectId(next[0]?.id ?? "")
-			return next
-		})
-		if (currentProjectId === id) {
-			setAssets([])
-			setOpenTabIds([])
-			setActiveTab("")
-		}
-	}
 
 	// ── Chat handlers ─────────────────────────────────────────────────────────
 
@@ -1491,20 +103,25 @@ function WorkspacePage() {
 	}
 
 	function sendToChat(chatId: string, message: string) {
-		const userMsg: Message = {
-			id: crypto.randomUUID(),
-			role: "user",
-			content: message,
-		}
-		const assistantMsg: Message = {
-			id: crypto.randomUUID(),
-			role: "assistant",
-			content: "Got it. Working on a response now.",
-		}
 		setChats((prev) =>
 			prev.map((c) =>
 				c.id === chatId
-					? { ...c, messages: [...c.messages, userMsg, assistantMsg] }
+					? {
+							...c,
+							messages: [
+								...c.messages,
+								{
+									id: crypto.randomUUID(),
+									role: "user" as const,
+									content: message,
+								},
+								{
+									id: crypto.randomUUID(),
+									role: "assistant" as const,
+									content: "Got it. Working on a response now.",
+								},
+							],
+						}
 					: c,
 			),
 		)
@@ -1524,155 +141,126 @@ function WorkspacePage() {
 		}
 	}
 
-	const openAssets = openTabIds
-		.map((id) => assets.find((a) => a.id === id))
-		.filter(Boolean) as ApiAsset[]
-
 	return (
-		<AIProvider apiKey={apiKey}>
-			<SidebarProvider className="h-full">
-				<AppSidebar
-					assets={assets}
-					openTabIds={openTabIds}
-					chats={chats}
-					openChatIds={openChatIds}
-					projects={projects}
-					projectsLoading={projectsLoading}
-					currentProjectId={currentProjectId}
-					onOpen={openAsset}
-					onEdit={editAsset}
-					onAddArtifact={addArtifact}
-					onAddSource={addSource}
-					onOpenChat={openChat}
-					onNewChat={newChat}
-					onEditChat={(id) => setChatSheet({ mode: "edit", chatId: id })}
-					onManageProjects={() => setProjectsOpen(true)}
-					onSettingsOpen={() => setSettingsOpen(true)}
-					connectedToAI={!!apiKey}
-				/>
-				<SidebarInset className="flex flex-col overflow-hidden">
-					<ResizablePanelGroup
-						orientation="horizontal"
-						className="flex-1 overflow-hidden"
-					>
-						<ResizablePanel defaultSize="68%" minSize="30%">
-							<AssetViewer
-								assets={assets}
-								openTabIds={openTabIds}
-								activeTab={activeTab}
-								splitView={splitView}
-								onTabClick={(id) => {
-									setActiveTab(id)
-									setSplitView(false)
-								}}
-								onTabClose={closeTab}
-								onSplitToggle={() => setSplitView((v) => !v)}
-								onChatToggle={toggleChat}
-								onAssetUpdate={(updated) =>
-									setAssets((prev) =>
-										prev.map((a) => (a.id === updated.id ? updated : a)),
-									)
-								}
-								chatCollapsed={chatCollapsed}
-							/>
-						</ResizablePanel>
-						<ResizableHandle
-							withHandle
-							className="w-[3px] before:absolute before:inset-x-0 before:top-0 before:h-10 before:bg-muted before:content-['']"
+		<SidebarProvider className="h-full">
+			<AppSidebar
+				assets={asset.assets}
+				openTabIds={asset.openTabIds}
+				chats={chats}
+				openChatIds={openChatIds}
+				projects={project.projects}
+				projectsLoading={project.projectsLoading}
+				currentProjectId={project.currentProjectId}
+				onOpen={asset.openAsset}
+				onEdit={asset.editAsset}
+				onAddArtifact={asset.addArtifact}
+				onAddSource={asset.addSource}
+				onOpenChat={openChat}
+				onNewChat={newChat}
+				onEditChat={setChatEditId}
+				onManageProjects={() => setProjectsOpen(true)}
+				onSettingsOpen={() => setSettingsOpen(true)}
+				connectedToAI={ai.connectedToAI}
+			/>
+			<SidebarInset className="flex flex-col overflow-hidden">
+				<ResizablePanelGroup
+					orientation="horizontal"
+					className="flex-1 overflow-hidden"
+				>
+					<ResizablePanel defaultSize="68%" minSize="30%">
+						<AssetViewer
+							assets={asset.assets}
+							openTabIds={asset.openTabIds}
+							activeTab={asset.activeTab}
+							splitView={asset.splitView}
+							onTabClick={asset.selectTab}
+							onTabClose={asset.closeTab}
+							onSplitToggle={asset.toggleSplitView}
+							onChatToggle={toggleChat}
+							onAssetUpdate={asset.updateAsset}
+							chatCollapsed={chatCollapsed}
 						/>
-						<ResizablePanel
-							panelRef={chatPanelRef}
-							defaultSize="32%"
-							minSize="20%"
-							maxSize="50%"
-							collapsible
-							collapsedSize="0%"
-							style={{ transition: "flex 150ms ease" }}
-						>
-							<ChatPanel
-								chats={chats}
-								openChatIds={openChatIds}
-								activeChatId={activeChatId}
-								openAssets={openAssets}
-								onNewChat={newChat}
-								onCloseChat={closeChat}
-								onSetActiveChat={setActiveChatId}
-								onSendToChat={sendToChat}
-								onSendInAgentPat={sendInAgentPat}
-								onRemoveAsset={closeTab}
-								onOpenSettings={() => setSettingsOpen(true)}
-							/>
-						</ResizablePanel>
-					</ResizablePanelGroup>
-				</SidebarInset>
-			</SidebarProvider>
+					</ResizablePanel>
+					<ResizableHandle
+						withHandle
+						className="w-[3px] before:absolute before:inset-x-0 before:top-0 before:h-10 before:bg-muted before:content-['']"
+					/>
+					<ResizablePanel
+						panelRef={chatPanelRef}
+						defaultSize="32%"
+						minSize="20%"
+						maxSize="50%"
+						collapsible
+						collapsedSize="0%"
+						style={{ transition: "flex 150ms ease" }}
+					>
+						<ChatPanel
+							chats={chats}
+							openChatIds={openChatIds}
+							activeChatId={activeChatId}
+							openAssets={asset.openAssets}
+							onNewChat={newChat}
+							onCloseChat={closeChat}
+							onSetActiveChat={setActiveChatId}
+							onSendToChat={sendToChat}
+							onSendInAgentPat={sendInAgentPat}
+							onRemoveAsset={asset.closeTab}
+							onOpenSettings={() => setSettingsOpen(true)}
+						/>
+					</ResizablePanel>
+				</ResizablePanelGroup>
+			</SidebarInset>
 			<ProjectManagerDialog
 				open={projectsOpen}
 				onOpenChange={setProjectsOpen}
-				projects={projects}
-				currentProjectId={currentProjectId}
-				onSelect={setCurrentProjectId}
-				onCreate={createProject}
-				onUpdate={updateProject}
-				onDelete={deleteProject}
+				projects={project.projects}
+				currentProjectId={project.currentProjectId}
+				onSelect={project.setCurrentProjectId}
+				onCreate={project.createProject}
+				onUpdate={project.updateProject}
+				onDelete={project.deleteProject}
 			/>
 			<SettingsDialog
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
-				savedProvider={provider}
-				keyStatus={keyStatus}
-				savedQuickModel={quickModel}
-				savedDetailedModel={detailedModel}
-				onVerify={verifyKey}
-				onSave={saveAiSettings}
-				onClear={clearApiKey}
+				savedProvider={ai.provider}
+				keyStatus={ai.keyStatus}
+				savedQuickModel={ai.quickModel}
+				savedDetailedModel={ai.detailedModel}
+				onVerify={ai.verifyKey}
+				onSave={ai.saveAiSettings}
+				onClear={ai.clearApiKey}
 			/>
 			<SourceDialog
-				asset={sourceDialogAsset}
-				open={sourceDialogOpen}
-				onOpenChange={setSourceDialogOpen}
-				projectId={currentProjectId}
-				provider={provider}
-				apiKey={localStorage.getItem(`ai-${provider}-key`) ?? ""}
-				model={detailedModel}
-				onSaved={(asset) => {
-					setAssets((prev) => {
-						const exists = prev.some((a) => a.id === asset.id)
-						return exists
-							? prev.map((a) => (a.id === asset.id ? asset : a))
-							: [...prev, asset]
-					})
-					if (!sourceDialogAsset) openAsset(asset.id)
-				}}
-				onDeleted={deleteAsset}
+				asset={asset.sourceDialogAsset}
+				open={asset.sourceDialogOpen}
+				onOpenChange={asset.setSourceDialogOpen}
+				projectId={project.currentProjectId}
+				provider={ai.provider}
+				apiKey={ai.apiKey}
+				model={ai.detailedModel}
+				onSaved={asset.onSourceSaved}
+				onDeleted={asset.deleteAsset}
 			/>
 			<ArtifactDialog
-				asset={artifactDialogAsset}
-				open={artifactDialogOpen}
-				onOpenChange={setArtifactDialogOpen}
-				projectId={currentProjectId}
-				onSaved={(asset) => {
-					setAssets((prev) => {
-						const exists = prev.some((a) => a.id === asset.id)
-						return exists
-							? prev.map((a) => (a.id === asset.id ? asset : a))
-							: [...prev, asset]
-					})
-					if (!artifactDialogAsset) openAsset(asset.id)
-				}}
-				onDeleted={deleteAsset}
+				asset={asset.artifactDialogAsset}
+				open={asset.artifactDialogOpen}
+				onOpenChange={asset.setArtifactDialogOpen}
+				projectId={project.currentProjectId}
+				onSaved={asset.onArtifactSaved}
+				onDeleted={asset.deleteAsset}
 			/>
-			<ChatMetaSheet
-				state={chatSheet}
+			<ChatMetaDialog
+				open={chatEditId !== null}
 				chat={
-					chatSheet.mode === "edit"
-						? chats.find((c) => c.id === chatSheet.chatId)
+					chatEditId !== null
+						? chats.find((c) => c.id === chatEditId)
 						: undefined
 				}
-				onClose={() => setChatSheet({ mode: "closed" })}
+				onClose={() => setChatEditId(null)}
 				onUpdated={updateChat}
 				onDeleted={deleteChat}
 			/>
-		</AIProvider>
+		</SidebarProvider>
 	)
 }
