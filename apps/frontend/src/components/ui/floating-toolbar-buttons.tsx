@@ -73,7 +73,7 @@ export function FloatingToolbarButtons() {
 							<Code2Icon />
 						</MarkToolbarButton>
 						<MarkToolbarButton nodeType={KEYS.highlight} tooltip="Highlight">
-							<HighlighterIcon />
+							<HighlighterIcon />aa
 						</MarkToolbarButton>
 						<InlineEquationToolbarButton />
 						<ToolbarButton

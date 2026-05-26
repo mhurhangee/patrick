@@ -358,7 +358,7 @@ const toResolvedSuggestion = ({
 	return null
 }
 
-export const buildBlockDiscussionIndex = ({
+const buildBlockDiscussionIndex = ({
 	discussions,
 	entries,
 	getCommentId,

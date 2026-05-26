@@ -101,14 +101,14 @@ export const ASSET_CONFIGS: AssetConfig[] = [
 	},
 ]
 
-export const KIND_LABELS: Record<AssetKind, string> = {
+const KIND_LABELS: Record<AssetKind, string> = {
 	source: "Sources",
 	artifact: "Artifacts",
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export function getAssetConfig(id: AssetType): AssetConfig | undefined {
+function getAssetConfig(id: AssetType): AssetConfig | undefined {
 	return ASSET_CONFIGS.find((c) => c.id === id)
 }
 

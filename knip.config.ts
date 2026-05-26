@@ -2,37 +2,26 @@ import type { KnipConfig } from "knip"
 
 const config: KnipConfig = {
 	workspaces: {
-		".": {
-			entry: [],
-			project: [],
-			ignoreDependencies: ["typescript"],
-		},
-		"apps/frontend": {
-			entry: ["src/main.tsx"],
-			project: ["src/**/*.{ts,tsx}"],
-			ignoreDependencies: [
-				"@fontsource-variable/geist",
-				"@fontsource-variable/lora",
-				"shadcn",
-				"tailwindcss",
-				"tw-animate-css",
-				"@tailwindcss/typography",
-				"globals",
-			],
-		},
-		"apps/api": {
-			entry: ["src/index.ts"],
-			project: ["src/**/*.ts"],
-		},
-		"packages/db": {
-			entry: ["src/index.ts"],
-			project: ["src/**/*.ts"],
-			ignoreDependencies: ["drizzle-kit", "@libsql/client"],
-		},
+		".": {},
+		"apps/frontend": {},
+		"apps/api": {},
+		"packages/db": {},
 	},
-	ignore: ["apps/desktop/**", "apps/frontend/src/routeTree.gen.ts"],
+	ignore: [
+		"apps/desktop/**",
+		// Static PDF.js worker — loaded via URL at runtime, not imported
+		"apps/frontend/public/pdf.worker.min.mjs",
+	],
 	ignoreIssues: {
+		// shadcn/ui components export everything for downstream use
 		"apps/frontend/src/components/ui/**": [
+			"exports",
+			"types",
+			"nsExports",
+			"nsTypes",
+		],
+		// Plate editor template files — exports used by Plate internals at runtime
+		"apps/frontend/src/components/editor/**": [
 			"exports",
 			"types",
 			"nsExports",

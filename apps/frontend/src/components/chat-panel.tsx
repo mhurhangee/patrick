@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface Message {
+interface Message {
 	id: string
 	role: "user" | "assistant"
 	content: string
