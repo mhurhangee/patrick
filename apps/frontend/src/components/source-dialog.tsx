@@ -40,21 +40,21 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
 import {
+	ASSET_CONFIGS,
 	emptyDetails,
 	type FieldDef,
 	mergeExtracted,
-	SOURCE_SCHEMA,
-} from "@/lib/source-schema"
+} from "@/lib/asset-config"
 import { cn } from "@/lib/utils"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 type SourceAssetType = "office-action" | "epo-examination-report"
 
-const SOURCE_TYPES: { id: SourceAssetType; label: string }[] = [
-	{ id: "office-action", label: "USPTO Office Action" },
-	{ id: "epo-examination-report", label: "EPO Examination Report" },
-]
+const SOURCE_TYPES = ASSET_CONFIGS.filter(
+	(c): c is (typeof ASSET_CONFIGS)[number] & { kind: "source" } =>
+		c.kind === "source",
+).map((c) => ({ id: c.id as SourceAssetType, label: c.typeLabel }))
 
 // ─── Save button hook ─────────────────────────────────────────────────────────
 
@@ -319,7 +319,7 @@ export function SourceDialog({
 
 	const canExtract = !!apiKey
 	const isExtracting = extractState === "extracting"
-	const schema = SOURCE_SCHEMA[type] ?? []
+	const schema = ASSET_CONFIGS.find((c) => c.id === type)?.fields ?? []
 
 	function handleFile(f: File) {
 		setNewFile(f)
