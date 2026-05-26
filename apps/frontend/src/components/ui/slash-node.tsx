@@ -27,6 +27,7 @@ import type { PlateEditor, PlateElementProps } from "platejs/react"
 import { PlateElement } from "platejs/react"
 import type * as React from "react"
 
+import { useAI } from "@/lib/ai-context"
 import {
 	insertBlock,
 	insertInlineElement,
@@ -222,6 +223,8 @@ export function SlashInputElement(
 	props: PlateElementProps<TComboboxInputElement>,
 ) {
 	const { editor, element } = props
+	const { connectedToAI } = useAI()
+	const visibleGroups = connectedToAI ? groups : groups.filter((g) => g.group !== "AI")
 
 	return (
 		<PlateElement {...props} as="span">
@@ -231,7 +234,7 @@ export function SlashInputElement(
 				<InlineComboboxContent>
 					<InlineComboboxEmpty>No results</InlineComboboxEmpty>
 
-					{groups.map(({ group, items }) => (
+					{visibleGroups.map(({ group, items }) => (
 						<InlineComboboxGroup key={group}>
 							<InlineComboboxGroupLabel>{group}</InlineComboboxGroupLabel>
 

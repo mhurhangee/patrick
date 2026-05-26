@@ -1,5 +1,6 @@
 import {
 	Check,
+	Clover,
 	CreditCard,
 	Database,
 	Eye,
@@ -7,7 +8,6 @@ import {
 	Loader2,
 	MessageSquare,
 	RotateCcw,
-	Sparkles,
 	User,
 } from "lucide-react"
 import * as React from "react"
@@ -222,7 +222,7 @@ const NAV: NavItem[] = [
 	{
 		id: "ai-provider",
 		label: "AI Provider",
-		icon: Sparkles,
+		icon: Clover,
 		children: [
 			{ id: "ai-provider-local", label: "Local" },
 			{ id: "ai-provider-byok", label: "BYOK" },

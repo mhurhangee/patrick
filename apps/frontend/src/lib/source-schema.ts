@@ -31,7 +31,11 @@ export const SOURCE_SCHEMA: Record<string, FieldDef[]> = {
 		{ key: "filingDate", label: "Filing Date", dateField: true },
 		{ key: "examiningDivision", label: "Examining Division" },
 		{ key: "objections", label: "Objections", complex: true },
-		{ key: "allowedSubjectMatter", label: "Allowed Subject Matter", complex: true },
+		{
+			key: "allowedSubjectMatter",
+			label: "Allowed Subject Matter",
+			complex: true,
+		},
 	],
 }
 

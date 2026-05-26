@@ -49,6 +49,8 @@ Rules:
 			// autoTriggerQuery only ADDS triggers (when last char is space) but never
 			// cancels them when the user keeps typing.
 			autoTriggerQuery: ({ editor }) => {
+				const _provider = localStorage.getItem("askpat-provider") || "anthropic"
+				if (!localStorage.getItem(`ai-${_provider}-key`)) return false
 				if (editor.getOptions(CopilotPlugin).suggestionText) return false
 				if (editor.api.isEmpty(editor.selection, { block: true })) return false
 				const blockAbove = editor.api.block()

@@ -49,6 +49,7 @@ import {
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
+import { useAI } from "@/lib/ai-context"
 import { AIChatEditor } from "./ai-chat-editor"
 
 export function AIMenu() {
@@ -232,7 +233,7 @@ export function AIMenu() {
 								}
 							}}
 							onValueChange={setInput}
-							placeholder="Ask AI anything..."
+							placeholder="AskPat..."
 							data-plate-focus
 							autoFocus
 						/>
@@ -444,6 +445,7 @@ export const AIMenuItems = ({
 	const { messages } = usePluginOption(AIChatPlugin, "chat")
 	const aiEditor = usePluginOption(AIChatPlugin, "aiEditor")!
 	const isSelecting = useIsSelecting()
+	const { connectedToAI } = useAI()
 
 	const menuState = React.useMemo(() => {
 		if (messages && messages.length > 0) {
@@ -464,6 +466,16 @@ export const AIMenuItems = ({
 			setValue(menuGroups[0].items[0].value)
 		}
 	}, [menuGroups, setValue])
+
+	if (!connectedToAI) {
+		return (
+			<CommandGroup>
+				<div className="px-3 py-2 text-xs text-muted-foreground">
+					Add an API key in Settings to use AskPat.
+				</div>
+			</CommandGroup>
+		)
+	}
 
 	return (
 		<>

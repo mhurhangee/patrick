@@ -47,6 +47,7 @@ import {
 	MenubarShortcut,
 	MenubarTrigger,
 } from "@/components/ui/menubar"
+import { useAI } from "@/lib/ai-context"
 import { EditorStatic } from "./editor-static"
 
 export function EditorMenubar() {
@@ -61,6 +62,7 @@ export function EditorMenubar() {
 		[],
 	)
 	const { api: aiApi } = useEditorPlugin(AIChatPlugin)
+	const { connectedToAI } = useAI()
 	const isSuggesting = usePluginOption(SuggestionPlugin, "isSuggesting")
 
 	const currentMode = readOnly
@@ -288,6 +290,8 @@ export function EditorMenubar() {
 						variant="default"
 						size="sm"
 						className="h-7 gap-1.5 px-2 text-sm cursor-pointer hover:bg-primary/90"
+						disabled={!connectedToAI}
+						title={!connectedToAI ? "Add an API key in Settings to use AskPat" : undefined}
 						onMouseDown={(e) => e.preventDefault()}
 						onClick={() => aiApi.aiChat.show()}
 					>

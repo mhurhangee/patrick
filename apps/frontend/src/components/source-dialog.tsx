@@ -1,5 +1,13 @@
 import type { AssetType } from "@patrickos/db"
-import { Check, FileText, Loader2, Sparkles, Trash2, Upload, X } from "lucide-react"
+import {
+	Check,
+	Clover,
+	FileText,
+	Loader2,
+	Trash2,
+	Upload,
+	X,
+} from "lucide-react"
 import * as React from "react"
 import {
 	AlertDialog,
@@ -453,11 +461,7 @@ export function SourceDialog({
 			)}
 		</Button>
 	) : (
-		<Button
-			size="sm"
-			onClick={handleSave}
-			disabled={!newFile || saving}
-		>
+		<Button size="sm" onClick={handleSave} disabled={!newFile || saving}>
 			{saving ? (
 				<>
 					<Loader2 size={12} className="animate-spin" />
@@ -554,10 +558,7 @@ export function SourceDialog({
 
 								{/* Type selector */}
 								<div className="flex flex-col gap-1.5">
-									<Label
-										htmlFor="source-type"
-										className="text-xs font-medium"
-									>
+									<Label htmlFor="source-type" className="text-xs font-medium">
 										Type
 									</Label>
 									<Select
@@ -630,8 +631,8 @@ export function SourceDialog({
 										</>
 									) : (
 										<>
-											<Sparkles size={12} />
-											Extract
+											<Clover size={12} />
+											ExtractPat
 										</>
 									)}
 								</Button>

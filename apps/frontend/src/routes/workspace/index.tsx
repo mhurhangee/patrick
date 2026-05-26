@@ -21,7 +21,6 @@ import {
 	Send,
 	Settings,
 	Trash2,
-	UserCircle,
 	X,
 } from "lucide-react"
 import type { Value } from "platejs"
@@ -96,6 +95,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import { AIProvider, useAI } from "@/lib/ai-context"
 import {
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
@@ -303,47 +303,6 @@ function AssetTypeIcon({
 	return <entry.icon size={size} className={cn("shrink-0", entry.color)} />
 }
 
-// ─── Projects sheet ───────────────────────────────────────────────────────────
-
-// ─── Auth sheet ───────────────────────────────────────────────────────────────
-
-function AuthSheet({
-	open,
-	onOpenChange,
-}: {
-	open: boolean
-	onOpenChange: (v: boolean) => void
-}) {
-	return (
-		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="left">
-				<SheetHeader>
-					<SheetTitle>Account</SheetTitle>
-					<SheetDescription>Manage your account.</SheetDescription>
-				</SheetHeader>
-				<div className="flex flex-col gap-4 px-4 pt-4">
-					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-							<UserCircle size={20} className="text-primary" />
-						</div>
-						<div>
-							<p className="text-sm font-medium">Demo User</p>
-							<p className="text-sm text-muted-foreground">user@firm.com</p>
-						</div>
-					</div>
-					<Separator />
-					<p className="text-sm text-muted-foreground">
-						Authentication is available in cloud and self-hosted deployments.
-					</p>
-					<Button variant="outline" size="sm" disabled>
-						Sign out
-					</Button>
-				</div>
-			</SheetContent>
-		</Sheet>
-	)
-}
-
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function AppSidebar({
@@ -362,9 +321,8 @@ function AppSidebar({
 	onNewChat,
 	onEditChat,
 	onManageProjects,
-	onAuthOpen,
 	onSettingsOpen,
-	keyStatus,
+	connectedToAI,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -381,9 +339,8 @@ function AppSidebar({
 	onNewChat: () => void
 	onEditChat: (id: string) => void
 	onManageProjects: () => void
-	onAuthOpen: () => void
 	onSettingsOpen: () => void
-	keyStatus: KeyStatus
+	connectedToAI: boolean
 }) {
 	const CHAT_LIMIT = 5
 	const [showAllChats, setShowAllChats] = React.useState(false)
@@ -604,41 +561,29 @@ function AppSidebar({
 			<SidebarFooter className="p-2">
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<div className="flex items-center gap-1">
-							<SidebarMenuButton
-								onClick={onAuthOpen}
-								className="flex-1 gap-2 text-xs text-muted-foreground"
-								tooltip="Account"
-							>
-								<UserCircle size={14} />
-								<span>Demo User</span>
-							</SidebarMenuButton>
-							<Button
-								variant="ghost"
-								size="icon-xs"
-								onClick={onSettingsOpen}
+						<SidebarMenuButton
+							onClick={onSettingsOpen}
+							className="gap-2 text-xs text-muted-foreground"
+							tooltip={
+								connectedToAI
+									? "AI connected"
+									: "AI not connected — click to configure"
+							}
+						>
+							<div
 								className={cn(
-									"shrink-0 group-data-[collapsible=icon]:hidden",
-									keyStatus === "valid" && "text-green-600",
-									keyStatus === "invalid" && "text-destructive",
+									"h-2 w-2 rounded-full shrink-0",
+									connectedToAI ? "bg-green-500" : "bg-muted-foreground/40",
 								)}
-								title={
-									keyStatus === "valid"
-										? "AI connected"
-										: keyStatus === "verifying"
-											? "Verifying…"
-											: keyStatus === "invalid"
-												? "Invalid API key — click to fix"
-												: "Settings"
-								}
-							>
-								{keyStatus === "verifying" ? (
-									<Loader2 size={14} className="animate-spin" />
-								) : (
-									<Settings size={14} />
-								)}
-							</Button>
-						</div>
+							/>
+							{connectedToAI ? "AI connected" : "AI not connected"}
+						</SidebarMenuButton>
+					</SidebarMenuItem>
+					<SidebarMenuItem>
+						<SidebarMenuButton onClick={onSettingsOpen} className="gap-2">
+							<Settings size={14} />
+							Settings
+						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarFooter>
@@ -872,7 +817,14 @@ function AssetViewer({
 
 // ─── AgentPat pane ────────────────────────────────────────────────────────────
 
-function AgentPatPane({ onSend }: { onSend: (message: string) => void }) {
+function AgentPatPane({
+	onSend,
+	onOpenSettings,
+}: {
+	onSend: (message: string) => void
+	onOpenSettings: () => void
+}) {
+	const { connectedToAI } = useAI()
 	const [input, setInput] = React.useState("")
 
 	function send(message: string) {
@@ -880,6 +832,27 @@ function AgentPatPane({ onSend }: { onSend: (message: string) => void }) {
 		if (!trimmed) return
 		onSend(trimmed)
 		setInput("")
+	}
+
+	if (!connectedToAI) {
+		return (
+			<div className="flex h-full items-center justify-center bg-sidebar">
+				<Empty className="max-w-xs border-0">
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<Clover className="text-muted-foreground/40" />
+						</EmptyMedia>
+						<EmptyTitle>AgentPat</EmptyTitle>
+						<EmptyDescription>
+							Connect an AI provider in Settings to start using AgentPat.
+						</EmptyDescription>
+					</EmptyHeader>
+					<Button size="sm" variant="outline" onClick={onOpenSettings}>
+						Open Settings
+					</Button>
+				</Empty>
+			</div>
+		)
 	}
 
 	return (
@@ -1051,6 +1024,7 @@ function ChatPanel({
 	onSendToChat,
 	onSendInAgentPat,
 	onRemoveAsset,
+	onOpenSettings,
 }: {
 	chats: Chat[]
 	openChatIds: string[]
@@ -1062,6 +1036,7 @@ function ChatPanel({
 	onSendToChat: (chatId: string, message: string) => void
 	onSendInAgentPat: (message: string) => void
 	onRemoveAsset: (id: string) => void
+	onOpenSettings: () => void
 }) {
 	const openChats = openChatIds
 		.map((id) => chats.find((c) => c.id === id))
@@ -1142,7 +1117,10 @@ function ChatPanel({
 
 			{/* Content */}
 			{activeChatId === "agentpat" || !activeChat ? (
-				<AgentPatPane onSend={onSendInAgentPat} />
+				<AgentPatPane
+					onSend={onSendInAgentPat}
+					onOpenSettings={onOpenSettings}
+				/>
 			) : (
 				<ChatPane
 					chat={activeChat}
@@ -1287,7 +1265,7 @@ function WorkspacePage() {
 
 	// AI settings
 	const [provider, setProvider] = React.useState<Provider>("anthropic")
-	const [_apiKey, setApiKey] = React.useState("")
+	const [apiKey, setApiKey] = React.useState("")
 	const [keyStatus, setKeyStatus] = React.useState<KeyStatus>("idle")
 	const [quickModel, setQuickModel] = React.useState(
 		DEFAULT_QUICK_MODEL.anthropic,
@@ -1302,7 +1280,6 @@ function WorkspacePage() {
 	const [projectsLoading, setProjectsLoading] = React.useState(true)
 	const [currentProjectId, setCurrentProjectId] = React.useState("")
 	const [projectsOpen, setProjectsOpen] = React.useState(false)
-	const [authOpen, setAuthOpen] = React.useState(false)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
 
 	const chatPanelRef = usePanelRef()
@@ -1552,7 +1529,7 @@ function WorkspacePage() {
 		.filter(Boolean) as ApiAsset[]
 
 	return (
-		<>
+		<AIProvider apiKey={apiKey}>
 			<SidebarProvider className="h-full">
 				<AppSidebar
 					assets={assets}
@@ -1570,9 +1547,8 @@ function WorkspacePage() {
 					onNewChat={newChat}
 					onEditChat={(id) => setChatSheet({ mode: "edit", chatId: id })}
 					onManageProjects={() => setProjectsOpen(true)}
-					onAuthOpen={() => setAuthOpen(true)}
 					onSettingsOpen={() => setSettingsOpen(true)}
-					keyStatus={keyStatus}
+					connectedToAI={!!apiKey}
 				/>
 				<SidebarInset className="flex flex-col overflow-hidden">
 					<ResizablePanelGroup
@@ -1624,6 +1600,7 @@ function WorkspacePage() {
 								onSendToChat={sendToChat}
 								onSendInAgentPat={sendInAgentPat}
 								onRemoveAsset={closeTab}
+								onOpenSettings={() => setSettingsOpen(true)}
 							/>
 						</ResizablePanel>
 					</ResizablePanelGroup>
@@ -1639,7 +1616,6 @@ function WorkspacePage() {
 				onUpdate={updateProject}
 				onDelete={deleteProject}
 			/>
-			<AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
 			<SettingsDialog
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
@@ -1697,6 +1673,6 @@ function WorkspacePage() {
 				onUpdated={updateChat}
 				onDeleted={deleteChat}
 			/>
-		</>
+		</AIProvider>
 	)
 }

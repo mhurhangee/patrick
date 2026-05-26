@@ -16,6 +16,7 @@ import {
 import { KEYS } from "platejs"
 import { useEditorReadOnly, useEditorRef } from "platejs/react"
 
+import { useAI } from "@/lib/ai-context"
 import { AIToolbarButton } from "./ai-toolbar-button"
 import { CommentToolbarButton } from "./comment-toolbar-button"
 import { InlineEquationToolbarButton } from "./equation-toolbar-button"
@@ -27,13 +28,18 @@ import { ToolbarButton, ToolbarGroup } from "./toolbar"
 export function FloatingToolbarButtons() {
 	const readOnly = useEditorReadOnly()
 	const editor = useEditorRef()
+	const { connectedToAI } = useAI()
 
 	return (
 		<>
 			{!readOnly && (
 				<>
 					<ToolbarGroup>
-						<AIToolbarButton className="bg-primary text-primary-foreground">
+						<AIToolbarButton
+							className="bg-primary text-primary-foreground"
+							disabled={!connectedToAI}
+							tooltip={!connectedToAI ? "Add an API key in Settings to use AskPat" : undefined}
+						>
 							<Clover />
 							AskPat
 						</AIToolbarButton>
