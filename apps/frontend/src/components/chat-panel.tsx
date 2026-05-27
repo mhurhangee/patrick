@@ -17,6 +17,11 @@ import { useAI } from "@/lib/ai-context"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
 import type { Chat as ApiChat } from "@/lib/use-chat-state"
 import { cn } from "@/lib/utils"
+import {
+	ExchangePanel,
+	type ExchangePanelData,
+	StreamingSpacer,
+} from "./exchange-panel"
 
 export type { ApiChat as Chat }
 
@@ -124,6 +129,12 @@ function AgentPatPane({
 
 // ─── Chat pane ────────────────────────────────────────────────────────────────
 
+type Exchange = {
+	id: string
+	userMsg: UIMessage
+	assistantMsg: UIMessage | null
+}
+
 function ChatPane({
 	chatId,
 	openAssets,
@@ -146,9 +157,19 @@ function ChatPane({
 	quickModel: string
 }) {
 	const openAssetIds = openAssets.map((a) => a.id)
-	const bottomRef = React.useRef<HTMLDivElement>(null)
+	const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+	const lastUserMsgRef = React.useRef<HTMLDivElement>(null)
+	const [containerHeight, setContainerHeight] = React.useState(400)
 	const [input, setInput] = React.useState("")
 	const sentInitial = React.useRef(false)
+	// closedIds: latest panels the user has manually collapsed
+	// openIds: non-latest panels the user has manually expanded
+	const [closedIds, setClosedIds] = React.useState<Set<string>>(new Set())
+	const [openIds, setOpenIds] = React.useState<Set<string>>(new Set())
+	const [exchangeDurations, setExchangeDurations] = React.useState<
+		Record<string, number>
+	>({})
+	const sendStartTimeRef = React.useRef<number | null>(null)
 
 	const { messages, sendMessage, status } = useChat({
 		transport: new DefaultChatTransport({
@@ -160,87 +181,198 @@ function ChatPane({
 
 	const isStreaming = status === "streaming" || status === "submitted"
 
-	function send() {
-		const trimmed = input.trim()
-		if (!trimmed || isStreaming) return
-		sendMessage({ text: trimmed })
-		setInput("")
-	}
+	// Measure scroll container once + whenever it resizes (user drags panel)
+	React.useEffect(() => {
+		const el = scrollContainerRef.current
+		if (!el) return
+		setContainerHeight(el.clientHeight)
+		const ro = new ResizeObserver(() => setContainerHeight(el.clientHeight))
+		ro.observe(el)
+		return () => ro.disconnect()
+	}, [])
+
+	// Group flat messages into user/assistant exchange pairs
+	const exchanges = React.useMemo<Exchange[]>(() => {
+		const result: Exchange[] = []
+		let i = 0
+		while (i < messages.length) {
+			const msg = messages[i]
+			if (msg.role === "user") {
+				const next = messages[i + 1]
+				const assistantMsg = next?.role === "assistant" ? next : null
+				result.push({ id: msg.id, userMsg: msg, assistantMsg })
+				i += assistantMsg ? 2 : 1
+			} else {
+				i++
+			}
+		}
+		return result
+	}, [messages])
+
+	const latestExchangeId = exchanges.at(-1)?.id
+
+	// Scroll latest user message to top on new send — not on initial history load.
+	// useLayoutEffect fires before paint so there's no flash of the old position.
+	const prevLatestExchangeIdRef = React.useRef<string | undefined>(undefined)
+	React.useLayoutEffect(() => {
+		if (!latestExchangeId) return
+		if (prevLatestExchangeIdRef.current === undefined) {
+			prevLatestExchangeIdRef.current = latestExchangeId
+			return
+		}
+		if (prevLatestExchangeIdRef.current === latestExchangeId) return
+		prevLatestExchangeIdRef.current = latestExchangeId
+		lastUserMsgRef.current?.scrollIntoView({
+			block: "start",
+			behavior: "instant",
+		})
+	}, [latestExchangeId])
+
+	// Capture duration when streaming ends
+	const prevStatusRef = React.useRef(status)
+	React.useEffect(() => {
+		if (prevStatusRef.current !== "ready" && status === "ready") {
+			if (sendStartTimeRef.current !== null && latestExchangeId) {
+				const durationMs = Date.now() - sendStartTimeRef.current
+				sendStartTimeRef.current = null
+				setExchangeDurations((prev) => ({
+					...prev,
+					[latestExchangeId]: durationMs,
+				}))
+			}
+		}
+		prevStatusRef.current = status
+	}, [status, latestExchangeId])
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sendMessage is stable, sentInitial is a ref
 	React.useEffect(() => {
 		if (initialMessage && !sentInitial.current) {
 			sentInitial.current = true
+			sendStartTimeRef.current = Date.now()
 			sendMessage({ text: initialMessage })
 		}
 	}, [initialMessage])
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll on message count change, ref not a dep
-	React.useEffect(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-	}, [messages.length])
+	function send() {
+		const trimmed = input.trim()
+		if (!trimmed || isStreaming) return
+		sendStartTimeRef.current = Date.now()
+		sendMessage({ text: trimmed })
+		setInput("")
+	}
+
+	// isPanelExpanded is pure derived state — no useEffect, no async races.
+	// Latest exchange: open by default (closedIds = user-collapsed ones).
+	// Non-latest: closed by default (openIds = user-expanded ones).
+	// When latestExchangeId changes, the old latest evaluates against openIds
+	// (which doesn't contain it), so it collapses synchronously in the same render.
+	function isPanelExpanded(exchangeId: string): boolean {
+		if (exchangeId === latestExchangeId) return !closedIds.has(exchangeId)
+		return openIds.has(exchangeId)
+	}
+
+	function togglePanel(exchangeId: string) {
+		if (exchangeId === latestExchangeId) {
+			setClosedIds((prev) => {
+				const next = new Set(prev)
+				if (next.has(exchangeId)) next.delete(exchangeId)
+				else next.add(exchangeId)
+				return next
+			})
+		} else {
+			setOpenIds((prev) => {
+				const next = new Set(prev)
+				if (next.has(exchangeId)) next.delete(exchangeId)
+				else next.add(exchangeId)
+				return next
+			})
+		}
+	}
+
+	function getPanelData(exchange: Exchange): ExchangePanelData {
+		const meta = exchange.assistantMsg?.metadata as
+			| { usage?: { inputTokens?: number; outputTokens?: number } }
+			| undefined
+		const tokenCount =
+			meta?.usage != null
+				? (meta.usage.inputTokens ?? 0) + (meta.usage.outputTokens ?? 0)
+				: null
+		return {
+			model: quickModel,
+			tokenCount,
+			durationMs: exchangeDurations[exchange.id] ?? null,
+		}
+	}
 
 	return (
 		<div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-sidebar">
-			<div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-				<div className="space-y-4">
-					{messages.length === 0 ? (
-						<p className="py-12 text-center text-sm text-muted-foreground">
-							No messages yet. Start the conversation below.
-						</p>
-					) : (
-						messages.map((msg) => (
-							<div
-								key={msg.id}
-								className={cn(
-									"flex flex-col gap-1",
-									msg.role === "user" ? "items-end" : "items-start",
-								)}
-							>
-								{msg.parts.map((part, i) => {
-									if (part.type === "text") {
-										const isLast = i === msg.parts.length - 1
-										const isLastMsg = msg === messages[messages.length - 1]
-										return (
-											<div
-												key={`${msg.id}-${
-													// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
-													i
-												}`}
-												className={cn(
-													"max-w-[88%] rounded-lg px-3 py-2 text-sm",
-													msg.role === "user"
-														? "bg-primary/10 text-foreground"
-														: "text-foreground prose prose-sm dark:prose-invert max-w-none",
-												)}
-											>
-												{msg.role === "user" ? (
-													part.text
-												) : (
+			<div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto">
+				{exchanges.length === 0 ? (
+					<p className="py-12 text-center text-sm text-muted-foreground">
+						No messages yet. Start the conversation below.
+					</p>
+				) : (
+					exchanges.map((exchange) => {
+						const isLatest = exchange.id === latestExchangeId
+						const showSpacer = isLatest && isStreaming
+						// Extract as local const so TypeScript narrows correctly in callbacks
+						const assistantMsg = exchange.assistantMsg
+
+						return (
+							<React.Fragment key={exchange.id}>
+								{/* User message */}
+								<div
+									ref={isLatest ? lastUserMsgRef : null}
+									className="flex justify-end px-3 pt-3"
+								>
+									<div className="max-w-[88%] rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground">
+										{exchange.userMsg.parts.map((part, i) => {
+											if (part.type !== "text") return null
+											return (
+												// biome-ignore lint/suspicious/noArrayIndexKey: parts are stable ordered array
+												<span key={i}>{part.text}</span>
+											)
+										})}
+									</div>
+								</div>
+
+								{/* Assistant message */}
+								{assistantMsg !== null && (
+									<div className="flex justify-start px-3 pt-3 pb-4">
+										<div className="prose prose-sm max-w-[88%] dark:prose-invert">
+											{assistantMsg.parts.map((part, i) => {
+												if (part.type !== "text") return null
+												const isLastPart = i === assistantMsg.parts.length - 1
+												return (
 													<Streamdown
-														isAnimating={isStreaming && isLast && isLastMsg}
+														// biome-ignore lint/suspicious/noArrayIndexKey: parts are stable ordered array
+														key={i}
+														isAnimating={isStreaming && isLatest && isLastPart}
 													>
 														{part.text}
 													</Streamdown>
-												)}
-											</div>
-										)
-									}
-									return null
-								})}
-							</div>
-						))
-					)}
-					{isStreaming && (
-						<div className="flex items-start">
-							<div className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground">
-								<Loader2 size={12} className="animate-spin" />
-								Thinking…
-							</div>
-						</div>
-					)}
-					<div ref={bottomRef} />
-				</div>
+												)
+											})}
+										</div>
+									</div>
+								)}
+
+								{/* StreamingSpacer during streaming, ExchangePanel after.
+								    Both use minHeight=containerHeight — no layout shift on swap. */}
+								{showSpacer ? (
+									<StreamingSpacer minHeight={containerHeight} />
+								) : (
+									<ExchangePanel
+										data={getPanelData(exchange)}
+										isExpanded={isPanelExpanded(exchange.id)}
+										minHeight={containerHeight}
+										onToggle={() => togglePanel(exchange.id)}
+									/>
+								)}
+							</React.Fragment>
+						)
+					})
+				)}
 			</div>
 			<div className="shrink-0 space-y-2 p-3">
 				{openAssets.length > 0 && (

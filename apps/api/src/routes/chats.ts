@@ -134,7 +134,15 @@ chatsRouter.post("/:id/messages", async (c) => {
 					})
 				},
 			})
-			writer.merge(result.toUIMessageStream())
+			writer.merge(
+				result.toUIMessageStream({
+					messageMetadata: ({ part }) => {
+						if (part.type === "finish" && "totalUsage" in part) {
+							return { usage: part.totalUsage }
+						}
+					},
+				}),
+			)
 		},
 	})
 
