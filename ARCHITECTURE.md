@@ -20,7 +20,7 @@ Only the **local** tier is wired up end-to-end today.
 - **Assets** — everything inside a project, split into two kinds:
   - **Sources** (`kind: "source"`) — uploaded PDFs providing context (prior art, office actions, inventor disclosures)
   - **Artifacts** (`kind: "artifact"`) — rich text documents written in the app, edited by humans and AI
-- **AssetType** — domain classification applied to both sources and artifacts: `inventor-disclosure`, `office-action`, `patent-spec`, `prior-art`, `claims-draft`, `response-draft`
+- **AssetType** — domain classification applied to both sources and artifacts.
 
 ## Key decisions
 

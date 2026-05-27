@@ -5,7 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { ArtifactDialog } from "@/components/artifact-dialog"
 import { AssetViewer } from "@/components/asset-viewer"
 import { ChatMetaDialog } from "@/components/chat-meta-dialog"
-import { type Chat, ChatPanel } from "@/components/chat-panel"
+import { ChatPanel } from "@/components/chat-panel"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsDialog } from "@/components/settings-dialog"
 import { SourceDialog } from "@/components/source-dialog"
@@ -17,6 +17,7 @@ import {
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AIProvider, useAI } from "@/lib/ai-context"
 import { useAssetState } from "@/lib/use-asset-state"
+import { useChatState } from "@/lib/use-chat-state"
 import { useProjectState } from "@/lib/use-project-state"
 
 export const Route = createFileRoute("/workspace/")({
@@ -35,97 +36,15 @@ function WorkspaceContent() {
 	const ai = useAI()
 	const project = useProjectState()
 	const asset = useAssetState(project.currentProjectId)
-
-	// Chats
-	const [chats, setChats] = React.useState<Chat[]>([])
-	const [openChatIds, setOpenChatIds] = React.useState<string[]>([])
-	const [activeChatId, setActiveChatId] = React.useState("agentpat")
-	const [chatEditId, setChatEditId] = React.useState<string | null>(null)
+	const chat = useChatState(project.currentProjectId)
 
 	// UI
+	const [chatEditId, setChatEditId] = React.useState<string | null>(null)
 	const [chatCollapsed, setChatCollapsed] = React.useState(false)
 	const [projectsOpen, setProjectsOpen] = React.useState(false)
 	const [settingsOpen, setSettingsOpen] = React.useState(false)
 
 	const chatPanelRef = usePanelRef()
-
-	// ── Chat handlers ─────────────────────────────────────────────────────────
-
-	function openChat(id: string) {
-		setOpenChatIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
-		setActiveChatId(id)
-	}
-
-	function closeChat(id: string) {
-		setOpenChatIds((prev) => {
-			const next = prev.filter((c) => c !== id)
-			if (activeChatId === id) setActiveChatId(next.at(-1) ?? "agentpat")
-			return next
-		})
-	}
-
-	function newChat() {
-		const chat: Chat = {
-			id: crypto.randomUUID(),
-			title: "New Chat",
-			messages: [],
-			createdAt: new Date(),
-		}
-		setChats((prev) => [chat, ...prev])
-		openChat(chat.id)
-	}
-
-	function deleteChat(id: string) {
-		setChats((prev) => prev.filter((c) => c.id !== id))
-		closeChat(id)
-	}
-
-	function updateChat(id: string, title: string) {
-		setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)))
-	}
-
-	function sendInAgentPat(message: string) {
-		const chat: Chat = {
-			id: crypto.randomUUID(),
-			title: message.length > 50 ? `${message.slice(0, 50)}…` : message,
-			messages: [
-				{ id: crypto.randomUUID(), role: "user", content: message },
-				{
-					id: crypto.randomUUID(),
-					role: "assistant",
-					content: "On it. I'll start working through this now.",
-				},
-			],
-			createdAt: new Date(),
-		}
-		setChats((prev) => [chat, ...prev])
-		openChat(chat.id)
-	}
-
-	function sendToChat(chatId: string, message: string) {
-		setChats((prev) =>
-			prev.map((c) =>
-				c.id === chatId
-					? {
-							...c,
-							messages: [
-								...c.messages,
-								{
-									id: crypto.randomUUID(),
-									role: "user" as const,
-									content: message,
-								},
-								{
-									id: crypto.randomUUID(),
-									role: "assistant" as const,
-									content: "Got it. Working on a response now.",
-								},
-							],
-						}
-					: c,
-			),
-		)
-	}
 
 	// ── Panel collapse ────────────────────────────────────────────────────────
 
@@ -146,8 +65,8 @@ function WorkspaceContent() {
 			<AppSidebar
 				assets={asset.assets}
 				openTabIds={asset.openTabIds}
-				chats={chats}
-				openChatIds={openChatIds}
+				chats={chat.chats}
+				openChatIds={chat.openChatIds}
 				projects={project.projects}
 				projectsLoading={project.projectsLoading}
 				currentProjectId={project.currentProjectId}
@@ -155,8 +74,8 @@ function WorkspaceContent() {
 				onEdit={asset.editAsset}
 				onAddArtifact={asset.addArtifact}
 				onAddSource={asset.addSource}
-				onOpenChat={openChat}
-				onNewChat={newChat}
+				onOpenChat={chat.openChat}
+				onNewChat={chat.newChat}
 				onEditChat={setChatEditId}
 				onManageProjects={() => setProjectsOpen(true)}
 				onSettingsOpen={() => setSettingsOpen(true)}
@@ -195,15 +114,19 @@ function WorkspaceContent() {
 						style={{ transition: "flex 150ms ease" }}
 					>
 						<ChatPanel
-							chats={chats}
-							openChatIds={openChatIds}
-							activeChatId={activeChatId}
+							chats={chat.chats}
+							openChatIds={chat.openChatIds}
+							activeChatId={chat.activeChatId}
 							openAssets={asset.openAssets}
-							onNewChat={newChat}
-							onCloseChat={closeChat}
-							onSetActiveChat={setActiveChatId}
-							onSendToChat={sendToChat}
-							onSendInAgentPat={sendInAgentPat}
+							pendingMessages={chat.pendingMessages}
+							projectId={project.currentProjectId}
+							provider={ai.provider}
+							apiKey={ai.apiKey}
+							quickModel={ai.quickModel}
+							onNewChat={chat.newChat}
+							onCloseChat={chat.closeChat}
+							onSetActiveChat={chat.setActiveChatId}
+							onSendInAgentPat={chat.sendInAgentPat}
 							onRemoveAsset={asset.closeTab}
 							onOpenSettings={() => setSettingsOpen(true)}
 						/>
@@ -254,12 +177,12 @@ function WorkspaceContent() {
 				open={chatEditId !== null}
 				chat={
 					chatEditId !== null
-						? chats.find((c) => c.id === chatEditId)
+						? chat.chats.find((c) => c.id === chatEditId)
 						: undefined
 				}
 				onClose={() => setChatEditId(null)}
-				onUpdated={updateChat}
-				onDeleted={deleteChat}
+				onUpdated={chat.updateChat}
+				onDeleted={chat.deleteChat}
 			/>
 		</SidebarProvider>
 	)

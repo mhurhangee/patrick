@@ -42,6 +42,26 @@ export const projects = sqliteTable("projects", {
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })
 
+export const chats = sqliteTable("chats", {
+	id: text("id").primaryKey(),
+	projectId: text("project_id")
+		.notNull()
+		.references(() => projects.id),
+	title: text("title").notNull(),
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
+})
+
+export const chatMessages = sqliteTable("chat_messages", {
+	id: text("id").primaryKey(),
+	chatId: text("chat_id")
+		.notNull()
+		.references(() => chats.id),
+	role: text("role", { enum: ["user", "assistant"] }).notNull(),
+	parts: text("parts").notNull(), // JSON — AI SDK v6 UIMessage parts array
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+})
+
 export const assets = sqliteTable("assets", {
 	id: text("id").primaryKey(),
 	projectId: text("project_id")

@@ -1,21 +1,11 @@
-import { createAnthropic } from "@ai-sdk/anthropic"
-import { createOpenAI } from "@ai-sdk/openai"
 import { assets, eq, settings } from "@patrickos/db"
-import { createGateway, generateObject } from "ai"
+import { generateText, Output } from "ai"
 import { Hono } from "hono"
 import { z } from "zod"
 import { db } from "../lib/db"
+import { createModel } from "../lib/patent-prompt"
 
 export const extractpatRouter = new Hono()
-
-// ─── Model factory (shared with askpat) ──────────────────────────────────────
-
-function createModel(provider: string, apiKey: string, modelId: string) {
-	const key = apiKey.trim()
-	if (provider === "openai") return createOpenAI({ apiKey: key })(modelId)
-	if (provider === "gateway") return createGateway({ apiKey: key })(modelId)
-	return createAnthropic({ apiKey: key })(modelId)
-}
 
 // ─── Per-type extraction schemas ──────────────────────────────────────────────
 
@@ -146,10 +136,10 @@ extractpatRouter.post("/extract", async (c) => {
 	const system = await loadSystemPrompt()
 	const model = createModel(provider, apiKey, modelId)
 
-	const { object } = await generateObject({
+	const { output: object } = await generateText({
 		model,
-		schema,
 		system,
+		output: Output.object({ schema: schema as z.ZodTypeAny }),
 		messages: [
 			{
 				role: "user",

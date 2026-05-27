@@ -1,4 +1,8 @@
-import { Clover, MessageSquare, Plus, Send, X } from "lucide-react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport, type UIMessage } from "ai"
+import { Streamdown } from "streamdown"
+import "streamdown/styles.css"
+import { Clover, Loader2, MessageSquare, Plus, Send, X } from "lucide-react"
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -8,26 +12,13 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import type { ApiAsset } from "@/lib/api"
+import { type ApiAsset, api, BASE_URL } from "@/lib/api"
+import type { Chat as ApiChat } from "@/lib/use-chat-state"
 import { cn } from "@/lib/utils"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Message {
-	id: string
-	role: "user" | "assistant"
-	content: string
-}
-
-export interface Chat {
-	id: string
-	title: string
-	messages: Message[]
-	createdAt: Date
-}
+export type { ApiChat as Chat }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -58,7 +49,7 @@ function AgentPatPane({
 
 	if (!connectedToAI) {
 		return (
-			<div className="flex h-full items-center justify-center bg-sidebar">
+			<div className="flex flex-1 min-h-0 items-center justify-center bg-sidebar">
 				<Empty className="max-w-xs border-0">
 					<EmptyHeader>
 						<EmptyMedia variant="icon">
@@ -78,8 +69,8 @@ function AgentPatPane({
 	}
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden bg-sidebar">
-			<ScrollArea className="flex-1">
+		<div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-sidebar">
+			<div className="min-h-0 flex-1 overflow-y-auto">
 				<div className="mx-auto max-w-sm px-6 py-10 text-center">
 					<div className="mb-4 flex justify-center">
 						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -92,7 +83,7 @@ function AgentPatPane({
 						pick a suggestion.
 					</p>
 				</div>
-			</ScrollArea>
+			</div>
 			<div className="tab-scroll flex shrink-0 gap-2 overflow-x-auto px-3">
 				{AGENTPAT_SUGGESTIONS.map((s) => (
 					<Button
@@ -134,35 +125,71 @@ function AgentPatPane({
 // ─── Chat pane ────────────────────────────────────────────────────────────────
 
 function ChatPane({
-	chat,
+	chatId,
 	openAssets,
 	onRemoveAsset,
-	onSend,
+	initialMessages,
+	initialMessage,
+	projectId,
+	provider,
+	apiKey,
+	quickModel,
 }: {
-	chat: Chat
+	chatId: string
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
-	onSend: (chatId: string, message: string) => void
+	initialMessages: UIMessage[]
+	initialMessage?: string | null
+	projectId: string
+	provider: string
+	apiKey: string
+	quickModel: string
 }) {
+	const openAssetIds = openAssets.map((a) => a.id)
+	const bottomRef = React.useRef<HTMLDivElement>(null)
 	const [input, setInput] = React.useState("")
+	const sentInitial = React.useRef(false)
+
+	const { messages, sendMessage, status } = useChat({
+		transport: new DefaultChatTransport({
+			api: `${BASE_URL}/chats/${chatId}/messages`,
+			body: { projectId, openAssetIds, provider, apiKey, quickModel },
+		}),
+		messages: initialMessages,
+	})
+
+	const isStreaming = status === "streaming" || status === "submitted"
 
 	function send() {
 		const trimmed = input.trim()
-		if (!trimmed) return
-		onSend(chat.id, trimmed)
+		if (!trimmed || isStreaming) return
+		sendMessage({ text: trimmed })
 		setInput("")
 	}
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sendMessage is stable, sentInitial is a ref
+	React.useEffect(() => {
+		if (initialMessage && !sentInitial.current) {
+			sentInitial.current = true
+			sendMessage({ text: initialMessage })
+		}
+	}, [initialMessage])
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll on message count change, ref not a dep
+	React.useEffect(() => {
+		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+	}, [messages.length])
+
 	return (
-		<div className="flex h-full flex-col overflow-hidden bg-sidebar">
-			<ScrollArea className="flex-1 px-3 py-3">
+		<div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-sidebar">
+			<div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
 				<div className="space-y-4">
-					{chat.messages.length === 0 ? (
+					{messages.length === 0 ? (
 						<p className="py-12 text-center text-sm text-muted-foreground">
 							No messages yet. Start the conversation below.
 						</p>
 					) : (
-						chat.messages.map((msg) => (
+						messages.map((msg) => (
 							<div
 								key={msg.id}
 								className={cn(
@@ -170,21 +197,51 @@ function ChatPane({
 									msg.role === "user" ? "items-end" : "items-start",
 								)}
 							>
-								<div
-									className={cn(
-										"max-w-[88%] rounded-lg px-3 py-2 text-sm",
-										msg.role === "user"
-											? "bg-primary/10 text-foreground"
-											: "text-foreground",
-									)}
-								>
-									{msg.content}
-								</div>
+								{msg.parts.map((part, i) => {
+									if (part.type === "text") {
+										const isLast = i === msg.parts.length - 1
+										const isLastMsg = msg === messages[messages.length - 1]
+										return (
+											<div
+												key={`${msg.id}-${
+													// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
+													i
+												}`}
+												className={cn(
+													"max-w-[88%] rounded-lg px-3 py-2 text-sm",
+													msg.role === "user"
+														? "bg-primary/10 text-foreground"
+														: "text-foreground prose prose-sm dark:prose-invert max-w-none",
+												)}
+											>
+												{msg.role === "user" ? (
+													part.text
+												) : (
+													<Streamdown
+														isAnimating={isStreaming && isLast && isLastMsg}
+													>
+														{part.text}
+													</Streamdown>
+												)}
+											</div>
+										)
+									}
+									return null
+								})}
 							</div>
 						))
 					)}
+					{isStreaming && (
+						<div className="flex items-start">
+							<div className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground">
+								<Loader2 size={12} className="animate-spin" />
+								Thinking…
+							</div>
+						</div>
+					)}
+					<div ref={bottomRef} />
 				</div>
-			</ScrollArea>
+			</div>
 			<div className="shrink-0 space-y-2 p-3">
 				{openAssets.length > 0 && (
 					<div className="flex flex-wrap items-center gap-1">
@@ -219,17 +276,70 @@ function ChatPane({
 								send()
 							}
 						}}
+						disabled={isStreaming}
 						placeholder="Ask about open assets…"
 						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
 					/>
 					<div className="flex justify-end px-3 pb-2">
-						<Button size="sm" onClick={send}>
-							Send
+						<Button
+							size="sm"
+							onClick={send}
+							disabled={isStreaming || !input.trim()}
+						>
+							Send <Send />
 						</Button>
 					</div>
 				</div>
 			</div>
 		</div>
+	)
+}
+
+// Loads history then renders ChatPane
+function ChatPaneLoader({
+	chatId,
+	...rest
+}: {
+	chatId: string
+	openAssets: ApiAsset[]
+	onRemoveAsset: (id: string) => void
+	initialMessage?: string | null
+	projectId: string
+	provider: string
+	apiKey: string
+	quickModel: string
+}) {
+	const [initialMessages, setInitialMessages] = React.useState<
+		UIMessage[] | null
+	>(null)
+
+	React.useEffect(() => {
+		setInitialMessages(null)
+		api.chats
+			.getMessages(chatId)
+			.then((msgs) =>
+				setInitialMessages(
+					msgs.map((m) => ({
+						id: m.id,
+						role: m.role,
+						parts: m.parts as UIMessage["parts"],
+						createdAt: new Date(m.createdAt),
+					})),
+				),
+			)
+			.catch(() => setInitialMessages([]))
+	}, [chatId])
+
+	if (initialMessages === null) {
+		return (
+			<div className="flex h-full items-center justify-center bg-sidebar">
+				<Loader2 size={16} className="animate-spin text-muted-foreground" />
+			</div>
+		)
+	}
+
+	return (
+		<ChatPane chatId={chatId} initialMessages={initialMessages} {...rest} />
 	)
 }
 
@@ -240,29 +350,37 @@ export function ChatPanel({
 	openChatIds,
 	activeChatId,
 	openAssets,
+	pendingMessages,
+	projectId,
+	provider,
+	apiKey,
+	quickModel,
 	onNewChat,
 	onCloseChat,
 	onSetActiveChat,
-	onSendToChat,
 	onSendInAgentPat,
 	onRemoveAsset,
 	onOpenSettings,
 }: {
-	chats: Chat[]
+	chats: ApiChat[]
 	openChatIds: string[]
 	activeChatId: string
 	openAssets: ApiAsset[]
+	pendingMessages: Record<string, string>
+	projectId: string
+	provider: string
+	apiKey: string
+	quickModel: string
 	onNewChat: () => void
 	onCloseChat: (id: string) => void
 	onSetActiveChat: (id: string) => void
-	onSendToChat: (chatId: string, message: string) => void
 	onSendInAgentPat: (message: string) => void
 	onRemoveAsset: (id: string) => void
 	onOpenSettings: () => void
 }) {
 	const openChats = openChatIds
 		.map((id) => chats.find((c) => c.id === id))
-		.filter(Boolean) as Chat[]
+		.filter(Boolean) as ApiChat[]
 	const activeChat = openChats.find((c) => c.id === activeChatId)
 
 	return (
@@ -324,7 +442,7 @@ export function ChatPanel({
 					))}
 				</div>
 
-				{/* Plus — new chat, styled as a tab */}
+				{/* Plus — new chat */}
 				<div className="relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 border-transparent text-muted-foreground transition-colors hover:text-foreground">
 					<Button
 						variant="ghost"
@@ -344,11 +462,16 @@ export function ChatPanel({
 					onOpenSettings={onOpenSettings}
 				/>
 			) : (
-				<ChatPane
-					chat={activeChat}
+				<ChatPaneLoader
+					key={activeChat.id}
+					chatId={activeChat.id}
 					openAssets={openAssets}
 					onRemoveAsset={onRemoveAsset}
-					onSend={onSendToChat}
+					initialMessage={pendingMessages[activeChat.id] ?? null}
+					projectId={projectId}
+					provider={provider}
+					apiKey={apiKey}
+					quickModel={quickModel}
 				/>
 			)}
 		</div>

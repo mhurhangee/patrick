@@ -25,6 +25,22 @@ export type ApiProject = {
 	updatedAt: string
 }
 
+export type ApiChat = {
+	id: string
+	projectId: string
+	title: string
+	createdAt: string
+	updatedAt: string
+}
+
+export type ApiChatMessage = {
+	id: string
+	chatId: string
+	role: "user" | "assistant"
+	parts: unknown[]
+	createdAt: string
+}
+
 export type ApiAsset = {
 	id: string
 	projectId: string
@@ -100,6 +116,19 @@ export const api = {
 			request<ApiProject>(`/projects/${id}`, json(patch, { method: "PUT" })),
 		delete: (id: string) =>
 			request<{ ok: boolean }>(`/projects/${id}`, { method: "DELETE" }),
+	},
+	chats: {
+		list: (projectId: string) =>
+			request<ApiChat[]>(`/chats?projectId=${projectId}`),
+		create: (projectId: string, title: string, id?: string) =>
+			request<ApiChat>(
+				"/chats",
+				json({ projectId, title, ...(id ? { id } : {}) }, { method: "POST" }),
+			),
+		delete: (id: string) =>
+			request<{ ok: boolean }>(`/chats/${id}`, { method: "DELETE" }),
+		getMessages: (chatId: string) =>
+			request<ApiChatMessage[]>(`/chats/${chatId}/messages`),
 	},
 	assets: {
 		list: (projectId: string) =>

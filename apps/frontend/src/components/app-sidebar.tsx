@@ -87,7 +87,7 @@ export function AppSidebar({
 	const openChatSet = new Set(openChatIds)
 	const kindGroups = groupAssetsByKindAndType(assets)
 	const sortedChats = [...chats].sort(
-		(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+		(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 	)
 	const visibleChats = showAllChats
 		? sortedChats
