@@ -19,7 +19,6 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Separator } from "@/components/ui/separator"
 import {
 	Sidebar,
 	SidebarContent,
@@ -97,7 +96,7 @@ export function AppSidebar({
 	return (
 		<Sidebar variant="inset">
 			<SidebarHeader className="gap-0 px-3 py-2">
-				<div className="flex items-center justify-between py-1">
+				<div className="flex items-center justify-between py-2">
 					<Link to="/" className="flex items-center gap-2">
 						<Logo size={20} />
 						<span className="font-heading text-xl font-semibold tracking-tight">
@@ -112,9 +111,6 @@ export function AppSidebar({
 						<Badge variant="secondary">Open Source</Badge>
 					</a>
 				</div>
-				<div className="px-2 pb-2">
-					<Separator className="my-1" />
-				</div>
 
 				<Button
 					onClick={onManageProjects}
@@ -124,20 +120,11 @@ export function AppSidebar({
 				>
 					<span className="flex items-center gap-1.5">
 						{projectsLoading ? (
-							<Loader2
-								size={13}
-								className="shrink-0 animate-spin text-muted-foreground"
-							/>
+							<Loader2 className="shrink-0 animate-spin text-muted-foreground" />
 						) : currentProject ? (
-							<FolderOpen
-								size={13}
-								className="shrink-0 text-muted-foreground"
-							/>
+							<FolderOpen className="shrink-0 text-muted-foreground" />
 						) : (
-							<FolderPlus
-								size={13}
-								className="shrink-0 text-muted-foreground"
-							/>
+							<FolderPlus className="shrink-0 text-muted-foreground" />
 						)}
 						{projectsLoading
 							? "Loading…"
@@ -298,31 +285,32 @@ export function AppSidebar({
 
 			<SidebarFooter className="p-2">
 				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							onClick={onSettingsOpen}
-							className="gap-2 text-xs text-muted-foreground"
-							tooltip={
-								connectedToAI
-									? "AI connected"
-									: "AI not connected — click to configure"
-							}
-						>
-							<div
-								className={cn(
-									"h-2 w-2 shrink-0 rounded-full",
-									connectedToAI ? "bg-green-500" : "bg-muted-foreground/40",
-								)}
-							/>
-							{connectedToAI ? "AI connected" : "AI not connected"}
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-					<SidebarMenuItem>
-						<SidebarMenuButton onClick={onSettingsOpen} className="gap-2">
-							<Settings size={14} />
-							Settings
-						</SidebarMenuButton>
-					</SidebarMenuItem>
+					<div className="flex items-center justify-between gap-2 px-3 py-2">
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								onClick={onSettingsOpen}
+								className="gap-2 text-xs text-muted-foreground font-mono uppercase"
+								tooltip={
+									connectedToAI
+										? "Connected"
+										: "Not connected — click to configure"
+								}
+							>
+								<div
+									className={cn(
+										"h-2 w-2 shrink-0 rounded-full",
+										connectedToAI ? "bg-green-500" : "bg-muted-foreground/40",
+									)}
+								/>
+								{connectedToAI ? "Connected" : "Not connected"}
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+						<SidebarMenuItem>
+							<SidebarMenuButton onClick={onSettingsOpen} className="gap-2">
+								<Settings size={14} />
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</div>
 				</SidebarMenu>
 			</SidebarFooter>
 		</Sidebar>

@@ -30,6 +30,14 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@/components/ui/dialog"
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -305,11 +313,18 @@ function EditProjectPanel({
 			<div className="flex flex-col gap-1">
 				<div className="flex items-center gap-2">
 					<typeConfig.icon size={14} className={typeConfig.color} />
-					<h2 className="text-sm font-semibold">{project.name}</h2>
+					<h2 className="text-base font-semibold">{project.name}</h2>
 				</div>
-				<p className="text-xs text-muted-foreground">Created {createdDate}</p>
+				<div className="flex items-center gap-2">
+					<p className="pl-6 py-0.5 text-xs text-muted-foreground">
+						{createdDate}
+					</p>
+					<p className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+						{typeConfig.label}
+					</p>
+				</div>
+				{/* TODO: add number of sources/artifacts/chats */}
 			</div>
-			<Separator />
 			<div className="flex flex-col gap-4">
 				<div className="flex flex-col gap-1.5">
 					<Label htmlFor="edit-project-name">Name</Label>
@@ -339,6 +354,7 @@ function EditProjectPanel({
 					<p className="text-xs text-muted-foreground">
 						{PROJECT_TYPE_CONFIG[type].description}
 					</p>
+					{/* TODO: add project notes section for context about the project, which can be referenced in chats and office action responses */}
 				</div>
 			</div>
 
@@ -449,22 +465,24 @@ export function ProjectManagerDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="overflow-hidden p-0 md:max-h-[580px] md:max-w-[760px] lg:max-w-[900px]">
+			{/* Fix 1: Fixed overall container height to 560px match your design intent */}
+			<DialogContent className="overflow-hidden p-0 h-[560px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
 				<DialogTitle className="sr-only">Projects</DialogTitle>
 				<DialogDescription className="sr-only">
 					Manage your patent matters.
 				</DialogDescription>
+
+				{/* Fix 2: Explicitly tell SidebarProvider to fill full inner layout container height */}
 				<SidebarProvider
-					className="items-start"
+					className="flex-1 h-full min-h-0 items-stretch"
 					style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
 				>
 					{/* Left — project list */}
 					<Sidebar
 						collapsible="none"
-						className="flex"
-						style={{ height: "560px" }}
+						className="flex h-full border-r border-border bg-sidebar"
 					>
-						<SidebarContent>
+						<SidebarContent className="overflow-y-auto">
 							<div className="px-3 pt-3 pb-1">
 								<div className="relative">
 									<Search
@@ -515,38 +533,40 @@ export function ProjectManagerDialog({
 										})}
 										{filtered.length === 0 && (
 											<p className="px-3 py-2 text-xs text-muted-foreground">
-												{search ? "No matches." : "No projects yet."}
+												{search
+													? "No matches."
+													: "Your projects will appear here."}
 											</p>
 										)}
 									</SidebarMenu>
 								</SidebarGroupContent>
 							</SidebarGroup>
 						</SidebarContent>
-						<SidebarFooter>
-							<Button
-								variant={panelState === "new" ? "secondary" : "outline"}
-								size="sm"
-								className="w-full gap-1.5"
-								onClick={() => setPanelState("new")}
-							>
-								<Plus size={13} />
-								New project
-							</Button>
+						<SidebarFooter className="p-3 mt-auto">
+							{projects.length > 0 && (
+								<Button
+									variant={panelState === "new" ? "secondary" : "default"}
+									size="sm"
+									className="w-full gap-1.5"
+									onClick={() => setPanelState("new")}
+								>
+									<Plus size={13} />
+									New project
+								</Button>
+							)}
 						</SidebarFooter>
 					</Sidebar>
 
 					{/* Right — content */}
-					<main className="flex h-[560px] flex-1 flex-col overflow-hidden">
-						<header className="flex h-12 shrink-0 items-center border-b px-4">
-							<span className="text-sm font-medium">
-								{panelState === "new"
-									? "New Project"
-									: selectedProject
-										? selectedProject.name
-										: "Projects"}
-							</span>
-						</header>
-						<div className="flex flex-1 flex-col overflow-y-auto p-6">
+					<main className="flex flex-1 flex-col h-full min-w-0 overflow-hidden bg-background">
+						{!selectedProject && (
+							<header className="flex h-12 shrink-0 items-center border-b px-4">
+								<span className="text-sm font-medium">
+									{panelState === "new" ? "New Project" : "Projects"}
+								</span>
+							</header>
+						)}
+						<div className="flex-1 overflow-y-auto p-6 flex flex-col min-h-0">
 							{panelState === "new" && (
 								<NewProjectPanel
 									onCreate={onCreate}
@@ -554,17 +574,27 @@ export function ProjectManagerDialog({
 								/>
 							)}
 							{panelState === "empty" && (
-								<div className="flex flex-1 items-center justify-center">
-									<div className="text-center">
-										<FolderOpen
-											size={32}
-											className="mx-auto mb-3 text-muted-foreground/40"
-										/>
-										<p className="text-sm text-muted-foreground">
-											Select a project or create a new one.
-										</p>
-									</div>
-								</div>
+								<Empty>
+									<EmptyHeader>
+										<EmptyMedia variant="icon">
+											<FolderOpen />
+										</EmptyMedia>
+										<EmptyTitle>Use projects to organize your work</EmptyTitle>
+										<EmptyDescription>
+											Create one to get started.
+										</EmptyDescription>
+									</EmptyHeader>
+									<EmptyContent>
+										<Button
+											variant="default"
+											size="sm"
+											onClick={() => setPanelState("new")}
+										>
+											<Plus size={13} />
+											New project
+										</Button>
+									</EmptyContent>
+								</Empty>
 							)}
 							{selectedProject && (
 								<EditProjectPanel

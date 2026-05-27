@@ -109,6 +109,7 @@ function WorkspaceContent() {
 						withHandle
 						className="w-[3px] before:absolute before:inset-x-1 before:top-0 before:h-10 before:bg-muted before:content-['']"
 					/>
+
 					<ResizablePanel
 						panelRef={chatPanelRef}
 						defaultSize="32%"

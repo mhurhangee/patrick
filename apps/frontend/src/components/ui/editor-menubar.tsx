@@ -5,6 +5,7 @@ import { exportToDocx, importDocx } from "@platejs/docx-io"
 import { MarkdownPlugin } from "@platejs/markdown"
 import { SuggestionPlugin } from "@platejs/suggestion/react"
 import {
+	ClockIcon,
 	Clover,
 	Code2Icon,
 	EyeIcon,
@@ -12,9 +13,7 @@ import {
 	FileTextIcon,
 	FolderOpenIcon,
 	HashIcon,
-	LayoutIcon,
 	MessageSquareTextIcon,
-	PencilIcon,
 	PencilLineIcon,
 	PenIcon,
 	Redo2Icon,
@@ -39,6 +38,7 @@ import { Button } from "@/components/ui/button"
 import {
 	Menubar,
 	MenubarContent,
+	MenubarGroup,
 	MenubarItem,
 	MenubarMenu,
 	MenubarRadioGroup,
@@ -186,45 +186,45 @@ export function EditorMenubar() {
 						<MenubarMenu>
 							<MenubarTrigger>
 								<FolderOpenIcon className="mr-1 size-3.5" />
-								File
 							</MenubarTrigger>
 							<MenubarContent>
+								<MenubarGroup className="flex gap-2 items-center font-semibold text-sm"> Import ...</MenubarGroup>
 								<MenubarItem onSelect={() => openHtmlPicker()}>
 									<Code2Icon />
-									Import from HTML
+									from HTML
 								</MenubarItem>
 								<MenubarItem onSelect={() => openMdPicker()}>
 									<HashIcon />
-									Import from Markdown
+									from Markdown
 								</MenubarItem>
 								<MenubarItem onSelect={() => openDocxPicker()}>
 									<FileTextIcon />
-									Import from Word
+									from Word
 								</MenubarItem>
 								<MenubarSeparator />
+								<MenubarGroup className="flex gap-2 items-center font-semibold text-sm"> Export ...</MenubarGroup>
 								<MenubarItem onSelect={exportToHtml}>
 									<Code2Icon />
-									Export as HTML
+									as HTML
 								</MenubarItem>
 								<MenubarItem onSelect={exportToPdf}>
 									<FileIcon />
-									Export as PDF
+									 as PDF
 								</MenubarItem>
 								<MenubarItem onSelect={exportToMarkdown}>
 									<HashIcon />
-									Export as Markdown
+									 as Markdown
 								</MenubarItem>
 								<MenubarItem onSelect={exportToWord}>
 									<FileTextIcon />
-									Export as Word
+									as Word
 								</MenubarItem>
 							</MenubarContent>
 						</MenubarMenu>
 
 						<MenubarMenu>
 							<MenubarTrigger>
-								<PencilIcon className="mr-1 size-3.5" />
-								Edit
+								<ClockIcon className="mr-1 size-3.5" />
 							</MenubarTrigger>
 							<MenubarContent>
 								<MenubarItem
@@ -250,8 +250,7 @@ export function EditorMenubar() {
 
 				<MenubarMenu>
 					<MenubarTrigger>
-						<LayoutIcon className="mr-1 size-3.5" />
-						View
+						<EyeIcon className="mr-1 size-3.5" />
 					</MenubarTrigger>
 					<MenubarContent>
 						<MenubarRadioGroup

@@ -1,4 +1,4 @@
-import { assets, eq, type ProjectType, projects } from "@patrickos/db"
+import { assets, chatMessages, chats, eq, type ProjectType, projects } from "@patrickos/db"
 import { Hono } from "hono"
 import { db } from "../lib/db"
 
@@ -53,6 +53,14 @@ projectsRouter.put("/:id", async (c) => {
 
 projectsRouter.delete("/:id", async (c) => {
 	const id = c.req.param("id")
+	const projectChats = await db
+		.select({ id: chats.id })
+		.from(chats)
+		.where(eq(chats.projectId, id))
+	for (const chat of projectChats) {
+		await db.delete(chatMessages).where(eq(chatMessages.chatId, chat.id))
+	}
+	await db.delete(chats).where(eq(chats.projectId, id))
 	await db.delete(assets).where(eq(assets.projectId, id))
 	const [row] = await db.delete(projects).where(eq(projects.id, id)).returning()
 	if (!row) return c.json({ error: "Not found" }, 404)
