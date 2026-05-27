@@ -127,7 +127,7 @@ function WorkspaceContent() {
 							projectId={project.currentProjectId}
 							provider={ai.provider}
 							apiKey={ai.apiKey}
-							quickModel={ai.quickModel}
+							detailedModel={ai.detailedModel}
 							onNewChat={chat.newChat}
 							onCloseChat={chat.closeChat}
 							onSetActiveChat={chat.setActiveChatId}

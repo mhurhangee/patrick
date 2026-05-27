@@ -1,12 +1,16 @@
-import { chatMessages, chats, eq, settings } from "@patrickos/db"
 import {
-	createUIMessageStream,
-	createUIMessageStreamResponse,
-	streamText,
-} from "ai"
+	assets,
+	chatMessages,
+	chats,
+	eq,
+	projects,
+	settings,
+} from "@patrickos/db"
+import type { ModelMessage } from "ai"
+import { createAgentUIStreamResponse, ToolLoopAgent } from "ai"
 import { Hono } from "hono"
 import { db } from "../lib/db"
-import { createModel } from "../lib/patent-prompt"
+import { buildAgentPatSystemPrompt, createModel } from "../lib/patent-prompt"
 
 export const chatsRouter = new Hono()
 
@@ -62,18 +66,63 @@ chatsRouter.get("/:id/messages", async (c) => {
 
 chatsRouter.post("/:id/messages", async (c) => {
 	const chatId = c.req.param("id")
-	const { messages, provider, apiKey, quickModel } = await c.req.json<{
-		messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
-		provider: string
-		apiKey: string
-		quickModel: string
-	}>()
+	const { messages, provider, apiKey, detailedModel, projectId, openAssetIds } =
+		await c.req.json<{
+			messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
+			provider: string
+			apiKey: string
+			detailedModel: string
+			projectId: string
+			openAssetIds: string[]
+		}>()
 
-	const [settingsRow] = await db
-		.select()
-		.from(settings)
-		.where(eq(settings.id, "local"))
-	const model = createModel(provider, apiKey, quickModel)
+	// Load context from DB in parallel
+	const [settingsResult, projectResult, allAssetsResult] = await Promise.all([
+		db.select().from(settings).where(eq(settings.id, "local")),
+		projectId
+			? db.select().from(projects).where(eq(projects.id, projectId))
+			: Promise.resolve([]),
+		projectId
+			? db
+					.select({
+						id: assets.id,
+						title: assets.title,
+						type: assets.type,
+						kind: assets.kind,
+						date: assets.date,
+						content: assets.content,
+						details: assets.details,
+					})
+					.from(assets)
+					.where(eq(assets.projectId, projectId))
+			: Promise.resolve([]),
+	])
+
+	const settingsRow = settingsResult[0]
+	const projectRow = projectResult[0]
+
+	// Load PDF blobs for open source assets — separate query since we exclude
+	// the data blob from the main asset list query for performance
+	const openIds = openAssetIds ?? []
+	const openSourceIds = allAssetsResult
+		.filter((a) => openIds.includes(a.id) && a.kind === "source")
+		.map((a) => a.id)
+
+	const openSourceBlobs = await Promise.all(
+		openSourceIds.map((id) =>
+			db
+				.select({ id: assets.id, title: assets.title, data: assets.data })
+				.from(assets)
+				.where(eq(assets.id, id))
+				.then((rows) => rows[0]),
+		),
+	)
+	// Only keep sources that actually have a PDF uploaded
+	const pdfSources = openSourceBlobs.filter(
+		(b): b is { id: string; title: string; data: NonNullable<typeof b.data> } =>
+			!!b?.data,
+	)
+	const pdfAttachedIds = pdfSources.map((b) => b.id)
 
 	// Persist the incoming user message (last message in the array)
 	const userMsg = messages.at(-1)
@@ -87,64 +136,75 @@ chatsRouter.post("/:id/messages", async (c) => {
 		})
 	}
 
-	const systemPrompt = [
-		"You are AgentPat, an expert AI patent attorney assistant.",
-		settingsRow?.promptAgentpat,
-		settingsRow?.promptContext,
-	]
-		.filter(Boolean)
-		.join("\n\n")
-
-	// Build plain text history for streamText
-	const history = messages.slice(0, -1).map((m) => ({
-		role: m.role,
-		content: m.parts
-			.filter(
-				(p): p is { type: "text"; text: string } =>
-					(p as { type: string }).type === "text",
-			)
-			.map((p) => p.text)
-			.join(""),
-	}))
-
-	const lastUserText = (userMsg?.parts ?? [])
-		.filter(
-			(p): p is { type: "text"; text: string } =>
-				(p as { type: string }).type === "text",
-		)
-		.map((p) => p.text)
-		.join("")
-
-	let assistantParts: unknown[] = []
-
-	const stream = createUIMessageStream({
-		execute: async ({ writer }) => {
-			const result = streamText({
-				model,
-				system: systemPrompt,
-				messages: [...history, { role: "user", content: lastUserText }],
-				onFinish: async ({ text }) => {
-					assistantParts = [{ type: "text", text }]
-					await db.insert(chatMessages).values({
-						id: crypto.randomUUID(),
-						chatId,
-						role: "assistant",
-						parts: JSON.stringify(assistantParts),
-						createdAt: new Date(),
-					})
-				},
-			})
-			writer.merge(
-				result.toUIMessageStream({
-					messageMetadata: ({ part }) => {
-						if (part.type === "finish" && "totalUsage" in part) {
-							return { usage: part.totalUsage }
-						}
-					},
-				}),
-			)
-		},
+	const systemPrompt = buildAgentPatSystemPrompt({
+		settingsRow,
+		projectRow,
+		allAssets: allAssetsResult,
+		openAssetIds: openIds,
+		pdfAttachedIds,
 	})
 
-	return createUIMessageStreamResponse({ stream })
+	const model = createModel(provider, apiKey, detailedModel)
+
+	const agent = new ToolLoopAgent({
+		model,
+		instructions: systemPrompt,
+		// Injects open source PDFs as native file parts before the conversation
+		// so the model reads them directly. Only runs when there are PDFs to inject.
+		prepareCall:
+			pdfSources.length > 0
+				? (baseArgs) => {
+						const rawPrompt = (baseArgs as { prompt?: unknown }).prompt
+						const modelMessages = Array.isArray(rawPrompt)
+							? (rawPrompt as ModelMessage[])
+							: []
+						return {
+							...baseArgs,
+							model,
+							prompt: [
+								{
+									role: "user" as const,
+									content: [
+										{
+											type: "text" as const,
+											text: `The following source document${pdfSources.length > 1 ? "s are" : " is"} attached for your reference:${pdfSources.map((b) => `\n- ${b.title}`).join("")}`,
+										},
+										...pdfSources.map((b) => ({
+											type: "file" as const,
+											data: b.data as Uint8Array,
+											mediaType: "application/pdf" as const,
+										})),
+									],
+								},
+								{
+									role: "assistant" as const,
+									content:
+										"I have reviewed the attached source document(s) and will use them as context throughout our conversation.",
+								},
+								...modelMessages,
+							] as ModelMessage[],
+						}
+					}
+				: undefined,
+	})
+
+	return createAgentUIStreamResponse({
+		agent,
+		uiMessages: messages,
+		generateMessageId: () => crypto.randomUUID(),
+		messageMetadata: ({ part }) => {
+			if (part.type === "finish" && "totalUsage" in part) {
+				return { usage: part.totalUsage }
+			}
+		},
+		onFinish: async ({ responseMessage }) => {
+			await db.insert(chatMessages).values({
+				id: responseMessage.id || crypto.randomUUID(),
+				chatId,
+				role: "assistant",
+				parts: JSON.stringify(responseMessage.parts),
+				createdAt: new Date(),
+			})
+		},
+	})
 })

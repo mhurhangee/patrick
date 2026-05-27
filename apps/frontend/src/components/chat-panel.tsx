@@ -144,7 +144,7 @@ function ChatPane({
 	projectId,
 	provider,
 	apiKey,
-	quickModel,
+	detailedModel,
 }: {
 	chatId: string
 	openAssets: ApiAsset[]
@@ -154,9 +154,11 @@ function ChatPane({
 	projectId: string
 	provider: string
 	apiKey: string
-	quickModel: string
+	detailedModel: string
 }) {
-	const openAssetIds = openAssets.map((a) => a.id)
+	const openAssetIdsRef = React.useRef<string[]>([])
+	openAssetIdsRef.current = openAssets.map((a) => a.id)
+
 	const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 	const lastUserMsgRef = React.useRef<HTMLDivElement>(null)
 	const [containerHeight, setContainerHeight] = React.useState(400)
@@ -170,11 +172,25 @@ function ChatPane({
 		Record<string, number>
 	>({})
 	const sendStartTimeRef = React.useRef<number | null>(null)
+	const pendingContextRef = React.useRef<Array<{ id: string; title: string }>>(
+		[],
+	)
+	// Phase 3: context snapshots per exchange — stored but not yet rendered in ExchangePanel
+	const [_exchangeContextSnapshots, setExchangeContextSnapshots] =
+		React.useState<Record<string, Array<{ id: string; title: string }>>>({})
 
 	const { messages, sendMessage, status } = useChat({
 		transport: new DefaultChatTransport({
 			api: `${BASE_URL}/chats/${chatId}/messages`,
-			body: { projectId, openAssetIds, provider, apiKey, quickModel },
+			body: { projectId, provider, apiKey, detailedModel },
+			prepareSendMessagesRequest: ({ body, messages: uiMessages, id }) => ({
+				body: {
+					...body,
+					id,
+					messages: uiMessages,
+					openAssetIds: openAssetIdsRef.current,
+				},
+			}),
 		}),
 		messages: initialMessages,
 	})
@@ -226,6 +242,11 @@ function ChatPane({
 			block: "start",
 			behavior: "instant",
 		})
+		const snapshot = pendingContextRef.current
+		setExchangeContextSnapshots((prev) => ({
+			...prev,
+			[latestExchangeId]: snapshot,
+		}))
 	}, [latestExchangeId])
 
 	// Capture duration when streaming ends
@@ -244,11 +265,15 @@ function ChatPane({
 		prevStatusRef.current = status
 	}, [status, latestExchangeId])
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: sendMessage is stable, sentInitial is a ref
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sendMessage is stable, sentInitial/pendingContextRef are refs
 	React.useEffect(() => {
 		if (initialMessage && !sentInitial.current) {
 			sentInitial.current = true
 			sendStartTimeRef.current = Date.now()
+			pendingContextRef.current = openAssets.map((a) => ({
+				id: a.id,
+				title: a.title,
+			}))
 			sendMessage({ text: initialMessage })
 		}
 	}, [initialMessage])
@@ -257,6 +282,10 @@ function ChatPane({
 		const trimmed = input.trim()
 		if (!trimmed || isStreaming) return
 		sendStartTimeRef.current = Date.now()
+		pendingContextRef.current = openAssets.map((a) => ({
+			id: a.id,
+			title: a.title,
+		}))
 		sendMessage({ text: trimmed })
 		setInput("")
 	}
@@ -298,7 +327,7 @@ function ChatPane({
 				? (meta.usage.inputTokens ?? 0) + (meta.usage.outputTokens ?? 0)
 				: null
 		return {
-			model: quickModel,
+			model: detailedModel,
 			tokenCount,
 			durationMs: exchangeDurations[exchange.id] ?? null,
 		}
@@ -439,7 +468,7 @@ function ChatPaneLoader({
 	projectId: string
 	provider: string
 	apiKey: string
-	quickModel: string
+	detailedModel: string
 }) {
 	const [initialMessages, setInitialMessages] = React.useState<
 		UIMessage[] | null
@@ -486,7 +515,7 @@ export function ChatPanel({
 	projectId,
 	provider,
 	apiKey,
-	quickModel,
+	detailedModel,
 	onNewChat,
 	onCloseChat,
 	onSetActiveChat,
@@ -502,7 +531,7 @@ export function ChatPanel({
 	projectId: string
 	provider: string
 	apiKey: string
-	quickModel: string
+	detailedModel: string
 	onNewChat: () => void
 	onCloseChat: (id: string) => void
 	onSetActiveChat: (id: string) => void
@@ -603,7 +632,7 @@ export function ChatPanel({
 					projectId={projectId}
 					provider={provider}
 					apiKey={apiKey}
-					quickModel={quickModel}
+					detailedModel={detailedModel}
 				/>
 			)}
 		</div>
