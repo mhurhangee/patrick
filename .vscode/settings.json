@@ -1,7 +1,11 @@
 {
-	"typescript.tsdk": "apps/frontend/node_modules/typescript/lib",
-	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"js/ts.tsdk.path": "apps/frontend/node_modules/typescript/lib",
+	"js/ts.tsdk.promptToUseWorkspaceVersion": true,
 	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.organizeImports.biome": "explicit",
+		"source.fixAll.biome": "explicit"
+	},
 	"editor.defaultFormatter": "biomejs.biome",
 	"[rust]": {
 		"editor.defaultFormatter": "rust-lang.rust-analyzer"

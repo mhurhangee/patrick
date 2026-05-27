@@ -86,7 +86,12 @@ function WorkspaceContent() {
 					orientation="horizontal"
 					className="flex-1 overflow-hidden"
 				>
-					<ResizablePanel defaultSize="68%" minSize="30%">
+					<ResizablePanel
+						defaultSize="68%"
+						minSize="30%"
+						collapsible
+						collapsedSize="0%"
+					>
 						<AssetViewer
 							assets={asset.assets}
 							openTabIds={asset.openTabIds}
@@ -102,13 +107,12 @@ function WorkspaceContent() {
 					</ResizablePanel>
 					<ResizableHandle
 						withHandle
-						className="w-[3px] before:absolute before:inset-x-0 before:top-0 before:h-10 before:bg-muted before:content-['']"
+						className="w-[3px] before:absolute before:inset-x-1 before:top-0 before:h-10 before:bg-muted before:content-['']"
 					/>
 					<ResizablePanel
 						panelRef={chatPanelRef}
 						defaultSize="32%"
 						minSize="20%"
-						maxSize="50%"
 						collapsible
 						collapsedSize="0%"
 						style={{ transition: "flex 150ms ease" }}

@@ -516,7 +516,7 @@ export function ChatPanel({
 	const activeChat = openChats.find((c) => c.id === activeChatId)
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden border-l">
+		<div className="flex h-full flex-col overflow-hidden">
 			{/* Tab bar */}
 			<div className="relative flex h-10 shrink-0 items-end gap-0.5 bg-muted px-1">
 				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
