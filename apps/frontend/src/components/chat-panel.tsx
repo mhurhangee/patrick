@@ -7,12 +7,11 @@ import {
 } from "ai"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
-import { Clover, Loader2, MessageSquare, Plus, Send, X } from "lucide-react"
+import { ArrowUp, Clover, Loader2, Plus, X } from "lucide-react"
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
-	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
@@ -29,7 +28,6 @@ import {
 	type ExchangePanelData,
 	StreamingSpacer,
 } from "./exchange-panel"
-import { Logo } from "./logo"
 
 export type { ApiChat as Chat }
 
@@ -39,12 +37,6 @@ const FALLBACK_SUGGESTIONS = [
 	"Draft §103 response",
 	"Amend claims",
 	"Search prior art",
-]
-
-const AGENTPAT_SUGGESTIONS = [
-	"Draft a §103 response",
-	"Search prior art",
-	"Amend claims",
 ]
 
 function getModelPricing(provider: string, modelId: string) {
@@ -62,9 +54,13 @@ function getModelPricing(provider: string, modelId: string) {
 function AgentPatPane({
 	onSend,
 	onOpenSettings,
+	openAssets,
+	onRemoveAsset,
 }: {
 	onSend: (message: string) => void
 	onOpenSettings: () => void
+	openAssets: ApiAsset[]
+	onRemoveAsset: (id: string) => void
 }) {
 	const { connectedToAI } = useAI()
 	const [input, setInput] = React.useState("")
@@ -78,7 +74,7 @@ function AgentPatPane({
 
 	if (!connectedToAI) {
 		return (
-			<div className="flex flex-1 min-h-0 items-center justify-center bg-sidebar">
+			<div className="flex flex-1 min-h-0 items-center justify-center">
 				<Empty>
 					<EmptyHeader>
 						<EmptyMedia variant="icon">
@@ -98,32 +94,38 @@ function AgentPatPane({
 	}
 
 	return (
-		<div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-sidebar">
+		<div className="flex flex-1 min-h-0 flex-col overflow-hidden">
 			<Empty className="max-w-xs mx-auto">
 				<EmptyHeader>
-					<EmptyMedia>
-						<Logo />
-					</EmptyMedia>
 					<EmptyTitle>AgentPat</EmptyTitle>
-					<EmptyContent>Your patent attorney assistant</EmptyContent>
-					<EmptyDescription>
-						Open sources and artifacts in the editor to give AgentPat full
-						access — everything else is metadata only.
-					</EmptyDescription>
+					<EmptyDescription>Send a message to get started</EmptyDescription>
 				</EmptyHeader>
 			</Empty>
-			<div className="tab-scroll flex shrink-0 gap-2 overflow-x-auto px-3">
-				{AGENTPAT_SUGGESTIONS.map((s) => (
-					<Button
-						key={s}
-						variant="secondary"
-						size="sm"
-						className="h-auto rounded-full px-3 py-1.5 text-xs font-normal"
-						onClick={() => send(s)}
-					>
-						{s}
-					</Button>
-				))}
+			<div className="shrink-0 px-3">
+				{openAssets.length > 0 ? (
+					<div className="flex flex-wrap items-center gap-1">
+						{openAssets.map((asset) => (
+							<span
+								key={asset.id}
+								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+							>
+								{asset.title}
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									onClick={() => onRemoveAsset(asset.id)}
+									className="h-auto w-auto p-0 hover:bg-transparent"
+								>
+									<X size={9} />
+								</Button>
+							</span>
+						))}
+					</div>
+				) : (
+					<div className="flex items-center pl-2 text-xs text-muted-foreground">
+						Open sources or artifacts for AI to use them
+					</div>
+				)}
 			</div>
 			<div className="shrink-0 p-3">
 				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
@@ -136,12 +138,12 @@ function AgentPatPane({
 								send(input)
 							}
 						}}
-						placeholder="Ask AgentPat anything…"
+						placeholder=""
 						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
 					/>
 					<div className="flex justify-end px-3 pb-2">
-						<Button size="sm" onClick={() => send(input)}>
-							Send <Send />
+						<Button size="icon" onClick={() => send(input)}>
+							<ArrowUp />
 						</Button>
 					</div>
 				</div>
@@ -463,7 +465,7 @@ function ChatPane({
 	}
 
 	return (
-		<div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-sidebar">
+		<div className="flex flex-1 min-h-0 flex-col overflow-hidden">
 			<div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto">
 				{exchanges.length === 0 ? (
 					<p className="py-12 text-center text-sm text-muted-foreground">
@@ -537,11 +539,8 @@ function ChatPane({
 				)}
 			</div>
 			<div className="shrink-0 space-y-2 p-3">
-				{openAssets.length > 0 && (
+				{openAssets.length > 0 ? (
 					<div className="flex flex-wrap items-center gap-1">
-						<span className="shrink-0 text-xs text-muted-foreground">
-							In context:
-						</span>
 						{openAssets.map((asset) => (
 							<span
 								key={asset.id}
@@ -559,6 +558,10 @@ function ChatPane({
 							</span>
 						))}
 					</div>
+				) : (
+					<div className="flex items-center pl-2 text-xs text-muted-foreground">
+						Open sources or artifacts for AI to use them
+					</div>
 				)}
 				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
 					<Textarea
@@ -572,16 +575,16 @@ function ChatPane({
 							}
 						}}
 						disabled={isStreaming}
-						placeholder="Ask about open assets…"
+						placeholder=""
 						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
 					/>
 					<div className="flex justify-end px-3 pb-2">
 						<Button
-							size="sm"
+							size="icon"
 							onClick={send}
 							disabled={isStreaming || !input.trim()}
 						>
-							Send <Send />
+							<ArrowUp />
 						</Button>
 					</div>
 				</div>
@@ -629,7 +632,7 @@ function ChatPaneLoader({
 
 	if (initialMessages === null) {
 		return (
-			<div className="flex h-full items-center justify-center bg-sidebar">
+			<div className="flex h-full items-center justify-center">
 				<Loader2 size={16} className="animate-spin text-muted-foreground" />
 			</div>
 		)
@@ -685,7 +688,7 @@ export function ChatPanel({
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
 			{/* Tab bar */}
-			<div className="relative flex h-10 shrink-0 items-end gap-0.5 bg-muted px-1">
+			<div className="relative flex h-8 shrink-0 items-end gap-0.5 bg-muted px-1">
 				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
 
 				{/* AgentPat — fixed left, shrinks to icon when other tabs are open */}
@@ -693,7 +696,7 @@ export function ChatPanel({
 					className={cn(
 						"relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
 						activeChatId === "agentpat"
-							? "border-border bg-sidebar text-foreground"
+							? "border-border bg-background text-foreground"
 							: "border-transparent text-muted-foreground hover:text-foreground",
 					)}
 				>
@@ -716,7 +719,7 @@ export function ChatPanel({
 							className={cn(
 								"group relative flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
 								activeChatId === chat.id
-									? "z-10 border-border bg-sidebar text-foreground"
+									? "z-10 border-border bg-background text-foreground"
 									: "border-transparent text-muted-foreground hover:text-foreground",
 							)}
 						>
@@ -726,7 +729,6 @@ export function ChatPanel({
 								onClick={() => onSetActiveChat(chat.id)}
 								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
 							>
-								<MessageSquare size={12} className="shrink-0" />
 								<span className="max-w-[120px] truncate">{chat.title}</span>
 							</Button>
 							<Button
@@ -759,6 +761,8 @@ export function ChatPanel({
 				<AgentPatPane
 					onSend={onSendInAgentPat}
 					onOpenSettings={onOpenSettings}
+					openAssets={openAssets}
+					onRemoveAsset={onRemoveAsset}
 				/>
 			) : (
 				<ChatPaneLoader

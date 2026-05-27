@@ -8,7 +8,6 @@ import {
 	Reply,
 } from "lucide-react"
 import type { ApiAsset } from "@/lib/api"
-import { cn } from "@/lib/utils"
 
 // ─── Field definition ─────────────────────────────────────────────────────────
 
@@ -36,7 +35,7 @@ export const ASSET_CONFIGS: AssetConfig[] = [
 	{
 		id: "office-action",
 		kind: "source",
-		groupLabel: "Office Actions",
+		groupLabel: "US OA",
 		typeLabel: "USPTO Office Action",
 		icon: Gavel,
 		color: "text-red-500",
@@ -86,16 +85,16 @@ export const ASSET_CONFIGS: AssetConfig[] = [
 	{
 		id: "claims-draft",
 		kind: "artifact",
-		groupLabel: "Claims Drafts",
-		typeLabel: "Claims Draft",
+		groupLabel: "Claims",
+		typeLabel: "Claims",
 		icon: ListChecks,
 		color: "text-green-500",
 	},
 	{
 		id: "response-draft",
 		kind: "artifact",
-		groupLabel: "Response Drafts",
-		typeLabel: "Response Draft",
+		groupLabel: "Response",
+		typeLabel: "Response",
 		icon: Reply,
 		color: "text-violet-500",
 	},
@@ -149,18 +148,6 @@ export function groupAssetsByKindAndType(assets: ApiAsset[]) {
 		result.push({ kind, label: KIND_LABELS[kind], types })
 	}
 	return result
-}
-
-export function AssetTypeIcon({
-	type,
-	size = 13,
-}: {
-	type: AssetType
-	size?: number
-}) {
-	const config = getAssetConfig(type)
-	if (!config) return null
-	return <config.icon size={size} className={cn("shrink-0", config.color)} />
 }
 
 // ─── Source field helpers ─────────────────────────────────────────────────────

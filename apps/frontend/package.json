@@ -17,6 +17,7 @@
 		"@ariakit/react": "^0.4.26",
 		"@emoji-mart/data": "1.2.1",
 		"@fontsource-variable/geist": "^5.2.9",
+		"@fontsource-variable/geist-mono": "^5.2.8",
 		"@fontsource-variable/lora": "^5.2.8",
 		"@patrickos/db": "workspace:*",
 		"@platejs/ai": "^53.0.4",

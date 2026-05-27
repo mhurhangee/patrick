@@ -287,15 +287,13 @@ export function EditorMenubar() {
 				{!readOnly && (
 					<Button
 						variant="default"
-						size="sm"
-						className="h-7 gap-1.5 px-2 text-sm cursor-pointer hover:bg-primary/90"
+						size="icon"
 						disabled={!connectedToAI}
 						title={!connectedToAI ? "Add an API key in Settings to use AskPat" : undefined}
 						onMouseDown={(e) => e.preventDefault()}
 						onClick={() => aiApi.aiChat.show()}
 					>
-						<Clover className="size-4" />
-						<span className="hidden lg:inline">AskPat</span>
+						<Clover />
 					</Button>
 				)}
 			</div>

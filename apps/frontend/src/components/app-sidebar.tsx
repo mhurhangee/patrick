@@ -1,24 +1,10 @@
 import { Link } from "@tanstack/react-router"
-import {
-	ChevronRight,
-	ChevronsUpDown,
-	FolderOpen,
-	FolderPlus,
-	Loader2,
-	Pencil,
-	Plus,
-	Settings,
-} from "lucide-react"
+import { ChevronsUpDown, Ellipsis, Plus, Settings2 } from "lucide-react"
 import * as React from "react"
 import type { Chat } from "@/components/chat-panel"
 import { Logo } from "@/components/logo"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import {
 	Sidebar,
 	SidebarContent,
@@ -31,7 +17,6 @@ import {
 	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarMenuSub,
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
@@ -96,45 +81,27 @@ export function AppSidebar({
 	return (
 		<Sidebar variant="inset">
 			<SidebarHeader className="gap-0 px-3 py-2">
-				<div className="flex items-center justify-between py-2">
-					<Link to="/" className="flex items-center gap-2">
+				<div className="flex items-center py-2">
+					<Link to="/" className="flex items-center">
 						<Logo size={20} />
-						<span className="font-heading text-xl font-semibold tracking-tight">
-							PatrickOS
-						</span>
 					</Link>
-					<a
-						href="https://github.com/mhurhangee/patrickos"
-						target="_blank"
-						rel="noopener noreferrer"
+					<Button
+						onClick={onManageProjects}
+						variant="ghost"
+						size="sm"
+						className="text-sm shrink-0 ml-2"
 					>
-						<Badge variant="secondary">Open Source</Badge>
-					</a>
+						<span className="flex items-center">
+							{projectsLoading
+								? "Loading…"
+								: (currentProject?.name ?? "Select project")}
+						</span>
+						<ChevronsUpDown
+							size={11}
+							className="shrink-0 text-muted-foreground"
+						/>
+					</Button>
 				</div>
-
-				<Button
-					onClick={onManageProjects}
-					variant="ghost"
-					size="sm"
-					className="w-full justify-between px-2 text-sm font-medium"
-				>
-					<span className="flex items-center gap-1.5">
-						{projectsLoading ? (
-							<Loader2 className="shrink-0 animate-spin text-muted-foreground" />
-						) : currentProject ? (
-							<FolderOpen className="shrink-0 text-muted-foreground" />
-						) : (
-							<FolderPlus className="shrink-0 text-muted-foreground" />
-						)}
-						{projectsLoading
-							? "Loading…"
-							: (currentProject?.name ?? "Select project")}
-					</span>
-					<ChevronsUpDown
-						size={11}
-						className="shrink-0 text-muted-foreground"
-					/>
-				</Button>
 			</SidebarHeader>
 
 			<SidebarContent>
@@ -169,57 +136,35 @@ export function AppSidebar({
 									</p>
 								)
 							)}
-							{kindGroup.types.map((typeGroup) => (
-								<Collapsible
-									key={typeGroup.type}
-									asChild
-									defaultOpen
-									className="group/collapsible"
-								>
-									<SidebarMenuItem>
-										<CollapsibleTrigger asChild>
-											<SidebarMenuButton
-												className="text-xs"
-												tooltip={typeGroup.label}
+							{kindGroup.types.flatMap((typeGroup) =>
+								typeGroup.assets.map((asset) => (
+									<SidebarMenuSubItem key={asset.id}>
+										<SidebarMenuAction
+											className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
+											onClick={(e) => {
+												e.stopPropagation()
+												onEdit(asset.id)
+											}}
+										>
+											<Ellipsis size={10} />
+											<span className="sr-only">Edit asset</span>
+										</SidebarMenuAction>
+										<SidebarMenuSubButton
+											onClick={() => onOpen(asset.id)}
+											isActive={openSet.has(asset.id)}
+											className="flex items-center items-center justify-between h-6 gap-1.5 mr-4 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-2"
+										>
+											<span className="truncate">{asset.title}</span>
+											<Badge
+												variant="secondary"
+												className="shrink-0 text-xxs font-normal bg-primary/5 border border-primary/10 uppercase tracking-wider"
 											>
-												<typeGroup.icon
-													size={13}
-													className={cn("shrink-0", typeGroup.color)}
-												/>
-												<span className="uppercase tracking-widest">
-													{typeGroup.label}
-												</span>
-												<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-											</SidebarMenuButton>
-										</CollapsibleTrigger>
-										<CollapsibleContent>
-											<SidebarMenuSub>
-												{typeGroup.assets.map((asset) => (
-													<SidebarMenuSubItem key={asset.id}>
-														<SidebarMenuSubButton
-															onClick={() => onOpen(asset.id)}
-															isActive={openSet.has(asset.id)}
-															className="gap-1.5"
-														>
-															<span className="truncate">{asset.title}</span>
-														</SidebarMenuSubButton>
-														<SidebarMenuAction
-															className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
-															onClick={(e) => {
-																e.stopPropagation()
-																onEdit(asset.id)
-															}}
-														>
-															<Pencil size={12} />
-															<span className="sr-only">Edit asset</span>
-														</SidebarMenuAction>
-													</SidebarMenuSubItem>
-												))}
-											</SidebarMenuSub>
-										</CollapsibleContent>
-									</SidebarMenuItem>
-								</Collapsible>
-							))}
+												{typeGroup.label}
+											</Badge>
+										</SidebarMenuSubButton>
+									</SidebarMenuSubItem>
+								)),
+							)}
 						</SidebarMenu>
 					</SidebarGroup>
 				))}
@@ -245,40 +190,39 @@ export function AppSidebar({
 								</p>
 							)
 						)}
-						<SidebarMenuSub>
-							{visibleChats.map((chat) => (
-								<SidebarMenuSubItem key={chat.id}>
-									<SidebarMenuSubButton
-										onClick={() => onOpenChat(chat.id)}
-										isActive={openChatSet.has(chat.id)}
-									>
-										<span className="truncate">{chat.title}</span>
-									</SidebarMenuSubButton>
-									<SidebarMenuAction
-										className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
-										onClick={(e) => {
-											e.stopPropagation()
-											onEditChat(chat.id)
-										}}
-									>
-										<Pencil size={12} />
-										<span className="sr-only">Edit chat</span>
-									</SidebarMenuAction>
-								</SidebarMenuSubItem>
-							))}
-							{sortedChats.length > CHAT_LIMIT && (
-								<SidebarMenuSubItem>
-									<SidebarMenuSubButton
-										onClick={() => setShowAllChats((v) => !v)}
-										className="justify-center text-muted-foreground"
-									>
-										{showAllChats
-											? "Show less"
-											: `${sortedChats.length - CHAT_LIMIT} older…`}
-									</SidebarMenuSubButton>
-								</SidebarMenuSubItem>
-							)}
-						</SidebarMenuSub>
+						{visibleChats.map((chat) => (
+							<SidebarMenuSubItem key={chat.id}>
+								<SidebarMenuSubButton
+									onClick={() => onOpenChat(chat.id)}
+									isActive={openChatSet.has(chat.id)}
+									className="flex items-center items-center justify-between h-6 gap-1.5 mr-6 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-2"
+								>
+									<span className="truncate">{chat.title}</span>
+								</SidebarMenuSubButton>
+								<SidebarMenuAction
+									className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
+									onClick={(e) => {
+										e.stopPropagation()
+										onEditChat(chat.id)
+									}}
+								>
+									<Ellipsis size={10} />
+									<span className="sr-only">Edit chat</span>
+								</SidebarMenuAction>
+							</SidebarMenuSubItem>
+						))}
+						{sortedChats.length > CHAT_LIMIT && (
+							<SidebarMenuSubItem>
+								<SidebarMenuSubButton
+									onClick={() => setShowAllChats((v) => !v)}
+									className="justify-center text-muted-foreground ml-2"
+								>
+									{showAllChats
+										? "Show less"
+										: `${sortedChats.length - CHAT_LIMIT} older…`}
+								</SidebarMenuSubButton>
+							</SidebarMenuSubItem>
+						)}
 					</SidebarMenu>
 				</SidebarGroup>
 			</SidebarContent>
@@ -289,25 +233,20 @@ export function AppSidebar({
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								onClick={onSettingsOpen}
-								className="gap-2 text-xs text-muted-foreground font-mono uppercase"
-								tooltip={
-									connectedToAI
-										? "Connected"
-										: "Not connected — click to configure"
-								}
+								className="gap-2 text-xs text-muted-foreground hover:text-foreground"
 							>
 								<div
 									className={cn(
 										"h-2 w-2 shrink-0 rounded-full",
-										connectedToAI ? "bg-green-500" : "bg-muted-foreground/40",
+										connectedToAI ? "bg-green-600" : "bg-muted-foreground/40",
 									)}
 								/>
-								{connectedToAI ? "Connected" : "Not connected"}
+								{connectedToAI ? "connected" : "not connected"}
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 						<SidebarMenuItem>
 							<SidebarMenuButton onClick={onSettingsOpen} className="gap-2">
-								<Settings size={14} />
+								<Settings2 size={14} />
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					</div>

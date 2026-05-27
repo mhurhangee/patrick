@@ -1,10 +1,4 @@
-import {
-	ChevronLeft,
-	ChevronRight,
-	Columns3,
-	FolderOpen,
-	X,
-} from "lucide-react"
+import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
 import type { Value } from "platejs"
 import * as React from "react"
 import { PlateEditor } from "@/components/editor/plate-editor"
@@ -12,9 +6,8 @@ import { SourceViewer } from "@/components/source-viewer"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
-	EmptyContent,
+	EmptyDescription,
 	EmptyHeader,
-	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty"
 import {
@@ -24,7 +17,6 @@ import {
 } from "@/components/ui/resizable"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
-import { AssetTypeIcon } from "@/lib/asset-config"
 import { cn } from "@/lib/utils"
 
 function ArtifactEditor({
@@ -135,7 +127,7 @@ export function AssetViewer({
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<div className="relative flex h-10 shrink-0 items-end bg-muted">
+			<div className="relative flex h-8 shrink-0 items-end bg-muted">
 				{/* border line — tabs with z-10 render on top of it */}
 				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
 				<div className="relative z-10 flex shrink-0 items-center self-stretch px-2">
@@ -158,7 +150,6 @@ export function AssetViewer({
 								onClick={() => onTabClick(asset.id)}
 								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
 							>
-								<AssetTypeIcon type={asset.type} />
 								<span className="max-w-[120px] truncate">{asset.title}</span>
 							</Button>
 							<Button
@@ -186,7 +177,7 @@ export function AssetViewer({
 								onClick={onSplitToggle}
 								disabled={openAssets.length < 2}
 							>
-								<Columns3 /> Split
+								<Columns3 />
 							</Button>
 						</div>
 					)}
@@ -202,13 +193,10 @@ export function AssetViewer({
 				<div className="flex h-full flex-col items-center justify-center gap-6 overflow-hidden">
 					<Empty className="max-w-xs border-0">
 						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<FolderOpen />
-							</EmptyMedia>
 							<EmptyTitle>Nothing open</EmptyTitle>
-							<EmptyContent>
-								Select an asset from the sidebar to open it here.
-							</EmptyContent>
+							<EmptyDescription>
+								Open one from the sidebar to get started
+							</EmptyDescription>
 						</EmptyHeader>
 					</Empty>
 				</div>
