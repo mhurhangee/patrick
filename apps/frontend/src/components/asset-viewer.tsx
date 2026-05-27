@@ -12,7 +12,7 @@ import { SourceViewer } from "@/components/source-viewer"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
-	EmptyDescription,
+	EmptyContent,
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
@@ -199,16 +199,16 @@ export function AssetViewer({
 			</div>
 
 			{openAssets.length === 0 ? (
-				<div className="flex flex-1 items-center justify-center">
+				<div className="flex h-full flex-col items-center justify-center gap-6 overflow-hidden">
 					<Empty className="max-w-xs border-0">
 						<EmptyHeader>
 							<EmptyMedia variant="icon">
 								<FolderOpen />
 							</EmptyMedia>
 							<EmptyTitle>Nothing open</EmptyTitle>
-							<EmptyDescription>
+							<EmptyContent>
 								Select an asset from the sidebar to open it here.
-							</EmptyDescription>
+							</EmptyContent>
 						</EmptyHeader>
 					</Empty>
 				</div>

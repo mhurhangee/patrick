@@ -1,4 +1,11 @@
-import { assets, chatMessages, chats, eq, type ProjectType, projects } from "@patrickos/db"
+import {
+	assets,
+	chatMessages,
+	chats,
+	eq,
+	type ProjectType,
+	projects,
+} from "@patrickos/db"
 import { Hono } from "hono"
 import { db } from "../lib/db"
 

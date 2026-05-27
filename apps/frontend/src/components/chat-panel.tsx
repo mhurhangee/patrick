@@ -7,6 +7,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
+	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
@@ -22,6 +23,7 @@ import {
 	type ExchangePanelData,
 	StreamingSpacer,
 } from "./exchange-panel"
+import { Logo } from "./logo"
 
 export type { ApiChat as Chat }
 
@@ -55,7 +57,7 @@ function AgentPatPane({
 	if (!connectedToAI) {
 		return (
 			<div className="flex flex-1 min-h-0 items-center justify-center bg-sidebar">
-				<Empty className="max-w-xs border-0">
+				<Empty>
 					<EmptyHeader>
 						<EmptyMedia variant="icon">
 							<Clover className="text-muted-foreground/40" />
@@ -75,20 +77,19 @@ function AgentPatPane({
 
 	return (
 		<div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-sidebar">
-			<div className="min-h-0 flex-1 overflow-y-auto">
-				<div className="mx-auto max-w-sm px-6 py-10 text-center">
-					<div className="mb-4 flex justify-center">
-						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-							<Clover className="size-8 text-primary" />
-						</div>
-					</div>
-					<h2 className="mb-1 font-heading text-lg font-semibold">AgentPat</h2>
-					<p className="text-sm text-muted-foreground">
-						Your AI patent attorney assistant. To get started send a message or
-						pick a suggestion.
-					</p>
-				</div>
-			</div>
+			<Empty className="max-w-xs mx-auto">
+				<EmptyHeader>
+					<EmptyMedia>
+						<Logo />
+					</EmptyMedia>
+					<EmptyTitle>AgentPat</EmptyTitle>
+					<EmptyContent>Your patent attorney assistant</EmptyContent>
+					<EmptyDescription>
+						Open sources and artifacts in the editor to give AgentPat the
+						ability to read them.
+					</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
 			<div className="tab-scroll flex shrink-0 gap-2 overflow-x-auto px-3">
 				{AGENTPAT_SUGGESTIONS.map((s) => (
 					<Button

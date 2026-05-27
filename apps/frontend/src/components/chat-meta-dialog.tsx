@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 
 export function ChatMetaDialog({
 	open,
@@ -81,12 +80,8 @@ export function ChatMetaDialog({
 							/>
 						</Field>
 					</FieldGroup>
-					<Button onClick={handleSave} disabled={saving}>
-						{saving ? "Saving…" : "Save"}
-					</Button>
-					{chat && (
-						<>
-							<Separator />
+					<div className="flex items-center justify-between gap-2">
+						{chat && (
 							<AlertDialog>
 								<AlertDialogTrigger asChild>
 									<Button variant="destructive" size="sm" className="gap-1.5">
@@ -115,8 +110,11 @@ export function ChatMetaDialog({
 									</AlertDialogFooter>
 								</AlertDialogContent>
 							</AlertDialog>
-						</>
-					)}
+						)}
+						<Button onClick={handleSave} disabled={saving}>
+							{saving ? "Saving…" : "Save"}
+						</Button>
+					</div>
 				</div>
 			</DialogContent>
 		</Dialog>
