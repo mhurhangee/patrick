@@ -38,6 +38,7 @@ export type ApiChatMessage = {
 	chatId: string
 	role: "user" | "assistant"
 	parts: unknown[]
+	metadata: Record<string, unknown>
 	createdAt: string
 }
 
@@ -125,6 +126,8 @@ export const api = {
 				"/chats",
 				json({ projectId, title, ...(id ? { id } : {}) }, { method: "POST" }),
 			),
+		update: (id: string, title: string) =>
+			request<ApiChat>(`/chats/${id}`, json({ title }, { method: "PATCH" })),
 		delete: (id: string) =>
 			request<{ ok: boolean }>(`/chats/${id}`, { method: "DELETE" }),
 		getMessages: (chatId: string) =>

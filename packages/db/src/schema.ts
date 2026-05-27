@@ -59,6 +59,7 @@ export const chatMessages = sqliteTable("chat_messages", {
 		.references(() => chats.id),
 	role: text("role", { enum: ["user", "assistant"] }).notNull(),
 	parts: text("parts").notNull(), // JSON — AI SDK v6 UIMessage parts array
+	metadata: text("metadata").notNull().default("{}"), // JSON — usage, etc.
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 })
 

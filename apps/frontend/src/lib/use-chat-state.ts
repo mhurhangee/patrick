@@ -50,6 +50,7 @@ export function useChatState(currentProjectId: string) {
 
 	function updateChat(id: string, title: string) {
 		setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)))
+		api.chats.update(id, title).catch(() => {})
 	}
 
 	function sendInAgentPat(message: string) {

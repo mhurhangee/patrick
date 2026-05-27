@@ -134,6 +134,7 @@ function WorkspaceContent() {
 							onSendInAgentPat={chat.sendInAgentPat}
 							onRemoveAsset={asset.closeTab}
 							onOpenSettings={() => setSettingsOpen(true)}
+							onChatTitleUpdate={chat.updateChat}
 						/>
 					</ResizablePanel>
 				</ResizablePanelGroup>

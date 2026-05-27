@@ -1,5 +1,10 @@
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport, type UIMessage } from "ai"
+import {
+	DefaultChatTransport,
+	getToolName,
+	isToolUIPart,
+	type UIMessage,
+} from "ai"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
 import { Clover, Loader2, MessageSquare, Plus, Send, X } from "lucide-react"
@@ -15,6 +20,7 @@ import {
 } from "@/components/ui/empty"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
+import { CURATED_MODELS, GATEWAY_DETAILED_MODELS } from "@/lib/ai-models"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
 import type { Chat as ApiChat } from "@/lib/use-chat-state"
 import { cn } from "@/lib/utils"
@@ -29,11 +35,27 @@ export type { ApiChat as Chat }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
+const FALLBACK_SUGGESTIONS = [
+	"Draft §103 response",
+	"Amend claims",
+	"Search prior art",
+]
+
 const AGENTPAT_SUGGESTIONS = [
 	"Draft a §103 response",
 	"Search prior art",
 	"Amend claims",
 ]
+
+function getModelPricing(provider: string, modelId: string) {
+	if (provider === "gateway") {
+		return (
+			GATEWAY_DETAILED_MODELS.find((m) => m.id === modelId)?.pricingPerM ?? null
+		)
+	}
+	const list = CURATED_MODELS[provider as "anthropic" | "openai"]
+	return list?.find((m) => m.id === modelId)?.pricingPerM ?? null
+}
 
 // ─── AgentPat pane ────────────────────────────────────────────────────────────
 
@@ -85,8 +107,8 @@ function AgentPatPane({
 					<EmptyTitle>AgentPat</EmptyTitle>
 					<EmptyContent>Your patent attorney assistant</EmptyContent>
 					<EmptyDescription>
-						Open sources and artifacts in the editor to give AgentPat the
-						ability to read them.
+						Open sources and artifacts in the editor to give AgentPat full
+						access — everything else is metadata only.
 					</EmptyDescription>
 				</EmptyHeader>
 			</Empty>
@@ -146,6 +168,7 @@ function ChatPane({
 	provider,
 	apiKey,
 	detailedModel,
+	onTitleUpdate,
 }: {
 	chatId: string
 	openAssets: ApiAsset[]
@@ -156,12 +179,14 @@ function ChatPane({
 	provider: string
 	apiKey: string
 	detailedModel: string
+	onTitleUpdate: (title: string) => void
 }) {
 	const openAssetIdsRef = React.useRef<string[]>([])
 	openAssetIdsRef.current = openAssets.map((a) => a.id)
 
 	const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 	const lastUserMsgRef = React.useRef<HTMLDivElement>(null)
+	const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 	const [containerHeight, setContainerHeight] = React.useState(400)
 	const [input, setInput] = React.useState("")
 	const sentInitial = React.useRef(false)
@@ -172,12 +197,14 @@ function ChatPane({
 	const [exchangeDurations, setExchangeDurations] = React.useState<
 		Record<string, number>
 	>({})
+	const [exchangeTtfts, setExchangeTtfts] = React.useState<
+		Record<string, number>
+	>({})
 	const sendStartTimeRef = React.useRef<number | null>(null)
 	const pendingContextRef = React.useRef<Array<{ id: string; title: string }>>(
 		[],
 	)
-	// Phase 3: context snapshots per exchange — stored but not yet rendered in ExchangePanel
-	const [_exchangeContextSnapshots, setExchangeContextSnapshots] =
+	const [exchangeContextSnapshots, setExchangeContextSnapshots] =
 		React.useState<Record<string, Array<{ id: string; title: string }>>>({})
 
 	const { messages, sendMessage, status } = useChat({
@@ -250,33 +277,70 @@ function ChatPane({
 		}))
 	}, [latestExchangeId])
 
-	// Capture duration when streaming ends
+	// Capture TTFT on first streaming chunk, duration when done
 	const prevStatusRef = React.useRef(status)
 	React.useEffect(() => {
-		if (prevStatusRef.current !== "ready" && status === "ready") {
+		const prev = prevStatusRef.current
+		if (prev === "submitted" && status === "streaming") {
+			if (sendStartTimeRef.current !== null && latestExchangeId) {
+				setExchangeTtfts((p) => ({
+					...p,
+					[latestExchangeId]: Date.now() - (sendStartTimeRef.current ?? 0),
+				}))
+			}
+		}
+		if (prev !== "ready" && status === "ready") {
 			if (sendStartTimeRef.current !== null && latestExchangeId) {
 				const durationMs = Date.now() - sendStartTimeRef.current
 				sendStartTimeRef.current = null
-				setExchangeDurations((prev) => ({
-					...prev,
-					[latestExchangeId]: durationMs,
-				}))
+				setExchangeDurations((p) => ({ ...p, [latestExchangeId]: durationMs }))
 			}
 		}
 		prevStatusRef.current = status
 	}, [status, latestExchangeId])
 
+	// Update chat title from the latest resolved generateMetadata tool call
+	const appliedTitleRef = React.useRef<string | null>(null)
+	React.useEffect(() => {
+		for (let i = messages.length - 1; i >= 0; i--) {
+			const msg = messages[i]
+			if (msg.role !== "assistant") continue
+			const metaPart = msg.parts.find(
+				(p) => p.type === "tool-generateMetadata",
+			) as { state: string; input?: { chatTitle?: string } } | undefined
+			const title =
+				metaPart?.state === "input-available"
+					? metaPart.input?.chatTitle
+					: undefined
+			if (title && title !== appliedTitleRef.current) {
+				appliedTitleRef.current = title
+				onTitleUpdate(title)
+			}
+			break
+		}
+	}, [messages, onTitleUpdate])
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sendMessage is stable, sentInitial/pendingContextRef are refs
 	React.useEffect(() => {
-		if (initialMessage && !sentInitial.current) {
-			sentInitial.current = true
-			sendStartTimeRef.current = Date.now()
-			pendingContextRef.current = openAssets.map((a) => ({
-				id: a.id,
-				title: a.title,
-			}))
-			sendMessage({ text: initialMessage })
-		}
+		if (!initialMessage || sentInitial.current) return
+		// If message already exists in loaded history (tab switch back), don't resend
+		const alreadyInHistory = initialMessages.some(
+			(m) =>
+				m.role === "user" &&
+				m.parts.some(
+					(p) =>
+						p.type === "text" &&
+						(p as { type: "text"; text: string }).text === initialMessage,
+				),
+		)
+		if (alreadyInHistory) return
+		sentInitial.current = true
+		sendStartTimeRef.current = Date.now()
+		pendingContextRef.current = openAssets.map((a) => ({
+			id: a.id,
+			title: a.title,
+		}))
+		sendMessage({ text: initialMessage })
 	}, [initialMessage])
 
 	function send() {
@@ -319,18 +383,82 @@ function ChatPane({
 		}
 	}
 
+	// Total conversation tokens + cost across all completed exchanges
+	const conversationStats = React.useMemo(() => {
+		let totalIn = 0
+		let totalOut = 0
+		for (const ex of exchanges) {
+			const m = ex.assistantMsg?.metadata as
+				| { usage?: { inputTokens?: number; outputTokens?: number } }
+				| undefined
+			totalIn += m?.usage?.inputTokens ?? 0
+			totalOut += m?.usage?.outputTokens ?? 0
+		}
+		const pricing = getModelPricing(provider, detailedModel)
+		const totalCost = pricing
+			? (totalIn / 1_000_000) * pricing.input +
+				(totalOut / 1_000_000) * pricing.output
+			: null
+		return { totalCost }
+	}, [exchanges, provider, detailedModel])
+
 	function getPanelData(exchange: Exchange): ExchangePanelData {
 		const meta = exchange.assistantMsg?.metadata as
 			| { usage?: { inputTokens?: number; outputTokens?: number } }
 			| undefined
-		const tokenCount =
-			meta?.usage != null
-				? (meta.usage.inputTokens ?? 0) + (meta.usage.outputTokens ?? 0)
+		const inputTokens = meta?.usage?.inputTokens ?? null
+		const outputTokens = meta?.usage?.outputTokens ?? null
+		const pricing = getModelPricing(provider, detailedModel)
+		const costUsd =
+			pricing != null && inputTokens != null && outputTokens != null
+				? (inputTokens / 1_000_000) * pricing.input +
+					(outputTokens / 1_000_000) * pricing.output
 				: null
+
+		// Extract user-facing tool names; hide internal generateMetadata tool
+		const tools: string[] = []
+		if (exchange.assistantMsg) {
+			for (const part of exchange.assistantMsg.parts) {
+				if (isToolUIPart(part)) {
+					const name = getToolName(part)
+					if (name !== "generateMetadata" && !tools.includes(name)) {
+						tools.push(name)
+					}
+				}
+			}
+		}
+
+		// Extract model-generated metadata from the generateMetadata tool part
+		type MetadataInput = {
+			suggestions: string[]
+			chatTitle: string
+			lastMessageSummary: string
+		}
+		const metaPart = exchange.assistantMsg?.parts.find(
+			(p) => p.type === "tool-generateMetadata",
+		) as { state: string; input?: MetadataInput } | undefined
+		const metaInput =
+			metaPart?.state === "input-available" ? metaPart.input : undefined
+
+		// If assistant message exists but no metadata yet, fall back to hardcoded suggestions
+		const suggestions = exchange.assistantMsg
+			? (metaInput?.suggestions ?? FALLBACK_SUGGESTIONS)
+			: null
+
 		return {
 			model: detailedModel,
-			tokenCount,
+			inputTokens,
+			outputTokens,
+			costUsd,
+			totalConversationCostUsd: conversationStats.totalCost,
 			durationMs: exchangeDurations[exchange.id] ?? null,
+			ttftMs: exchangeTtfts[exchange.id] ?? null,
+			context: exchangeContextSnapshots[exchange.id] ?? [],
+			tools,
+			sources: [],
+			suggestions,
+			chatTitle: metaInput?.chatTitle ?? null,
+			lastMessageSummary: metaInput?.lastMessageSummary ?? null,
 		}
 	}
 
@@ -397,6 +525,10 @@ function ChatPane({
 										isExpanded={isPanelExpanded(exchange.id)}
 										minHeight={containerHeight}
 										onToggle={() => togglePanel(exchange.id)}
+										onSuggestion={(text) => {
+											setInput(text)
+											textareaRef.current?.focus()
+										}}
 									/>
 								)}
 							</React.Fragment>
@@ -430,6 +562,7 @@ function ChatPane({
 				)}
 				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
 					<Textarea
+						ref={textareaRef}
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
 						onKeyDown={(e) => {
@@ -470,6 +603,7 @@ function ChatPaneLoader({
 	provider: string
 	apiKey: string
 	detailedModel: string
+	onTitleUpdate: (title: string) => void
 }) {
 	const [initialMessages, setInitialMessages] = React.useState<
 		UIMessage[] | null
@@ -485,6 +619,7 @@ function ChatPaneLoader({
 						id: m.id,
 						role: m.role,
 						parts: m.parts as UIMessage["parts"],
+						metadata: m.metadata,
 						createdAt: new Date(m.createdAt),
 					})),
 				),
@@ -523,6 +658,7 @@ export function ChatPanel({
 	onSendInAgentPat,
 	onRemoveAsset,
 	onOpenSettings,
+	onChatTitleUpdate,
 }: {
 	chats: ApiChat[]
 	openChatIds: string[]
@@ -539,6 +675,7 @@ export function ChatPanel({
 	onSendInAgentPat: (message: string) => void
 	onRemoveAsset: (id: string) => void
 	onOpenSettings: () => void
+	onChatTitleUpdate: (chatId: string, title: string) => void
 }) {
 	const openChats = openChatIds
 		.map((id) => chats.find((c) => c.id === id))
@@ -634,6 +771,7 @@ export function ChatPanel({
 					provider={provider}
 					apiKey={apiKey}
 					detailedModel={detailedModel}
+					onTitleUpdate={(title) => onChatTitleUpdate(activeChat.id, title)}
 				/>
 			)}
 		</div>

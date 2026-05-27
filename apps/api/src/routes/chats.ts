@@ -1,4 +1,5 @@
 import {
+	asc,
 	assets,
 	chatMessages,
 	chats,
@@ -7,10 +8,33 @@ import {
 	settings,
 } from "@patrickos/db"
 import type { ModelMessage } from "ai"
-import { createAgentUIStreamResponse, ToolLoopAgent } from "ai"
+import { createAgentUIStreamResponse, ToolLoopAgent, tool } from "ai"
 import { Hono } from "hono"
+import { z } from "zod"
 import { db } from "../lib/db"
 import { buildAgentPatSystemPrompt, createModel } from "../lib/patent-prompt"
+
+// No execute — loop stops when called; data lives in part.input on the client.
+const generateMetadata = tool({
+	description:
+		"Generate metadata after your response. Call this ONCE as your final action.",
+	inputSchema: z.object({
+		suggestions: z
+			.array(z.string())
+			.length(3)
+			.describe(
+				"Three short follow-up actions or questions (under 8 words each)",
+			),
+		chatTitle: z
+			.string()
+			.max(60)
+			.describe("A concise title for this chat based on the conversation"),
+		lastMessageSummary: z
+			.string()
+			.max(150)
+			.describe("A one-sentence summary of your last response"),
+	}),
+})
 
 export const chatsRouter = new Hono()
 
@@ -46,6 +70,18 @@ chatsRouter.post("/", async (c) => {
 	return c.json(row, 201)
 })
 
+chatsRouter.patch("/:id", async (c) => {
+	const id = c.req.param("id")
+	const { title } = await c.req.json<{ title: string }>()
+	const [row] = await db
+		.update(chats)
+		.set({ title, updatedAt: new Date() })
+		.where(eq(chats.id, id))
+		.returning()
+	if (!row) return c.json({ error: "Not found" }, 404)
+	return c.json(row)
+})
+
 chatsRouter.delete("/:id", async (c) => {
 	const id = c.req.param("id")
 	await db.delete(chatMessages).where(eq(chatMessages.chatId, id))
@@ -61,7 +97,14 @@ chatsRouter.get("/:id/messages", async (c) => {
 		.select()
 		.from(chatMessages)
 		.where(eq(chatMessages.chatId, c.req.param("id")))
-	return c.json(rows.map((r) => ({ ...r, parts: JSON.parse(r.parts) })))
+		.orderBy(asc(chatMessages.createdAt))
+	return c.json(
+		rows.map((r) => ({
+			...r,
+			parts: JSON.parse(r.parts),
+			metadata: JSON.parse(r.metadata),
+		})),
+	)
 })
 
 chatsRouter.post("/:id/messages", async (c) => {
@@ -124,8 +167,17 @@ chatsRouter.post("/:id/messages", async (c) => {
 	)
 	const pdfAttachedIds = pdfSources.map((b) => b.id)
 
+	// Strip generateMetadata tool parts from history — they're internal scaffolding
+	// and add noise to the model's context on subsequent turns.
+	const cleanedMessages = messages.map((m) => ({
+		...m,
+		parts: (m.parts as Array<{ type: string }>).filter(
+			(p) => p.type !== "tool-generateMetadata",
+		),
+	}))
+
 	// Persist the incoming user message (last message in the array)
-	const userMsg = messages.at(-1)
+	const userMsg = cleanedMessages.at(-1)
 	if (userMsg?.role === "user") {
 		await db.insert(chatMessages).values({
 			id: userMsg.id ?? crypto.randomUUID(),
@@ -136,19 +188,23 @@ chatsRouter.post("/:id/messages", async (c) => {
 		})
 	}
 
-	const systemPrompt = buildAgentPatSystemPrompt({
+	const basePrompt = buildAgentPatSystemPrompt({
 		settingsRow,
 		projectRow,
 		allAssets: allAssetsResult,
 		openAssetIds: openIds,
 		pdfAttachedIds,
 	})
+	const systemPrompt = `${basePrompt}
+
+After providing your complete response, you MUST call generateMetadata exactly once as your final action. Provide exactly 3 short follow-up suggestions (under 8 words each), a concise chat title, and a one-sentence summary of your last response.`
 
 	const model = createModel(provider, apiKey, detailedModel)
 
 	const agent = new ToolLoopAgent({
 		model,
 		instructions: systemPrompt,
+		tools: { generateMetadata },
 		// Injects open source PDFs as native file parts before the conversation
 		// so the model reads them directly. Only runs when there are PDFs to inject.
 		prepareCall:
@@ -190,7 +246,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 
 	return createAgentUIStreamResponse({
 		agent,
-		uiMessages: messages,
+		uiMessages: cleanedMessages,
 		generateMessageId: () => crypto.randomUUID(),
 		messageMetadata: ({ part }) => {
 			if (part.type === "finish" && "totalUsage" in part) {
@@ -203,6 +259,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 				chatId,
 				role: "assistant",
 				parts: JSON.stringify(responseMessage.parts),
+				metadata: JSON.stringify(responseMessage.metadata ?? {}),
 				createdAt: new Date(),
 			})
 		},
