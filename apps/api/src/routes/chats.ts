@@ -1,18 +1,10 @@
-import {
-	asc,
-	assets,
-	chatMessages,
-	chats,
-	eq,
-	projects,
-	settings,
-} from "@patrickos/db"
+import { asc, assets, chatMessages, chats, eq, projects } from "@patrickos/db"
 import type { ModelMessage } from "ai"
 import { createAgentUIStreamResponse, ToolLoopAgent, tool } from "ai"
 import { Hono } from "hono"
 import { z } from "zod"
 import { db } from "../lib/db"
-import { buildAgentPatSystemPrompt, createModel } from "../lib/patent-prompt"
+import { buildAgentPatPrompt, createModel } from "../lib/patent-prompt"
 
 // No execute — loop stops when called; data lives in part.input on the client.
 const generateMetadata = tool({
@@ -120,8 +112,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 		}>()
 
 	// Load context from DB in parallel
-	const [settingsResult, projectResult, allAssetsResult] = await Promise.all([
-		db.select().from(settings).where(eq(settings.id, "local")),
+	const [projectResult, allAssetsResult] = await Promise.all([
 		projectId
 			? db.select().from(projects).where(eq(projects.id, projectId))
 			: Promise.resolve([]),
@@ -141,7 +132,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 			: Promise.resolve([]),
 	])
 
-	const settingsRow = settingsResult[0]
 	const projectRow = projectResult[0]
 
 	// Load PDF blobs for open source assets — separate query since we exclude
@@ -165,7 +155,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 		(b): b is { id: string; title: string; data: NonNullable<typeof b.data> } =>
 			!!b?.data,
 	)
-	const pdfAttachedIds = pdfSources.map((b) => b.id)
 
 	// Strip generateMetadata tool parts from history — they're internal scaffolding
 	// and add noise to the model's context on subsequent turns.
@@ -188,27 +177,23 @@ chatsRouter.post("/:id/messages", async (c) => {
 		})
 	}
 
-	const basePrompt = buildAgentPatSystemPrompt({
-		settingsRow,
-		projectRow,
+	const { system, fileParts } = await buildAgentPatPrompt({
+		project: projectRow,
 		allAssets: allAssetsResult,
 		openAssetIds: openIds,
-		pdfAttachedIds,
+		pdfSources,
 	})
-	const systemPrompt = `${basePrompt}
-
-After providing your complete response, you MUST call generateMetadata exactly once as your final action. Provide exactly 3 short follow-up suggestions (under 8 words each), a concise chat title, and a one-sentence summary of your last response.`
 
 	const model = createModel(provider, apiKey, detailedModel)
 
 	const agent = new ToolLoopAgent({
 		model,
-		instructions: systemPrompt,
+		instructions: system,
 		tools: { generateMetadata },
 		// Injects open source PDFs as native file parts before the conversation
 		// so the model reads them directly. Only runs when there are PDFs to inject.
 		prepareCall:
-			pdfSources.length > 0
+			fileParts.length > 0
 				? (baseArgs) => {
 						const rawPrompt = (baseArgs as { prompt?: unknown }).prompt
 						const modelMessages = Array.isArray(rawPrompt)
@@ -223,19 +208,15 @@ After providing your complete response, you MUST call generateMetadata exactly o
 									content: [
 										{
 											type: "text" as const,
-											text: `The following source document${pdfSources.length > 1 ? "s are" : " is"} attached for your reference:${pdfSources.map((b) => `\n- ${b.title}`).join("")}`,
+											text: "Source documents attached for reference.",
 										},
-										...pdfSources.map((b) => ({
-											type: "file" as const,
-											data: b.data as Uint8Array,
-											mediaType: "application/pdf" as const,
-										})),
+										...fileParts,
 									],
 								},
 								{
 									role: "assistant" as const,
 									content:
-										"I have reviewed the attached source document(s) and will use them as context throughout our conversation.",
+										"I have reviewed the attached source documents and will use them as context throughout our conversation.",
 								},
 								...modelMessages,
 							] as ModelMessage[],

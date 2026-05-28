@@ -1,16 +1,11 @@
-import { ASSET_CONFIGS, assets, eq, settings } from "@patrickos/db"
+import { ASSET_CONFIGS, assets, eq } from "@patrickos/db"
 import { generateText, Output } from "ai"
 import { Hono } from "hono"
 import type { z } from "zod"
 import { db } from "../lib/db"
-import { createModel } from "../lib/patent-prompt"
+import { buildExtractPatPrompt, createModel } from "../lib/patent-prompt"
 
 export const extractpatRouter = new Hono()
-
-async function loadSystemPrompt(): Promise<string | undefined> {
-	const [row] = await db.select().from(settings).where(eq(settings.id, "local"))
-	return row?.promptExtractpat || undefined
-}
 
 extractpatRouter.post("/extract", async (c) => {
 	const {
@@ -43,12 +38,13 @@ extractpatRouter.post("/extract", async (c) => {
 			{ error: `No extraction schema for type: ${asset.type}` },
 			400,
 		)
-	const system = await loadSystemPrompt()
+	const systemStr = await buildExtractPatPrompt()
+
 	const model = createModel(provider, apiKey, modelId)
 
 	const { output: object } = await generateText({
 		model,
-		system,
+		system: systemStr || undefined,
 		output: Output.object({ schema }),
 		messages: [
 			{
