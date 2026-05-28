@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react"
 import * as React from "react"
-import type { ApiChat } from "@/lib/api"
+import type { ApiChat } from "@patrickos/db"
 import {
 	AlertDialog,
 	AlertDialogAction,

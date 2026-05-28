@@ -21,7 +21,7 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { ApiAsset, ApiChat, ApiProject } from "@/lib/api"
+import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/db"
 import { cn } from "@/lib/utils"
 
 export function AppSidebar({

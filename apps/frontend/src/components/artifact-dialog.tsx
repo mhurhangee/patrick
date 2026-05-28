@@ -36,7 +36,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { type ApiAsset, api } from "@/lib/api"
+import type { ApiAsset } from "@patrickos/db"
+import { api } from "@/lib/api"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

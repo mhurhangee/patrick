@@ -1,5 +1,6 @@
 import * as React from "react"
-import { type ApiAsset, api } from "@/lib/api"
+import type { ApiAsset } from "@patrickos/db"
+import { api } from "@/lib/api"
 
 export function useAssetState(currentProjectId: string) {
 	const [assets, setAssets] = React.useState<ApiAsset[]>([])

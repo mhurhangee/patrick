@@ -1,4 +1,4 @@
-import { PROJECT_TYPE_CONFIG, type ProjectType } from "@patrickos/db"
+import { PROJECT_TYPE_CONFIG, type ApiProject, type ProjectType } from "@patrickos/db"
 import { Check, FolderOpen, Loader2, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 import {
@@ -48,7 +48,6 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 } from "@/components/ui/sidebar"
-import type { ApiProject } from "@/lib/api"
 
 // ─── Project type config ──────────────────────────────────────────────────────
 

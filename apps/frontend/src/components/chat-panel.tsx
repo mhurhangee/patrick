@@ -20,7 +20,8 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
 import { CURATED_MODELS, GATEWAY_DETAILED_MODELS } from "@/lib/ai-models"
-import { type ApiAsset, type ApiChat, api, BASE_URL } from "@/lib/api"
+import type { ApiAsset, ApiChat } from "@patrickos/db"
+import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import {
 	ExchangePanel,

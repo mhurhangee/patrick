@@ -7,8 +7,6 @@ import type {
 	ProjectType,
 } from "@patrickos/db"
 
-export type { ApiAsset, ApiChat, ApiChatMessage, ApiProject, ApiSettings }
-
 export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

@@ -44,7 +44,8 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { type ApiAsset, api, BASE_URL } from "@/lib/api"
+import type { ApiAsset } from "@patrickos/db"
+import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 const SOURCE_TYPES = ASSET_CONFIGS.filter((c) => c.kind === "source").map(

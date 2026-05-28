@@ -1,5 +1,6 @@
 import * as React from "react"
-import { type ApiChat, api } from "@/lib/api"
+import type { ApiChat } from "@patrickos/db"
+import { api } from "@/lib/api"
 
 export function useChatState(currentProjectId: string) {
 	const [chats, setChats] = React.useState<ApiChat[]>([])

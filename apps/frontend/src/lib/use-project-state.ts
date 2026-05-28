@@ -1,11 +1,9 @@
-import type { ProjectType } from "@patrickos/db"
+import type { ApiProject, ProjectType } from "@patrickos/db"
 import * as React from "react"
 import { api } from "@/lib/api"
 
-type Project = import("@/lib/api").ApiProject
-
 export function useProjectState() {
-	const [projects, setProjects] = React.useState<Project[]>([])
+	const [projects, setProjects] = React.useState<ApiProject[]>([])
 	const [projectsLoading, setProjectsLoading] = React.useState(true)
 	const [currentProjectId, setCurrentProjectId] = React.useState("")
 

@@ -16,7 +16,8 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { type ApiAsset, api, BASE_URL } from "@/lib/api"
+import type { ApiAsset } from "@patrickos/db"
+import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 function ArtifactEditor({
