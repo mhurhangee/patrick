@@ -37,7 +37,7 @@ import {
 	useHotkeys,
 	usePluginOption,
 } from "platejs/react"
-import * as React from "react"
+import { useEffect, useState, useMemo, type ReactNode } from "react"
 import { commentPlugin } from "@/components/editor/plugins/comment-kit"
 import { Button } from "@/components/ui/button"
 import {
@@ -61,14 +61,14 @@ export function AIMenu() {
 	const isSelecting = useIsSelecting()
 	const isFocusedLast = useFocusedLast()
 	const open = usePluginOption(AIChatPlugin, "open") && isFocusedLast
-	const [value, setValue] = React.useState("")
+	const [value, setValue] = useState("")
 
-	const [input, setInput] = React.useState("")
+	const [input, setInput] = useState("")
 
 	const chat = usePluginOption(AIChatPlugin, "chat")
 
 	const { messages, status } = chat
-	const [anchorElement, setAnchorElement] = React.useState<HTMLElement | null>(
+	const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(
 		null,
 	)
 
@@ -76,7 +76,7 @@ export function AIMenu() {
 		(part) => part.type === "text",
 	)?.text
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!streaming) return
 
 		const anchorEntry = api.aiChat.node({ anchor: true })
@@ -134,13 +134,13 @@ export function AIMenu() {
 			api.aiChat.hide()
 		} else {
 			api.aiChat.stop()
-			;(chat as any)._abortFakeStream()
+				; (chat as any)._abortFakeStream()
 		}
 	})
 
 	const isLoading = status === "streaming" || status === "submitted"
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (toolName !== "edit" || mode !== "chat" || isLoading) return
 
 		let anchorNode = editor.api.node({
@@ -166,7 +166,7 @@ export function AIMenu() {
 
 	// After insert-mode streaming ends the component remounts (it returned null during streaming).
 	// Re-anchor the popover to the current block so Radix doesn't treat every click as "outside".
-	React.useEffect(() => {
+	useEffect(() => {
 		if (mode !== "insert" || isLoading || !open || messages.length === 0) return
 		const block = editor.api.block({ highest: true })
 		if (!block) return
@@ -380,7 +380,7 @@ const aiChatItems = {
 } satisfies Record<
 	string,
 	{
-		icon: React.ReactNode
+		icon: ReactNode
 		label: string
 		value: string
 		shortcut?: string
@@ -447,7 +447,7 @@ export const AIMenuItems = ({
 	const isSelecting = useIsSelecting()
 	const { connectedToAI } = useAI()
 
-	const menuState = React.useMemo(() => {
+	const menuState = useMemo(() => {
 		if (messages && messages.length > 0) {
 			return isSelecting ? "selectionSuggestion" : "cursorSuggestion"
 		}
@@ -455,13 +455,13 @@ export const AIMenuItems = ({
 		return isSelecting ? "selectionCommand" : "cursorCommand"
 	}, [isSelecting, messages])
 
-	const menuGroups = React.useMemo(() => {
+	const menuGroups = useMemo(() => {
 		const items = menuStateItems[menuState]
 
 		return items
 	}, [menuState])
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (menuGroups.length > 0 && menuGroups[0].items.length > 0) {
 			setValue(menuGroups[0].items[0].value)
 		}
@@ -536,8 +536,8 @@ export function AILoadingBar() {
 	useHotkeys("esc", () => {
 		api.aiChat.stop()
 
-		// remove when you implement the route /api/ai/command
-		;(chat as any)._abortFakeStream()
+			// remove when you implement the route /api/ai/command
+			; (chat as any)._abortFakeStream()
 	})
 
 	if (

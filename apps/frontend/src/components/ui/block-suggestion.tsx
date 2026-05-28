@@ -4,7 +4,6 @@ import { acceptSuggestion, rejectSuggestion } from "@platejs/suggestion"
 import { SuggestionPlugin } from "@platejs/suggestion/react"
 import { CheckIcon, XIcon } from "lucide-react"
 import { useEditorPlugin, usePluginOption } from "platejs/react"
-import * as React from "react"
 import {
 	discussionPlugin,
 	type TDiscussion,
@@ -16,6 +15,7 @@ import {
 	type ResolvedSuggestion,
 } from "@/lib/block-discussion-index"
 import { Comment, CommentCreateForm, formatCommentDate } from "./comment"
+import { useState, Fragment } from "react"
 
 export function BlockSuggestionCard({
 	idx,
@@ -42,7 +42,7 @@ export function BlockSuggestionCard({
 		})
 	}
 
-	const [hovering, setHovering] = React.useState(false)
+	const [hovering, setHovering] = useState(false)
 
 	const suggestionText2Array = (text: string) => {
 		if (text === BLOCK_SUGGESTION_TOKEN) return ["line breaks"]
@@ -65,7 +65,7 @@ export function BlockSuggestionCard({
 		return items
 	}
 
-	const [editingId, setEditingId] = React.useState<string | null>(null)
+	const [editingId, setEditingId] = useState<string | null>(null)
 
 	return (
 		<div
@@ -119,7 +119,7 @@ export function BlockSuggestionCard({
 							<div className="flex flex-col gap-2">
 								{suggestionText2Array(suggestion.newText!).map(
 									(text, index) => (
-										<React.Fragment key={index}>
+										<Fragment key={index}>
 											<div
 												key={index}
 												className="flex items-start gap-2 text-brand/80"
@@ -127,19 +127,19 @@ export function BlockSuggestionCard({
 												<span className="text-sm">with:</span>
 												<span className="text-sm">{text || "line breaks"}</span>
 											</div>
-										</React.Fragment>
+										</Fragment>
 									),
 								)}
 
 								{suggestionText2Array(suggestion.text!).map((text, index) => (
-									<React.Fragment key={index}>
+									<Fragment key={index}>
 										<div key={index} className="flex items-start gap-2">
 											<span className="text-muted-foreground text-sm">
 												{index === 0 ? "Replace:" : "Delete:"}
 											</span>
 											<span className="text-sm">{text || "line breaks"}</span>
 										</div>
-									</React.Fragment>
+									</Fragment>
 								))}
 							</div>
 						)}

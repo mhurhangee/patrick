@@ -18,7 +18,7 @@ import {
 	useRemoveNodeButton,
 	useSelected,
 } from "platejs/react"
-import * as React from "react"
+import { useEffect, type ReactNode } from "react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
@@ -34,7 +34,7 @@ export function MediaToolbar({
 	children,
 	plugin,
 }: {
-	children: React.ReactNode
+	children: ReactNode
 	plugin: WithRequiredKey
 }) {
 	const editor = useEditorRef()
@@ -54,7 +54,7 @@ export function MediaToolbar({
 		!isImagePreviewOpen
 	const isEditing = useFloatingMediaValue("isEditing")
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open && isEditing) {
 			FloatingMediaStore.set("isEditing", false)
 		}

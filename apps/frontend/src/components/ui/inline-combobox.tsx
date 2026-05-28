@@ -22,7 +22,7 @@ import {
 import { cva } from "class-variance-authority"
 import type { PointRef, TElement } from "platejs"
 import { useComposedRef, useEditorRef } from "platejs/react"
-import * as React from "react"
+import { createContext, useRef, useEffect, useState, useMemo, useCallback, useContext, startTransition, type ComponentProps, type RefObject, type ReactNode, type KeyboardEvent as ReactKeyboardEvent, type HTMLAttributes as ReactHTMLAttributes } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -34,14 +34,14 @@ type FilterFn = (
 type InlineComboboxContextValue = {
 	filter: FilterFn | false
 	inputProps: UseComboboxInputResult["props"]
-	inputRef: React.RefObject<HTMLInputElement | null>
+	inputRef: RefObject<HTMLInputElement | null>
 	removeInput: UseComboboxInputResult["removeInput"]
 	showTrigger: boolean
 	trigger: string
 	setHasEmpty: (hasEmpty: boolean) => void
 }
 
-const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
+const InlineComboboxContext = createContext<InlineComboboxContextValue>(
 	null as unknown as InlineComboboxContextValue,
 )
 
@@ -59,7 +59,7 @@ const defaultFilter: FilterFn = (
 }
 
 type InlineComboboxProps = {
-	children: React.ReactNode
+	children: ReactNode
 	element: TElement
 	trigger: string
 	filter?: FilterFn | false
@@ -80,15 +80,15 @@ const InlineCombobox = ({
 	value: valueProp,
 }: InlineComboboxProps) => {
 	const editor = useEditorRef()
-	const inputRef = React.useRef<HTMLInputElement>(null)
+	const inputRef = useRef<HTMLInputElement>(null)
 	const cursorState = useHTMLInputCursorState(inputRef)
 
-	const [valueState, setValueState] = React.useState("")
+	const [valueState, setValueState] = useState("")
 	const hasValueProp = valueProp !== undefined
 	const value = hasValueProp ? valueProp : valueState
 
 	// Check if current user is the creator of this element (for Yjs collaboration)
-	const isCreator = React.useMemo(() => {
+	const isCreator = useMemo(() => {
 		const elementUserId = (element as any).userId
 		const currentUserId = editor.meta.userId
 
@@ -98,7 +98,7 @@ const InlineCombobox = ({
 		return elementUserId === currentUserId
 	}, [editor.meta.userId, element])
 
-	const setValue = React.useCallback(
+	const setValue = useCallback(
 		(newValue: string) => {
 			setValueProp?.(newValue)
 
@@ -113,9 +113,9 @@ const InlineCombobox = ({
 	 * Track the point just before the input element so we know where to
 	 * insertText if the combobox closes due to a selection change.
 	 */
-	const insertPointRef = React.useRef<PointRef | null>(null)
+	const insertPointRef = useRef<PointRef | null>(null)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		insertPointRef.current?.unref()
 		insertPointRef.current = null
 
@@ -158,9 +158,9 @@ const InlineCombobox = ({
 		},
 	})
 
-	const [hasEmpty, setHasEmpty] = React.useState(false)
+	const [hasEmpty, setHasEmpty] = useState(false)
 
-	const contextValue: InlineComboboxContextValue = React.useMemo(
+	const contextValue: InlineComboboxContextValue = useMemo(
 		() => ({
 			filter,
 			inputProps,
@@ -183,7 +183,7 @@ const InlineCombobox = ({
 
 	const store = useComboboxStore({
 		// open: ,
-		setValue: (newValue) => React.startTransition(() => setValue(newValue)),
+		setValue: (newValue) => startTransition(() => setValue(newValue)),
 	})
 
 	const items = store.useState("items")
@@ -192,7 +192,7 @@ const InlineCombobox = ({
 	 * If there is no active ID and the list of items changes, select the first
 	 * item.
 	 */
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!store.getState().activeId) {
 			store.setActiveId(store.first())
 		}
@@ -219,15 +219,15 @@ const InlineComboboxInput = ({
 	className,
 	ref: propRef,
 	...props
-}: React.HTMLAttributes<HTMLInputElement> & {
-	ref?: React.RefObject<HTMLInputElement | null>
+}: ReactHTMLAttributes<HTMLInputElement> & {
+	ref?: RefObject<HTMLInputElement | null>
 }) => {
 	const {
 		inputProps,
 		inputRef: contextRef,
 		showTrigger,
 		trigger,
-	} = React.useContext(InlineComboboxContext)
+	} = useContext(InlineComboboxContext)
 
 	const store = useComboboxContext()!
 	const value = store.useState("value")
@@ -278,7 +278,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({
 	// Portal prevents CSS from leaking into popover
 	const store = useComboboxContext()
 
-	function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+	function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
 		if (!store) return
 
 		const state = store.getState()
@@ -343,14 +343,14 @@ const InlineComboboxItem = ({
 	Required<Pick<ComboboxItemProps, "value">>) => {
 	const { value } = props
 
-	const { filter, removeInput } = React.useContext(InlineComboboxContext)
+	const { filter, removeInput } = useContext(InlineComboboxContext)
 
 	const store = useComboboxContext()!
 
 	// Optimization: Do not subscribe to value if filter is false
 	const search = filter && store.useState("value")
 
-	const visible = React.useMemo(
+	const visible = useMemo(
 		() =>
 			!filter || filter({ group, keywords, label, value }, search as string),
 		[filter, group, keywords, label, value, search],
@@ -373,12 +373,12 @@ const InlineComboboxItem = ({
 const InlineComboboxEmpty = ({
 	children,
 	className,
-}: React.HTMLAttributes<HTMLDivElement>) => {
-	const { setHasEmpty } = React.useContext(InlineComboboxContext)
+}: ReactHTMLAttributes<HTMLDivElement>) => {
+	const { setHasEmpty } = useContext(InlineComboboxContext)
 	const store = useComboboxContext()!
 	const items = store.useState("items")
 
-	React.useEffect(() => {
+	useEffect(() => {
 		setHasEmpty(true)
 
 		return () => {
@@ -402,7 +402,7 @@ const InlineComboboxRow = ComboboxRow
 function InlineComboboxGroup({
 	className,
 	...props
-}: React.ComponentProps<typeof ComboboxGroup>) {
+}: ComponentProps<typeof ComboboxGroup>) {
 	return (
 		<ComboboxGroup
 			{...props}
@@ -417,7 +417,7 @@ function InlineComboboxGroup({
 function InlineComboboxGroupLabel({
 	className,
 	...props
-}: React.ComponentProps<typeof ComboboxGroupLabel>) {
+}: ComponentProps<typeof ComboboxGroupLabel>) {
 	return (
 		<ComboboxGroupLabel
 			{...props}

@@ -32,7 +32,7 @@ import {
 	usePlateEditor,
 	usePluginOption,
 } from "platejs/react"
-import * as React from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit"
 import {
 	discussionPlugin,
@@ -174,8 +174,8 @@ export function Comment(props: {
 	const isLast = index === discussionLength - 1
 	const isEditing = editingId && editingId === comment.id
 
-	const [hovering, setHovering] = React.useState(false)
-	const [dropdownOpen, setDropdownOpen] = React.useState(false)
+	const [hovering, setHovering] = useState(false)
+	const [dropdownOpen, setDropdownOpen] = useState(false)
 
 	return (
 		<div
@@ -311,9 +311,9 @@ function CommentMoreDropdown(props: {
 
 	const editor = useEditorRef()
 
-	const selectedEditCommentRef = React.useRef<boolean>(false)
+	const selectedEditCommentRef = useRef<boolean>(false)
 
-	const onDeleteComment = React.useCallback(() => {
+	const onDeleteComment = useCallback(() => {
 		if (!comment.id)
 			return alert("You are operating too quickly, please try again later.")
 
@@ -346,7 +346,7 @@ function CommentMoreDropdown(props: {
 		onRemoveComment?.()
 	}, [comment.discussionId, comment.id, editor, onRemoveComment])
 
-	const onEditComment = React.useCallback(() => {
+	const onEditComment = useCallback(() => {
 		selectedEditCommentRef.current = true
 
 		if (!comment.id)
@@ -427,8 +427,8 @@ export function CommentCreateForm({
 	const discussionId = discussionIdProp ?? commentId
 
 	const userInfo = usePluginOption(discussionPlugin, "currentUser")
-	const [commentValue, setCommentValue] = React.useState<Value | undefined>()
-	const commentContent = React.useMemo(
+	const [commentValue, setCommentValue] = useState<Value | undefined>()
+	const commentContent = useMemo(
 		() =>
 			commentValue
 				? NodeApi.string({ children: commentValue, type: KEYS.p })
@@ -437,13 +437,13 @@ export function CommentCreateForm({
 	)
 	const commentEditor = useCommentEditor()
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (commentEditor && focusOnMount) {
 			commentEditor.tf.focus()
 		}
 	}, [commentEditor, focusOnMount])
 
-	const onAddComment = React.useCallback(async () => {
+	const onAddComment = useCallback(async () => {
 		if (!commentValue) return
 
 		commentEditor.tf.reset()

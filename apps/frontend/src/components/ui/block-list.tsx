@@ -11,7 +11,7 @@ import {
 	type RenderNodeWrapper,
 	useReadOnly,
 } from "platejs/react"
-import type React from "react"
+import type { FC, ReactNode } from "react"
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
@@ -19,8 +19,8 @@ import { cn } from "@/lib/utils"
 const config: Record<
 	string,
 	{
-		Li: React.FC<PlateElementProps & { lineBreakBadge?: React.ReactNode }>
-		Marker: React.FC<PlateElementProps>
+		Li: FC<PlateElementProps & { lineBreakBadge?: ReactNode }>
+		Marker: FC<PlateElementProps>
 	}
 > = {
 	todo: {
@@ -35,7 +35,7 @@ export const BlockList: RenderNodeWrapper = (props) => {
 	return (props) => <List {...props} />
 }
 
-function List(props: PlateElementProps & { lineBreakBadge?: React.ReactNode }) {
+function List(props: PlateElementProps & { lineBreakBadge?: ReactNode }) {
 	const { listStart, listStyleType } = props.element as TListElement
 	const { Li, Marker } = config[listStyleType] ?? {}
 	const List = isOrderedList(props.element) ? "ol" : "ul"
@@ -78,14 +78,14 @@ function TodoMarker(props: PlateElementProps) {
 }
 
 function TodoLi(
-	props: PlateElementProps & { lineBreakBadge?: React.ReactNode },
+	props: PlateElementProps & { lineBreakBadge?: ReactNode },
 ) {
 	return (
 		<li
 			className={cn(
 				"list-none",
 				(props.element.checked as boolean) &&
-					"text-muted-foreground line-through",
+				"text-muted-foreground line-through",
 			)}
 		>
 			{props.children}

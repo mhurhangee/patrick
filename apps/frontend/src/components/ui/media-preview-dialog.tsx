@@ -9,6 +9,7 @@ import {
 import { cva } from "class-variance-authority"
 import { ArrowLeft, ArrowRight, Download, Minus, Plus, X } from "lucide-react"
 import { useEditorRef } from "platejs/react"
+import { type ComponentProps } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -145,7 +146,7 @@ export function MediaPreviewDialog() {
 	)
 }
 
-function ScaleInput(props: React.ComponentProps<"input">) {
+function ScaleInput(props: ComponentProps<"input">) {
 	const { props: scaleInputProps, ref } = useScaleInput()
 
 	return <input {...scaleInputProps} {...props} ref={ref} />

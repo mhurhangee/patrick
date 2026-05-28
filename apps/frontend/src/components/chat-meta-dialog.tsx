@@ -1,6 +1,6 @@
-import { Trash2 } from "lucide-react"
-import * as React from "react"
 import type { ApiChat } from "@patrickos/db"
+import { Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -36,11 +36,11 @@ export function ChatMetaDialog({
 	onUpdated: (id: string, title: string) => void
 	onDeleted: (id: string) => void
 }) {
-	const [title, setTitle] = React.useState("")
-	const [saving, setSaving] = React.useState(false)
+	const [title, setTitle] = useState("")
+	const [saving, setSaving] = useState(false)
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only sync on open/switch
-	React.useEffect(() => {
+	useEffect(() => {
 		if (open && chat) setTitle(chat.title)
 	}, [open, chat?.id])
 

@@ -1,6 +1,7 @@
+import type { ApiAsset } from "@patrickos/db"
 import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
 import type { Value } from "platejs"
-import * as React from "react"
+import { Fragment, useEffect, useRef } from "react"
 import { PlateEditor } from "@/components/editor/plate-editor"
 import { SourceViewer } from "@/components/source-viewer"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,6 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import type { ApiAsset } from "@patrickos/db"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -27,9 +27,9 @@ function ArtifactEditor({
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
 }) {
-	const saveTimer = React.useRef<ReturnType<typeof setTimeout>>(null)
-	const latestValue = React.useRef<Value | null>(null)
-	const isDirty = React.useRef(false)
+	const saveTimer = useRef<ReturnType<typeof setTimeout>>(null)
+	const latestValue = useRef<Value | null>(null)
+	const isDirty = useRef(false)
 
 	function save(value: Value) {
 		api.assets
@@ -48,13 +48,13 @@ function ArtifactEditor({
 	}
 
 	// Tell the AI transport what kind of document is open so prompts can be doc-type-aware
-	React.useEffect(() => {
+	useEffect(() => {
 		localStorage.setItem("askpat-asset-type", asset.type)
 	}, [asset.type])
 
 	// Flush on unmount (tab switch, close) — intentionally no deps, save is stable for asset lifetime
 	// biome-ignore lint/correctness/useExhaustiveDependencies: unmount-only flush, save recreated each render
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (saveTimer.current) clearTimeout(saveTimer.current)
 			if (isDirty.current && latestValue.current) {
@@ -204,7 +204,7 @@ export function AssetViewer({
 			) : splitView && openAssets.length > 1 ? (
 				<ResizablePanelGroup orientation="horizontal" className="flex-1">
 					{openAssets.map((asset, i) => (
-						<React.Fragment key={asset.id}>
+						<Fragment key={asset.id}>
 							{i > 0 && <ResizableHandle withHandle />}
 							<ResizablePanel
 								defaultSize={`${100 / openAssets.length}%`}
@@ -218,7 +218,7 @@ export function AssetViewer({
 									onAssetUpdate={onAssetUpdate}
 								/>
 							</ResizablePanel>
-						</React.Fragment>
+						</Fragment>
 					))}
 				</ResizablePanelGroup>
 			) : (

@@ -11,7 +11,7 @@ import {
 	useReadOnly,
 	useSelected,
 } from "platejs/react"
-import * as React from "react"
+import { useState } from "react"
 import { useMounted } from "@/hooks/use-mounted"
 import { inlineSuggestionVariants } from "@/lib/suggestion"
 import { cn } from "@/lib/utils"
@@ -80,7 +80,7 @@ export function MentionInputElement(
 	props: PlateElementProps<TComboboxInputElement>,
 ) {
 	const { editor, element } = props
-	const [search, setSearch] = React.useState("")
+	const [search, setSearch] = useState("")
 
 	return (
 		<PlateElement {...props} as="span">

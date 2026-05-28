@@ -1,6 +1,10 @@
-import { PROJECT_TYPE_CONFIG, type ApiProject, type ProjectType } from "@patrickos/db"
+import {
+	type ApiProject,
+	PROJECT_TYPE_CONFIG,
+	type ProjectType,
+} from "@patrickos/db"
 import { Check, FolderOpen, Loader2, Plus, Search, Trash2 } from "lucide-react"
-import * as React from "react"
+import { type CSSProperties, useEffect, useRef, useState } from "react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -60,10 +64,10 @@ const PROJECT_TYPE_OPTIONS = Object.entries(PROJECT_TYPE_CONFIG).map(
 type SaveStatus = "idle" | "saving" | "saved"
 
 function useSaveButton() {
-	const [status, setStatus] = React.useState<SaveStatus>("idle")
-	const timerRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+	const [status, setStatus] = useState<SaveStatus>("idle")
+	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (timerRef.current) clearTimeout(timerRef.current)
 		}
@@ -125,9 +129,9 @@ function NewProjectPanel({
 	onCreate: (name: string, type: ProjectType) => Promise<ApiProject>
 	onCreated: (project: ApiProject) => void
 }) {
-	const [name, setName] = React.useState("")
-	const [type, setType] = React.useState<ProjectType>("office-action-response")
-	const [creating, setCreating] = React.useState(false)
+	const [name, setName] = useState("")
+	const [type, setType] = useState<ProjectType>("office-action-response")
+	const [creating, setCreating] = useState(false)
 
 	async function handleCreate() {
 		const trimmed = name.trim()
@@ -221,14 +225,14 @@ function EditProjectPanel({
 	onDelete: (id: string) => Promise<void>
 	onOpen: () => void
 }) {
-	const [name, setName] = React.useState(project.name)
-	const [type, setType] = React.useState<ProjectType>(project.type)
-	const [savedName, setSavedName] = React.useState(project.name)
-	const [savedType, setSavedType] = React.useState<ProjectType>(project.type)
+	const [name, setName] = useState(project.name)
+	const [type, setType] = useState<ProjectType>(project.type)
+	const [savedName, setSavedName] = useState(project.name)
+	const [savedType, setSavedType] = useState<ProjectType>(project.type)
 	const { status, wrap } = useSaveButton()
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync on project identity change only
-	React.useEffect(() => {
+	useEffect(() => {
 		setName(project.name)
 		setType(project.type)
 		setSavedName(project.name)
@@ -377,11 +381,11 @@ export function ProjectManagerDialog({
 	) => Promise<ApiProject>
 	onDelete: (id: string) => Promise<void>
 }) {
-	const [panelState, setPanelState] = React.useState<PanelState>("empty")
-	const [search, setSearch] = React.useState("")
+	const [panelState, setPanelState] = useState<PanelState>("empty")
+	const [search, setSearch] = useState("")
 
 	// Select current project when dialog opens
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return
 		setSearch("")
 		setPanelState(currentProjectId ? { id: currentProjectId } : "empty")
@@ -416,7 +420,7 @@ export function ProjectManagerDialog({
 
 				<SidebarProvider
 					className="flex-1 h-full min-h-0 items-stretch"
-					style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
+					style={{ "--sidebar-width": "13rem" } as CSSProperties}
 				>
 					{/* Left — project list */}
 					<Sidebar

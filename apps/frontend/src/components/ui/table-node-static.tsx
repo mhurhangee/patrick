@@ -3,7 +3,7 @@ import { BaseTablePlugin } from "@platejs/table"
 import type { TTableCellElement, TTableElement } from "platejs"
 import type { SlateElementProps } from "platejs/static"
 import { SlateElement } from "platejs/static"
-import type * as React from "react"
+import type { CSSProperties } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -63,19 +63,19 @@ export function TableCellElementStatic({
 				"before:size-full",
 				"before:absolute before:box-border before:select-none before:content-['']",
 				borders &&
-					cn(
-						borders.bottom?.size && "before:border-b before:border-b-border",
-						borders.right?.size && "before:border-r before:border-r-border",
-						borders.left?.size && "before:border-l before:border-l-border",
-						borders.top?.size && "before:border-t before:border-t-border",
-					),
+				cn(
+					borders.bottom?.size && "before:border-b before:border-b-border",
+					borders.right?.size && "before:border-r before:border-r-border",
+					borders.left?.size && "before:border-l before:border-l-border",
+					borders.top?.size && "before:border-t before:border-t-border",
+				),
 			)}
 			style={
 				{
 					"--cellBackground": element.background,
 					maxWidth: width || 240,
 					minWidth: width || 120,
-				} as React.CSSProperties
+				} as CSSProperties
 			}
 			attributes={{
 				...props.attributes,

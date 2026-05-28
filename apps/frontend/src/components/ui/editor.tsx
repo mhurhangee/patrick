@@ -4,7 +4,7 @@ import type { VariantProps } from "class-variance-authority"
 import { cva } from "class-variance-authority"
 import type { PlateContentProps, PlateViewProps } from "platejs/react"
 import { PlateContainer, PlateContent, PlateView } from "platejs/react"
-import type * as React from "react"
+import { type ComponentProps, type RefObject } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -37,7 +37,7 @@ export function EditorContainer({
 	className,
 	variant,
 	...props
-}: React.ComponentProps<"div"> & VariantProps<typeof editorContainerVariants>) {
+}: ComponentProps<"div"> & VariantProps<typeof editorContainerVariants>) {
 	return (
 		<PlateContainer
 			className={cn(
@@ -95,7 +95,7 @@ export const Editor = ({
 	variant,
 	ref,
 	...props
-}: EditorProps & { ref?: React.RefObject<HTMLDivElement | null> }) => (
+}: EditorProps & { ref?: RefObject<HTMLDivElement | null> }) => (
 	<PlateContent
 		ref={ref}
 		className={cn(

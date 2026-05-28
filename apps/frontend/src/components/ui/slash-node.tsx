@@ -25,7 +25,7 @@ import {
 import { KEYS, type TComboboxInputElement } from "platejs"
 import type { PlateEditor, PlateElementProps } from "platejs/react"
 import { PlateElement } from "platejs/react"
-import type * as React from "react"
+import { type ReactNode } from "react"
 
 import { useAI } from "@/lib/ai-context"
 import {
@@ -46,7 +46,7 @@ import {
 type Group = {
 	group: string
 	items: {
-		icon: React.ReactNode
+		icon: ReactNode
 		value: string
 		onSelect: (editor: PlateEditor, value: string) => void
 		className?: string

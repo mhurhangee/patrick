@@ -23,7 +23,7 @@ import {
 	useEditorReadOnly,
 	usePluginOption,
 } from "platejs/react"
-import * as React from "react"
+import { useCallback, useState, type ReactNode } from "react"
 import { setBlockType } from "@/components/editor/transforms"
 import {
 	ContextMenu,
@@ -41,15 +41,15 @@ import { useIsTouchDevice } from "@/hooks/use-is-touch-device"
 
 type Value = "askAI" | null
 
-export function BlockContextMenu({ children }: { children: React.ReactNode }) {
+export function BlockContextMenu({ children }: { children: ReactNode }) {
 	const { api, editor } = useEditorPlugin(BlockMenuPlugin)
-	const [value, setValue] = React.useState<Value>(null)
+	const [value, setValue] = useState<Value>(null)
 	const isTouch = useIsTouchDevice()
 	const readOnly = useEditorReadOnly()
 	const openId = usePluginOption(BlockMenuPlugin, "openId")
 	const isOpen = openId === BLOCK_CONTEXT_MENU_ID
 
-	const handleTurnInto = React.useCallback(
+	const handleTurnInto = useCallback(
 		(type: string) => {
 			editor
 				.getApi(BlockSelectionPlugin)
@@ -61,7 +61,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 		[editor],
 	)
 
-	const handleAlign = React.useCallback(
+	const handleAlign = useCallback(
 		(align: "center" | "left" | "right") => {
 			editor
 				.getTransforms(BlockSelectionPlugin)
@@ -70,7 +70,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 		[editor],
 	)
 
-	const handleInsertAbove = React.useCallback(() => {
+	const handleInsertAbove = useCallback(() => {
 		const nodes = editor
 			.getApi(BlockSelectionPlugin)
 			.blockSelection.getNodes({ sort: true })
@@ -82,7 +82,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 		})
 	}, [editor])
 
-	const handleInsertBelow = React.useCallback(() => {
+	const handleInsertBelow = useCallback(() => {
 		const nodes = editor
 			.getApi(BlockSelectionPlugin)
 			.blockSelection.getNodes({ sort: true })

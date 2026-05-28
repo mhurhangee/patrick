@@ -10,7 +10,13 @@ import {
 	RotateCcw,
 	User,
 } from "lucide-react"
-import * as React from "react"
+import {
+	type CSSProperties,
+	type ElementType,
+	useEffect,
+	useRef,
+	useState,
+} from "react"
 import { useTheme } from "@/components/theme-provider"
 import {
 	AlertDialog,
@@ -151,10 +157,10 @@ type SaveStatus = "idle" | "saving" | "saved"
 // ─── useSaveButton ────────────────────────────────────────────────────────────
 
 function useSaveButton() {
-	const [status, setStatus] = React.useState<SaveStatus>("idle")
-	const timerRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+	const [status, setStatus] = useState<SaveStatus>("idle")
+	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (timerRef.current) clearTimeout(timerRef.current)
 		}
@@ -213,7 +219,7 @@ function SaveButton({
 type NavItem = {
 	id: Section
 	label: string
-	icon: React.ElementType
+	icon: ElementType
 	children?: { id: Section; label: string }[]
 }
 
@@ -340,16 +346,16 @@ export function SettingsDialog({
 	onClear: () => void
 }) {
 	const { theme, setTheme } = useTheme()
-	const [activeSection, setActiveSection] = React.useState<Section>("account")
+	const [activeSection, setActiveSection] = useState<Section>("account")
 
 	// ── Account state ──────────────────────────────────────────────────────────
-	const [name, setName] = React.useState("")
-	const [firm, setFirm] = React.useState("")
-	const [role, setRole] = React.useState("")
-	const [jurisdiction, setJurisdiction] = React.useState("")
+	const [name, setName] = useState("")
+	const [firm, setFirm] = useState("")
+	const [role, setRole] = useState("")
+	const [jurisdiction, setJurisdiction] = useState("")
 
 	// ── Account saved snapshot (for dirty tracking) ────────────────────────────
-	const [savedAccount, setSavedAccount] = React.useState({
+	const [savedAccount, setSavedAccount] = useState({
 		name: "",
 		firm: "",
 		role: "",
@@ -357,20 +363,18 @@ export function SettingsDialog({
 	})
 
 	// ── AI Provider state ──────────────────────────────────────────────────────
-	const [tempProvider, setTempProvider] =
-		React.useState<Provider>(savedProvider)
-	const [tempKeys, setTempKeys] = React.useState<Record<Provider, string>>({
+	const [tempProvider, setTempProvider] = useState<Provider>(savedProvider)
+	const [tempKeys, setTempKeys] = useState<Record<Provider, string>>({
 		gateway: "",
 		anthropic: "",
 		openai: "",
 	})
-	const [tempQuickModel, setTempQuickModel] = React.useState(savedQuickModel)
-	const [tempDetailedModel, setTempDetailedModel] =
-		React.useState(savedDetailedModel)
-	const [showKey, setShowKey] = React.useState(false)
+	const [tempQuickModel, setTempQuickModel] = useState(savedQuickModel)
+	const [tempDetailedModel, setTempDetailedModel] = useState(savedDetailedModel)
+	const [showKey, setShowKey] = useState(false)
 
 	// ── Provider saved snapshot (for dirty tracking) ───────────────────────────
-	const [savedProviderSnap, setSavedProviderSnap] = React.useState<{
+	const [savedProviderSnap, setSavedProviderSnap] = useState<{
 		provider: Provider
 		quickModel: string
 		detailedModel: string
@@ -383,19 +387,19 @@ export function SettingsDialog({
 	})
 
 	// ── AI Instructions state ──────────────────────────────────────────────────
-	const [practiceContext, setPracticeContext] = React.useState("")
-	const [askPatInstructions, setAskPatInstructions] = React.useState("")
-	const [agentPatInstructions, setAgentPatInstructions] = React.useState("")
-	const [extractPatInstructions, setExtractPatInstructions] = React.useState("")
+	const [practiceContext, setPracticeContext] = useState("")
+	const [askPatInstructions, setAskPatInstructions] = useState("")
+	const [agentPatInstructions, setAgentPatInstructions] = useState("")
+	const [extractPatInstructions, setExtractPatInstructions] = useState("")
 
 	// ── Prompt saved snapshots (for dirty tracking) ────────────────────────────
-	const [savedPracticeContext, setSavedPracticeContext] = React.useState("")
-	const [savedAskPat, setSavedAskPat] = React.useState("")
-	const [savedAgentPat, setSavedAgentPat] = React.useState("")
-	const [savedExtractPat, setSavedExtractPat] = React.useState("")
+	const [savedPracticeContext, setSavedPracticeContext] = useState("")
+	const [savedAskPat, setSavedAskPat] = useState("")
+	const [savedAgentPat, setSavedAgentPat] = useState("")
+	const [savedExtractPat, setSavedExtractPat] = useState("")
 
 	// ── Sync on open ──────────────────────────────────────────────────────────
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return
 		setTempProvider(savedProvider)
 		setTempQuickModel(savedQuickModel)
@@ -554,7 +558,7 @@ export function SettingsDialog({
 				</DialogDescription>
 				<SidebarProvider
 					className="items-start"
-					style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
+					style={{ "--sidebar-width": "13rem" } as CSSProperties}
 				>
 					<Sidebar collapsible="none" className="hidden md:flex">
 						<SidebarHeader>
@@ -1280,7 +1284,7 @@ function PromptSection({
 	onSave: () => Promise<void>
 	showAlert?: boolean
 }) {
-	const [alertOpen, setAlertOpen] = React.useState(false)
+	const [alertOpen, setAlertOpen] = useState(false)
 	const { status, wrap } = useSaveButton()
 
 	const displayValue = value || defaultPrompt || ""

@@ -1,6 +1,7 @@
+import type { ApiAsset } from "@patrickos/db"
 import { ASSET_CONFIGS, type AssetType } from "@patrickos/db"
 import { CalendarDays, Check, Loader2, Trash2 } from "lucide-react"
-import * as React from "react"
+import { useEffect, useRef, useState } from "react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -36,7 +37,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import type { ApiAsset } from "@patrickos/db"
 import { api } from "@/lib/api"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -59,10 +59,10 @@ function formatDisplayDate(iso: string) {
 type SaveStatus = "idle" | "saving" | "saved"
 
 function useSaveButton() {
-	const [status, setStatus] = React.useState<SaveStatus>("idle")
-	const timerRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+	const [status, setStatus] = useState<SaveStatus>("idle")
+	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (timerRef.current) clearTimeout(timerRef.current)
 		}
@@ -101,22 +101,22 @@ export function ArtifactDialog({
 }) {
 	const isEdit = !!asset
 
-	const [title, setTitle] = React.useState("")
-	const [type, setType] = React.useState<AssetType>("claims-draft")
-	const [date, setDate] = React.useState("")
-	const [notes, setNotes] = React.useState("")
+	const [title, setTitle] = useState("")
+	const [type, setType] = useState<AssetType>("claims-draft")
+	const [date, setDate] = useState("")
+	const [notes, setNotes] = useState("")
 
 	// Edit mode: saved values for dirty tracking
-	const [savedTitle, setSavedTitle] = React.useState("")
-	const [savedType, setSavedType] = React.useState<AssetType>("claims-draft")
-	const [savedDate, setSavedDate] = React.useState("")
-	const [savedNotes, setSavedNotes] = React.useState("")
+	const [savedTitle, setSavedTitle] = useState("")
+	const [savedType, setSavedType] = useState<AssetType>("claims-draft")
+	const [savedDate, setSavedDate] = useState("")
+	const [savedNotes, setSavedNotes] = useState("")
 
-	const [saving, setSaving] = React.useState(false)
+	const [saving, setSaving] = useState(false)
 	const { status: saveStatus, wrap: wrapSave } = useSaveButton()
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on open/asset identity
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return
 		if (asset) {
 			setTitle(asset.title)

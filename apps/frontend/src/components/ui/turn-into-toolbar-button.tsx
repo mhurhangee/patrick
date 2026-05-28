@@ -22,7 +22,7 @@ import {
 import type { TElement } from "platejs"
 import { KEYS } from "platejs"
 import { useEditorRef, useSelectionFragmentProp } from "platejs/react"
-import * as React from "react"
+import { useState, useMemo } from "react"
 import { getBlockType, setBlockType } from "@/components/editor/transforms"
 import {
 	DropdownMenu,
@@ -121,13 +121,13 @@ export const turnIntoItems = [
 
 export function TurnIntoToolbarButton(props: DropdownMenuProps) {
 	const editor = useEditorRef()
-	const [open, setOpen] = React.useState(false)
+	const [open, setOpen] = useState(false)
 
 	const value = useSelectionFragmentProp({
 		defaultValue: KEYS.p,
 		getProp: (node) => getBlockType(node as TElement),
 	})
-	const selectedItem = React.useMemo(
+	const selectedItem = useMemo(
 		() =>
 			turnIntoItems.find((item) => item.value === (value ?? KEYS.p)) ??
 			turnIntoItems[0],

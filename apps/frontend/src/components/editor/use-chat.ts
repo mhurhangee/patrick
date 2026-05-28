@@ -11,7 +11,7 @@ import { BlockSelectionPlugin } from "@platejs/selection/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
 import { KEYS, NodeApi, nanoid, TextApi, type TElement, type TNode } from "platejs"
 import { useEditorRef, usePluginOption } from "platejs/react"
-import * as React from "react"
+import { useMemo, useEffect } from "react"
 import { createSlateEditor } from "platejs"
 import { aiChatPlugin } from "@/components/editor/plugins/ai-kit"
 import { BaseEditorKit } from "@/components/editor/editor-base-kit"
@@ -112,7 +112,7 @@ export const useChat = () => {
 	const editor = useEditorRef()
 	const options = usePluginOption(aiChatPlugin, "chatOptions")
 
-	const transport = React.useMemo(
+	const transport = useMemo(
 		() => createChatTransport({ api: options.api || "/ai/askpat/command" }),
 		[options.api],
 	)
@@ -188,7 +188,7 @@ export const useChat = () => {
 		_abortFakeStream: baseChat.stop,
 	}
 
-	React.useEffect(() => {
+	useEffect(() => {
 		editor.setOption(AIChatPlugin, "chat", chat as any)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [chat.status, chat.messages, chat.error])

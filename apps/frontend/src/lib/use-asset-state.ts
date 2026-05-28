@@ -1,23 +1,23 @@
-import * as React from "react"
 import type { ApiAsset } from "@patrickos/db"
+import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
 export function useAssetState(currentProjectId: string) {
-	const [assets, setAssets] = React.useState<ApiAsset[]>([])
-	const [openTabIds, setOpenTabIds] = React.useState<string[]>([])
-	const [activeTab, setActiveTab] = React.useState("")
-	const [splitView, setSplitView] = React.useState(false)
-	const [sourceDialogOpen, setSourceDialogOpen] = React.useState(false)
-	const [sourceDialogAsset, setSourceDialogAsset] = React.useState<
+	const [assets, setAssets] = useState<ApiAsset[]>([])
+	const [openTabIds, setOpenTabIds] = useState<string[]>([])
+	const [activeTab, setActiveTab] = useState("")
+	const [splitView, setSplitView] = useState(false)
+	const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
+	const [sourceDialogAsset, setSourceDialogAsset] = useState<
 		ApiAsset | undefined
 	>(undefined)
-	const [artifactDialogOpen, setArtifactDialogOpen] = React.useState(false)
-	const [artifactDialogAsset, setArtifactDialogAsset] = React.useState<
+	const [artifactDialogOpen, setArtifactDialogOpen] = useState(false)
+	const [artifactDialogAsset, setArtifactDialogAsset] = useState<
 		ApiAsset | undefined
 	>(undefined)
 
 	// Always reset on project change, then fetch if a project is selected
-	React.useEffect(() => {
+	useEffect(() => {
 		setAssets([])
 		setOpenTabIds([])
 		setActiveTab("")

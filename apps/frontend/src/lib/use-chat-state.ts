@@ -1,16 +1,16 @@
-import * as React from "react"
 import type { ApiChat } from "@patrickos/db"
+import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
 export function useChatState(currentProjectId: string) {
-	const [chats, setChats] = React.useState<ApiChat[]>([])
-	const [openChatIds, setOpenChatIds] = React.useState<string[]>([])
-	const [activeChatId, setActiveChatId] = React.useState("agentpat")
-	const [pendingMessages, setPendingMessages] = React.useState<
+	const [chats, setChats] = useState<ApiChat[]>([])
+	const [openChatIds, setOpenChatIds] = useState<string[]>([])
+	const [activeChatId, setActiveChatId] = useState("agentpat")
+	const [pendingMessages, setPendingMessages] = useState<
 		Record<string, string>
 	>({})
 
-	React.useEffect(() => {
+	useEffect(() => {
 		setChats([])
 		setOpenChatIds([])
 		setActiveChatId("agentpat")

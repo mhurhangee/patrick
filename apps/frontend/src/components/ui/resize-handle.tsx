@@ -9,7 +9,7 @@ import {
 
 import type { VariantProps } from "class-variance-authority"
 import { cva } from "class-variance-authority"
-import type * as React from "react"
+import { type ComponentProps } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -43,7 +43,7 @@ export function ResizeHandle({
 	className,
 	options,
 	...props
-}: React.ComponentProps<typeof ResizeHandlePrimitive> &
+}: ComponentProps<typeof ResizeHandlePrimitive> &
 	VariantProps<typeof resizeHandleVariants>) {
 	const state = useResizeHandleState(options ?? {})
 	const resizeHandle = useResizeHandle(state)
@@ -77,7 +77,7 @@ export function Resizable({
 	align,
 	className,
 	...props
-}: React.ComponentProps<typeof ResizablePrimitive> &
+}: ComponentProps<typeof ResizablePrimitive> &
 	VariantProps<typeof resizableVariants>) {
 	return (
 		<ResizablePrimitive

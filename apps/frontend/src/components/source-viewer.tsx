@@ -1,24 +1,22 @@
-import * as React from "react"
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
 
 export function SourceViewer({ src }: { src: string }) {
-	const [numPages, setNumPages] = React.useState(0)
-	const [pageNumber, setPageNumber] = React.useState(1)
-	const [scalePercent, setScalePercent] = React.useState(100)
-	const [containerWidth, setContainerWidth] = React.useState<
-		number | undefined
-	>()
-	const containerRef = React.useRef<HTMLDivElement>(null)
-	const resizeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+	const [numPages, setNumPages] = useState(0)
+	const [pageNumber, setPageNumber] = useState(1)
+	const [scalePercent, setScalePercent] = useState(100)
+	const [containerWidth, setContainerWidth] = useState<number | undefined>()
+	const containerRef = useRef<HTMLDivElement>(null)
+	const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		const el = containerRef.current
 		if (!el) return
 		const ro = new ResizeObserver(([entry]) => {
@@ -35,7 +33,7 @@ export function SourceViewer({ src }: { src: string }) {
 	}, [])
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on src change
-	React.useEffect(() => {
+	useEffect(() => {
 		setPageNumber(1)
 		setNumPages(0)
 	}, [src])

@@ -3,7 +3,7 @@
 import { useCalloutEmojiPicker } from "@platejs/callout/react"
 import { useEmojiDropdownMenuState } from "@platejs/emoji/react"
 import { PlateElement } from "platejs/react"
-import type * as React from "react"
+import { type ComponentProps } from "react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -15,7 +15,7 @@ export function CalloutElement({
 	children,
 	className,
 	...props
-}: React.ComponentProps<typeof PlateElement>) {
+}: ComponentProps<typeof PlateElement>) {
 	const { emojiPickerState, isOpen, setIsOpen } = useEmojiDropdownMenuState({
 		closeOnSelect: true,
 	})

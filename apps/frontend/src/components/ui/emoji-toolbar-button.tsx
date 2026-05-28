@@ -28,7 +28,13 @@ import {
 	StarIcon,
 	XIcon,
 } from "lucide-react"
-import * as React from "react"
+import {
+	type ComponentPropsWithoutRef,
+	type ReactNode,
+	useCallback,
+	memo,
+	type ReactElement,
+} from "react"
 
 import { Button } from "@/components/ui/button"
 import { ToolbarButton } from "@/components/ui/toolbar"
@@ -45,7 +51,7 @@ export function EmojiToolbarButton({
 	...props
 }: {
 	options?: EmojiDropdownMenuOptions
-} & React.ComponentPropsWithoutRef<typeof ToolbarButton>) {
+} & ComponentPropsWithoutRef<typeof ToolbarButton>) {
 	const { emojiPickerState, isOpen, setIsOpen } =
 		useEmojiDropdownMenuState(options)
 
@@ -75,8 +81,8 @@ export function EmojiPopover({
 	isOpen,
 	setIsOpen,
 }: {
-	children: React.ReactNode
-	control: React.ReactNode
+	children: ReactNode
+	control: ReactNode
 	isOpen: boolean
 	setIsOpen: (open: boolean) => void
 }) {
@@ -113,7 +119,7 @@ export function EmojiPicker({
 	onMouseOver,
 	onSelectEmoji,
 }: Omit<UseEmojiPickerType, "icons"> & {
-	icons?: EmojiIconList<React.ReactElement>
+	icons?: EmojiIconList<ReactElement>
 }) {
 	return (
 		<div
@@ -161,7 +167,7 @@ export function EmojiPicker({
 	)
 }
 
-const EmojiButton = React.memo(function EmojiButton({
+const EmojiButton = memo(function EmojiButton({
 	emoji,
 	index,
 	onMouseOver,
@@ -201,7 +207,7 @@ const EmojiButton = React.memo(function EmojiButton({
 	)
 })
 
-const RowOfButtons = React.memo(function RowOfButtons({
+const RowOfButtons = memo(function RowOfButtons({
 	emojiLibrary,
 	row,
 	onMouseOver,
@@ -251,7 +257,7 @@ function EmojiPickerContent({
 >) {
 	const getRowWidth = settings.perLine.value * settings.buttonSize.value
 
-	const isCategoryVisible = React.useCallback(
+	const isCategoryVisible = useCallback(
 		(categoryId: any) =>
 			visibleCategories.has(categoryId)
 				? visibleCategories.get(categoryId)
@@ -259,7 +265,7 @@ function EmojiPickerContent({
 		[visibleCategories],
 	)
 
-	const EmojiList = React.useCallback(
+	const EmojiList = useCallback(
 		() =>
 			emojiLibrary
 				.getGrid()
@@ -309,7 +315,7 @@ function EmojiPickerContent({
 		],
 	)
 
-	const SearchList = React.useCallback(
+	const SearchList = useCallback(
 		() => (
 			<div style={{ width: getRowWidth }} data-id="search">
 				<div className="-top-px sticky z-1 bg-popover/90 p-1 py-2 font-semibold text-card-foreground text-sm backdrop-blur-xs">
@@ -363,7 +369,7 @@ function EmojiPickerSearchBar({
 	searchValue,
 	setSearch,
 }: {
-	children: React.ReactNode
+	children: ReactNode
 } & Pick<UseEmojiPickerType, "i18n" | "searchValue" | "setSearch">) {
 	return (
 		<div className="flex items-center px-2">
@@ -507,7 +513,7 @@ function EmojiPickerNavigation({
 										className={cn(
 											"h-fit rounded-full fill-current p-1.5 text-muted-foreground hover:bg-muted hover:text-muted-foreground",
 											id === focusedCategory &&
-												"pointer-events-none bg-accent fill-current text-accent-foreground",
+											"pointer-events-none bg-accent fill-current text-accent-foreground",
 										)}
 										onClick={() => {
 											onClick(id)
@@ -534,8 +540,8 @@ function EmojiPickerNavigation({
 const emojiCategoryIcons: Record<
 	EmojiCategoryList,
 	{
-		outline: React.ReactElement
-		solid: React.ReactElement // Needed to add another solid variant - outline will be used for now
+		outline: ReactElement
+		solid: ReactElement // Needed to add another solid variant - outline will be used for now
 	}
 > = {
 	activity: {

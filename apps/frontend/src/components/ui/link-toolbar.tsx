@@ -20,7 +20,7 @@ import {
 	useFormInputProps,
 	usePluginOption,
 } from "platejs/react"
-import * as React from "react"
+import { useMemo } from "react"
 
 import { buttonVariants } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -44,7 +44,7 @@ export function LinkFloatingToolbar({
 		"activeId",
 	)
 
-	const floatingOptions: UseVirtualFloatingOptions = React.useMemo(
+	const floatingOptions: UseVirtualFloatingOptions = useMemo(
 		() => ({
 			middleware: [
 				offset(8),
@@ -168,7 +168,7 @@ function LinkOpenButton() {
 	const editor = useEditorRef()
 	const selection = useEditorSelection()
 
-	const attributes = React.useMemo(
+	const attributes = useMemo(
 		() => {
 			const entry = editor.api.node<TLinkElement>({
 				match: { type: editor.getType(KEYS.link) },

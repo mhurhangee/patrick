@@ -1,3 +1,4 @@
+import type { ApiAsset } from "@patrickos/db"
 import {
 	ASSET_CONFIGS,
 	type AssetType,
@@ -14,7 +15,7 @@ import {
 	Upload,
 	X,
 } from "lucide-react"
-import * as React from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -44,7 +45,6 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import type { ApiAsset } from "@patrickos/db"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -57,10 +57,10 @@ const SOURCE_TYPES = ASSET_CONFIGS.filter((c) => c.kind === "source").map(
 type SaveStatus = "idle" | "saving" | "saved"
 
 function useSaveButton() {
-	const [status, setStatus] = React.useState<SaveStatus>("idle")
-	const timerRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+	const [status, setStatus] = useState<SaveStatus>("idle")
+	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (timerRef.current) clearTimeout(timerRef.current)
 		}
@@ -95,12 +95,12 @@ function DetailsField({
 }) {
 	const strVal = String(value ?? "")
 
-	const [rawJson, setRawJson] = React.useState(
+	const [rawJson, setRawJson] = useState(
 		field.complex ? JSON.stringify(value, null, 2) : "",
 	)
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on value identity
-	React.useEffect(() => {
+	useEffect(() => {
 		if (field.complex) setRawJson(JSON.stringify(value, null, 2))
 	}, [JSON.stringify(value)])
 
@@ -154,14 +154,14 @@ function PdfDropZone({
 	file: File | null
 	onFile: (f: File) => void
 }) {
-	const inputRef = React.useRef<HTMLInputElement>(null)
-	const [dragging, setDragging] = React.useState(false)
-	const objectUrl = React.useMemo(
+	const inputRef = useRef<HTMLInputElement>(null)
+	const [dragging, setDragging] = useState(false)
+	const objectUrl = useMemo(
 		() => (file ? URL.createObjectURL(file) : null),
 		[file],
 	)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (objectUrl) URL.revokeObjectURL(objectUrl)
 		}
@@ -246,30 +246,28 @@ export function SourceDialog({
 	const isEdit = !!asset
 
 	// Form state
-	const [newFile, setNewFile] = React.useState<File | null>(null)
-	const [type, setType] = React.useState<AssetType>("office-action")
-	const [details, setDetails] = React.useState<Record<string, unknown>>(() =>
+	const [newFile, setNewFile] = useState<File | null>(null)
+	const [type, setType] = useState<AssetType>("office-action")
+	const [details, setDetails] = useState<Record<string, unknown>>(() =>
 		emptyDetails("office-action"),
 	)
 
 	// Edit mode: dirty tracking
-	const [savedType, setSavedType] = React.useState<AssetType>("office-action")
-	const [savedDetails, setSavedDetails] = React.useState<
-		Record<string, unknown>
-	>({})
+	const [savedType, setSavedType] = useState<AssetType>("office-action")
+	const [savedDetails, setSavedDetails] = useState<Record<string, unknown>>({})
 
 	// Add mode: temp asset created during extract so we can update instead of re-upload
-	const [tempAsset, setTempAsset] = React.useState<ApiAsset | null>(null)
+	const [tempAsset, setTempAsset] = useState<ApiAsset | null>(null)
 
 	// Status
-	const [saving, setSaving] = React.useState(false)
-	const [extractState, setExtractState] = React.useState<ExtractState>("idle")
-	const [extractError, setExtractError] = React.useState<string | null>(null)
+	const [saving, setSaving] = useState(false)
+	const [extractState, setExtractState] = useState<ExtractState>("idle")
+	const [extractError, setExtractError] = useState<string | null>(null)
 	const { status: saveStatus, wrap: wrapSave } = useSaveButton()
 
 	// Sync form state when dialog opens or asset switches
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on open/asset identity
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return
 		if (asset) {
 			const t = asset.type as AssetType
@@ -297,7 +295,7 @@ export function SourceDialog({
 	}, [open, asset?.id])
 
 	// In add mode: when type changes, preserve title/date/notes, reset type-specific fields
-	React.useEffect(() => {
+	useEffect(() => {
 		if (isEdit) return
 		setDetails((prev) => ({
 			...emptyDetails(type),
@@ -351,8 +349,8 @@ export function SourceDialog({
 				formData.append(
 					"title",
 					String(details.title ?? "").trim() ||
-					newFile?.name.replace(/\.pdf$/i, "") ||
-					"Untitled",
+						newFile?.name.replace(/\.pdf$/i, "") ||
+						"Untitled",
 				)
 				formData.append("type", type)
 				formData.append("kind", "source")

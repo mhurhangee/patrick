@@ -19,7 +19,7 @@ import {
 } from "platejs"
 import type { PlateEditor } from "platejs/react"
 import { useEditorRef, useEditorVersion, usePluginOption } from "platejs/react"
-import * as React from "react"
+import { useMemo } from "react"
 
 import {
 	discussionPlugin,
@@ -487,7 +487,7 @@ export const useBlockDiscussionItems = (blockPath: Path) => {
 	const discussions = usePluginOption(discussionPlugin, "discussions")
 	const version = useEditorVersion() ?? 0
 
-	return React.useMemo(() => {
+	return useMemo(() => {
 		const index = getDiscussionIndex(editor, discussions, version)
 		const blockKey = getBlockKey(blockPath)
 

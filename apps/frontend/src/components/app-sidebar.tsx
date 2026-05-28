@@ -1,7 +1,8 @@
+import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/db"
 import { ASSET_CONFIGS } from "@patrickos/db"
 import { Link } from "@tanstack/react-router"
 import { ChevronsUpDown, Ellipsis, Plus, Settings2 } from "lucide-react"
-import * as React from "react"
+import { useState } from "react"
 import { Logo } from "@/components/logo"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,7 +22,6 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/db"
 import { cn } from "@/lib/utils"
 
 export function AppSidebar({
@@ -62,7 +62,7 @@ export function AppSidebar({
 	connectedToAI: boolean
 }) {
 	const CHAT_LIMIT = 5
-	const [showAllChats, setShowAllChats] = React.useState(false)
+	const [showAllChats, setShowAllChats] = useState(false)
 
 	const openSet = new Set(openTabIds)
 	const openChatSet = new Set(openChatIds)

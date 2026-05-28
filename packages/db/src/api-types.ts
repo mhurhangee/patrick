@@ -1,9 +1,11 @@
 import type { InferSelectModel } from "drizzle-orm"
-import { assets, chatMessages, chats, projects, settings } from "./schema"
+import type { assets, chatMessages, chats, projects, settings } from "./schema"
 
 type SerialiseDate<T> = { [K in keyof T]: T[K] extends Date ? string : T[K] }
 
-export type ApiAsset = SerialiseDate<Omit<InferSelectModel<typeof assets>, "data">>
+export type ApiAsset = SerialiseDate<
+	Omit<InferSelectModel<typeof assets>, "data">
+>
 
 export type ApiProject = SerialiseDate<InferSelectModel<typeof projects>>
 

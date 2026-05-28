@@ -7,8 +7,16 @@ import {
 } from "ai"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
+import type { ApiAsset, ApiChat } from "@patrickos/db"
 import { ArrowUp, Clover, Loader2, Plus, X } from "lucide-react"
-import * as React from "react"
+import {
+	Fragment,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
@@ -20,7 +28,6 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
 import { CURATED_MODELS, GATEWAY_DETAILED_MODELS } from "@/lib/ai-models"
-import type { ApiAsset, ApiChat } from "@patrickos/db"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import {
@@ -28,7 +35,6 @@ import {
 	type ExchangePanelData,
 	StreamingSpacer,
 } from "./exchange-panel"
-
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -62,7 +68,7 @@ function AgentPatPane({
 	onRemoveAsset: (id: string) => void
 }) {
 	const { connectedToAI } = useAI()
-	const [input, setInput] = React.useState("")
+	const [input, setInput] = useState("")
 
 	function send(message: string) {
 		const trimmed = message.trim()
@@ -182,31 +188,28 @@ function ChatPane({
 	detailedModel: string
 	onTitleUpdate: (title: string) => void
 }) {
-	const openAssetIdsRef = React.useRef<string[]>([])
+	const openAssetIdsRef = useRef<string[]>([])
 	openAssetIdsRef.current = openAssets.map((a) => a.id)
 
-	const scrollContainerRef = React.useRef<HTMLDivElement>(null)
-	const lastUserMsgRef = React.useRef<HTMLDivElement>(null)
-	const textareaRef = React.useRef<HTMLTextAreaElement>(null)
-	const [containerHeight, setContainerHeight] = React.useState(400)
-	const [input, setInput] = React.useState("")
-	const sentInitial = React.useRef(false)
+	const scrollContainerRef = useRef<HTMLDivElement>(null)
+	const lastUserMsgRef = useRef<HTMLDivElement>(null)
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+	const [containerHeight, setContainerHeight] = useState(400)
+	const [input, setInput] = useState("")
+	const sentInitial = useRef(false)
 	// closedIds: latest panels the user has manually collapsed
 	// openIds: non-latest panels the user has manually expanded
-	const [closedIds, setClosedIds] = React.useState<Set<string>>(new Set())
-	const [openIds, setOpenIds] = React.useState<Set<string>>(new Set())
-	const [exchangeDurations, setExchangeDurations] = React.useState<
+	const [closedIds, setClosedIds] = useState<Set<string>>(new Set())
+	const [openIds, setOpenIds] = useState<Set<string>>(new Set())
+	const [exchangeDurations, setExchangeDurations] = useState<
 		Record<string, number>
 	>({})
-	const [exchangeTtfts, setExchangeTtfts] = React.useState<
-		Record<string, number>
+	const [exchangeTtfts, setExchangeTtfts] = useState<Record<string, number>>({})
+	const sendStartTimeRef = useRef<number | null>(null)
+	const pendingContextRef = useRef<Array<{ id: string; title: string }>>([])
+	const [exchangeContextSnapshots, setExchangeContextSnapshots] = useState<
+		Record<string, Array<{ id: string; title: string }>>
 	>({})
-	const sendStartTimeRef = React.useRef<number | null>(null)
-	const pendingContextRef = React.useRef<Array<{ id: string; title: string }>>(
-		[],
-	)
-	const [exchangeContextSnapshots, setExchangeContextSnapshots] =
-		React.useState<Record<string, Array<{ id: string; title: string }>>>({})
 
 	const { messages, sendMessage, status } = useChat({
 		transport: new DefaultChatTransport({
@@ -227,7 +230,7 @@ function ChatPane({
 	const isStreaming = status === "streaming" || status === "submitted"
 
 	// Measure scroll container once + whenever it resizes (user drags panel)
-	React.useEffect(() => {
+	useEffect(() => {
 		const el = scrollContainerRef.current
 		if (!el) return
 		setContainerHeight(el.clientHeight)
@@ -237,7 +240,7 @@ function ChatPane({
 	}, [])
 
 	// Group flat messages into user/assistant exchange pairs
-	const exchanges = React.useMemo<Exchange[]>(() => {
+	const exchanges = useMemo<Exchange[]>(() => {
 		const result: Exchange[] = []
 		let i = 0
 		while (i < messages.length) {
@@ -258,8 +261,8 @@ function ChatPane({
 
 	// Scroll latest user message to top on new send — not on initial history load.
 	// useLayoutEffect fires before paint so there's no flash of the old position.
-	const prevLatestExchangeIdRef = React.useRef<string | undefined>(undefined)
-	React.useLayoutEffect(() => {
+	const prevLatestExchangeIdRef = useRef<string | undefined>(undefined)
+	useLayoutEffect(() => {
 		if (!latestExchangeId) return
 		if (prevLatestExchangeIdRef.current === undefined) {
 			prevLatestExchangeIdRef.current = latestExchangeId
@@ -279,8 +282,8 @@ function ChatPane({
 	}, [latestExchangeId])
 
 	// Capture TTFT on first streaming chunk, duration when done
-	const prevStatusRef = React.useRef(status)
-	React.useEffect(() => {
+	const prevStatusRef = useRef(status)
+	useEffect(() => {
 		const prev = prevStatusRef.current
 		if (prev === "submitted" && status === "streaming") {
 			if (sendStartTimeRef.current !== null && latestExchangeId) {
@@ -301,8 +304,8 @@ function ChatPane({
 	}, [status, latestExchangeId])
 
 	// Update chat title from the latest resolved generateMetadata tool call
-	const appliedTitleRef = React.useRef<string | null>(null)
-	React.useEffect(() => {
+	const appliedTitleRef = useRef<string | null>(null)
+	useEffect(() => {
 		for (let i = messages.length - 1; i >= 0; i--) {
 			const msg = messages[i]
 			if (msg.role !== "assistant") continue
@@ -322,7 +325,7 @@ function ChatPane({
 	}, [messages, onTitleUpdate])
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sendMessage is stable, sentInitial/pendingContextRef are refs
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!initialMessage || sentInitial.current) return
 		// If message already exists in loaded history (tab switch back), don't resend
 		const alreadyInHistory = initialMessages.some(
@@ -385,7 +388,7 @@ function ChatPane({
 	}
 
 	// Total conversation tokens + cost across all completed exchanges
-	const conversationStats = React.useMemo(() => {
+	const conversationStats = useMemo(() => {
 		let totalIn = 0
 		let totalOut = 0
 		for (const ex of exchanges) {
@@ -478,7 +481,7 @@ function ChatPane({
 						const assistantMsg = exchange.assistantMsg
 
 						return (
-							<React.Fragment key={exchange.id}>
+							<Fragment key={exchange.id}>
 								{/* User message */}
 								<div
 									ref={isLatest ? lastUserMsgRef : null}
@@ -532,7 +535,7 @@ function ChatPane({
 										}}
 									/>
 								)}
-							</React.Fragment>
+							</Fragment>
 						)
 					})
 				)}
@@ -607,11 +610,11 @@ function ChatPaneLoader({
 	detailedModel: string
 	onTitleUpdate: (title: string) => void
 }) {
-	const [initialMessages, setInitialMessages] = React.useState<
-		UIMessage[] | null
-	>(null)
+	const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(
+		null,
+	)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		setInitialMessages(null)
 		api.chats
 			.getMessages(chatId)

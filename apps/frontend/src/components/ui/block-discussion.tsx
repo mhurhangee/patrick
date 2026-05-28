@@ -12,7 +12,7 @@ import {
 import { type AnyPluginConfig, type NodeEntry, PathApi } from "platejs"
 import type { PlateElementProps, RenderNodeWrapper } from "platejs/react"
 import { useEditorRef, usePluginOption } from "platejs/react"
-import * as React from "react"
+import { useState, useMemo, Fragment } from "react"
 import { commentPlugin } from "@/components/editor/plugins/comment-kit"
 import type { TDiscussion } from "@/components/editor/plugins/discussion-kit"
 import { suggestionPlugin } from "@/components/editor/plugins/suggestion-kit"
@@ -44,8 +44,8 @@ const BlockCommentContent = ({ children, element }: PlateElementProps) => {
 		: []
 	const suggestionNodes = isTopLevelBlock
 		? [
-				...editor.getApi(SuggestionPlugin).suggestion.nodes({ at: blockPath }),
-			].filter(([node]) => !node[getTransientSuggestionKey()])
+			...editor.getApi(SuggestionPlugin).suggestion.nodes({ at: blockPath }),
+		].filter(([node]) => !node[getTransientSuggestionKey()])
 		: []
 	const { resolvedDiscussions, resolvedSuggestions } =
 		useBlockDiscussionItems(blockPath)
@@ -76,7 +76,7 @@ const BlockCommentContent = ({ children, element }: PlateElementProps) => {
 		resolvedDiscussions.some((d) => d.id === activeCommentId) ||
 		resolvedSuggestions.some((s) => s.suggestionId === activeSuggestionId)
 
-	const [_open, setOpen] = React.useState(selected)
+	const [_open, setOpen] = useState(selected)
 
 	// in some cases, we may comment the multiple blocks
 	const commentingCurrent =
@@ -87,7 +87,7 @@ const BlockCommentContent = ({ children, element }: PlateElementProps) => {
 		selected ||
 		(isCommenting && !!draftCommentNode && commentingCurrent)
 
-	const anchorElement = React.useMemo(() => {
+	const anchorElement = useMemo(() => {
 		let activeNode: NodeEntry | undefined
 
 		if (activeSuggestion) {
@@ -235,10 +235,10 @@ function BlockComment({
 	discussion: TDiscussion
 	isLast: boolean
 }) {
-	const [editingId, setEditingId] = React.useState<string | null>(null)
+	const [editingId, setEditingId] = useState<string | null>(null)
 
 	return (
-		<React.Fragment key={discussion.id}>
+		<Fragment key={discussion.id}>
 			<div className="p-4">
 				{discussion.comments.map((comment, index) => (
 					<Comment
@@ -256,6 +256,6 @@ function BlockComment({
 			</div>
 
 			{!isLast && <div className="h-px w-full bg-muted" />}
-		</React.Fragment>
+		</Fragment>
 	)
 }

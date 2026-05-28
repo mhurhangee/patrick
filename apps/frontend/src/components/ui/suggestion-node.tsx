@@ -18,7 +18,14 @@ import type {
 	RenderNodeWrapper,
 } from "platejs/react"
 import { PlateLeaf, useEditorPlugin, usePluginOption } from "platejs/react"
-import * as React from "react"
+import {
+	type ComponentProps,
+	type ReactNode,
+	isValidElement,
+	cloneElement,
+	Children,
+	type ReactElement,
+} from "react"
 import type { SuggestionConfig } from "@/components/editor/plugins/suggestion-kit"
 import { voidRemoveSuggestionOverlayVariants } from "@/components/ui/suggestion-node-static"
 import { cn } from "@/lib/utils"
@@ -110,8 +117,8 @@ export function SuggestionLineBreakAnchor({
 	children,
 	className,
 }: {
-	badgeProps?: React.ComponentProps<"span">
-	children: React.ReactNode
+	badgeProps?: ComponentProps<"span">
+	children: ReactNode
 	className?: string
 }) {
 	const badge = (
@@ -141,11 +148,11 @@ function SuggestionLineBreakElementAnchor({
 	children,
 	className,
 }: {
-	badgeProps?: React.ComponentProps<"span">
-	children: React.ReactElement<any>
+	badgeProps?: ComponentProps<"span">
+	children: ReactElement<any>
 	className?: string
 }) {
-	if (!React.isValidElement(children)) return children
+	if (!isValidElement(children)) return children
 	const badge = (
 		<span
 			{...badgeProps}
@@ -161,29 +168,29 @@ function SuggestionLineBreakElementAnchor({
 	)
 
 	if (children.type === "ol" || children.type === "ul") {
-		const childNodes = React.Children.toArray(
-			(children.props as { children?: React.ReactNode }).children,
+		const childNodes = Children.toArray(
+			(children.props as { children?: ReactNode }).children,
 		)
 		const lastIndex = childNodes.length - 1
 		const lastChild = childNodes[lastIndex]
 
-		if (!React.isValidElement(lastChild) || lastChild.type !== "li") {
+		if (!isValidElement(lastChild) || lastChild.type !== "li") {
 			return children
 		}
 
-		const nextLastChild = React.cloneElement(
-			lastChild as React.ReactElement<any>,
+		const nextLastChild = cloneElement(
+			lastChild as ReactElement<any>,
 			{
 				children: (
 					<>
-						{(lastChild.props as { children?: React.ReactNode }).children}
+						{(lastChild.props as { children?: ReactNode }).children}
 						{badge}
 					</>
 				),
 			},
 		)
 
-		return React.cloneElement(children as React.ReactElement<any>, {
+		return cloneElement(children as ReactElement<any>, {
 			children: [...childNodes.slice(0, lastIndex), nextLastChild],
 		})
 	}
@@ -197,7 +204,7 @@ function SuggestionLineBreakElementAnchor({
 		)
 	}
 
-	return React.cloneElement(children as React.ReactElement<any>, {
+	return cloneElement(children as ReactElement<any>, {
 		lineBreakBadge: badge,
 	})
 }
@@ -267,7 +274,7 @@ export function SuggestionLineBreakContent({
 	elementType,
 	suggestionData,
 }: {
-	children: React.ReactNode
+	children: ReactNode
 	elementType?: string
 	suggestionData: TSuggestionData
 }) {
@@ -284,7 +291,7 @@ export function SuggestionLineBreakContent({
 	const { setOption } = useEditorPlugin(suggestionPlugin)
 	const lineBreakBadgeClassName = cn(
 		isInsert &&
-			"bg-transparent! text-emerald-700! transition-colors duration-200",
+		"bg-transparent! text-emerald-700! transition-colors duration-200",
 		isInsert && (isActive || isHover) && "bg-transparent! text-emerald-700!",
 		isRemove && "bg-transparent! text-red-700! transition-colors duration-200",
 		isRemove && (isActive || isHover) && "bg-transparent! text-red-700!",
@@ -293,7 +300,7 @@ export function SuggestionLineBreakContent({
 	return (
 		<>
 			{isLineBreak ? (
-				React.isValidElement(children) && typeof children.type !== "string" ? (
+				isValidElement(children) && typeof children.type !== "string" ? (
 					<SuggestionLineBreakElementAnchor
 						badgeProps={{
 							onClick: (event) => {
@@ -308,7 +315,7 @@ export function SuggestionLineBreakContent({
 					>
 						{children}
 					</SuggestionLineBreakElementAnchor>
-				) : React.isValidElement(children) &&
+				) : isValidElement(children) &&
 					(children.type === "ol" || children.type === "ul") ? (
 					<SuggestionLineBreakElementAnchor
 						badgeProps={{

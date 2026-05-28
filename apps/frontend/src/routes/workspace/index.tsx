@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import * as React from "react"
+import { useState } from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { AppSidebar } from "@/components/app-sidebar"
 import { ArtifactDialog } from "@/components/artifact-dialog"
@@ -39,10 +39,10 @@ function WorkspaceContent() {
 	const chat = useChatState(project.currentProjectId)
 
 	// UI
-	const [chatEditId, setChatEditId] = React.useState<string | null>(null)
-	const [chatCollapsed, setChatCollapsed] = React.useState(false)
-	const [projectsOpen, setProjectsOpen] = React.useState(false)
-	const [settingsOpen, setSettingsOpen] = React.useState(false)
+	const [chatEditId, setChatEditId] = useState<string | null>(null)
+	const [chatCollapsed, setChatCollapsed] = useState(false)
+	const [projectsOpen, setProjectsOpen] = useState(false)
+	const [settingsOpen, setSettingsOpen] = useState(false)
 
 	const chatPanelRef = usePanelRef()
 

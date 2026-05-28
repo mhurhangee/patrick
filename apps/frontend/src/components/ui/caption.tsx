@@ -9,7 +9,7 @@ import {
 import { createPrimitiveComponent } from "@udecode/cn"
 import type { VariantProps } from "class-variance-authority"
 import { cva } from "class-variance-authority"
-import type * as React from "react"
+import { type ComponentProps } from "react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -31,7 +31,7 @@ export function Caption({
 	align,
 	className,
 	...props
-}: React.ComponentProps<typeof CaptionPrimitive> &
+}: ComponentProps<typeof CaptionPrimitive> &
 	VariantProps<typeof captionVariants>) {
 	return (
 		<CaptionPrimitive
@@ -42,7 +42,7 @@ export function Caption({
 }
 
 export function CaptionTextarea(
-	props: React.ComponentProps<typeof CaptionTextareaPrimitive>,
+	props: ComponentProps<typeof CaptionTextareaPrimitive>,
 ) {
 	return (
 		<CaptionTextareaPrimitive

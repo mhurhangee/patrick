@@ -21,7 +21,7 @@ import {
 	useSelected,
 	withHOC,
 } from "platejs/react"
-import * as React from "react"
+import { memo, type PropsWithChildren } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
@@ -92,7 +92,7 @@ export const ColumnElement = withHOC(
 	},
 )
 
-const ColumnDragHandle = React.memo(function ColumnDragHandle() {
+const ColumnDragHandle = memo(function ColumnDragHandle() {
 	return (
 		<TooltipProvider>
 			<Tooltip>
@@ -125,9 +125,9 @@ function DropLine() {
 				"slate-dropLine",
 				"absolute bg-brand/50",
 				dropLine === "left" &&
-					"group-first/column:-left-1 inset-y-0 left-[-10.5px] w-1",
+				"group-first/column:-left-1 inset-y-0 left-[-10.5px] w-1",
 				dropLine === "right" &&
-					"group-last/column:-right-1 inset-y-0 right-[-11px] w-1",
+				"group-last/column:-right-1 inset-y-0 right-[-11px] w-1",
 			)}
 		/>
 	)
@@ -143,7 +143,7 @@ export function ColumnGroupElement(props: PlateElementProps) {
 	)
 }
 
-function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
+function ColumnFloatingToolbar({ children }: PropsWithChildren) {
 	const editor = useEditorRef()
 	const readOnly = useReadOnly()
 	const element = useElement<TColumnElement>()

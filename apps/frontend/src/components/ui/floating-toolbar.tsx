@@ -14,7 +14,7 @@ import {
 	useEventEditorValue,
 	usePluginOption,
 } from "platejs/react"
-import type * as React from "react"
+import { type ComponentProps } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -25,7 +25,7 @@ export function FloatingToolbar({
 	className,
 	state,
 	...props
-}: React.ComponentProps<typeof Toolbar> & {
+}: ComponentProps<typeof Toolbar> & {
 	state?: FloatingToolbarState
 }) {
 	const editorId = useEditorId()

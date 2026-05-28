@@ -14,7 +14,7 @@ import {
 	useReadOnly,
 	useSelected,
 } from "platejs/react"
-import * as React from "react"
+import { useEffect, useState, useRef, type ReactNode } from "react"
 import TextareaAutosize, {
 	type TextareaAutosizeProps,
 } from "react-textarea-autosize"
@@ -30,11 +30,11 @@ import { cn } from "@/lib/utils"
 
 export function EquationElement(props: PlateElementProps<TEquationElement>) {
 	const selected = useSelected()
-	const [open, setOpen] = React.useState(selected)
-	const katexRef = React.useRef<HTMLDivElement | null>(null)
+	const [open, setOpen] = useState(selected)
+	const katexRef = useRef<HTMLDivElement | null>(null)
 	const lineBreakBadge = (
 		props as PlateElementProps<TEquationElement> & {
-			lineBreakBadge?: React.ReactNode
+			lineBreakBadge?: ReactNode
 		}
 	).lineBreakBadge
 
@@ -100,15 +100,15 @@ export function InlineEquationElement(
 	props: PlateElementProps<TEquationElement>,
 ) {
 	const { element } = props
-	const katexRef = React.useRef<HTMLDivElement | null>(null)
+	const katexRef = useRef<HTMLDivElement | null>(null)
 	const selected = useSelected()
 	const isCollapsed = useEditorSelector(
 		(editor) => editor.api.isCollapsed(),
 		[],
 	)
-	const [open, setOpen] = React.useState(selected && isCollapsed)
+	const [open, setOpen] = useState(selected && isCollapsed)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (selected && isCollapsed) {
 			// eslint-disable-next-line react-hooks/set-state-in-effect -- Open the inline equation popover when editor selection enters it.
 			setOpen(true)
@@ -146,9 +146,9 @@ export function InlineEquationElement(
 							"h-6",
 							inlineSuggestionVariants(),
 							((element.texExpression.length > 0 && open) || selected) &&
-								"after:bg-brand/15",
+							"after:bg-brand/15",
 							element.texExpression.length === 0 &&
-								"text-muted-foreground after:bg-neutral-500/10",
+							"text-muted-foreground after:bg-neutral-500/10",
 						)}
 						contentEditable={false}
 					>
@@ -201,7 +201,7 @@ const EquationPopoverContent = ({
 	const readOnly = useReadOnly()
 	const element = useElement<TEquationElement>()
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (isInline && open) {
 			setOpen(true)
 		}

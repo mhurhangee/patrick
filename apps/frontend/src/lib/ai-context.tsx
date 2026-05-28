@@ -1,4 +1,10 @@
-import * as React from "react"
+import {
+	createContext,
+	type ReactNode,
+	useContext,
+	useEffect,
+	useState,
+} from "react"
 import {
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
@@ -26,7 +32,7 @@ interface AIContextValue {
 	clearApiKey: () => void
 }
 
-const AIContext = React.createContext<AIContextValue>({
+const AIContext = createContext<AIContextValue>({
 	connectedToAI: false,
 	connectedBYOK: false,
 	provider: "anthropic",
@@ -39,18 +45,16 @@ const AIContext = React.createContext<AIContextValue>({
 	clearApiKey: () => {},
 })
 
-export function AIProvider({ children }: { children: React.ReactNode }) {
-	const [provider, setProvider] = React.useState<Provider>("anthropic")
-	const [apiKey, setApiKey] = React.useState("")
-	const [keyStatus, setKeyStatus] = React.useState<KeyStatus>("idle")
-	const [quickModel, setQuickModel] = React.useState(
-		DEFAULT_QUICK_MODEL.anthropic,
-	)
-	const [detailedModel, setDetailedModel] = React.useState(
+export function AIProvider({ children }: { children: ReactNode }) {
+	const [provider, setProvider] = useState<Provider>("anthropic")
+	const [apiKey, setApiKey] = useState("")
+	const [keyStatus, setKeyStatus] = useState<KeyStatus>("idle")
+	const [quickModel, setQuickModel] = useState(DEFAULT_QUICK_MODEL.anthropic)
+	const [detailedModel, setDetailedModel] = useState(
 		DEFAULT_DETAILED_MODEL.anthropic,
 	)
 
-	React.useEffect(() => {
+	useEffect(() => {
 		api.settings.get().then((s) => {
 			const p = (s.aiProvider as Provider) || "anthropic"
 			const quick = s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic
@@ -130,5 +134,5 @@ export function AIProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAI() {
-	return React.useContext(AIContext)
+	return useContext(AIContext)
 }
