@@ -1,4 +1,10 @@
 import {
+	DEFAULT_PROMPT_AGENTPAT,
+	DEFAULT_PROMPT_ASKPAT,
+	DEFAULT_PROMPT_CONTEXT,
+	DEFAULT_PROMPT_EXTRACTPAT,
+} from "@patrickos/db"
+import {
 	Check,
 	Clover,
 	CreditCard,
@@ -8,7 +14,7 @@ import {
 	Loader2,
 	MessageSquare,
 	RotateCcw,
-	User,
+	User
 } from "lucide-react"
 import {
 	type CSSProperties,
@@ -77,62 +83,6 @@ import {
 } from "@/lib/ai-models"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
-
-// ─── Default prompts ──────────────────────────────────────────────────────────
-
-const DEFAULT_PROMPT_CONTEXT = `## Jurisdiction
-[e.g. USPTO, EPO, IPO]
-
-## Firm Specialisations
-[e.g. mechanical, software, life sciences]
-
-## Claim Style Preferences
-[e.g. independent claim first, means-plus-function, Jepson format]
-
-## Client Preferences
-[e.g. conservative prosecution, broad first filing]`
-
-const DEFAULT_PROMPT_ASKPAT = `## Role
-You are AskPat, a patent attorney writing assistant embedded in the document editor. You help draft, refine, and improve patent documents.
-
-## Do
-- Use precise, unambiguous claim language
-- Follow USPTO/EPO claim drafting conventions
-- Maintain consistency with existing claim terminology
-- Flag potential 35 USC §112 issues
-
-## Don't
-- Add functional language without structural support
-- Broaden claims beyond the disclosed embodiments
-- Use trade names or jargon without definition`
-
-const DEFAULT_PROMPT_AGENTPAT = `## Role
-You are AgentPat, a project-aware patent attorney assistant. You have access to the full matter including sources and artifacts.
-
-## Do
-- Reason across all available documents before responding
-- Cite specific passages when making arguments
-- Structure responses as an experienced patent attorney would
-- Flag deadlines and procedural risks
-
-## Don't
-- Make legal conclusions without citing supporting documents
-- Overlook prior art references in the matter
-- Give generic advice when matter-specific context is available`
-
-const DEFAULT_PROMPT_EXTRACTPAT = `## Role
-You are ExtractPat, a document analysis specialist. You extract structured metadata from patent documents.
-
-## Do
-- Extract exact dates, numbers, and identifiers as they appear in the document
-- Classify document type accurately (office action, prior art, disclosure, etc.)
-- Identify the primary inventor, applicant, and examiner where present
-- Note key claim elements and rejection grounds
-
-## Don't
-- Infer or guess values not explicitly stated in the document
-- Summarise when exact extraction is possible
-- Conflate related but distinct fields`
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -240,7 +190,7 @@ const NAV: NavItem[] = [
 		label: "AI Instructions",
 		icon: MessageSquare,
 		children: [
-			{ id: "ai-instructions-context", label: "Practice Context" },
+			{ id: "ai-instructions-context", label: "Practice Preferences" },
 			{ id: "ai-instructions-askpat", label: "AskPat" },
 			{ id: "ai-instructions-agentpat", label: "AgentPat" },
 			{ id: "ai-instructions-extractpat", label: "ExtractPat" },
@@ -272,7 +222,7 @@ function getBreadcrumb(section: Section): {
 	if (section === "ai-instructions-context")
 		return {
 			parent: { label: "AI Instructions", id: "ai-instructions" },
-			current: "Practice Context",
+			current: "Practice Preferences",
 		}
 	if (section === "ai-instructions-askpat")
 		return {
@@ -697,8 +647,8 @@ export function SettingsDialog({
 							)}
 							{activeSection === "ai-instructions-context" && (
 								<PromptSection
-									title="Practice Context"
-									description="Jurisdiction, firm specialisations, and preferred claim style. Included in every AI call."
+									title="Practice Preferences"
+									description="Freeform context included in every AI call — prosecution style, specialisations, formatting preferences, or anything else that applies across all matters."
 									defaultPrompt={DEFAULT_PROMPT_CONTEXT}
 									value={practiceContext}
 									savedValue={savedPracticeContext}
@@ -874,27 +824,27 @@ function AiProviderOverview({
 		description: string
 		badge?: string
 	}[] = [
-		{
-			id: "ai-provider-local",
-			name: "Local",
-			description:
-				"Run models on your machine via Ollama. No API costs, fully private. Requires local setup.",
-			badge: "Coming soon",
-		},
-		{
-			id: "ai-provider-byok",
-			name: "BYOK",
-			description:
-				"Bring your own Anthropic, OpenAI, or AI Gateway key. Pay providers directly — no markup.",
-		},
-		{
-			id: "ai-provider-cloud",
-			name: "Cloud",
-			description:
-				"Buy credits from PatrickOS. Simple billing, no provider accounts needed.",
-			badge: "Coming soon",
-		},
-	]
+			{
+				id: "ai-provider-local",
+				name: "Local",
+				description:
+					"Run models on your machine via Ollama. No API costs, fully private. Requires local setup.",
+				badge: "Coming soon",
+			},
+			{
+				id: "ai-provider-byok",
+				name: "BYOK",
+				description:
+					"Bring your own Anthropic, OpenAI, or AI Gateway key. Pay providers directly — no markup.",
+			},
+			{
+				id: "ai-provider-cloud",
+				name: "Cloud",
+				description:
+					"Buy credits from PatrickOS. Simple billing, no provider accounts needed.",
+				badge: "Coming soon",
+			},
+		]
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -1210,7 +1160,7 @@ function AiInstructionsOverview({
 	const options: { id: Section; name: string; description: string }[] = [
 		{
 			id: "ai-instructions-context",
-			name: "Practice Context",
+			name: "Practice Preferences",
 			description:
 				"Jurisdiction, firm specialisations, and preferred claim style. Injected into every AI call as shared context.",
 		},
@@ -1305,15 +1255,11 @@ function PromptSection({
 				<div className="flex flex-col gap-1">
 					<h2 className="text-sm font-semibold">{title}</h2>
 					<p className="text-xs text-muted-foreground">{description}</p>
-				</div>
-				<Separator />
-				<div className="flex flex-col gap-1.5">
-					<Label>System prompt</Label>
 					<Textarea
 						value={displayValue}
 						onChange={(e) => onChange(e.target.value)}
 						placeholder="Enter custom instructions…"
-						className="min-h-[220px] font-mono text-xs"
+						className="min-h-[220px] font-mono text-xs mt-6"
 					/>
 				</div>
 				<div className="flex items-center justify-between">
@@ -1322,7 +1268,7 @@ function PromptSection({
 							variant="ghost"
 							size="sm"
 							className="gap-1.5 text-muted-foreground"
-							onClick={() => onChange("")}
+							onClick={() => onChange(defaultPrompt)}
 						>
 							<RotateCcw size={12} />
 							Reset to default

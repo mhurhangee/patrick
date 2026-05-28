@@ -16,6 +16,10 @@ import {
 	ASSET_CONFIGS,
 	type AssetKind,
 	type AssetType,
+	DEFAULT_PROMPT_AGENTPAT,
+	DEFAULT_PROMPT_ASKPAT,
+	DEFAULT_PROMPT_CONTEXT,
+	DEFAULT_PROMPT_EXTRACTPAT,
 	eq,
 	getFormFields,
 	PROJECT_CONFIGS,
@@ -49,7 +53,13 @@ type FilePart = {
 }
 
 export type AgentPatContext = {
-	project?: { name: string; type: string }
+	project?: {
+		name: string
+		type: string
+		clientName?: string
+		clientIndustry?: string
+		clientPreferences?: string
+	}
 	allAssets?: AssetRow[]
 	openAssetIds?: string[]
 	pdfSources?: PdfSource[]
@@ -58,6 +68,18 @@ export type AgentPatContext = {
 // ─── Private utilities ────────────────────────────────────────────────────────
 
 async function loadSettings() {
+	// Upsert ensures a row always exists. Insert with real defaults on first creation
+	// so prompts are active immediately without requiring the user to visit settings.
+	await db
+		.insert(settings)
+		.values({
+			id: "local",
+			promptAgentpat: DEFAULT_PROMPT_AGENTPAT,
+			promptAskpat: DEFAULT_PROMPT_ASKPAT,
+			promptContext: DEFAULT_PROMPT_CONTEXT,
+			promptExtractpat: DEFAULT_PROMPT_EXTRACTPAT,
+		})
+		.onConflictDoNothing()
 	const [row] = await db.select().from(settings).where(eq(settings.id, "local"))
 	return row
 }
@@ -109,67 +131,80 @@ function formatDetails(assetType: string, details: string | null): string {
 // ─── Parts ────────────────────────────────────────────────────────────────────
 
 // Hardcoded personas — set the floor for behaviour. User instructions layer
-// on top via *Instructions() parts but cannot overwrite these.
+// on top but cannot overwrite these.
 
 function identityAgentPat() {
-	return "You are AgentPat, an expert AI patent attorney assistant. You help patent attorneys with patent prosecution, drafting, and analysis. Write in formal, precise language appropriate for patent practice."
+	return "# Identity\nYou are AgentPat, an expert AI patent attorney assistant. You help patent attorneys with patent prosecution, drafting, and analysis. Write in formal, precise language appropriate for patent practice."
 }
 
 function identityAskPat() {
-	return "You are AskPat, an AI writing assistant embedded in a patent document editor. Help edit and generate precise, formal patent text. Do not add unsupported factual claims. When editing claims, preserve structure unless explicitly instructed otherwise."
+	return "# Identity\nYou are AskPat, an AI writing assistant embedded in a patent document editor. Help edit and generate precise, formal patent text. Do not add unsupported factual claims. When editing claims, preserve structure unless explicitly instructed otherwise."
 }
 
-// Attorney/firm info from settings — structured lines, not free text.
+function identityExtractPat() {
+	return "# Identity\nYou are an expert patent document analyst. Extract structured data accurately and only from what is explicitly stated in the document. Do not infer or add information not present in the text."
+}
+
+// Attorney/firm info from settings — written as a sentence so it reads naturally
+// in context rather than as a data dump.
 function userContext(s: SettingsRow) {
 	if (!s) return null
-	const lines = [
-		s.name && `Attorney: ${s.name}`,
-		s.firm && `Firm: ${s.firm}`,
-		s.role && `Role: ${s.role}`,
-		s.jurisdiction && `Jurisdiction: ${s.jurisdiction}`,
-	].filter(Boolean)
-	return lines.length ? lines.join("\n") : null
+	if (!s.name && !s.firm) return null
+	const role = s.role ? ` (${s.role})` : ""
+	const firm = s.firm ? ` at ${s.firm}` : ""
+	const jurisdiction = s.jurisdiction ? `, practising before ${s.jurisdiction}` : ""
+	return `# Attorney\nYou are assisting ${s.name}${role}${firm}${jurisdiction}.`
 }
 
-// User-editable instructions per feature — flavour without overwriting identity.
+// User-editable instructions per feature — wrapped with a section heading.
 function agentPatInstructions(s: SettingsRow) {
-	return s?.promptAgentpat || null
+	const text = s?.promptAgentpat || null
+	return text ? `# Instructions\n${text}` : null
 }
 function askPatInstructions(s: SettingsRow) {
-	return s?.promptAskpat || null
+	const text = s?.promptAskpat || null
+	return text ? `# Instructions\n${text}` : null
 }
 function extractPatInstructions(s: SettingsRow) {
-	return s?.promptExtractpat || null
+	const text = s?.promptExtractpat || null
+	return text ? `# Instructions\n${text}` : null
 }
 
 // User-editable context shared across all features (style guides, preferences).
 function sharedContext(s: SettingsRow) {
-	return s?.promptContext || null
+	const text = s?.promptContext || null
+	return text ? `# Practice Preferences\n${text}` : null
 }
 
-// Active project name + jurisdiction/procedure context from PROJECT_CONFIGS.
+// Active project name + procedure context from PROJECT_CONFIGS + client info.
 function projectContext(project: AgentPatContext["project"]) {
 	if (!project) return null
 	const config = PROJECT_CONFIGS.find((c) => c.id === project.type)
 	const label = config?.label ?? project.type
-	const lines = [`## Project: ${project.name} (${label})`]
+	const lines = [`# Project: ${project.name} (${label})`]
 	if (config?.aiContext) lines.push(config.aiContext)
+	if (project.clientName || project.clientIndustry || project.clientPreferences) {
+		const industry = project.clientIndustry ? ` (${project.clientIndustry})` : ""
+		lines.push(`\n## Client\n${project.clientName}${industry} — the attorney is acting on behalf of this client.`)
+		if (project.clientPreferences)
+			lines.push(`\nClient preferences:\n${project.clientPreferences}`)
+	}
 	return lines.join("\n")
 }
 
 // All project assets — type labels, AI context, and extracted details.
-// [open] tag marks assets currently visible in the workspace.
+// [open] marks assets currently visible in the workspace.
 function assetToc(assets: AssetRow[], openIds: string[]) {
 	if (!assets.length) return null
 	const sections = assets.map((a) => {
 		const config = ASSET_CONFIGS.find((c) => c.id === a.type)
 		const typeLabel = config?.typeLabel ?? a.type
-		const header = `### ${a.title}${openIds.includes(a.id) ? " [open]" : ""}\nType: ${typeLabel}${a.date ? ` | ${a.date}` : ""}`
+		const header = `## ${a.title}${openIds.includes(a.id) ? " [open]" : ""}\nType: ${typeLabel}${a.date ? ` | ${a.date}` : ""}`
 		const context = config?.aiContext ? `Context: ${config.aiContext}` : ""
 		const details = formatDetails(a.type, a.details)
 		return [header, context, details].filter(Boolean).join("\n")
 	})
-	return `## Project Assets\n\n${sections.join("\n\n")}`
+	return `# Project Assets\n\n${sections.join("\n\n")}`
 }
 
 // Full Plate text of open artifact documents.
@@ -179,9 +214,9 @@ function openArtifacts(assets: AssetRow[], openIds: string[]) {
 	)
 	if (!artifacts.length) return null
 	const sections = artifacts.map(
-		(a) => `### ${a.title}\n${plateJsonToText(a.content)}`,
+		(a) => `## ${a.title}\n${plateJsonToText(a.content)}`,
 	)
-	return `## Open Documents (full content)\n\n${sections.join("\n\n")}`
+	return `# Open Documents\n\n${sections.join("\n\n")}`
 }
 
 // Text listing which PDFs are attached — always pair with buildFileParts().
@@ -196,20 +231,20 @@ function pdfList(pdfSources: PdfSource[], assets: AssetRow[]) {
 			return `- ${b.title}${config ? ` (${config.typeLabel})` : ""}`
 		})
 		.join("\n")
-	return `## Attached Source PDFs\n\nThe following source documents are attached as files — read them directly:\n${list}`
+	return `# Source Documents\n\nThe following source documents are attached as files — read them directly:\n${list}`
 }
 
 // AskPat: what type of document is being edited.
 function docTypeContext(assetType: string | undefined) {
 	if (!assetType) return null
 	const config = ASSET_CONFIGS.find((c) => c.id === assetType)
-	return config?.aiContext ? `Document context: ${config.aiContext}` : null
+	return config?.aiContext ? `# Document\n${config.aiContext}` : null
 }
 
 // Load-bearing infrastructure — drives suggestions, chat title, cost panel.
 // Hardcoded so user instructions can't accidentally omit it.
 function metadataInstruction() {
-	return "After providing your complete response, call generateMetadata exactly once as your final action. Provide exactly 3 short follow-up suggestions (under 8 words each), a concise chat title, and a one-sentence summary of your last response."
+	return "\n\nAfter providing your complete response, you MUST call generateMetadata exactly once as your final action. Provide exactly 3 short follow-up suggestions (under 8 words each), a concise chat title, and a one-sentence summary of your last response."
 }
 
 // Builds the binary file parts array for PDF attachment (not part of system text).
@@ -242,6 +277,7 @@ export async function buildAgentPatPrompt(
 		pdfList(pdfSources, allAssets),
 		metadataInstruction(),
 	])
+	console.log(`=====AgentPat====== \n ${system}`)
 
 	return { system, fileParts: buildFileParts(pdfSources) }
 }
@@ -250,18 +286,27 @@ export async function buildAskPatPrompt(ctx: {
 	assetType?: string
 }): Promise<string> {
 	const s = await loadSettings()
-	return assemble([
+	const system = assemble([
 		identityAskPat(),
 		userContext(s),
 		askPatInstructions(s),
 		sharedContext(s),
 		docTypeContext(ctx.assetType),
 	])
+
+	console.log(`=====AskPat====== \n ${system}`)
+	return system
 }
 
-export async function buildExtractPatPrompt(): Promise<string | undefined> {
+export async function buildExtractPatPrompt(): Promise<string> {
 	const s = await loadSettings()
-	return assemble([extractPatInstructions(s), sharedContext(s)]) || undefined
+	const system = assemble([
+		identityExtractPat(),
+		extractPatInstructions(s),
+		sharedContext(s),
+	])
+	console.log(`=====ExtractPat====== \n ${system}`)
+	return system
 }
 
 // ─── Model factory ────────────────────────────────────────────────────────────

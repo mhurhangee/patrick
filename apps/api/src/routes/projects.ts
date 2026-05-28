@@ -45,7 +45,13 @@ projectsRouter.post("/", async (c) => {
 })
 
 projectsRouter.put("/:id", async (c) => {
-	const body = await c.req.json<{ name?: string; type?: ProjectType }>()
+	const body = await c.req.json<{
+		name?: string
+		type?: ProjectType
+		clientName?: string
+		clientIndustry?: string
+		clientPreferences?: string
+	}>()
 	const patch = Object.fromEntries(
 		Object.entries(body).filter(([, v]) => v !== undefined),
 	)

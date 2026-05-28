@@ -25,6 +25,9 @@ export const projects = sqliteTable("projects", {
 		.$type<ProjectType>()
 		.notNull()
 		.default("us-non-final-oa-response"),
+	clientName: text("client_name").notNull().default(""),
+	clientIndustry: text("client_industry").notNull().default(""),
+	clientPreferences: text("client_preferences").notNull().default(""),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })

@@ -44,7 +44,7 @@ extractpatRouter.post("/extract", async (c) => {
 
 	const { output: object } = await generateText({
 		model,
-		system: systemStr || undefined,
+		system: systemStr,
 		output: Output.object({ schema }),
 		messages: [
 			{

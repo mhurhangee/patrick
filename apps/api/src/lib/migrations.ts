@@ -22,6 +22,9 @@ export const migrations: { name: string; sql: string }[] = [
 				id TEXT PRIMARY KEY,
 				name TEXT NOT NULL,
 				type TEXT NOT NULL DEFAULT 'us-non-final-oa-response',
+				client_name TEXT NOT NULL DEFAULT '',
+				client_industry TEXT NOT NULL DEFAULT '',
+				client_preferences TEXT NOT NULL DEFAULT '',
 				created_at INTEGER NOT NULL,
 				updated_at INTEGER NOT NULL
 			);

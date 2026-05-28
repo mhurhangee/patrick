@@ -1,11 +1,27 @@
-import { eq, settings } from "@patrickos/db"
+import {
+	DEFAULT_PROMPT_AGENTPAT,
+	DEFAULT_PROMPT_ASKPAT,
+	DEFAULT_PROMPT_CONTEXT,
+	DEFAULT_PROMPT_EXTRACTPAT,
+	eq,
+	settings,
+} from "@patrickos/db"
 import { Hono } from "hono"
 import { db } from "../lib/db"
 
 export const settingsRouter = new Hono()
 
 settingsRouter.get("/", async (c) => {
-	await db.insert(settings).values({ id: "local" }).onConflictDoNothing()
+	await db
+		.insert(settings)
+		.values({
+			id: "local",
+			promptAgentpat: DEFAULT_PROMPT_AGENTPAT,
+			promptAskpat: DEFAULT_PROMPT_ASKPAT,
+			promptContext: DEFAULT_PROMPT_CONTEXT,
+			promptExtractpat: DEFAULT_PROMPT_EXTRACTPAT,
+		})
+		.onConflictDoNothing()
 	const [row] = await db.select().from(settings).where(eq(settings.id, "local"))
 	return c.json(row)
 })

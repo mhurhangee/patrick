@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
 	Select,
 	SelectContent,
@@ -220,34 +221,69 @@ function EditProjectPanel({
 	isCurrent: boolean
 	onUpdate: (
 		id: string,
-		patch: { name?: string; type?: ProjectType },
+		patch: {
+			name?: string
+			type?: ProjectType
+			clientName?: string
+			clientIndustry?: string
+			clientPreferences?: string
+		},
 	) => Promise<ApiProject>
 	onDelete: (id: string) => Promise<void>
 	onOpen: () => void
 }) {
 	const [name, setName] = useState(project.name)
 	const [type, setType] = useState<ProjectType>(project.type)
+	const [clientName, setClientName] = useState(project.clientName)
+	const [clientIndustry, setClientIndustry] = useState(project.clientIndustry)
+	const [clientPreferences, setClientPreferences] = useState(
+		project.clientPreferences,
+	)
 	const [savedName, setSavedName] = useState(project.name)
 	const [savedType, setSavedType] = useState<ProjectType>(project.type)
+	const [savedClientName, setSavedClientName] = useState(project.clientName)
+	const [savedClientIndustry, setSavedClientIndustry] = useState(
+		project.clientIndustry,
+	)
+	const [savedClientPreferences, setSavedClientPreferences] = useState(
+		project.clientPreferences,
+	)
 	const { status, wrap } = useSaveButton()
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync on project identity change only
 	useEffect(() => {
 		setName(project.name)
 		setType(project.type)
+		setClientName(project.clientName)
+		setClientIndustry(project.clientIndustry)
+		setClientPreferences(project.clientPreferences)
 		setSavedName(project.name)
 		setSavedType(project.type)
+		setSavedClientName(project.clientName)
+		setSavedClientIndustry(project.clientIndustry)
+		setSavedClientPreferences(project.clientPreferences)
 	}, [project.id])
 
-	const isDirty = name !== savedName || type !== savedType
+	const isDirty =
+		name !== savedName ||
+		type !== savedType ||
+		clientName !== savedClientName ||
+		clientIndustry !== savedClientIndustry ||
+		clientPreferences !== savedClientPreferences
 
 	async function handleSave() {
 		const updated = await onUpdate(project.id, {
 			name: name.trim() || project.name,
 			type,
+			clientName,
+			clientIndustry,
+			clientPreferences,
 		})
 		setSavedName(updated.name)
 		setSavedType(updated.type)
+		setSavedClientName(updated.clientName)
+		setSavedClientIndustry(updated.clientIndustry)
+		setSavedClientPreferences(updated.clientPreferences)
 	}
 
 	const createdDate = new Date(project.createdAt).toLocaleDateString("en-US", {
@@ -299,7 +335,41 @@ function EditProjectPanel({
 					<p className="text-xs text-muted-foreground">
 						{getProjectConfig(type)?.description}
 					</p>
-					{/* TODO: add project notes section for context about the project, which can be referenced in chats and office action responses */}
+				</div>
+				<Separator />
+				<div className="flex flex-col gap-1">
+					<h3 className="text-sm font-medium">Client</h3>
+					<p className="text-xs text-muted-foreground">
+						Included in AI context for this project.
+					</p>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<Label htmlFor="edit-client-name">Client name</Label>
+					<Input
+						id="edit-client-name"
+						value={clientName}
+						onChange={(e) => setClientName(e.target.value)}
+						placeholder="Acme Corp"
+					/>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<Label htmlFor="edit-client-industry">Industry</Label>
+					<Input
+						id="edit-client-industry"
+						value={clientIndustry}
+						onChange={(e) => setClientIndustry(e.target.value)}
+						placeholder="Consumer electronics"
+					/>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<Label htmlFor="edit-client-preferences">Preferences</Label>
+					<Textarea
+						id="edit-client-preferences"
+						value={clientPreferences}
+						onChange={(e) => setClientPreferences(e.target.value)}
+						placeholder="Broad initial claims, conservative on amendments…"
+						className="min-h-[80px] text-sm"
+					/>
 				</div>
 			</div>
 
