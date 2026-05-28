@@ -5,13 +5,13 @@ import {
 	streamText,
 } from "ai"
 import { Hono } from "hono"
-import { createModel, loadSystemPrompt } from "../lib/patent-prompt"
+import { buildAskPatPrompt, createModel } from "../lib/patent-prompt"
 
 export const askpatRouter = new Hono()
 
 type ToolName = "edit" | "generate"
 
-function buildPrompt(
+function buildUserPrompt(
 	toolName: ToolName,
 	instruction: string,
 	selectedMarkdown: string | null,
@@ -26,7 +26,7 @@ function buildPrompt(
 	const docContext = documentMarkdown?.trim()
 		? `Current document:\n\n${documentMarkdown}\n\n`
 		: ""
-	return `${docContext}Task: ${instruction}. Continue seamlessly from where the document ends. Write in the same formal USPTO correspondence style. One to three sentences unless instructed otherwise.`
+	return `${docContext}Task: ${instruction}. Continue seamlessly from where the document ends. Write in the same formal patent correspondence style. One to three sentences unless instructed otherwise.`
 }
 
 askpatRouter.post("/command", async (c) => {
@@ -60,9 +60,10 @@ askpatRouter.post("/command", async (c) => {
 			? "edit"
 			: "generate"
 
+	const system = await buildAskPatPrompt({ assetType })
+
 	const model = createModel(provider, apiKey, modelId)
-	const systemPrompt = await loadSystemPrompt(assetType)
-	const prompt = buildPrompt(
+	const prompt = buildUserPrompt(
 		toolName,
 		instruction,
 		selectedMarkdown,
@@ -73,7 +74,7 @@ askpatRouter.post("/command", async (c) => {
 		execute: async ({ writer }) => {
 			writer.write({ type: "data-toolName", data: toolName })
 
-			const result = streamText({ model, system: systemPrompt, prompt })
+			const result = streamText({ model, system, prompt })
 			writer.merge(result.toUIMessageStream({ sendFinish: false }))
 		},
 	})
