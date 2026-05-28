@@ -60,7 +60,7 @@ export const api = {
 	},
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
-		create: (name: string, type: ProjectType = "office-action-response") =>
+		create: (name: string, type: ProjectType = "us-non-final-oa-response") =>
 			request<ApiProject>(
 				"/projects",
 				json({ name, type }, { method: "POST" }),
