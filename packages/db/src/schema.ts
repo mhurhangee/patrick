@@ -1,4 +1,5 @@
 import { blob, int, sqliteTable, text } from "drizzle-orm/sqlite-core"
+import type { AssetKind, AssetType } from "./asset-config"
 
 export const settings = sqliteTable("settings", {
 	id: text("id").primaryKey(),
@@ -15,22 +16,29 @@ export const settings = sqliteTable("settings", {
 	promptExtractpat: text("prompt_extractpat").notNull().default(""),
 })
 
-export type ProjectType =
-	| "office-action-response"
-	| "new-application"
-	| "appeal"
-	| "inventor-disclosure"
-	| "general"
+// --- Project types ---
+export type ProjectType = "office-action-response" | "general"
 
-export type AssetType =
-	| "office-action"
-	| "epo-examination-report"
-	| "patent-spec"
-	| "claims-draft"
-	| "response-draft"
+export type ProjectTypeConfig = {
+	label: string
+	description: string
+}
 
-export type AssetKind = "source" | "artifact"
+export const PROJECT_TYPE_CONFIG: Record<ProjectType, ProjectTypeConfig> = {
+	"office-action-response": {
+		label: "Office Action Response",
+		description: "Respond to a USPTO or EPO office action",
+	},
+	general: {
+		label: "General",
+		description: "General-purpose patent matter",
+	},
+}
 
+// --- Asset types (derived from ASSET_CONFIGS in asset-config.ts) ---
+export type { AssetKind, AssetType, SourceAssetType } from "./asset-config"
+
+// --- Projects ---
 export const projects = sqliteTable("projects", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
@@ -42,6 +50,7 @@ export const projects = sqliteTable("projects", {
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })
 
+// --- Chats ---
 export const chats = sqliteTable("chats", {
 	id: text("id").primaryKey(),
 	projectId: text("project_id")
@@ -63,6 +72,7 @@ export const chatMessages = sqliteTable("chat_messages", {
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 })
 
+// --- Assets ---
 export const assets = sqliteTable("assets", {
 	id: text("id").primaryKey(),
 	projectId: text("project_id")

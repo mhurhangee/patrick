@@ -1,16 +1,5 @@
-import type { ProjectType } from "@patrickos/db"
-import {
-	BookOpen,
-	Check,
-	FolderOpen,
-	Gavel,
-	Lightbulb,
-	Loader2,
-	Plus,
-	Scale,
-	Search,
-	Trash2,
-} from "lucide-react"
+import { PROJECT_TYPE_CONFIG, type ProjectType } from "@patrickos/db"
+import { Check, FolderOpen, Loader2, Plus, Search, Trash2 } from "lucide-react"
 import * as React from "react"
 import {
 	AlertDialog,
@@ -60,49 +49,8 @@ import {
 	SidebarProvider,
 } from "@/components/ui/sidebar"
 import type { ApiProject } from "@/lib/api"
-import { cn } from "@/lib/utils"
 
 // ─── Project type config ──────────────────────────────────────────────────────
-
-type ProjectTypeConfig = {
-	label: string
-	description: string
-	icon: React.ElementType
-	color: string
-}
-
-const PROJECT_TYPE_CONFIG: Record<ProjectType, ProjectTypeConfig> = {
-	"office-action-response": {
-		label: "Office Action Response",
-		description: "Respond to a USPTO or EPO office action",
-		icon: Gavel,
-		color: "text-red-500",
-	},
-	"new-application": {
-		label: "New Application",
-		description: "Draft a new patent application",
-		icon: BookOpen,
-		color: "text-blue-500",
-	},
-	appeal: {
-		label: "Appeal",
-		description: "Prepare an appeal brief",
-		icon: Scale,
-		color: "text-orange-500",
-	},
-	"inventor-disclosure": {
-		label: "Inventor Disclosure",
-		description: "Process and structure an inventor disclosure",
-		icon: Lightbulb,
-		color: "text-amber-500",
-	},
-	general: {
-		label: "General",
-		description: "General-purpose patent matter",
-		icon: FolderOpen,
-		color: "text-slate-500",
-	},
-}
 
 const PROJECT_TYPE_OPTIONS = Object.entries(PROJECT_TYPE_CONFIG).map(
 	([id, cfg]) => ({ id: id as ProjectType, label: cfg.label }),
@@ -280,7 +228,6 @@ function EditProjectPanel({
 	const [savedType, setSavedType] = React.useState<ProjectType>(project.type)
 	const { status, wrap } = useSaveButton()
 
-	// Sync when a different project is selected
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync on project identity change only
 	React.useEffect(() => {
 		setName(project.name)
@@ -312,13 +259,10 @@ function EditProjectPanel({
 		<div className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">
 				<div className="flex items-center gap-2">
-					<typeConfig.icon size={14} className={typeConfig.color} />
 					<h2 className="text-base font-semibold">{project.name}</h2>
 				</div>
 				<div className="flex items-center gap-2">
-					<p className="pl-6 py-0.5 text-xs text-muted-foreground">
-						{createdDate}
-					</p>
+					<p className="py-0.5 text-xs text-muted-foreground">{createdDate}</p>
 					<p className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
 						{typeConfig.label}
 					</p>
@@ -465,14 +409,12 @@ export function ProjectManagerDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			{/* Fix 1: Fixed overall container height to 560px match your design intent */}
 			<DialogContent className="overflow-hidden p-0 h-[560px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
 				<DialogTitle className="sr-only">Projects</DialogTitle>
 				<DialogDescription className="sr-only">
 					Manage your patent matters.
 				</DialogDescription>
 
-				{/* Fix 2: Explicitly tell SidebarProvider to fill full inner layout container height */}
 				<SidebarProvider
 					className="flex-1 h-full min-h-0 items-stretch"
 					style={{ "--sidebar-width": "13rem" } as React.CSSProperties}
@@ -501,7 +443,6 @@ export function ProjectManagerDialog({
 								<SidebarGroupContent>
 									<SidebarMenu>
 										{filtered.map((project) => {
-											const cfg = PROJECT_TYPE_CONFIG[project.type]
 											const isSelected =
 												panelState !== "empty" &&
 												panelState !== "new" &&
@@ -514,10 +455,6 @@ export function ProjectManagerDialog({
 														onClick={() => setPanelState({ id: project.id })}
 														className="gap-2 h-auto py-2"
 													>
-														<cfg.icon
-															size={13}
-															className={cn("shrink-0 mt-0.5", cfg.color)}
-														/>
 														<span className="flex-1 truncate text-left">
 															{project.name}
 														</span>

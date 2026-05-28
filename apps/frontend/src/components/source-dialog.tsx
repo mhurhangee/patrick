@@ -1,4 +1,10 @@
-import type { AssetType } from "@patrickos/db"
+import {
+	ASSET_CONFIGS,
+	type AssetType,
+	emptyDetails,
+	type FieldDef,
+	mergeExtracted,
+} from "@patrickos/db"
 import {
 	Check,
 	Clover,
@@ -39,22 +45,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { type ApiAsset, api, BASE_URL } from "@/lib/api"
-import {
-	ASSET_CONFIGS,
-	emptyDetails,
-	type FieldDef,
-	mergeExtracted,
-} from "@/lib/asset-config"
 import { cn } from "@/lib/utils"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-type SourceAssetType = "office-action" | "epo-examination-report"
-
-const SOURCE_TYPES = ASSET_CONFIGS.filter(
-	(c): c is (typeof ASSET_CONFIGS)[number] & { kind: "source" } =>
-		c.kind === "source",
-).map((c) => ({ id: c.id as SourceAssetType, label: c.typeLabel }))
+const SOURCE_TYPES = ASSET_CONFIGS.filter((c) => c.kind === "source").map(
+	(c) => ({ id: c.id, label: c.typeLabel }),
+)
 
 // ─── Save button hook ─────────────────────────────────────────────────────────
 
@@ -355,8 +350,8 @@ export function SourceDialog({
 				formData.append(
 					"title",
 					String(details.title ?? "").trim() ||
-						newFile?.name.replace(/\.pdf$/i, "") ||
-						"Untitled",
+					newFile?.name.replace(/\.pdf$/i, "") ||
+					"Untitled",
 				)
 				formData.append("type", type)
 				formData.append("kind", "source")

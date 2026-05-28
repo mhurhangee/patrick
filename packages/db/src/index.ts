@@ -1,3 +1,4 @@
 export { and, asc, desc, eq, gt, gte, lt, lte, ne, or, sql } from "drizzle-orm"
 export { drizzle as drizzleBunSqlite } from "drizzle-orm/bun-sqlite"
+export * from "./asset-config"
 export * from "./schema"

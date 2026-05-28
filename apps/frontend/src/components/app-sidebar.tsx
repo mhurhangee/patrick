@@ -1,3 +1,4 @@
+import { ASSET_CONFIGS } from "@patrickos/db"
 import { Link } from "@tanstack/react-router"
 import { ChevronsUpDown, Ellipsis, Plus, Settings2 } from "lucide-react"
 import * as React from "react"
@@ -22,7 +23,6 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { ApiAsset } from "@/lib/api"
-import { groupAssetsByKindAndType } from "@/lib/asset-config"
 import { cn } from "@/lib/utils"
 
 type Project = import("@/lib/api").ApiProject
@@ -69,7 +69,23 @@ export function AppSidebar({
 
 	const openSet = new Set(openTabIds)
 	const openChatSet = new Set(openChatIds)
-	const kindGroups = groupAssetsByKindAndType(assets)
+	const sorted = [...assets].sort((a, b) => a.date.localeCompare(b.date))
+	const assetGroups = [
+		{
+			kind: "source" as const,
+			label: "Sources",
+			items: sorted.filter((a) => a.kind === "source"),
+			onAdd: onAddSource,
+			addLabel: "Add source",
+		},
+		{
+			kind: "artifact" as const,
+			label: "Artifacts",
+			items: sorted.filter((a) => a.kind === "artifact"),
+			onAdd: onAddArtifact,
+			addLabel: "New artifact",
+		},
+	]
 	const sortedChats = [...chats].sort(
 		(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 	)
@@ -89,39 +105,33 @@ export function AppSidebar({
 						onClick={onManageProjects}
 						variant="ghost"
 						size="sm"
-						className="text-sm shrink-0 ml-2"
+						className="text-sm shrink-0"
 					>
+						<ChevronsUpDown
+							size={11}
+							className="shrink-0 text-muted-foreground"
+						/>
 						<span className="flex items-center">
 							{projectsLoading
 								? "Loading…"
 								: (currentProject?.name ?? "Select project")}
 						</span>
-						<ChevronsUpDown
-							size={11}
-							className="shrink-0 text-muted-foreground"
-						/>
 					</Button>
 				</div>
 			</SidebarHeader>
 
 			<SidebarContent>
 				{/* Sources + Artifacts */}
-				{kindGroups.map((kindGroup) => (
-					<SidebarGroup key={kindGroup.kind}>
-						<SidebarGroupLabel>{kindGroup.label}</SidebarGroupLabel>
+				{assetGroups.map(({ kind, label, items, onAdd, addLabel }) => (
+					<SidebarGroup key={kind}>
+						<SidebarGroupLabel>{label}</SidebarGroupLabel>
 						<SidebarGroupAction
-							title={
-								kindGroup.kind === "source" ? "Add source" : "New artifact"
-							}
-							onClick={
-								kindGroup.kind === "source" ? onAddSource : onAddArtifact
-							}
+							title={addLabel}
+							onClick={onAdd}
 							disabled={!currentProjectId}
 						>
 							<Plus />
-							<span className="sr-only">
-								{kindGroup.kind === "source" ? "Add source" : "New artifact"}
-							</span>
+							<span className="sr-only">{addLabel}</span>
 						</SidebarGroupAction>
 						<SidebarMenu>
 							{projectsLoading ? (
@@ -130,41 +140,40 @@ export function AppSidebar({
 									<Skeleton className="h-3 w-1/2" />
 								</div>
 							) : (
-								kindGroup.types.length === 0 && (
+								items.length === 0 && (
 									<p className="px-3 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-										No {kindGroup.label.toLowerCase()} yet.
+										No {label.toLowerCase()} yet.
 									</p>
 								)
 							)}
-							{kindGroup.types.flatMap((typeGroup) =>
-								typeGroup.assets.map((asset) => (
-									<SidebarMenuSubItem key={asset.id}>
-										<SidebarMenuAction
-											className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
-											onClick={(e) => {
-												e.stopPropagation()
-												onEdit(asset.id)
-											}}
+							{items.map((asset) => (
+								<SidebarMenuSubItem key={asset.id}>
+									<SidebarMenuAction
+										className="opacity-0 transition-opacity group-hover/menu-sub-item:opacity-100"
+										onClick={(e) => {
+											e.stopPropagation()
+											onEdit(asset.id)
+										}}
+									>
+										<Ellipsis size={10} />
+										<span className="sr-only">Edit asset</span>
+									</SidebarMenuAction>
+									<SidebarMenuSubButton
+										onClick={() => onOpen(asset.id)}
+										isActive={openSet.has(asset.id)}
+										className="flex items-center items-center justify-between h-6 gap-1.5 mr-4 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-2"
+									>
+										<span className="truncate">{asset.title}</span>
+										<Badge
+											variant="secondary"
+											className="shrink-0 text-xxs font-normal bg-primary/5 border border-primary/10 uppercase tracking-wider"
 										>
-											<Ellipsis size={10} />
-											<span className="sr-only">Edit asset</span>
-										</SidebarMenuAction>
-										<SidebarMenuSubButton
-											onClick={() => onOpen(asset.id)}
-											isActive={openSet.has(asset.id)}
-											className="flex items-center items-center justify-between h-6 gap-1.5 mr-4 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-2"
-										>
-											<span className="truncate">{asset.title}</span>
-											<Badge
-												variant="secondary"
-												className="shrink-0 text-xxs font-normal bg-primary/5 border border-primary/10 uppercase tracking-wider"
-											>
-												{typeGroup.label}
-											</Badge>
-										</SidebarMenuSubButton>
-									</SidebarMenuSubItem>
-								)),
-							)}
+											{ASSET_CONFIGS.find((c) => c.id === asset.type)
+												?.groupLabel ?? asset.type}
+										</Badge>
+									</SidebarMenuSubButton>
+								</SidebarMenuSubItem>
+							))}
 						</SidebarMenu>
 					</SidebarGroup>
 				))}
