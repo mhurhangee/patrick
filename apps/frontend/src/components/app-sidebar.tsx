@@ -178,7 +178,11 @@ export function AppSidebar({
 				{/* Chats */}
 				<SidebarGroup>
 					<SidebarGroupLabel>Chats</SidebarGroupLabel>
-					<SidebarGroupAction title="New chat" onClick={onNewChat}>
+					<SidebarGroupAction
+						title="New chat"
+						onClick={onNewChat}
+						disabled={!connectedToAI || !currentProjectId}
+					>
 						<Plus />
 						<span className="sr-only">New chat</span>
 					</SidebarGroupAction>

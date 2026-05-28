@@ -11,6 +11,7 @@ import type { ApiAsset, ApiChat } from "@patrickos/db"
 import { ArrowUp, Clover, Loader2, Plus, X } from "lucide-react"
 import {
 	Fragment,
+	type RefObject,
 	useEffect,
 	useLayoutEffect,
 	useMemo,
@@ -54,48 +55,98 @@ function getModelPricing(provider: string, modelId: string) {
 	return list?.find((m) => m.id === modelId)?.pricingPerM ?? null
 }
 
+// ─── Shared input bar ─────────────────────────────────────────────────────────
+
+function ChatInputBar({
+	openAssets,
+	onRemoveAsset,
+	input,
+	onInputChange,
+	onSend,
+	disabled,
+	textareaRef,
+}: {
+	openAssets: ApiAsset[]
+	onRemoveAsset: (id: string) => void
+	input: string
+	onInputChange: (value: string) => void
+	onSend: () => void
+	disabled?: boolean
+	textareaRef?: RefObject<HTMLTextAreaElement | null>
+}) {
+	return (
+		<div className="shrink-0 space-y-2 p-3">
+			{openAssets.length > 0 ? (
+				<div className="flex flex-wrap items-center gap-1">
+					{openAssets.map((asset) => (
+						<span
+							key={asset.id}
+							className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+						>
+							{asset.title}
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								onClick={() => onRemoveAsset(asset.id)}
+								className="h-auto w-auto p-0 hover:bg-transparent"
+							>
+								<X size={9} />
+							</Button>
+						</span>
+					))}
+				</div>
+			) : (
+				<div className="flex items-center pl-2 text-xs text-muted-foreground">
+					Open sources or artifacts for AI to use them
+				</div>
+			)}
+			<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
+				<Textarea
+					ref={textareaRef}
+					value={input}
+					onChange={(e) => onInputChange(e.target.value)}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" && !e.shiftKey) {
+							e.preventDefault()
+							onSend()
+						}
+					}}
+					disabled={disabled}
+					placeholder=""
+					className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+				/>
+				<div className="flex justify-end px-3 pb-2">
+					<Button
+						size="icon"
+						onClick={onSend}
+						disabled={disabled || !input.trim()}
+					>
+						<ArrowUp />
+					</Button>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 // ─── AgentPat pane ────────────────────────────────────────────────────────────
 
 function AgentPatPane({
 	onSend,
-	onOpenSettings,
 	openAssets,
 	onRemoveAsset,
 }: {
 	onSend: (message: string) => void
-	onOpenSettings: () => void
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 }) {
-	const { connectedToAI } = useAI()
 	const [input, setInput] = useState("")
 
-	function send(message: string) {
-		const trimmed = message.trim()
+	function send() {
+		const trimmed = input.trim()
 		if (!trimmed) return
 		onSend(trimmed)
 		setInput("")
-	}
-
-	if (!connectedToAI) {
-		return (
-			<div className="flex flex-1 min-h-0 items-center justify-center">
-				<Empty>
-					<EmptyHeader>
-						<EmptyMedia variant="icon">
-							<Clover className="text-muted-foreground/40" />
-						</EmptyMedia>
-						<EmptyTitle>AgentPat</EmptyTitle>
-						<EmptyDescription>
-							Connect an AI provider in Settings to start using AgentPat.
-						</EmptyDescription>
-					</EmptyHeader>
-					<Button size="sm" variant="outline" onClick={onOpenSettings}>
-						Open Settings
-					</Button>
-				</Empty>
-			</div>
-		)
 	}
 
 	return (
@@ -106,53 +157,13 @@ function AgentPatPane({
 					<EmptyDescription>Send a message to get started</EmptyDescription>
 				</EmptyHeader>
 			</Empty>
-			<div className="shrink-0 px-3">
-				{openAssets.length > 0 ? (
-					<div className="flex flex-wrap items-center gap-1">
-						{openAssets.map((asset) => (
-							<span
-								key={asset.id}
-								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-							>
-								{asset.title}
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									onClick={() => onRemoveAsset(asset.id)}
-									className="h-auto w-auto p-0 hover:bg-transparent"
-								>
-									<X size={9} />
-								</Button>
-							</span>
-						))}
-					</div>
-				) : (
-					<div className="flex items-center pl-2 text-xs text-muted-foreground">
-						Open sources or artifacts for AI to use them
-					</div>
-				)}
-			</div>
-			<div className="shrink-0 p-3">
-				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
-					<Textarea
-						value={input}
-						onChange={(e) => setInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && !e.shiftKey) {
-								e.preventDefault()
-								send(input)
-							}
-						}}
-						placeholder=""
-						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
-					/>
-					<div className="flex justify-end px-3 pb-2">
-						<Button size="icon" onClick={() => send(input)}>
-							<ArrowUp />
-						</Button>
-					</div>
-				</div>
-			</div>
+			<ChatInputBar
+				openAssets={openAssets}
+				onRemoveAsset={onRemoveAsset}
+				input={input}
+				onInputChange={setInput}
+				onSend={send}
+			/>
 		</div>
 	)
 }
@@ -540,57 +551,15 @@ function ChatPane({
 					})
 				)}
 			</div>
-			<div className="shrink-0 space-y-2 p-3">
-				{openAssets.length > 0 ? (
-					<div className="flex flex-wrap items-center gap-1">
-						{openAssets.map((asset) => (
-							<span
-								key={asset.id}
-								className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-							>
-								{asset.title}
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									onClick={() => onRemoveAsset(asset.id)}
-									className="h-auto w-auto p-0 hover:bg-transparent"
-								>
-									<X size={9} />
-								</Button>
-							</span>
-						))}
-					</div>
-				) : (
-					<div className="flex items-center pl-2 text-xs text-muted-foreground">
-						Open sources or artifacts for AI to use them
-					</div>
-				)}
-				<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
-					<Textarea
-						ref={textareaRef}
-						value={input}
-						onChange={(e) => setInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && !e.shiftKey) {
-								e.preventDefault()
-								send()
-							}
-						}}
-						disabled={isStreaming}
-						placeholder=""
-						className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
-					/>
-					<div className="flex justify-end px-3 pb-2">
-						<Button
-							size="icon"
-							onClick={send}
-							disabled={isStreaming || !input.trim()}
-						>
-							<ArrowUp />
-						</Button>
-					</div>
-				</div>
-			</div>
+			<ChatInputBar
+				openAssets={openAssets}
+				onRemoveAsset={onRemoveAsset}
+				input={input}
+				onInputChange={setInput}
+				onSend={send}
+				disabled={isStreaming}
+				textareaRef={textareaRef}
+			/>
 		</div>
 	)
 }
@@ -682,6 +651,7 @@ export function ChatPanel({
 	onOpenSettings: () => void
 	onChatTitleUpdate: (chatId: string, title: string) => void
 }) {
+	const { connectedToAI } = useAI()
 	const openChats = openChatIds
 		.map((id) => chats.find((c) => c.id === id))
 		.filter(Boolean) as ApiChat[]
@@ -752,6 +722,7 @@ export function ChatPanel({
 						size="xs"
 						onClick={onNewChat}
 						title="New chat"
+						disabled={!connectedToAI || !projectId}
 					>
 						<Plus size={12} />
 					</Button>
@@ -759,10 +730,40 @@ export function ChatPanel({
 			</div>
 
 			{/* Content */}
-			{activeChatId === "agentpat" || !activeChat ? (
+			{!connectedToAI ? (
+				<div className="flex flex-1 min-h-0 items-center justify-center">
+					<Empty>
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<Clover className="text-muted-foreground/40" />
+							</EmptyMedia>
+							<EmptyTitle>AgentPat</EmptyTitle>
+							<EmptyDescription>
+								Connect an AI provider in Settings to start using AgentPat.
+							</EmptyDescription>
+						</EmptyHeader>
+						<Button size="sm" variant="outline" onClick={onOpenSettings}>
+							Open Settings
+						</Button>
+					</Empty>
+				</div>
+			) : !projectId ? (
+				<div className="flex flex-1 min-h-0 items-center justify-center">
+					<Empty>
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<Clover className="text-muted-foreground/40" />
+							</EmptyMedia>
+							<EmptyTitle>No project selected</EmptyTitle>
+							<EmptyDescription>
+								Select or create a project to start chatting.
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
+				</div>
+			) : activeChatId === "agentpat" || !activeChat ? (
 				<AgentPatPane
 					onSend={onSendInAgentPat}
-					onOpenSettings={onOpenSettings}
 					openAssets={openAssets}
 					onRemoveAsset={onRemoveAsset}
 				/>
