@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react"
 import * as React from "react"
-import type { Chat } from "@/components/chat-panel"
+import type { ApiChat } from "@/lib/api"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -31,7 +31,7 @@ export function ChatMetaDialog({
 	onDeleted,
 }: {
 	open: boolean
-	chat: Chat | undefined
+	chat: ApiChat | undefined
 	onClose: () => void
 	onUpdated: (id: string, title: string) => void
 	onDeleted: (id: string) => void

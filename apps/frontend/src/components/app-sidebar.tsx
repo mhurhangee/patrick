@@ -2,7 +2,6 @@ import { ASSET_CONFIGS } from "@patrickos/db"
 import { Link } from "@tanstack/react-router"
 import { ChevronsUpDown, Ellipsis, Plus, Settings2 } from "lucide-react"
 import * as React from "react"
-import type { Chat } from "@/components/chat-panel"
 import { Logo } from "@/components/logo"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,10 +21,8 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { ApiAsset } from "@/lib/api"
+import type { ApiAsset, ApiChat, ApiProject } from "@/lib/api"
 import { cn } from "@/lib/utils"
-
-type Project = import("@/lib/api").ApiProject
 
 export function AppSidebar({
 	assets,
@@ -48,9 +45,9 @@ export function AppSidebar({
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
-	chats: Chat[]
+	chats: ApiChat[]
 	openChatIds: string[]
-	projects: Project[]
+	projects: ApiProject[]
 	projectsLoading: boolean
 	currentProjectId: string
 	onOpen: (id: string) => void

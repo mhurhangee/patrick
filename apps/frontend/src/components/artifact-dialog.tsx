@@ -1,4 +1,4 @@
-import type { AssetType } from "@patrickos/db"
+import { ASSET_CONFIGS, type AssetType } from "@patrickos/db"
 import { CalendarDays, Check, Loader2, Trash2 } from "lucide-react"
 import * as React from "react"
 import {
@@ -40,11 +40,9 @@ import { type ApiAsset, api } from "@/lib/api"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ARTIFACT_TYPES: { id: AssetType; label: string }[] = [
-	{ id: "patent-spec", label: "Patent Specification" },
-	{ id: "claims-draft", label: "Claims Draft" },
-	{ id: "response-draft", label: "Response Draft" },
-]
+const ARTIFACT_TYPES = ASSET_CONFIGS.filter((c) => c.kind === "artifact").map(
+	(c) => ({ id: c.id, label: c.typeLabel }),
+)
 
 function formatDisplayDate(iso: string) {
 	if (!iso) return "Pick a date"

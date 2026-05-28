@@ -1,8 +1,6 @@
 import * as React from "react"
 import { type ApiChat, api } from "@/lib/api"
 
-export type { ApiChat as Chat }
-
 export function useChatState(currentProjectId: string) {
 	const [chats, setChats] = React.useState<ApiChat[]>([])
 	const [openChatIds, setOpenChatIds] = React.useState<string[]>([])

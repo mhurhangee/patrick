@@ -20,8 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
 import { CURATED_MODELS, GATEWAY_DETAILED_MODELS } from "@/lib/ai-models"
-import { type ApiAsset, api, BASE_URL } from "@/lib/api"
-import type { Chat as ApiChat } from "@/lib/use-chat-state"
+import { type ApiAsset, type ApiChat, api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import {
 	ExchangePanel,
@@ -29,7 +28,6 @@ import {
 	StreamingSpacer,
 } from "./exchange-panel"
 
-export type { ApiChat as Chat }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 

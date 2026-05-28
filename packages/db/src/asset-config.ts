@@ -55,13 +55,13 @@ export const ASSET_CONFIGS = [
 		id: "claims-draft" as const,
 		kind: "artifact" as const,
 		groupLabel: "Claims",
-		typeLabel: "Claims",
+		typeLabel: "Claims Draft",
 	},
 	{
 		id: "response-draft" as const,
 		kind: "artifact" as const,
 		groupLabel: "Response",
-		typeLabel: "Response",
+		typeLabel: "Response Draft",
 	},
 ]
 
