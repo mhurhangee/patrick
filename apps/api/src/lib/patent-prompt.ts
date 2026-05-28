@@ -151,18 +151,14 @@ const BASE_SYSTEM =
 	"You are AskPat, an AI assistant for patent prosecution. You help patent attorneys draft responses to USPTO Office Actions. Write in formal, precise language appropriate for USPTO correspondence. Do not add unsupported factual claims. When editing claims, preserve structure unless explicitly instructed otherwise."
 
 const DOC_TYPE_CONTEXT: Record<string, string> = {
-	"claims-draft":
+	"us-amended-claims":
 		"The document being edited is a patent claims draft. Focus on precise claim language, proper antecedent basis, claim dependencies, and broadest reasonable interpretation.",
-	"patent-spec":
-		"The document being edited is a patent specification. Focus on clear technical description, enablement, written description requirements, and consistency with the claims.",
-	"office-action":
-		"The document being edited is a response to a patent office action. Focus on distinguishing cited prior art, persuasive arguments, and proposed claim amendments.",
-	"response-draft":
-		"The document being edited is an office action response draft. Maintain a professional, persuasive tone appropriate for USPTO correspondence.",
-	"inventor-disclosure":
-		"The document being edited is an inventor disclosure. Help capture the invention clearly, identify novel aspects, potential embodiments, and relevant prior art.",
-	"prior-art":
-		"The document being edited is a prior art analysis. Focus on accurate technical description and objective comparison to the claimed invention.",
+	"ep-amended-claims":
+		"The document being edited is a patent claims draft. Focus on precise claim language, proper antecedent basis, claim dependencies, and broadest reasonable interpretation.",
+	"us-response":
+		"The document being edited is a response to a USPTO office action. Focus on distinguishing cited prior art, persuasive arguments, and proposed claim amendments.",
+	"ep-response":
+		"The document being edited is a response to an EPO examination report. Focus on distinguishing cited prior art, persuasive arguments, and proposed claim amendments.",
 }
 
 export async function loadSystemPrompt(assetType?: string): Promise<string> {

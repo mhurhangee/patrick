@@ -1,5 +1,6 @@
 import { blob, int, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import type { AssetKind, AssetType } from "./asset-config"
+import type { ProjectType } from "./project-config"
 
 export const settings = sqliteTable("settings", {
 	id: text("id").primaryKey(),
@@ -16,28 +17,6 @@ export const settings = sqliteTable("settings", {
 	promptExtractpat: text("prompt_extractpat").notNull().default(""),
 })
 
-// --- Project types ---
-export type ProjectType = "office-action-response" | "general"
-
-export type ProjectTypeConfig = {
-	label: string
-	description: string
-}
-
-export const PROJECT_TYPE_CONFIG: Record<ProjectType, ProjectTypeConfig> = {
-	"office-action-response": {
-		label: "Office Action Response",
-		description: "Respond to a USPTO or EPO office action",
-	},
-	general: {
-		label: "General",
-		description: "General-purpose patent matter",
-	},
-}
-
-// --- Asset types (derived from ASSET_CONFIGS in asset-config.ts) ---
-export type { AssetKind, AssetType, SourceAssetType } from "./asset-config"
-
 // --- Projects ---
 export const projects = sqliteTable("projects", {
 	id: text("id").primaryKey(),
@@ -45,7 +24,7 @@ export const projects = sqliteTable("projects", {
 	type: text("type")
 		.$type<ProjectType>()
 		.notNull()
-		.default("office-action-response"),
+		.default("us-non-final-oa-response"),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	updatedAt: int("updated_at", { mode: "timestamp" }).notNull(),
 })
@@ -80,7 +59,7 @@ export const assets = sqliteTable("assets", {
 		.references(() => projects.id),
 	title: text("title").notNull(),
 	content: text("content").notNull().default(""),
-	type: text("type").$type<AssetType>().notNull().default("claims-draft"),
+	type: text("type").$type<AssetType>().notNull().default("us-response"),
 	kind: text("kind").$type<AssetKind>().notNull().default("artifact"),
 	date: text("date").notNull().default(""),
 	notes: text("notes").notNull().default(""),

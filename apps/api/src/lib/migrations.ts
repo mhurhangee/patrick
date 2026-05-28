@@ -21,7 +21,7 @@ export const migrations: { name: string; sql: string }[] = [
 			CREATE TABLE IF NOT EXISTS projects (
 				id TEXT PRIMARY KEY,
 				name TEXT NOT NULL,
-				type TEXT NOT NULL DEFAULT 'office-action-response',
+				type TEXT NOT NULL DEFAULT 'us-non-final-oa-response',
 				created_at INTEGER NOT NULL,
 				updated_at INTEGER NOT NULL
 			);
@@ -30,7 +30,7 @@ export const migrations: { name: string; sql: string }[] = [
 				project_id TEXT NOT NULL REFERENCES projects(id),
 				title TEXT NOT NULL,
 				content TEXT NOT NULL DEFAULT '',
-				type TEXT NOT NULL DEFAULT 'claims-draft',
+				type TEXT NOT NULL DEFAULT 'us-response',
 				kind TEXT NOT NULL DEFAULT 'artifact',
 				date TEXT NOT NULL DEFAULT '',
 				notes TEXT NOT NULL DEFAULT '',

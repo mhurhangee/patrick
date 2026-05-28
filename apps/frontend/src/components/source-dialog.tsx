@@ -3,8 +3,12 @@ import {
 	ASSET_CONFIGS,
 	type AssetType,
 	emptyDetails,
-	type FieldDef,
+	type FieldMeta,
+	getFormFields,
+	isExtractable,
 	mergeExtracted,
+	PROJECT_CONFIGS,
+	type ProjectType,
 } from "@patrickos/db"
 import {
 	Check,
@@ -48,10 +52,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-const SOURCE_TYPES = ASSET_CONFIGS.filter((c) => c.kind === "source").map(
-	(c) => ({ id: c.id, label: c.typeLabel }),
-)
-
 // ─── Save button hook ─────────────────────────────────────────────────────────
 
 type SaveStatus = "idle" | "saving" | "saved"
@@ -82,62 +82,71 @@ function useSaveButton() {
 
 // ─── Details field ────────────────────────────────────────────────────────────
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
 function DetailsField({
 	field,
 	value,
 	onChange,
 	isExtracting,
 }: {
-	field: FieldDef
+	field: FieldMeta
 	value: unknown
 	onChange: (v: unknown) => void
 	isExtracting: boolean
 }) {
 	const strVal = String(value ?? "")
 
-	const [rawJson, setRawJson] = useState(
-		field.complex ? JSON.stringify(value, null, 2) : "",
+	const [listText, setListText] = useState(() =>
+		field.inputType === "list" && Array.isArray(value) ? value.join("\n") : "",
 	)
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on value identity
 	useEffect(() => {
-		if (field.complex) setRawJson(JSON.stringify(value, null, 2))
+		if (field.inputType === "list") {
+			setListText(Array.isArray(value) ? value.join("\n") : "")
+		}
 	}, [JSON.stringify(value)])
 
-	const skeletonH = field.complex || field.multiline ? "h-20" : "h-9"
+	const isLarge = field.inputType === "list" || field.inputType === "textarea"
+	const dateInvalid =
+		field.inputType === "date" && strVal !== "" && !DATE_RE.test(strVal)
 
 	return (
 		<div className="flex flex-col gap-1.5">
 			<Label className="text-xs font-medium">{field.label}</Label>
 			{isExtracting ? (
-				<Skeleton className={cn("w-full", skeletonH)} />
-			) : field.complex ? (
+				<Skeleton className={cn("w-full", isLarge ? "h-20" : "h-9")} />
+			) : field.inputType === "list" ? (
 				<Textarea
-					className="font-mono text-xs resize-y"
-					rows={6}
-					value={rawJson}
+					className="resize-y"
+					rows={4}
+					placeholder="One item per line"
+					value={listText}
 					onChange={(e) => {
-						setRawJson(e.target.value)
-						try {
-							onChange(JSON.parse(e.target.value))
-						} catch {
-							// keep stale parsed value while JSON is mid-edit
-						}
+						setListText(e.target.value)
+						onChange(e.target.value.split("\n").filter((l) => l.trim() !== ""))
 					}}
 				/>
-			) : field.multiline ? (
+			) : field.inputType === "textarea" ? (
 				<Textarea
 					className="resize-y"
 					rows={3}
 					value={strVal}
 					onChange={(e) => onChange(e.target.value)}
 				/>
-			) : field.dateField ? (
-				<Input
-					type="date"
-					value={strVal}
-					onChange={(e) => onChange(e.target.value)}
-				/>
+			) : field.inputType === "date" ? (
+				<>
+					<Input
+						placeholder="YYYY-MM-DD"
+						value={strVal}
+						className={cn(dateInvalid && "border-destructive")}
+						onChange={(e) => onChange(e.target.value)}
+					/>
+					{dateInvalid && (
+						<p className="text-xs text-destructive">Use YYYY-MM-DD format</p>
+					)}
+				</>
 			) : (
 				<Input value={strVal} onChange={(e) => onChange(e.target.value)} />
 			)}
@@ -227,6 +236,7 @@ export function SourceDialog({
 	open,
 	onOpenChange,
 	projectId,
+	projectType,
 	provider,
 	apiKey,
 	model,
@@ -237,6 +247,7 @@ export function SourceDialog({
 	open: boolean
 	onOpenChange: (v: boolean) => void
 	projectId: string
+	projectType: ProjectType
 	provider: string
 	apiKey: string
 	model: string
@@ -245,15 +256,23 @@ export function SourceDialog({
 }) {
 	const isEdit = !!asset
 
+	const allowedTypes = PROJECT_CONFIGS.find(
+		(c) => c.id === projectType,
+	)?.allowedAssetTypes
+	const sourceTypes = ASSET_CONFIGS.filter(
+		(c) => c.kind === "source" && allowedTypes?.includes(c.id),
+	).map((c) => ({ id: c.id, label: c.typeLabel }))
+	const defaultSourceType = sourceTypes[0]?.id ?? "us-office-action"
+
 	// Form state
 	const [newFile, setNewFile] = useState<File | null>(null)
-	const [type, setType] = useState<AssetType>("office-action")
+	const [type, setType] = useState<AssetType>(defaultSourceType)
 	const [details, setDetails] = useState<Record<string, unknown>>(() =>
-		emptyDetails("office-action"),
+		emptyDetails(defaultSourceType),
 	)
 
 	// Edit mode: dirty tracking
-	const [savedType, setSavedType] = useState<AssetType>("office-action")
+	const [savedType, setSavedType] = useState<AssetType>(defaultSourceType)
 	const [savedDetails, setSavedDetails] = useState<Record<string, unknown>>({})
 
 	// Add mode: temp asset created during extract so we can update instead of re-upload
@@ -282,9 +301,9 @@ export function SourceDialog({
 			setDetails(merged)
 			setSavedDetails(merged)
 		} else {
-			setType("office-action")
-			setDetails(emptyDetails("office-action"))
-			setSavedType("office-action")
+			setType(defaultSourceType)
+			setDetails(emptyDetails(defaultSourceType))
+			setSavedType(defaultSourceType)
 			setSavedDetails({})
 		}
 		setNewFile(null)
@@ -311,9 +330,9 @@ export function SourceDialog({
 		type !== savedType ||
 		JSON.stringify(details) !== JSON.stringify(savedDetails)
 
-	const canExtract = !!apiKey
+	const canExtract = !!apiKey && isExtractable(type)
 	const isExtracting = extractState === "extracting"
-	const schema = ASSET_CONFIGS.find((c) => c.id === type)?.fields ?? []
+	const formFields = getFormFields(type)
 
 	function handleFile(f: File) {
 		setNewFile(f)
@@ -563,7 +582,7 @@ export function SourceDialog({
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{SOURCE_TYPES.map((t) => (
+											{sourceTypes.map((t) => (
 												<SelectItem key={t.id} value={t.id}>
 													{t.label}
 												</SelectItem>
@@ -573,11 +592,14 @@ export function SourceDialog({
 								</div>
 
 								{/* Schema-driven fields */}
-								{schema.map((field) => (
+								{formFields.map((field) => (
 									<DetailsField
 										key={field.key}
 										field={field}
-										value={details[field.key] ?? (field.complex ? [] : "")}
+										value={
+											details[field.key] ??
+											(field.inputType === "list" ? [] : "")
+										}
 										onChange={(v) =>
 											setDetails((prev) => ({ ...prev, [field.key]: v }))
 										}

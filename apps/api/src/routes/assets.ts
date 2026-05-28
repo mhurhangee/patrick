@@ -63,7 +63,7 @@ assetsRouter.post("/", async (c) => {
 		const file = form.get("file")
 		const projectId = form.get("projectId") as string
 		const title = form.get("title") as string
-		const type = (form.get("type") as AssetType) ?? "inventor-disclosure"
+		const type = (form.get("type") as AssetType) ?? "us-office-action"
 		const date = (form.get("date") as string) ?? ""
 		const notes = (form.get("notes") as string) ?? ""
 		const details = (form.get("details") as string) || null
@@ -98,7 +98,7 @@ assetsRouter.post("/", async (c) => {
 		projectId,
 		title,
 		content = "",
-		type = "claims-draft",
+		type = "us-response",
 		kind = "artifact",
 		date = "",
 		notes = "",

@@ -35,6 +35,9 @@ function WorkspacePage() {
 function WorkspaceContent() {
 	const ai = useAI()
 	const project = useProjectState()
+	const currentProjectType =
+		project.projects.find((p) => p.id === project.currentProjectId)?.type ??
+		"us-non-final-oa-response"
 	const asset = useAssetState(project.currentProjectId)
 	const chat = useChatState(project.currentProjectId)
 
@@ -165,6 +168,7 @@ function WorkspaceContent() {
 				open={asset.sourceDialogOpen}
 				onOpenChange={asset.setSourceDialogOpen}
 				projectId={project.currentProjectId}
+				projectType={currentProjectType}
 				provider={ai.provider}
 				apiKey={ai.apiKey}
 				model={ai.detailedModel}
@@ -176,6 +180,7 @@ function WorkspaceContent() {
 				open={asset.artifactDialogOpen}
 				onOpenChange={asset.setArtifactDialogOpen}
 				projectId={project.currentProjectId}
+				projectType={currentProjectType}
 				onSaved={asset.onArtifactSaved}
 				onDeleted={asset.deleteAsset}
 			/>

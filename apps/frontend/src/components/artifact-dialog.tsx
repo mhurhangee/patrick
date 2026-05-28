@@ -1,5 +1,10 @@
-import type { ApiAsset } from "@patrickos/db"
-import { ASSET_CONFIGS, type AssetType } from "@patrickos/db"
+import {
+	type ApiAsset,
+	ASSET_CONFIGS,
+	type AssetType,
+	PROJECT_CONFIGS,
+	type ProjectType,
+} from "@patrickos/db"
 import { CalendarDays, Check, Loader2, Trash2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -40,10 +45,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const ARTIFACT_TYPES = ASSET_CONFIGS.filter((c) => c.kind === "artifact").map(
-	(c) => ({ id: c.id, label: c.typeLabel }),
-)
 
 function formatDisplayDate(iso: string) {
 	if (!iso) return "Pick a date"
@@ -89,6 +90,7 @@ export function ArtifactDialog({
 	open,
 	onOpenChange,
 	projectId,
+	projectType,
 	onSaved,
 	onDeleted,
 }: {
@@ -96,19 +98,28 @@ export function ArtifactDialog({
 	open: boolean
 	onOpenChange: (v: boolean) => void
 	projectId: string
+	projectType: ProjectType
 	onSaved: (asset: ApiAsset) => void
 	onDeleted?: (id: string) => void
 }) {
 	const isEdit = !!asset
 
+	const allowedTypes = PROJECT_CONFIGS.find(
+		(c) => c.id === projectType,
+	)?.allowedAssetTypes
+	const artifactTypes = ASSET_CONFIGS.filter(
+		(c) => c.kind === "artifact" && allowedTypes?.includes(c.id),
+	).map((c) => ({ id: c.id, label: c.typeLabel }))
+	const defaultArtifactType = artifactTypes[0]?.id ?? "us-amended-claims"
+
 	const [title, setTitle] = useState("")
-	const [type, setType] = useState<AssetType>("claims-draft")
+	const [type, setType] = useState<AssetType>(defaultArtifactType)
 	const [date, setDate] = useState("")
 	const [notes, setNotes] = useState("")
 
 	// Edit mode: saved values for dirty tracking
 	const [savedTitle, setSavedTitle] = useState("")
-	const [savedType, setSavedType] = useState<AssetType>("claims-draft")
+	const [savedType, setSavedType] = useState<AssetType>(defaultArtifactType)
 	const [savedDate, setSavedDate] = useState("")
 	const [savedNotes, setSavedNotes] = useState("")
 
@@ -129,11 +140,11 @@ export function ArtifactDialog({
 			setSavedNotes(asset.notes)
 		} else {
 			setTitle("")
-			setType("claims-draft")
+			setType(defaultArtifactType)
 			setDate("")
 			setNotes("")
 			setSavedTitle("")
-			setSavedType("claims-draft")
+			setSavedType(defaultArtifactType)
 			setSavedDate("")
 			setSavedNotes("")
 		}
@@ -304,7 +315,7 @@ export function ArtifactDialog({
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									{ARTIFACT_TYPES.map((t) => (
+									{artifactTypes.map((t) => (
 										<SelectItem key={t.id} value={t.id}>
 											{t.label}
 										</SelectItem>

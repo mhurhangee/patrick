@@ -1,6 +1,6 @@
 import {
 	type ApiProject,
-	PROJECT_TYPE_CONFIG,
+	PROJECT_CONFIGS,
 	type ProjectType,
 } from "@patrickos/db"
 import { Check, FolderOpen, Loader2, Plus, Search, Trash2 } from "lucide-react"
@@ -53,11 +53,11 @@ import {
 	SidebarProvider,
 } from "@/components/ui/sidebar"
 
-// ─── Project type config ──────────────────────────────────────────────────────
+// ─── Project type helpers ─────────────────────────────────────────────────────
 
-const PROJECT_TYPE_OPTIONS = Object.entries(PROJECT_TYPE_CONFIG).map(
-	([id, cfg]) => ({ id: id as ProjectType, label: cfg.label }),
-)
+function getProjectConfig(id: ProjectType) {
+	return PROJECT_CONFIGS.find((c) => c.id === id)
+}
 
 // ─── useSaveButton ────────────────────────────────────────────────────────────
 
@@ -130,7 +130,7 @@ function NewProjectPanel({
 	onCreated: (project: ApiProject) => void
 }) {
 	const [name, setName] = useState("")
-	const [type, setType] = useState<ProjectType>("office-action-response")
+	const [type, setType] = useState<ProjectType>(PROJECT_CONFIGS[0].id)
 	const [creating, setCreating] = useState(false)
 
 	async function handleCreate() {
@@ -175,15 +175,15 @@ function NewProjectPanel({
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							{PROJECT_TYPE_OPTIONS.map((opt) => (
-								<SelectItem key={opt.id} value={opt.id}>
-									{opt.label}
+							{PROJECT_CONFIGS.map((cfg) => (
+								<SelectItem key={cfg.id} value={cfg.id}>
+									{cfg.label}
 								</SelectItem>
 							))}
 						</SelectContent>
 					</Select>
 					<p className="text-xs text-muted-foreground">
-						{PROJECT_TYPE_CONFIG[type].description}
+						{getProjectConfig(type)?.description}
 					</p>
 				</div>
 			</div>
@@ -256,8 +256,6 @@ function EditProjectPanel({
 		day: "numeric",
 	})
 
-	const typeConfig = PROJECT_TYPE_CONFIG[project.type]
-
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">
@@ -267,7 +265,7 @@ function EditProjectPanel({
 				<div className="flex items-center gap-2">
 					<p className="py-0.5 text-xs text-muted-foreground">{createdDate}</p>
 					<p className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-						{typeConfig.label}
+						{getProjectConfig(project.type)?.label ?? project.type}
 					</p>
 				</div>
 				{/* TODO: add number of sources/artifacts/chats */}
@@ -291,15 +289,15 @@ function EditProjectPanel({
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							{PROJECT_TYPE_OPTIONS.map((opt) => (
-								<SelectItem key={opt.id} value={opt.id}>
-									{opt.label}
+							{PROJECT_CONFIGS.map((cfg) => (
+								<SelectItem key={cfg.id} value={cfg.id}>
+									{cfg.label}
 								</SelectItem>
 							))}
 						</SelectContent>
 					</Select>
 					<p className="text-xs text-muted-foreground">
-						{PROJECT_TYPE_CONFIG[type].description}
+						{getProjectConfig(type)?.description}
 					</p>
 					{/* TODO: add project notes section for context about the project, which can be referenced in chats and office action responses */}
 				</div>

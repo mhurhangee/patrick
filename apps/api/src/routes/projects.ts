@@ -26,7 +26,7 @@ projectsRouter.get("/:id", async (c) => {
 })
 
 projectsRouter.post("/", async (c) => {
-	const { name, type = "office-action-response" } = await c.req.json<{
+	const { name, type = "us-non-final-oa-response" } = await c.req.json<{
 		name: string
 		type?: ProjectType
 	}>()
