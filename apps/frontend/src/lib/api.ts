@@ -1,61 +1,15 @@
-import type { AssetKind, AssetType, ProjectType } from "@patrickos/db"
+import type {
+	ApiAsset,
+	ApiChat,
+	ApiChatMessage,
+	ApiProject,
+	ApiSettings,
+	ProjectType,
+} from "@patrickos/db"
+
+export type { ApiAsset, ApiChat, ApiChatMessage, ApiProject, ApiSettings }
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
-
-export type ApiSettings = {
-	id: string
-	name: string
-	firm: string
-	role: string
-	jurisdiction: string
-	aiProvider: string
-	aiQuickModel: string
-	aiDetailedModel: string
-	promptContext: string
-	promptAskpat: string
-	promptAgentpat: string
-	promptExtractpat: string
-}
-
-export type ApiProject = {
-	id: string
-	name: string
-	type: ProjectType
-	createdAt: string
-	updatedAt: string
-}
-
-export type ApiChat = {
-	id: string
-	projectId: string
-	title: string
-	createdAt: string
-	updatedAt: string
-}
-
-export type ApiChatMessage = {
-	id: string
-	chatId: string
-	role: "user" | "assistant"
-	parts: unknown[]
-	metadata: Record<string, unknown>
-	createdAt: string
-}
-
-export type ApiAsset = {
-	id: string
-	projectId: string
-	title: string
-	content: string
-	type: AssetType
-	kind: AssetKind
-	date: string
-	notes: string
-	metadata: string
-	details: string | null
-	createdAt: string
-	updatedAt: string
-}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const res = await fetch(`${BASE_URL}${path}`, init)
