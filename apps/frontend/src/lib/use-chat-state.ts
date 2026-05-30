@@ -52,6 +52,14 @@ export function useChatState(currentProjectId: string) {
 		api.chats.update(id, title).catch(() => {})
 	}
 
+	function incrementMessageCount(chatId: string) {
+		setChats((prev) =>
+			prev.map((c) =>
+				c.id === chatId ? { ...c, messageCount: (c.messageCount ?? 0) + 1 } : c,
+			),
+		)
+	}
+
 	function sendInAgentPat(message: string) {
 		if (!currentProjectId) return
 		const id = crypto.randomUUID()
@@ -65,6 +73,7 @@ export function useChatState(currentProjectId: string) {
 				title,
 				createdAt: now,
 				updatedAt: now,
+				messageCount: 0,
 			},
 			...prev,
 		])
@@ -87,5 +96,6 @@ export function useChatState(currentProjectId: string) {
 		deleteChat,
 		updateChat,
 		sendInAgentPat,
+		incrementMessageCount,
 	}
 }

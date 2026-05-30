@@ -10,6 +10,7 @@ const buttonVariants = cva(
 		variants: {
 			variant: {
 				default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+				action: "bg-foreground text-background hover:bg-foreground/90 aria-expanded:bg-foreground/90",
 				outline:
 					"border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
 				secondary:
@@ -32,11 +33,12 @@ const buttonVariants = cva(
 				"icon-sm":
 					"size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
 				"icon-lg": "size-9",
+				"chip": "h-6 gap-1 rounded-full px-2 text-xxs in-data-[slot=button-group]:rounded-full has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
 			},
 		},
 		defaultVariants: {
 			variant: "default",
-			size: "default",
+			size: "sm",
 		},
 	},
 )

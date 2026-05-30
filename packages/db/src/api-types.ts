@@ -9,7 +9,9 @@ export type ApiAsset = SerialiseDate<
 
 export type ApiProject = SerialiseDate<InferSelectModel<typeof projects>>
 
-export type ApiChat = SerialiseDate<InferSelectModel<typeof chats>>
+export type ApiChat = SerialiseDate<InferSelectModel<typeof chats>> & {
+	messageCount?: number
+}
 
 export type ApiSettings = Omit<InferSelectModel<typeof settings>, "id">
 

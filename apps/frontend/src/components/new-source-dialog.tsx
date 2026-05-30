@@ -10,32 +10,14 @@ import {
 	PROJECT_CONFIGS,
 	type ProjectType,
 } from "@patrickos/db"
-import {
-	Check,
-	Clover,
-	FileText,
-	Loader2,
-	Trash2,
-	Upload,
-	X,
-} from "lucide-react"
+import { Clover, FileText, Loader2, Upload, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -49,38 +31,10 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { api, BASE_URL } from "@/lib/api"
+import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-// ─── Save button hook ─────────────────────────────────────────────────────────
-
-type SaveStatus = "idle" | "saving" | "saved"
-
-function useSaveButton() {
-	const [status, setStatus] = useState<SaveStatus>("idle")
-	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-
-	useEffect(() => {
-		return () => {
-			if (timerRef.current) clearTimeout(timerRef.current)
-		}
-	}, [])
-
-	async function wrap(fn: () => Promise<void>) {
-		setStatus("saving")
-		try {
-			await fn()
-			setStatus("saved")
-			timerRef.current = setTimeout(() => setStatus("idle"), 2000)
-		} catch {
-			setStatus("idle")
-		}
-	}
-
-	return { status, wrap }
-}
-
-// ─── Details field ────────────────────────────────────────────────────────────
+// ─── Shared sub-components ────────────────────────────────────────────────────
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -96,7 +50,6 @@ function DetailsField({
 	isExtracting: boolean
 }) {
 	const strVal = String(value ?? "")
-
 	const [listText, setListText] = useState(() =>
 		field.inputType === "list" && Array.isArray(value) ? value.join("\n") : "",
 	)
@@ -154,8 +107,6 @@ function DetailsField({
 	)
 }
 
-// ─── PDF drop zone ────────────────────────────────────────────────────────────
-
 function PdfDropZone({
 	file,
 	onFile,
@@ -170,11 +121,12 @@ function PdfDropZone({
 		[file],
 	)
 
-	useEffect(() => {
-		return () => {
+	useEffect(
+		() => () => {
 			if (objectUrl) URL.revokeObjectURL(objectUrl)
-		}
-	}, [objectUrl])
+		},
+		[objectUrl],
+	)
 
 	if (objectUrl) {
 		return (
@@ -227,12 +179,11 @@ function PdfDropZone({
 	)
 }
 
-// ─── Main dialog ──────────────────────────────────────────────────────────────
+// ─── New source dialog ────────────────────────────────────────────────────────
 
 type ExtractState = "idle" | "extracting" | "done" | "error"
 
-export function SourceDialog({
-	asset,
+export function NewSourceDialog({
 	open,
 	onOpenChange,
 	projectId,
@@ -240,10 +191,8 @@ export function SourceDialog({
 	provider,
 	apiKey,
 	model,
-	onSaved,
-	onDeleted,
+	onCreated,
 }: {
-	asset?: ApiAsset
 	open: boolean
 	onOpenChange: (v: boolean) => void
 	projectId: string
@@ -251,11 +200,8 @@ export function SourceDialog({
 	provider: string
 	apiKey: string
 	model: string
-	onSaved: (asset: ApiAsset) => void
-	onDeleted?: (id: string) => void
+	onCreated: (asset: ApiAsset) => void
 }) {
-	const isEdit = !!asset
-
 	const allowedTypes = PROJECT_CONFIGS.find(
 		(c) => c.id === projectType,
 	)?.allowedAssetTypes
@@ -264,58 +210,29 @@ export function SourceDialog({
 	).map((c) => ({ id: c.id, label: c.typeLabel }))
 	const defaultSourceType = sourceTypes[0]?.id ?? "us-office-action"
 
-	// Form state
-	const [newFile, setNewFile] = useState<File | null>(null)
+	const [file, setFile] = useState<File | null>(null)
 	const [type, setType] = useState<AssetType>(defaultSourceType)
 	const [details, setDetails] = useState<Record<string, unknown>>(() =>
 		emptyDetails(defaultSourceType),
 	)
-
-	// Edit mode: dirty tracking
-	const [savedType, setSavedType] = useState<AssetType>(defaultSourceType)
-	const [savedDetails, setSavedDetails] = useState<Record<string, unknown>>({})
-
-	// Add mode: temp asset created during extract so we can update instead of re-upload
 	const [tempAsset, setTempAsset] = useState<ApiAsset | null>(null)
-
-	// Status
 	const [saving, setSaving] = useState(false)
 	const [extractState, setExtractState] = useState<ExtractState>("idle")
 	const [extractError, setExtractError] = useState<string | null>(null)
-	const { status: saveStatus, wrap: wrapSave } = useSaveButton()
 
-	// Sync form state when dialog opens or asset switches
-	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on open/asset identity
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset on open only
 	useEffect(() => {
 		if (!open) return
-		if (asset) {
-			const t = asset.type as AssetType
-			setType(t)
-			setSavedType(t)
-			const merged = {
-				...emptyDetails(t),
-				...(asset.details
-					? (JSON.parse(asset.details) as Record<string, unknown>)
-					: {}),
-			}
-			setDetails(merged)
-			setSavedDetails(merged)
-		} else {
-			setType(defaultSourceType)
-			setDetails(emptyDetails(defaultSourceType))
-			setSavedType(defaultSourceType)
-			setSavedDetails({})
-		}
-		setNewFile(null)
+		setFile(null)
+		setType(defaultSourceType)
+		setDetails(emptyDetails(defaultSourceType))
 		setTempAsset(null)
 		setSaving(false)
 		setExtractState("idle")
 		setExtractError(null)
-	}, [open, asset?.id])
+	}, [open])
 
-	// In add mode: when type changes, preserve title/date/notes, reset type-specific fields
 	useEffect(() => {
-		if (isEdit) return
 		setDetails((prev) => ({
 			...emptyDetails(type),
 			title: prev.title ?? "",
@@ -324,51 +241,42 @@ export function SourceDialog({
 		}))
 		setExtractState("idle")
 		setExtractError(null)
-	}, [type, isEdit])
-
-	const isDirty =
-		type !== savedType ||
-		JSON.stringify(details) !== JSON.stringify(savedDetails)
+	}, [type])
 
 	const canExtract = !!apiKey && isExtractable(type)
 	const isExtracting = extractState === "extracting"
 	const formFields = getFormFields(type)
 
 	function handleFile(f: File) {
-		setNewFile(f)
+		setFile(f)
 		if (!String(details.title ?? "").trim()) {
 			setDetails((prev) => ({ ...prev, title: f.name.replace(/\.pdf$/i, "") }))
 		}
 	}
 
 	function handleClearFile() {
-		setNewFile(null)
-		if (!isEdit) setTempAsset(null)
+		setFile(null)
+		setTempAsset(null)
 		setExtractState("idle")
 		setExtractError(null)
 	}
 
 	async function handleExtract() {
-		if (!isEdit && !newFile) return
+		if (!file) return
 		setExtractState("extracting")
 		setExtractError(null)
 		try {
 			let targetId: string
-			if (asset) {
-				// Edit mode: re-extract from stored file
-				targetId = asset.id
-			} else if (tempAsset) {
-				// Add mode: already uploaded during a previous extract
+			if (tempAsset) {
 				targetId = tempAsset.id
 			} else {
-				// Add mode: upload first to get an asset ID
 				const formData = new FormData()
-				if (newFile) formData.append("file", newFile)
+				formData.append("file", file)
 				formData.append("projectId", projectId)
 				formData.append(
 					"title",
 					String(details.title ?? "").trim() ||
-						newFile?.name.replace(/\.pdf$/i, "") ||
+						file.name.replace(/\.pdf$/i, "") ||
 						"Untitled",
 				)
 				formData.append("type", type)
@@ -394,173 +302,68 @@ export function SourceDialog({
 	}
 
 	async function handleSave() {
+		if (!file) return
 		const titleVal =
 			String(details.title ?? "").trim() ||
-			newFile?.name.replace(/\.pdf$/i, "") ||
+			file.name.replace(/\.pdf$/i, "") ||
 			"Untitled"
 		const dateVal = String(details.date ?? "")
 		const notesVal = String(details.notes ?? "")
 		const detailsJson = JSON.stringify(details)
 
-		if (asset) {
-			// Edit mode: update in place, show save status
-			await wrapSave(async () => {
-				const updated = await api.assets.update(asset.id, {
+		setSaving(true)
+		try {
+			let saved: ApiAsset
+			if (tempAsset) {
+				saved = await api.assets.update(tempAsset.id, {
 					title: titleVal,
 					date: dateVal,
 					notes: notesVal,
 					type,
 					details: detailsJson,
 				})
-				setSavedType(updated.type as AssetType)
-				setSavedDetails(details)
-				onSaved(updated)
-			})
-		} else {
-			// Add mode: create and close
-			setSaving(true)
-			try {
-				let saved: ApiAsset
-				if (tempAsset) {
-					// Already uploaded during extract — just update fields
-					saved = await api.assets.update(tempAsset.id, {
-						title: titleVal,
-						date: dateVal,
-						notes: notesVal,
-						type,
-						details: detailsJson,
-					})
-				} else {
-					if (!newFile) return
-					const formData = new FormData()
-					formData.append("file", newFile)
-					formData.append("projectId", projectId)
-					formData.append("title", titleVal)
-					formData.append("type", type)
-					formData.append("kind", "source")
-					formData.append("date", dateVal)
-					formData.append("notes", notesVal)
-					formData.append("details", detailsJson)
-					saved = await api.assets.createSource(formData)
-				}
-				onSaved(saved)
-				onOpenChange(false)
-			} finally {
-				setSaving(false)
+			} else {
+				const formData = new FormData()
+				formData.append("file", file)
+				formData.append("projectId", projectId)
+				formData.append("title", titleVal)
+				formData.append("type", type)
+				formData.append("kind", "source")
+				formData.append("date", dateVal)
+				formData.append("notes", notesVal)
+				formData.append("details", detailsJson)
+				saved = await api.assets.createSource(formData)
 			}
+			onCreated(saved)
+			onOpenChange(false)
+		} finally {
+			setSaving(false)
 		}
 	}
-
-	// ── Render ────────────────────────────────────────────────────────────────
-
-	const saveButton = isEdit ? (
-		<Button
-			size="sm"
-			onClick={handleSave}
-			disabled={!isDirty || saveStatus === "saving"}
-		>
-			{saveStatus === "saving" ? (
-				<>
-					<Loader2 size={12} className="animate-spin" />
-					Saving…
-				</>
-			) : saveStatus === "saved" ? (
-				<>
-					<Check size={12} />
-					Saved
-				</>
-			) : (
-				"Save"
-			)}
-		</Button>
-	) : (
-		<Button size="sm" onClick={handleSave} disabled={!newFile || saving}>
-			{saving ? (
-				<>
-					<Loader2 size={12} className="animate-spin" />
-					Saving…
-				</>
-			) : (
-				"Save"
-			)}
-		</Button>
-	)
-
-	const deleteButton =
-		isEdit && onDeleted ? (
-			<AlertDialog>
-				<AlertDialogTrigger asChild>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="gap-1.5 text-destructive hover:text-destructive"
-					>
-						<Trash2 size={13} />
-						Delete source
-					</Button>
-				</AlertDialogTrigger>
-				<AlertDialogContent size="sm">
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete source?</AlertDialogTitle>
-						<AlertDialogDescription>
-							"{asset?.title}" will be permanently removed. This cannot be
-							undone.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							variant="destructive"
-							onClick={() => {
-								if (asset) {
-									onDeleted(asset.id)
-									onOpenChange(false)
-								}
-							}}
-						>
-							Delete
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-		) : null
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="overflow-hidden p-0 md:max-w-[1100px]">
-				<DialogTitle className="sr-only">
-					{isEdit ? "Edit Source" : "Add Source"}
-				</DialogTitle>
+				<DialogTitle className="sr-only">Add Source</DialogTitle>
 				<DialogDescription className="sr-only">
-					{isEdit
-						? "Edit source document details or re-extract."
-						: "Upload a PDF source document."}
+					Upload a PDF source document.
 				</DialogDescription>
 
 				<div className="flex" style={{ height: "min(840px, 85vh)" }}>
 					{/* Left — PDF */}
 					<div className="w-[45%] border-r bg-muted/30 p-3">
-						{isEdit && !newFile ? (
-							<iframe
-								src={`${BASE_URL}/assets/${asset.id}/file`}
-								title="PDF preview"
-								className="w-full h-full border-0 rounded"
-							/>
-						) : (
-							<PdfDropZone file={newFile} onFile={handleFile} />
-						)}
+						<PdfDropZone file={file} onFile={handleFile} />
 					</div>
 
 					{/* Right — form */}
-					<div className="flex flex-col flex-1">
-						{/* Header */}
-						<div className="h-12 shrink-0 flex items-center border-b px-4">
-							<span className="text-sm font-medium">
-								{isEdit ? (asset?.title ?? "Edit Source") : "Add Source"}
-							</span>
-						</div>
+					<div className="flex flex-col flex-1 overflow-hidden">
+						<DialogHeader className="shrink-0 border-b px-4 py-3">
+							<DialogTitle>Add Source</DialogTitle>
+							<DialogDescription>
+								Upload a PDF to add as a source.
+							</DialogDescription>
+						</DialogHeader>
 
-						{/* Body — scrollable */}
 						<div className="flex-1 overflow-y-auto">
 							<div className="flex flex-col gap-4 p-4">
 								{extractError && (
@@ -569,11 +372,8 @@ export function SourceDialog({
 									</p>
 								)}
 
-								{/* Type selector */}
 								<div className="flex flex-col gap-1.5">
-									<Label htmlFor="source-type" className="text-xs font-medium">
-										Type
-									</Label>
+									<Label htmlFor="source-type">Type</Label>
 									<Select
 										value={type}
 										onValueChange={(v) => setType(v as AssetType)}
@@ -591,7 +391,6 @@ export function SourceDialog({
 									</Select>
 								</div>
 
-								{/* Schema-driven fields */}
 								{formFields.map((field) => (
 									<DetailsField
 										key={field.key}
@@ -609,13 +408,9 @@ export function SourceDialog({
 							</div>
 						</div>
 
-						{/* Footer — always visible */}
-						<div className="h-14 shrink-0 border-t px-4 flex items-center gap-2">
-							{/* Left */}
+						<div className="shrink-0 border-t px-4 py-3 flex items-center gap-2">
 							<div className="flex-1">
-								{isEdit ? (
-									deleteButton
-								) : !newFile ? (
+								{!file ? (
 									<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 										<FileText size={13} />
 										No file selected
@@ -627,35 +422,34 @@ export function SourceDialog({
 										className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
 									>
 										<X size={11} />
-										{newFile.name}
+										{file.name}
 									</button>
 								)}
 							</div>
 
-							{/* Extract */}
 							{canExtract && (
 								<Button
-									size="sm"
 									variant="outline"
 									onClick={handleExtract}
-									disabled={(!isEdit && !newFile) || isExtracting || saving}
+									disabled={!file || isExtracting || saving}
 								>
 									{isExtracting ? (
-										<>
-											<Loader2 size={12} className="animate-spin" />
-											Extracting…
-										</>
+										<Loader2 size={12} className="animate-spin" />
 									) : (
 										<>
-											<Clover size={12} />
-											ExtractPat
+											<Clover size={12} /> ExtractPat
 										</>
 									)}
 								</Button>
 							)}
 
-							{/* Save */}
-							{saveButton}
+							<Button onClick={handleSave} disabled={!file || saving}>
+								{saving ? (
+									<Loader2 size={12} className="animate-spin" />
+								) : (
+									"Save"
+								)}
+							</Button>
 						</div>
 					</div>
 				</div>

@@ -7,7 +7,7 @@ import { SourceViewer } from "@/components/source-viewer"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
-	EmptyDescription,
+	EmptyContent,
 	EmptyHeader,
 	EmptyTitle,
 } from "@/components/ui/empty"
@@ -130,37 +130,35 @@ export function AssetViewer({
 		<div className="flex h-full flex-col overflow-hidden">
 			<div className="relative flex h-8 shrink-0 items-end bg-muted">
 				{/* border line — tabs with z-10 render on top of it */}
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
+				<div className="pointer-events-none absolute inset-x-0 bottom-0 bg-border" />
 				<div className="relative z-10 flex shrink-0 items-center self-stretch px-2">
 					<SidebarTrigger className="h-6 w-6" />
 				</div>
-				<div className="tab-scroll flex flex-1 items-end gap-0.5 overflow-x-auto px-1">
+				<div className="tab-scroll flex flex-1 items-end gap-1 overflow-x-auto px-1">
 					{openAssets.map((asset) => (
 						<div
 							key={asset.id}
 							className={cn(
-								"group relative flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
+								"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-3 pr-1 text-xs transition-colors cursor-default rounded-t-sm",
 								!splitView && activeTab === asset.id
-									? "z-10 border-border bg-background text-foreground"
-									: "border-transparent text-muted-foreground hover:text-foreground",
+									? "border-t-2 border-primary shadow-sm bg-background text-foreground"
+									: "border-t-2 border-primary/30 shadow-sm text-muted-foreground hover:text-foreground",
 							)}
 						>
-							<Button
-								variant="ghost"
-								size="xs"
+							<button
+								type="button"
 								onClick={() => onTabClick(asset.id)}
-								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
+								className="max-w-[120px] cursor-pointer truncate capitalize font-medium"
 							>
-								<span className="max-w-[120px] truncate">{asset.title}</span>
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon-xs"
+								{asset.title}
+							</button>
+							<button
+								type="button"
 								onClick={() => onTabClose(asset.id)}
-								className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+								className="shrink-0 opacity-0 transition-opacity group-hover/tab:opacity-100"
 							>
-								<X size={10} />
-							</Button>
+								<X size={8} />
+							</button>
 						</div>
 					))}
 					{openAssets.length >= 1 && (
@@ -195,9 +193,7 @@ export function AssetViewer({
 					<Empty className="max-w-xs border-0">
 						<EmptyHeader>
 							<EmptyTitle>Nothing open</EmptyTitle>
-							<EmptyDescription>
-								Open one from the sidebar to get started
-							</EmptyDescription>
+							<EmptyContent>Add or open docs from the sidebar</EmptyContent>
 						</EmptyHeader>
 					</Empty>
 				</div>

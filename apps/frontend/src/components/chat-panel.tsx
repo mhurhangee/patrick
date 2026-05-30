@@ -8,7 +8,7 @@ import {
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
 import type { ApiAsset, ApiChat } from "@patrickos/db"
-import { ArrowUp, Clover, Loader2, Plus, X } from "lucide-react"
+import { ArrowUp, Loader2, Plus, X } from "lucide-react"
 import {
 	Fragment,
 	type RefObject,
@@ -21,9 +21,9 @@ import {
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
+	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
-	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty"
 import { Textarea } from "@/components/ui/textarea"
@@ -60,6 +60,7 @@ function getModelPricing(provider: string, modelId: string) {
 function ChatInputBar({
 	openAssets,
 	onRemoveAsset,
+	onOpenAsset,
 	input,
 	onInputChange,
 	onSend,
@@ -68,6 +69,7 @@ function ChatInputBar({
 }: {
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
+	onOpenAsset: (id: string) => void
 	input: string
 	onInputChange: (value: string) => void
 	onSend: () => void
@@ -75,32 +77,8 @@ function ChatInputBar({
 	textareaRef?: RefObject<HTMLTextAreaElement | null>
 }) {
 	return (
-		<div className="shrink-0 space-y-2 p-3">
-			{openAssets.length > 0 ? (
-				<div className="flex flex-wrap items-center gap-1">
-					{openAssets.map((asset) => (
-						<span
-							key={asset.id}
-							className="flex items-center gap-1 rounded-md border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-						>
-							{asset.title}
-							<Button
-								variant="ghost"
-								size="icon-xs"
-								onClick={() => onRemoveAsset(asset.id)}
-								className="h-auto w-auto p-0 hover:bg-transparent"
-							>
-								<X size={9} />
-							</Button>
-						</span>
-					))}
-				</div>
-			) : (
-				<div className="flex items-center pl-2 text-xs text-muted-foreground">
-					Open sources or artifacts for AI to use them
-				</div>
-			)}
-			<div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring">
+		<div className="shrink-0 space-y-2 pb-3 px-3 pt-0">
+			<div className="rounded-lg border bg-transparent focus-within:ring-1 focus-within:ring-ring">
 				<Textarea
 					ref={textareaRef}
 					value={input}
@@ -115,7 +93,37 @@ function ChatInputBar({
 					placeholder=""
 					className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
 				/>
-				<div className="flex justify-end px-3 pb-2">
+
+				<div className="flex justify-between px-3 pb-2">
+					{openAssets.length === 0 ? (
+						<span className="select-none pl-1 text-xxs text-muted-foreground/40 pt-2">
+							Open docs are sent to the AI
+						</span>
+					) : (
+						<div className="flex flex-wrap items-center gap-1">
+							{openAssets.map((asset) => (
+								<span
+									key={asset.id}
+									className="group/chip inline-flex items-center gap-1"
+								>
+									<button
+										type="button"
+										onClick={() => onOpenAsset(asset.id)}
+										className="cursor-pointer capitalize truncate text-xxs font-medium text-muted-foreground hover:text-foreground"
+									>
+										{asset.title}
+									</button>
+									<button
+										type="button"
+										onClick={() => onRemoveAsset(asset.id)}
+										className="opacity-0 transition-opacity group-hover/chip:opacity-100 text-muted-foreground"
+									>
+										<X size={9} />
+									</button>
+								</span>
+							))}
+						</div>
+					)}
 					<Button
 						size="icon"
 						onClick={onSend}
@@ -135,10 +143,12 @@ function AgentPatPane({
 	onSend,
 	openAssets,
 	onRemoveAsset,
+	onOpenAsset,
 }: {
 	onSend: (message: string) => void
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
+	onOpenAsset: (id: string) => void
 }) {
 	const [input, setInput] = useState("")
 
@@ -154,12 +164,15 @@ function AgentPatPane({
 			<Empty className="max-w-xs mx-auto">
 				<EmptyHeader>
 					<EmptyTitle>AgentPat</EmptyTitle>
-					<EmptyDescription>Send a message to get started</EmptyDescription>
+					<EmptyContent>
+						Send a message to your AI patent assistant
+					</EmptyContent>
 				</EmptyHeader>
 			</Empty>
 			<ChatInputBar
 				openAssets={openAssets}
 				onRemoveAsset={onRemoveAsset}
+				onOpenAsset={onOpenAsset}
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
@@ -180,6 +193,7 @@ function ChatPane({
 	chatId,
 	openAssets,
 	onRemoveAsset,
+	onOpenAsset,
 	initialMessages,
 	initialMessage,
 	projectId,
@@ -187,10 +201,12 @@ function ChatPane({
 	apiKey,
 	detailedModel,
 	onTitleUpdate,
+	onMessageSent,
 }: {
 	chatId: string
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
+	onOpenAsset: (id: string) => void
 	initialMessages: UIMessage[]
 	initialMessage?: string | null
 	projectId: string
@@ -198,6 +214,7 @@ function ChatPane({
 	apiKey: string
 	detailedModel: string
 	onTitleUpdate: (title: string) => void
+	onMessageSent: () => void
 }) {
 	const openAssetIdsRef = useRef<string[]>([])
 	openAssetIdsRef.current = openAssets.map((a) => a.id)
@@ -239,6 +256,12 @@ function ChatPane({
 	})
 
 	const isStreaming = status === "streaming" || status === "submitted"
+
+	// Focus textarea on mount for new (empty) chats
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
+	useEffect(() => {
+		if (initialMessages.length === 0) textareaRef.current?.focus()
+	}, [])
 
 	// Measure scroll container once + whenever it resizes (user drags panel)
 	useEffect(() => {
@@ -356,6 +379,7 @@ function ChatPane({
 			title: a.title,
 		}))
 		sendMessage({ text: initialMessage })
+		onMessageSent()
 	}, [initialMessage])
 
 	function send() {
@@ -368,6 +392,7 @@ function ChatPane({
 		}))
 		sendMessage({ text: trimmed })
 		setInput("")
+		onMessageSent()
 	}
 
 	// isPanelExpanded is pure derived state — no useEffect, no async races.
@@ -479,7 +504,10 @@ function ChatPane({
 
 	return (
 		<div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-			<div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto">
+			<div
+				ref={scrollContainerRef}
+				className="min-h-0 flex-1 overflow-y-auto p-3"
+			>
 				{exchanges.length === 0 ? (
 					<p className="py-12 text-center text-sm text-muted-foreground">
 						No messages yet. Start the conversation below.
@@ -498,7 +526,7 @@ function ChatPane({
 									ref={isLatest ? lastUserMsgRef : null}
 									className="flex justify-end px-3 pt-3"
 								>
-									<div className="max-w-[88%] rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground">
+									<div className="max-w-[88%] font-medium  px-3 py-2 pb-6 text-sm text-foreground">
 										{exchange.userMsg.parts.map((part, i) => {
 											if (part.type !== "text") return null
 											return (
@@ -511,8 +539,8 @@ function ChatPane({
 
 								{/* Assistant message */}
 								{assistantMsg !== null && (
-									<div className="flex justify-start px-3 pt-3 pb-4">
-										<div className="prose prose-sm max-w-[88%] dark:prose-invert">
+									<div className="flex justify-start px-3 pt-3 pb-2">
+										<div className="prose prose-sm tracking-tight leading-normalS max-w-[88%] dark:prose-invert [&_h1]:text-[17px] [&_h1]:font-bold [&_h1]:mb-1.5 [&_h1]:mt-4 [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:mb-1 [&_h2]:mt-3 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:mb-0.5 [&_h3]:mt-2 [&_hr]:my-3 [&_hr]:border-border/40 [&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:my-0.5">
 											{assistantMsg.parts.map((part, i) => {
 												if (part.type !== "text") return null
 												const isLastPart = i === assistantMsg.parts.length - 1
@@ -554,6 +582,7 @@ function ChatPane({
 			<ChatInputBar
 				openAssets={openAssets}
 				onRemoveAsset={onRemoveAsset}
+				onOpenAsset={onOpenAsset}
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
@@ -572,12 +601,14 @@ function ChatPaneLoader({
 	chatId: string
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
+	onOpenAsset: (id: string) => void
 	initialMessage?: string | null
 	projectId: string
 	provider: string
 	apiKey: string
 	detailedModel: string
 	onTitleUpdate: (title: string) => void
+	onMessageSent: () => void
 }) {
 	const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(
 		null,
@@ -631,8 +662,10 @@ export function ChatPanel({
 	onSetActiveChat,
 	onSendInAgentPat,
 	onRemoveAsset,
+	onOpenAsset,
 	onOpenSettings,
 	onChatTitleUpdate,
+	onMessageSent,
 }: {
 	chats: ApiChat[]
 	openChatIds: string[]
@@ -648,8 +681,10 @@ export function ChatPanel({
 	onSetActiveChat: (id: string) => void
 	onSendInAgentPat: (message: string) => void
 	onRemoveAsset: (id: string) => void
+	onOpenAsset: (id: string) => void
 	onOpenSettings: () => void
 	onChatTitleUpdate: (chatId: string, title: string) => void
+	onMessageSent: (chatId: string) => void
 }) {
 	const { connectedToAI } = useAI()
 	const openChats = openChatIds
@@ -663,54 +698,32 @@ export function ChatPanel({
 			<div className="relative flex h-8 shrink-0 items-end gap-0.5 bg-muted px-1">
 				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
 
-				{/* AgentPat — fixed left, shrinks to icon when other tabs are open */}
-				<div
-					className={cn(
-						"relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
-						activeChatId === "agentpat"
-							? "border-border bg-background text-foreground"
-							: "border-transparent text-muted-foreground hover:text-foreground",
-					)}
-				>
-					<Button
-						variant="ghost"
-						size="xs"
-						onClick={() => onSetActiveChat("agentpat")}
-						className="gap-1.5"
-					>
-						<Clover className="size-4 shrink-0 text-primary" />
-						{openChatIds.length === 0 && <span>AgentPat</span>}
-					</Button>
-				</div>
-
-				{/* Open chat tabs */}
-				<div className="tab-scroll flex flex-1 items-end gap-0.5 overflow-x-auto">
+				{/* Open chat tabs — AgentPat first so all tabs share the same flex context */}
+				<div className="tab-scroll flex flex-1 items-end h-6 gap-0.5 overflow-x-auto">
 					{openChats.map((chat) => (
 						<div
 							key={chat.id}
 							className={cn(
-								"group relative flex shrink-0 items-center rounded-t-md border border-b-0 text-xs transition-colors",
+								"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-3 pr-1 text-xs transition-colors cursor-default rounded-t-sm",
 								activeChatId === chat.id
-									? "z-10 border-border bg-background text-foreground"
-									: "border-transparent text-muted-foreground hover:text-foreground",
+									? "border-t-2 border-primary shadow-sm bg-background text-foreground"
+									: "border-t-2 border-primary/30 shadow-sm text-muted-foreground hover:text-foreground",
 							)}
 						>
-							<Button
-								variant="ghost"
-								size="xs"
+							<button
+								type="button"
 								onClick={() => onSetActiveChat(chat.id)}
-								className="gap-1.5 rounded-none rounded-tl-md pr-0.5"
+								className="max-w-[120px] truncate cursor-pointer font-medium"
 							>
-								<span className="max-w-[120px] truncate">{chat.title}</span>
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon-xs"
+								{chat.title}
+							</button>
+							<button
+								type="button"
 								onClick={() => onCloseChat(chat.id)}
-								className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+								className="shrink-0 opacity-0 transition-opacity group-hover/tab:opacity-100"
 							>
-								<X size={10} />
-							</Button>
+								<X size={8} />
+							</button>
 						</div>
 					))}
 				</div>
@@ -719,7 +732,7 @@ export function ChatPanel({
 				<div className="relative z-10 flex shrink-0 items-center rounded-t-md border border-b-0 border-transparent text-muted-foreground transition-colors hover:text-foreground">
 					<Button
 						variant="ghost"
-						size="xs"
+						size="icon"
 						onClick={onNewChat}
 						title="New chat"
 						disabled={!connectedToAI || !projectId}
@@ -734,31 +747,14 @@ export function ChatPanel({
 				<div className="flex flex-1 min-h-0 items-center justify-center">
 					<Empty>
 						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<Clover className="text-muted-foreground/40" />
-							</EmptyMedia>
 							<EmptyTitle>AgentPat</EmptyTitle>
 							<EmptyDescription>
 								Connect an AI provider in Settings to start using AgentPat.
 							</EmptyDescription>
 						</EmptyHeader>
 						<Button size="sm" variant="outline" onClick={onOpenSettings}>
-							Open Settings
+							Settings
 						</Button>
-					</Empty>
-				</div>
-			) : !projectId ? (
-				<div className="flex flex-1 min-h-0 items-center justify-center">
-					<Empty>
-						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<Clover className="text-muted-foreground/40" />
-							</EmptyMedia>
-							<EmptyTitle>No project selected</EmptyTitle>
-							<EmptyDescription>
-								Select or create a project to start chatting.
-							</EmptyDescription>
-						</EmptyHeader>
 					</Empty>
 				</div>
 			) : activeChatId === "agentpat" || !activeChat ? (
@@ -766,6 +762,7 @@ export function ChatPanel({
 					onSend={onSendInAgentPat}
 					openAssets={openAssets}
 					onRemoveAsset={onRemoveAsset}
+					onOpenAsset={onOpenAsset}
 				/>
 			) : (
 				<ChatPaneLoader
@@ -773,12 +770,14 @@ export function ChatPanel({
 					chatId={activeChat.id}
 					openAssets={openAssets}
 					onRemoveAsset={onRemoveAsset}
+					onOpenAsset={onOpenAsset}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
 					projectId={projectId}
 					provider={provider}
 					apiKey={apiKey}
 					detailedModel={detailedModel}
 					onTitleUpdate={(title) => onChatTitleUpdate(activeChat.id, title)}
+					onMessageSent={() => onMessageSent(activeChat.id)}
 				/>
 			)}
 		</div>

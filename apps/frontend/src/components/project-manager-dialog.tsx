@@ -3,7 +3,7 @@ import {
 	PROJECT_CONFIGS,
 	type ProjectType,
 } from "@patrickos/db"
-import { Check, FolderOpen, Loader2, Plus, Search, Trash2 } from "lucide-react"
+import { Loader2, Search } from "lucide-react"
 import { type CSSProperties, useEffect, useRef, useState } from "react"
 import {
 	AlertDialog,
@@ -25,15 +25,12 @@ import {
 } from "@/components/ui/dialog"
 import {
 	Empty,
-	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
-	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
 	Select,
 	SelectContent,
@@ -53,14 +50,14 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 } from "@/components/ui/sidebar"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
-// ─── Project type helpers ─────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getProjectConfig(id: ProjectType) {
 	return PROJECT_CONFIGS.find((c) => c.id === id)
 }
-
-// ─── useSaveButton ────────────────────────────────────────────────────────────
 
 type SaveStatus = "idle" | "saving" | "saved"
 
@@ -68,11 +65,12 @@ function useSaveButton() {
 	const [status, setStatus] = useState<SaveStatus>("idle")
 	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-	useEffect(() => {
-		return () => {
+	useEffect(
+		() => () => {
 			if (timerRef.current) clearTimeout(timerRef.current)
-		}
-	}, [])
+		},
+		[],
+	)
 
 	async function wrap(fn: () => void | Promise<void>) {
 		setStatus("saving")
@@ -88,190 +86,99 @@ function useSaveButton() {
 	return { status, wrap }
 }
 
-function SaveButton({
-	status,
-	isDirty,
-	onClick,
-}: {
-	status: SaveStatus
-	isDirty: boolean
-	onClick: () => void
-}) {
-	return (
-		<Button
-			size="sm"
-			variant="outline"
-			onClick={onClick}
-			disabled={!isDirty || status === "saving"}
-		>
-			{status === "saving" ? (
-				<>
-					<Loader2 size={12} className="animate-spin" />
-					Saving…
-				</>
-			) : status === "saved" ? (
-				<>
-					<Check size={12} />
-					Saved
-				</>
-			) : (
-				"Save"
-			)}
-		</Button>
-	)
+// ─── Unified project form ─────────────────────────────────────────────────────
+
+type ProjectPatch = {
+	name?: string
+	type?: ProjectType
+	clientName?: string
+	clientIndustry?: string
+	clientPreferences?: string
 }
 
-// ─── New project panel ────────────────────────────────────────────────────────
-
-function NewProjectPanel({
+function ProjectForm({
+	project,
 	onCreate,
 	onCreated,
+	onUpdate,
+	onDelete,
 }: {
-	onCreate: (name: string, type: ProjectType) => Promise<ApiProject>
-	onCreated: (project: ApiProject) => void
+	project?: ApiProject
+	onCreate?: (name: string, type: ProjectType) => Promise<ApiProject>
+	onCreated?: (project: ApiProject) => void
+	onUpdate?: (id: string, patch: ProjectPatch) => Promise<ApiProject>
+	onDelete?: (id: string) => Promise<void>
 }) {
-	const [name, setName] = useState("")
-	const [type, setType] = useState<ProjectType>(PROJECT_CONFIGS[0].id)
+	const isEdit = !!project
+
+	const [name, setName] = useState(project?.name ?? "")
+	const [type, setType] = useState<ProjectType>(
+		project?.type ?? PROJECT_CONFIGS[0].id,
+	)
+	const [clientName, setClientName] = useState(project?.clientName ?? "")
+	const [clientIndustry, setClientIndustry] = useState(
+		project?.clientIndustry ?? "",
+	)
+	const [clientPreferences, setClientPreferences] = useState(
+		project?.clientPreferences ?? "",
+	)
+
+	const [savedName, setSavedName] = useState(project?.name ?? "")
+	const [savedType, setSavedType] = useState<ProjectType>(
+		project?.type ?? PROJECT_CONFIGS[0].id,
+	)
+	const [savedClientName, setSavedClientName] = useState(
+		project?.clientName ?? "",
+	)
+	const [savedClientIndustry, setSavedClientIndustry] = useState(
+		project?.clientIndustry ?? "",
+	)
+	const [savedClientPreferences, setSavedClientPreferences] = useState(
+		project?.clientPreferences ?? "",
+	)
+
 	const [creating, setCreating] = useState(false)
+	const [deleteOpen, setDeleteOpen] = useState(false)
+	const [deleting, setDeleting] = useState(false)
+	const { status: saveStatus, wrap } = useSaveButton()
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on project identity only
+	useEffect(() => {
+		setName(project?.name ?? "")
+		setType(project?.type ?? PROJECT_CONFIGS[0].id)
+		setClientName(project?.clientName ?? "")
+		setClientIndustry(project?.clientIndustry ?? "")
+		setClientPreferences(project?.clientPreferences ?? "")
+		setSavedName(project?.name ?? "")
+		setSavedType(project?.type ?? PROJECT_CONFIGS[0].id)
+		setSavedClientName(project?.clientName ?? "")
+		setSavedClientIndustry(project?.clientIndustry ?? "")
+		setSavedClientPreferences(project?.clientPreferences ?? "")
+	}, [project?.id])
+
+	const isDirty =
+		isEdit &&
+		(name !== savedName ||
+			type !== savedType ||
+			clientName !== savedClientName ||
+			clientIndustry !== savedClientIndustry ||
+			clientPreferences !== savedClientPreferences)
 
 	async function handleCreate() {
+		if (!onCreate || !onCreated) return
 		const trimmed = name.trim()
 		if (!trimmed) return
 		setCreating(true)
 		try {
-			const project = await onCreate(trimmed, type)
-			onCreated(project)
+			const created = await onCreate(trimmed, type)
+			onCreated(created)
 		} finally {
 			setCreating(false)
 		}
 	}
 
-	return (
-		<div className="flex flex-col gap-6">
-			<div className="flex flex-col gap-1">
-				<h2 className="text-sm font-semibold">New Project</h2>
-				<p className="text-xs text-muted-foreground">
-					Create a new patent matter.
-				</p>
-			</div>
-			<Separator />
-			<div className="flex flex-col gap-4">
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="new-project-name">Name</Label>
-					<Input
-						id="new-project-name"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="Smith Corp — Office Action 2024"
-						onKeyDown={(e) => {
-							if (e.key === "Enter") handleCreate()
-						}}
-						autoFocus
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="new-project-type">Type</Label>
-					<Select value={type} onValueChange={(v) => setType(v as ProjectType)}>
-						<SelectTrigger id="new-project-type">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{PROJECT_CONFIGS.map((cfg) => (
-								<SelectItem key={cfg.id} value={cfg.id}>
-									{cfg.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<p className="text-xs text-muted-foreground">
-						{getProjectConfig(type)?.description}
-					</p>
-				</div>
-			</div>
-			<div className="flex justify-end">
-				<Button
-					size="sm"
-					onClick={handleCreate}
-					disabled={!name.trim() || creating}
-				>
-					{creating ? (
-						<>
-							<Loader2 size={12} className="animate-spin" />
-							Creating…
-						</>
-					) : (
-						"Create project"
-					)}
-				</Button>
-			</div>
-		</div>
-	)
-}
-
-// ─── Edit project panel ───────────────────────────────────────────────────────
-
-function EditProjectPanel({
-	project,
-	isCurrent,
-	onUpdate,
-	onDelete,
-	onOpen,
-}: {
-	project: ApiProject
-	isCurrent: boolean
-	onUpdate: (
-		id: string,
-		patch: {
-			name?: string
-			type?: ProjectType
-			clientName?: string
-			clientIndustry?: string
-			clientPreferences?: string
-		},
-	) => Promise<ApiProject>
-	onDelete: (id: string) => Promise<void>
-	onOpen: () => void
-}) {
-	const [name, setName] = useState(project.name)
-	const [type, setType] = useState<ProjectType>(project.type)
-	const [clientName, setClientName] = useState(project.clientName)
-	const [clientIndustry, setClientIndustry] = useState(project.clientIndustry)
-	const [clientPreferences, setClientPreferences] = useState(
-		project.clientPreferences,
-	)
-	const [savedName, setSavedName] = useState(project.name)
-	const [savedType, setSavedType] = useState<ProjectType>(project.type)
-	const [savedClientName, setSavedClientName] = useState(project.clientName)
-	const [savedClientIndustry, setSavedClientIndustry] = useState(
-		project.clientIndustry,
-	)
-	const [savedClientPreferences, setSavedClientPreferences] = useState(
-		project.clientPreferences,
-	)
-	const { status, wrap } = useSaveButton()
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync on project identity change only
-	useEffect(() => {
-		setName(project.name)
-		setType(project.type)
-		setClientName(project.clientName)
-		setClientIndustry(project.clientIndustry)
-		setClientPreferences(project.clientPreferences)
-		setSavedName(project.name)
-		setSavedType(project.type)
-		setSavedClientName(project.clientName)
-		setSavedClientIndustry(project.clientIndustry)
-		setSavedClientPreferences(project.clientPreferences)
-	}, [project.id])
-
-	const isDirty =
-		name !== savedName ||
-		type !== savedType ||
-		clientName !== savedClientName ||
-		clientIndustry !== savedClientIndustry ||
-		clientPreferences !== savedClientPreferences
-
 	async function handleSave() {
+		if (!project || !onUpdate) return
 		const updated = await onUpdate(project.id, {
 			name: name.trim() || project.name,
 			type,
@@ -286,140 +193,186 @@ function EditProjectPanel({
 		setSavedClientPreferences(updated.clientPreferences)
 	}
 
-	const createdDate = new Date(project.createdAt).toLocaleDateString("en-US", {
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	})
+	async function handleDelete() {
+		if (!project || !onDelete) return
+		setDeleting(true)
+		try {
+			await onDelete(project.id)
+			setDeleteOpen(false)
+		} finally {
+			setDeleting(false)
+		}
+	}
 
 	return (
-		<div className="flex flex-col gap-6">
-			<div className="flex flex-col gap-1">
-				<div className="flex items-center gap-2">
-					<h2 className="text-base font-semibold">{project.name}</h2>
-				</div>
-				<div className="flex items-center gap-2">
-					<p className="py-0.5 text-xs text-muted-foreground">{createdDate}</p>
-					<p className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-						{getProjectConfig(project.type)?.label ?? project.type}
-					</p>
-				</div>
-				{/* TODO: add number of sources/artifacts/chats */}
+		<>
+			{/* Sticky header */}
+			<div className="shrink-0 border-b px-6 py-4">
+				<h2 className="text-base font-semibold font-heading">
+					{isEdit ? "Edit Project" : "New Project"}
+				</h2>
+				<p className="text-xs text-muted-foreground mt-0.5">
+					{isEdit
+						? project.name
+						: "Fill in the details to create a new matter."}
+				</p>
 			</div>
-			<div className="flex flex-col gap-4">
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="edit-project-name">Name</Label>
-					<Input
-						id="edit-project-name"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && isDirty) wrap(handleSave)
-						}}
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="edit-project-type">Type</Label>
-					<Select value={type} onValueChange={(v) => setType(v as ProjectType)}>
-						<SelectTrigger id="edit-project-type">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{PROJECT_CONFIGS.map((cfg) => (
-								<SelectItem key={cfg.id} value={cfg.id}>
-									{cfg.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<p className="text-xs text-muted-foreground">
-						{getProjectConfig(type)?.description}
-					</p>
-				</div>
-				<Separator />
-				<div className="flex flex-col gap-1">
-					<h3 className="text-sm font-medium">Client</h3>
-					<p className="text-xs text-muted-foreground">
-						Included in AI context for this project.
-					</p>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="edit-client-name">Client name</Label>
-					<Input
-						id="edit-client-name"
-						value={clientName}
-						onChange={(e) => setClientName(e.target.value)}
-						placeholder="Acme Corp"
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="edit-client-industry">Industry</Label>
-					<Input
-						id="edit-client-industry"
-						value={clientIndustry}
-						onChange={(e) => setClientIndustry(e.target.value)}
-						placeholder="Consumer electronics"
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="edit-client-preferences">Preferences</Label>
-					<Textarea
-						id="edit-client-preferences"
-						value={clientPreferences}
-						onChange={(e) => setClientPreferences(e.target.value)}
-						placeholder="Broad initial claims, conservative on amendments…"
-						className="min-h-[80px] text-sm"
-					/>
+
+			{/* Scrollable content */}
+			<div className="flex-1 overflow-y-auto px-6 py-4">
+				<div className="flex flex-col gap-4 max-w-md">
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="project-name">Name</Label>
+						<Input
+							id="project-name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Smith Corp — Office Action 2024"
+							autoFocus={!isEdit}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									if (isEdit && isDirty) wrap(handleSave)
+									else if (!isEdit) handleCreate()
+								}
+							}}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="project-type">Type</Label>
+						<Select
+							value={type}
+							onValueChange={(v) => setType(v as ProjectType)}
+						>
+							<SelectTrigger id="project-type">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{PROJECT_CONFIGS.map((cfg) => (
+									<SelectItem key={cfg.id} value={cfg.id}>
+										{cfg.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<p className="text-xs text-muted-foreground">
+							{getProjectConfig(type)?.description}
+						</p>
+					</div>
+
+					<Separator />
+
+					<div className="flex flex-col gap-1">
+						<h3 className="text-sm font-medium">Client</h3>
+						<p className="text-xs text-muted-foreground">
+							Included in AI context for this project.
+						</p>
+					</div>
+
+					<div className="grid grid-cols-2 gap-3">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="project-client-name">Client name</Label>
+							<Input
+								id="project-client-name"
+								value={clientName}
+								onChange={(e) => setClientName(e.target.value)}
+								placeholder="Acme Corp"
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="project-client-industry">Industry</Label>
+							<Input
+								id="project-client-industry"
+								value={clientIndustry}
+								onChange={(e) => setClientIndustry(e.target.value)}
+								placeholder="Consumer electronics"
+							/>
+						</div>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="project-client-preferences">Preferences</Label>
+						<Textarea
+							id="project-client-preferences"
+							value={clientPreferences}
+							onChange={(e) => setClientPreferences(e.target.value)}
+							placeholder="Broad initial claims, conservative on amendments…"
+							className="min-h-[80px] text-sm"
+						/>
+					</div>
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between">
-				<AlertDialog>
-					<AlertDialogTrigger asChild>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="w-fit gap-1.5 text-destructive hover:text-destructive"
-						>
-							<Trash2 size={13} />
-							Delete project
-						</Button>
-					</AlertDialogTrigger>
-					<AlertDialogContent size="sm">
-						<AlertDialogHeader>
-							<AlertDialogTitle>Delete project?</AlertDialogTitle>
-							<AlertDialogDescription>
-								"{project.name}" and all its sources and artifacts will be
-								permanently deleted. This cannot be undone.
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						<AlertDialogFooter>
-							<AlertDialogCancel>Cancel</AlertDialogCancel>
-							<AlertDialogAction
-								variant="destructive"
-								onClick={() => onDelete(project.id)}
-							>
-								Delete
-							</AlertDialogAction>
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
-				<div className="flex items-center gap-2">
-					<SaveButton
-						status={status}
-						isDirty={isDirty}
-						onClick={() => wrap(handleSave)}
-					/>
+			{/* Sticky footer */}
+			<div className="flex shrink-0 items-center justify-between border-t px-6 py-4">
+				{isEdit && onDelete ? (
+					<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+						<AlertDialogTrigger asChild>
+							<Button variant="destructive">Delete</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent size="sm">
+							<AlertDialogHeader>
+								<AlertDialogTitle>Delete project?</AlertDialogTitle>
+								<AlertDialogDescription>
+									<span className="font-semibold">{project.name}</span> and all
+									its contents will be permanently deleted. This cannot be
+									undone.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel disabled={deleting}>
+									Cancel
+								</AlertDialogCancel>
+								<AlertDialogAction
+									variant="destructive"
+									disabled={deleting}
+									onClick={(e) => {
+										e.preventDefault()
+										handleDelete()
+									}}
+								>
+									{deleting ? (
+										<Loader2 size={12} className="animate-spin" />
+									) : (
+										"Delete"
+									)}
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				) : (
+					<div />
+				)}
+
+				{isEdit ? (
 					<Button
-						size="sm"
-						variant={isCurrent ? "secondary" : "default"}
-						onClick={onOpen}
+						variant="outline"
+						disabled={!isDirty || saveStatus === "saving"}
+						onClick={() => wrap(handleSave)}
 					>
-						{isCurrent ? "Current project" : "Open project"}
+						{saveStatus === "saving" ? (
+							<Loader2 size={12} className="animate-spin" />
+						) : saveStatus === "saved" ? (
+							"Saved"
+						) : (
+							"Save"
+						)}
 					</Button>
-				</div>
+				) : (
+					<Button
+						variant="secondary"
+						disabled={!name.trim() || creating}
+						onClick={handleCreate}
+					>
+						{creating ? (
+							<Loader2 size={12} className="animate-spin" />
+						) : (
+							"Create"
+						)}
+					</Button>
+				)}
 			</div>
-		</div>
+		</>
 	)
 }
 
@@ -432,6 +385,7 @@ export function ProjectManagerDialog({
 	onOpenChange,
 	projects,
 	currentProjectId,
+	defaultPanel = "empty",
 	onSelect,
 	onCreate,
 	onUpdate,
@@ -441,23 +395,20 @@ export function ProjectManagerDialog({
 	onOpenChange: (v: boolean) => void
 	projects: ApiProject[]
 	currentProjectId: string
+	defaultPanel?: "empty" | "new"
 	onSelect: (id: string) => void
 	onCreate: (name: string, type: ProjectType) => Promise<ApiProject>
-	onUpdate: (
-		id: string,
-		patch: { name?: string; type?: ProjectType },
-	) => Promise<ApiProject>
+	onUpdate: (id: string, patch: ProjectPatch) => Promise<ApiProject>
 	onDelete: (id: string) => Promise<void>
 }) {
 	const [panelState, setPanelState] = useState<PanelState>("empty")
 	const [search, setSearch] = useState("")
 
-	// Select current project when dialog opens
 	useEffect(() => {
 		if (!open) return
 		setSearch("")
-		setPanelState(currentProjectId ? { id: currentProjectId } : "empty")
-	}, [open, currentProjectId])
+		setPanelState(currentProjectId ? { id: currentProjectId } : defaultPanel)
+	}, [open, currentProjectId, defaultPanel])
 
 	const filtered = projects.filter((p) =>
 		p.name.toLowerCase().includes(search.toLowerCase()),
@@ -468,19 +419,20 @@ export function ProjectManagerDialog({
 			? projects.find((p) => p.id === panelState.id)
 			: undefined
 
-	function handleOpen(id: string) {
-		onSelect(id)
-		onOpenChange(false)
-	}
-
 	async function handleDelete(id: string) {
 		await onDelete(id)
 		setPanelState("empty")
 	}
 
+	async function handleCreate(name: string, type: ProjectType) {
+		const project = await onCreate(name, type)
+		onSelect(project.id)
+		return project
+	}
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="overflow-hidden p-0 h-[560px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
+			<DialogContent className="overflow-hidden p-0 h-[600px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
 				<DialogTitle className="sr-only">Projects</DialogTitle>
 				<DialogDescription className="sr-only">
 					Manage your patent matters.
@@ -522,99 +474,72 @@ export function ProjectManagerDialog({
 											return (
 												<SidebarMenuItem key={project.id}>
 													<SidebarMenuButton
-														isActive={isSelected}
-														onClick={() => setPanelState({ id: project.id })}
-														className="gap-2 h-auto py-2"
+														onClick={() => {
+															setPanelState({ id: project.id })
+															onSelect(project.id)
+														}}
+														className={cn(
+															"rounded-none h-auto py-2",
+															isSelected
+																? "border-l-2 border-primary font-medium"
+																: project.id === currentProjectId
+																	? "border-l-2 border-primary/30"
+																	: "border-l-2 border-transparent",
+														)}
 													>
 														<span className="flex-1 truncate text-left">
 															{project.name}
 														</span>
-														{project.id === currentProjectId && (
-															<Check
-																size={11}
-																className="shrink-0 text-primary"
-															/>
-														)}
 													</SidebarMenuButton>
 												</SidebarMenuItem>
 											)
 										})}
 										{filtered.length === 0 && (
 											<p className="px-3 py-2 text-xs text-muted-foreground">
-												{search
-													? "No matches."
-													: "Your projects will appear here."}
+												{search ? "No matches." : "No projects yet."}
 											</p>
 										)}
 									</SidebarMenu>
 								</SidebarGroupContent>
 							</SidebarGroup>
 						</SidebarContent>
-						<SidebarFooter className="p-3 mt-auto">
-							{projects.length > 0 && (
-								<Button
-									variant={panelState === "new" ? "secondary" : "default"}
-									size="sm"
-									className="w-full gap-1.5"
-									onClick={() => setPanelState("new")}
-								>
-									<Plus size={13} />
-									New project
-								</Button>
-							)}
+						<SidebarFooter className="p-3">
+							<Button
+								variant="secondary"
+								className="w-full"
+								onClick={() => setPanelState("new")}
+							>
+								New project
+							</Button>
 						</SidebarFooter>
 					</Sidebar>
 
 					{/* Right — content */}
 					<main className="flex flex-1 flex-col h-full min-w-0 overflow-hidden bg-background">
-						{!selectedProject && (
-							<header className="flex h-12 shrink-0 items-center border-b px-4">
-								<span className="text-sm font-medium">
-									{panelState === "new" ? "New Project" : "Projects"}
-								</span>
-							</header>
-						)}
-						<div className="flex-1 overflow-y-auto p-6 flex flex-col min-h-0">
-							{panelState === "new" && (
-								<NewProjectPanel
-									onCreate={onCreate}
-									onCreated={(project) => setPanelState({ id: project.id })}
-								/>
-							)}
-							{panelState === "empty" && (
+						{panelState === "empty" ? (
+							<div className="flex flex-1 items-center justify-center">
 								<Empty>
 									<EmptyHeader>
-										<EmptyMedia variant="icon">
-											<FolderOpen />
-										</EmptyMedia>
-										<EmptyTitle>Use projects to organize your work</EmptyTitle>
+										<EmptyTitle>Select a project</EmptyTitle>
 										<EmptyDescription>
-											Create one to get started.
+											Pick one from the list or create a new one.
 										</EmptyDescription>
 									</EmptyHeader>
-									<EmptyContent>
-										<Button
-											variant="default"
-											size="sm"
-											onClick={() => setPanelState("new")}
-										>
-											<Plus size={13} />
-											New project
-										</Button>
-									</EmptyContent>
 								</Empty>
-							)}
-							{selectedProject && (
-								<EditProjectPanel
-									key={selectedProject.id}
-									project={selectedProject}
-									isCurrent={selectedProject.id === currentProjectId}
-									onUpdate={onUpdate}
-									onDelete={handleDelete}
-									onOpen={() => handleOpen(selectedProject.id)}
-								/>
-							)}
-						</div>
+							</div>
+						) : panelState === "new" ? (
+							<ProjectForm
+								onCreate={handleCreate}
+								onCreated={(project) => setPanelState({ id: project.id })}
+							/>
+						) : selectedProject ? (
+							<ProjectForm
+								key={selectedProject.id}
+								project={selectedProject}
+								onUpdate={onUpdate}
+								onDelete={handleDelete}
+							/>
+						) : null}
 					</main>
 				</SidebarProvider>
 			</DialogContent>

@@ -1,4 +1,12 @@
-import { asc, assets, chatMessages, chats, eq, projects } from "@patrickos/db"
+import {
+	asc,
+	assets,
+	chatMessages,
+	chats,
+	eq,
+	projects,
+	sql,
+} from "@patrickos/db"
 import type { ModelMessage } from "ai"
 import { createAgentUIStreamResponse, ToolLoopAgent, tool } from "ai"
 import { Hono } from "hono"
@@ -36,7 +44,14 @@ chatsRouter.get("/", async (c) => {
 	const projectId = c.req.query("projectId")
 	if (!projectId) return c.json({ error: "projectId required" }, 400)
 	const rows = await db
-		.select()
+		.select({
+			id: chats.id,
+			projectId: chats.projectId,
+			title: chats.title,
+			createdAt: chats.createdAt,
+			updatedAt: chats.updatedAt,
+			messageCount: sql<number>`(select count(*) from chat_messages where chat_id = ${chats.id} and role = 'user')`,
+		})
 		.from(chats)
 		.where(eq(chats.projectId, projectId))
 	return c.json(rows)
