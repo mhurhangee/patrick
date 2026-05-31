@@ -121,9 +121,11 @@ export function ChatMetaDialog({
 			}}
 		>
 			<DialogContent className="flex flex-col overflow-hidden p-0 sm:max-w-[400px]">
-				<DialogHeader className="shrink-0 border-b px-6 py-4">
+				<DialogHeader>
 					<DialogTitle>Edit Chat</DialogTitle>
-					<DialogDescription>{chat?.title}</DialogDescription>
+					<DialogDescription>
+						Rename your chat and view its statistics.
+					</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex-1 overflow-y-auto px-6 py-4">

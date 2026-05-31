@@ -152,9 +152,11 @@ export function EditArtifactDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex flex-col overflow-hidden p-0 sm:max-w-[440px]">
-				<DialogHeader className="shrink-0 border-b px-6 py-4">
+				<DialogHeader>
 					<DialogTitle>Edit Artifact</DialogTitle>
-					<DialogDescription>{asset.title}</DialogDescription>
+					<DialogDescription>
+						Edit the artifact's details and save your changes.
+					</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex-1 overflow-y-auto px-6 py-4">

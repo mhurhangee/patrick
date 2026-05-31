@@ -61,5 +61,7 @@ extractpatRouter.post("/extract", async (c) => {
 		],
 	})
 
+	console.log("Extracted PAT object:", object)
+
 	return c.json({ extracted: object, assetType: asset.type })
 })

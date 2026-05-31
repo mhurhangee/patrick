@@ -148,23 +148,18 @@ export function AppSidebar({
 												const isInView = splitView
 													? openSet.has(asset.id)
 													: asset.id === activeTabId
+
 												if (isInView) onClose(asset.id)
 												else onOpen(asset.id)
 											}}
 											className={cn(
 												"flex items-center justify-between h-5 rounded-none gap-1.5 mr-2",
-												splitView
-													? openSet.has(asset.id)
-														? "border-l-2 border-primary pl-2 font-medium"
-														: ""
-													: asset.id === activeTabId
-														? "border-l-2 border-primary pl-2 font-medium"
-														: openSet.has(asset.id)
-															? "border-l-2 border-primary/30 pl-2"
-															: "",
 											)}
 										>
-											<span className="capitalize">{asset.title}</span>
+											<span className="capitalize min-w-0 flex-1 truncate">
+												{asset.title}
+											</span>
+
 											<Badge
 												variant="secondary"
 												className="shrink-0 text-xxs font-normal cursor-pointer hover:bg-secondary/80"

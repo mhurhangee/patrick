@@ -1,14 +1,11 @@
 import type { ApiAsset } from "@patrickos/db"
 import {
-	ASSET_CONFIGS,
 	type AssetType,
 	emptyDetails,
 	type FieldMeta,
 	getFormFields,
 	isExtractable,
 	mergeExtracted,
-	PROJECT_CONFIGS,
-	type ProjectType,
 } from "@patrickos/db"
 import { Clover, Loader2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -33,17 +30,11 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { SourceViewer } from "./source-viewer"
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
@@ -150,7 +141,6 @@ export function EditSourceDialog({
 	asset,
 	open,
 	onOpenChange,
-	projectType,
 	provider,
 	apiKey,
 	model,
@@ -160,20 +150,12 @@ export function EditSourceDialog({
 	asset: ApiAsset
 	open: boolean
 	onOpenChange: (v: boolean) => void
-	projectType: ProjectType
 	provider: string
 	apiKey: string
 	model: string
 	onSaved: (asset: ApiAsset) => void
 	onDeleted: (id: string) => void
 }) {
-	const allowedTypes = PROJECT_CONFIGS.find(
-		(c) => c.id === projectType,
-	)?.allowedAssetTypes
-	const sourceTypes = ASSET_CONFIGS.filter(
-		(c) => c.kind === "source" && allowedTypes?.includes(c.id),
-	).map((c) => ({ id: c.id, label: c.typeLabel }))
-
 	const [type, setType] = useState<AssetType>(asset.type)
 	const [details, setDetails] = useState<Record<string, unknown>>(() => ({
 		...emptyDetails(asset.type),
@@ -265,24 +247,19 @@ export function EditSourceDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="overflow-hidden p-0 md:max-w-[1100px]">
-				<DialogTitle className="sr-only">Edit Source</DialogTitle>
-				<DialogDescription className="sr-only">{asset.title}</DialogDescription>
-
 				<div className="flex" style={{ height: "min(840px, 85vh)" }}>
 					{/* Left — PDF preview */}
-					<div className="w-[45%] border-r bg-muted/30 p-3">
-						<iframe
-							src={`${BASE_URL}/assets/${asset.id}/file`}
-							title="PDF preview"
-							className="w-full h-full border-0 rounded"
-						/>
+					<div className="w-[45%] border-r overflow-hidden">
+						<SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
 					</div>
 
 					{/* Right — form */}
 					<div className="flex flex-col flex-1 overflow-hidden">
-						<DialogHeader className="shrink-0 border-b px-4 py-3">
+						<DialogHeader>
 							<DialogTitle>Edit Source</DialogTitle>
-							<DialogDescription>{asset.title}</DialogDescription>
+							<DialogDescription>
+								Edit the source's details and save your changes.
+							</DialogDescription>
 						</DialogHeader>
 
 						<div className="flex-1 overflow-y-auto">
@@ -292,25 +269,6 @@ export function EditSourceDialog({
 										{extractError}
 									</p>
 								)}
-
-								<div className="flex flex-col gap-1.5">
-									<Label htmlFor="source-type">Type</Label>
-									<Select
-										value={type}
-										onValueChange={(v) => setType(v as AssetType)}
-									>
-										<SelectTrigger id="source-type">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{sourceTypes.map((t) => (
-												<SelectItem key={t.id} value={t.id}>
-													{t.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
 
 								{formFields.map((field) => (
 									<DetailsField

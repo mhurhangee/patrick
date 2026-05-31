@@ -27,6 +27,7 @@ export const DEFAULT_PROMPT_EXTRACTPAT = `## Do
 - Classify document type accurately (office action, prior art, disclosure, etc.)
 - Identify the primary inventor, applicant, and examiner where present
 - Note key claim elements and rejection grounds
+- For _locations: for each field you extract, record the page number and your best estimate of where on that page the relevant text appears — provide all three coordinate systems (zone, yPercent, thirds) simultaneously. yPercent should be the percentage from the top of the page where the relevant section starts and ends (0 = top, 100 = bottom). Make separate location entries if a field's content spans multiple non-contiguous sections.
 
 ## Don't
 - Infer or guess values not explicitly stated in the document

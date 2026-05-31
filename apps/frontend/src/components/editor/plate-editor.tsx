@@ -23,7 +23,7 @@ export function PlateEditor({
 	return (
 		<Plate editor={editor} onValueChange={({ value }) => onChange?.(value)}>
 			<EditorContainer>
-				<Editor variant="default" placeholder="Start writing…" />
+				<Editor variant="default" placeholder="Start writing…" className="prose dark:prose-invert max-w-none font-heading text-base leading-[1.8] tracking-normal font-medium [&_p]:mb-6" />
 			</EditorContainer>
 		</Plate>
 	)

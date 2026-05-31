@@ -5,14 +5,34 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
+import { cn } from "@/lib/utils"
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
 
-export function SourceViewer({ src }: { src: string }) {
+export type SourceViewerHighlight = {
+	page: number
+	yStart: number // 0–100, percentage from top of page
+	yEnd: number
+	active?: boolean // brighter highlight
+}
+
+export function SourceViewer({
+	src,
+	jumpToPage,
+	highlights = [],
+}: {
+	src: string | File
+	jumpToPage?: number
+	highlights?: SourceViewerHighlight[]
+}) {
 	const [numPages, setNumPages] = useState(0)
 	const [pageNumber, setPageNumber] = useState(1)
 	const [scalePercent, setScalePercent] = useState(100)
 	const [containerWidth, setContainerWidth] = useState<number | undefined>()
+	const [pageSize, setPageSize] = useState<{
+		width: number
+		height: number
+	} | null>(null)
 	const containerRef = useRef<HTMLDivElement>(null)
 	const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -36,7 +56,22 @@ export function SourceViewer({ src }: { src: string }) {
 	useEffect(() => {
 		setPageNumber(1)
 		setNumPages(0)
+		setPageSize(null)
 	}, [src])
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset on page change, pageNumber not used in body
+	useEffect(() => {
+		setPageSize(null)
+	}, [pageNumber])
+
+	// External page jump
+	useEffect(() => {
+		if (jumpToPage && jumpToPage >= 1 && jumpToPage <= numPages) {
+			setPageNumber(jumpToPage)
+		}
+	}, [jumpToPage, numPages])
+
+	const pageHighlights = highlights.filter((h) => h.page === pageNumber)
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
@@ -81,13 +116,40 @@ export function SourceViewer({ src }: { src: string }) {
 					onLoadSuccess={({ numPages }) => setNumPages(numPages)}
 					className="flex flex-col items-center gap-4 py-4"
 				>
-					<Page
-						pageNumber={pageNumber}
-						scale={scalePercent / 100}
-						width={containerWidth ? containerWidth - 48 : undefined}
-						renderTextLayer
-						renderAnnotationLayer
-					/>
+					<div
+						className="relative"
+						style={
+							pageSize
+								? { width: pageSize.width, height: pageSize.height }
+								: undefined
+						}
+					>
+						<Page
+							pageNumber={pageNumber}
+							scale={scalePercent / 100}
+							width={containerWidth ? containerWidth - 48 : undefined}
+							renderTextLayer
+							renderAnnotationLayer
+							onRenderSuccess={({ width, height }) =>
+								setPageSize({ width, height })
+							}
+						/>
+						{pageSize &&
+							pageHighlights.map((h, i) => (
+								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: highlight list is stable per render
+									key={i}
+									className={cn(
+										"absolute inset-x-0 pointer-events-none rounded-sm",
+										h.active ? "bg-amber-400/50" : "bg-amber-300/25",
+									)}
+									style={{
+										top: `${h.yStart}%`,
+										height: `${h.yEnd - h.yStart}%`,
+									}}
+								/>
+							))}
+					</div>
 				</Document>
 			</div>
 		</div>

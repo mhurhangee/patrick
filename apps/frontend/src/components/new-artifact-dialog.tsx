@@ -87,7 +87,7 @@ export function NewArtifactDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex flex-col overflow-hidden p-0 sm:max-w-[440px]">
-				<DialogHeader className="shrink-0 border-b px-6 py-4">
+				<DialogHeader>
 					<DialogTitle>New Artifact</DialogTitle>
 					<DialogDescription>
 						Create a new document to draft in this project.

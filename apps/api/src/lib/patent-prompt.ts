@@ -145,6 +145,24 @@ function identityExtractPat() {
 	return "# Identity\nYou are an expert patent document analyst. Extract structured data accurately and only from what is explicitly stated in the document. Do not infer or add information not present in the text."
 }
 
+// Hardcoded — not user-editable because it's a schema contract, not a style preference.
+function locationInstruction() {
+	return `# Field Locations
+Every field in the schema is an object { content, locations }. Populate:
+- content: the extracted value (string, date, or array as required)
+- locations: an array of { page, zone } indicating where in the document the value was found
+  - page: 1-based page number
+  - zone: which vertical zone of that page the content falls in — choose one of:
+      "top"           — very top of the page (letterhead, stamps, document header)
+      "upper-centre"  — upper portion of the body (e.g. header tables, first paragraphs)
+      "centre"        — middle of the page body
+      "lower-centre"  — lower portion of the body
+      "bottom"        — very bottom (footer, signature block, page number)
+  - If the content appears in one place, return one location entry
+  - If it spans a page break or appears in multiple non-adjacent places, return multiple entries
+  - If no content was found, return an empty locations array`
+}
+
 // Attorney/firm info from settings — written as a sentence so it reads naturally
 // in context rather than as a data dump.
 function userContext(s: SettingsRow) {
@@ -152,7 +170,9 @@ function userContext(s: SettingsRow) {
 	if (!s.name && !s.firm) return null
 	const role = s.role ? ` (${s.role})` : ""
 	const firm = s.firm ? ` at ${s.firm}` : ""
-	const jurisdiction = s.jurisdiction ? `, practising before ${s.jurisdiction}` : ""
+	const jurisdiction = s.jurisdiction
+		? `, practising before ${s.jurisdiction}`
+		: ""
 	return `# Attorney\nYou are assisting ${s.name}${role}${firm}${jurisdiction}.`
 }
 
@@ -183,9 +203,17 @@ function projectContext(project: AgentPatContext["project"]) {
 	const label = config?.label ?? project.type
 	const lines = [`# Project: ${project.name} (${label})`]
 	if (config?.aiContext) lines.push(config.aiContext)
-	if (project.clientName || project.clientIndustry || project.clientPreferences) {
-		const industry = project.clientIndustry ? ` (${project.clientIndustry})` : ""
-		lines.push(`\n## Client\n${project.clientName}${industry} — the attorney is acting on behalf of this client.`)
+	if (
+		project.clientName ||
+		project.clientIndustry ||
+		project.clientPreferences
+	) {
+		const industry = project.clientIndustry
+			? ` (${project.clientIndustry})`
+			: ""
+		lines.push(
+			`\n## Client\n${project.clientName}${industry} — the attorney is acting on behalf of this client.`,
+		)
 		if (project.clientPreferences)
 			lines.push(`\nClient preferences:\n${project.clientPreferences}`)
 	}
@@ -302,6 +330,7 @@ export async function buildExtractPatPrompt(): Promise<string> {
 	const s = await loadSettings()
 	const system = assemble([
 		identityExtractPat(),
+		locationInstruction(),
 		extractPatInstructions(s),
 		sharedContext(s),
 	])

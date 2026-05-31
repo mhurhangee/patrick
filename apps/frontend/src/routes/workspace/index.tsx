@@ -215,7 +215,6 @@ function WorkspaceContent() {
 					asset={asset.sourceDialogAsset}
 					open={asset.sourceDialogOpen}
 					onOpenChange={asset.setSourceDialogOpen}
-					projectType={currentProjectType}
 					provider={ai.provider}
 					apiKey={ai.apiKey}
 					model={ai.detailedModel}
@@ -232,6 +231,7 @@ function WorkspaceContent() {
 					apiKey={ai.apiKey}
 					model={ai.detailedModel}
 					onCreated={asset.onSourceSaved}
+					onTempCreated={asset.onTempSourceCreated}
 				/>
 			)}
 

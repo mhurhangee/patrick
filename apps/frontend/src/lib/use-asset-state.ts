@@ -82,6 +82,12 @@ export function useAssetState(currentProjectId: string) {
 		}
 	}
 
+	function onTempSourceCreated(asset: ApiAsset) {
+		setAssets((prev) =>
+			prev.some((a) => a.id === asset.id) ? prev : [...prev, asset],
+		)
+	}
+
 	function onSourceSaved(asset: ApiAsset) {
 		const isNew = !sourceDialogAsset
 		setAssets((prev) => {
@@ -129,6 +135,7 @@ export function useAssetState(currentProjectId: string) {
 		addSource,
 		addArtifact,
 		editAsset,
+		onTempSourceCreated,
 		onSourceSaved,
 		onArtifactSaved,
 	}

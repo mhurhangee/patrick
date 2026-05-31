@@ -5,15 +5,12 @@ import { exportToDocx, importDocx } from "@platejs/docx-io"
 import { MarkdownPlugin } from "@platejs/markdown"
 import { SuggestionPlugin } from "@platejs/suggestion/react"
 import {
-	ClockIcon,
 	Clover,
 	Code2Icon,
 	EyeIcon,
 	FileIcon,
 	FileTextIcon,
-	FolderOpenIcon,
 	HashIcon,
-	MessageSquareTextIcon,
 	PencilLineIcon,
 	PenIcon,
 	Redo2Icon,
@@ -185,7 +182,7 @@ export function EditorMenubar() {
 					<>
 						<MenubarMenu>
 							<MenubarTrigger>
-								<FolderOpenIcon className="mr-1 size-3.5" />
+								File
 							</MenubarTrigger>
 							<MenubarContent>
 								<MenubarGroup className="flex gap-2 items-center font-semibold text-sm"> Import ...</MenubarGroup>
@@ -224,7 +221,7 @@ export function EditorMenubar() {
 
 						<MenubarMenu>
 							<MenubarTrigger>
-								<ClockIcon className="mr-1 size-3.5" />
+								Edit
 							</MenubarTrigger>
 							<MenubarContent>
 								<MenubarItem
@@ -250,7 +247,7 @@ export function EditorMenubar() {
 
 				<MenubarMenu>
 					<MenubarTrigger>
-						<EyeIcon className="mr-1 size-3.5" />
+						View
 					</MenubarTrigger>
 					<MenubarContent>
 						<MenubarRadioGroup
@@ -282,18 +279,18 @@ export function EditorMenubar() {
 					onClick={() => editor.getTransforms(commentPlugin).comment.setDraft()}
 					data-plate-prevent-overlay
 				>
-					<MessageSquareTextIcon className="size-4" />
+					Comment
 				</Button>
 				{!readOnly && (
 					<Button
 						variant="default"
-						size="icon"
+						size="sm"
 						disabled={!connectedToAI}
 						title={!connectedToAI ? "Add an API key in Settings to use AskPat" : undefined}
 						onMouseDown={(e) => e.preventDefault()}
 						onClick={() => aiApi.aiChat.show()}
 					>
-						<Clover />
+						<Clover /> AskPat
 					</Button>
 				)}
 			</div>

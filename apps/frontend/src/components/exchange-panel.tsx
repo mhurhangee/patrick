@@ -37,10 +37,7 @@ function formatTokens(n: number): string {
 // Shown during streaming — holds the space so the user message stays at top
 export function StreamingSpacer({ minHeight }: { minHeight: number }) {
 	return (
-		<div
-			style={{ minHeight }}
-			className="flex items-start bg-muted/20 px-5 pt-5"
-		>
+		<div style={{ minHeight }} className="flex items-start px-5 pt-5">
 			<span className="animate-pulse text-xs text-muted-foreground/40">
 				Thinking…
 			</span>
@@ -64,7 +61,7 @@ export function ExchangePanel({
 }) {
 	return (
 		<div
-			className="flex flex-col bg-muted/20"
+			className="flex flex-col pb-8"
 			style={isExpanded ? { minHeight } : undefined}
 		>
 			{/* Toggle bar */}
@@ -240,8 +237,7 @@ export function ExchangePanel({
 								<Button
 									key={s}
 									variant="secondary"
-									size="sm"
-									className="h-7 rounded-full text-xs"
+									size="chip"
 									onClick={() => onSuggestion(s)}
 								>
 									{s}
