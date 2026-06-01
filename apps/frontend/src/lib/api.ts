@@ -1,5 +1,4 @@
 import type {
-	ApiAsset,
 	ApiChat,
 	ApiChatMessage,
 	ApiProject,
@@ -130,27 +129,5 @@ export const api = {
 			request<ApiChatMessage[]>(
 				`/chats/${chatId}/messages?projectPath=${encodeURIComponent(projectPath)}`,
 			),
-	},
-	// Legacy asset API — components using this will be rewritten in the fs migration
-	assets: {
-		list: (projectId: string) =>
-			request<ApiAsset[]>(`/assets?projectId=${projectId}`),
-		create: (
-			data: Pick<ApiAsset, "projectId" | "title" | "type" | "kind"> &
-				Partial<Pick<ApiAsset, "content" | "date" | "notes">>,
-		) => request<ApiAsset>("/assets", json(data, { method: "POST" })),
-		createSource: (formData: FormData) =>
-			request<ApiAsset>("/assets", { method: "POST", body: formData }),
-		update: (
-			id: string,
-			patch: Partial<
-				Pick<
-					ApiAsset,
-					"title" | "content" | "type" | "kind" | "date" | "notes" | "details"
-				>
-			>,
-		) => request<ApiAsset>(`/assets/${id}`, json(patch, { method: "PUT" })),
-		delete: (id: string) =>
-			request<{ ok: boolean }>(`/assets/${id}`, { method: "DELETE" }),
 	},
 }

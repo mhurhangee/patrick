@@ -1,5 +1,5 @@
 import type { ApiAsset } from "@patrickos/shared"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
 function fileToAsset(
@@ -38,17 +38,12 @@ export function useAssetState(currentProjectId: string) {
 	const [openTabIds, setOpenTabIds] = useState<string[]>([])
 	const [activeTab, setActiveTab] = useState("")
 	const [splitView, setSplitView] = useState(false)
-	// Dialogs kept as stubs — will be rewritten as part of the artifact creation flow
-	const [sourceDialogOpen] = useState(false)
-	const [sourceDialogAsset] = useState<ApiAsset | undefined>(undefined)
-	const [artifactDialogOpen] = useState(false)
-	const [artifactDialogAsset] = useState<ApiAsset | undefined>(undefined)
 
-	useEffect(() => {
-		setAssets([])
-		setOpenTabIds([])
-		setActiveTab("")
-		if (!currentProjectId) return
+	const refresh = useCallback(() => {
+		if (!currentProjectId) {
+			setAssets([])
+			return
+		}
 		api.projects.listFiles(currentProjectId).then(({ sources, artifacts }) => {
 			const sourceAssets = sources.map((f) =>
 				fileToAsset(f, "source", currentProjectId),
@@ -59,6 +54,12 @@ export function useAssetState(currentProjectId: string) {
 			setAssets([...sourceAssets, ...artifactAssets])
 		})
 	}, [currentProjectId])
+
+	useEffect(() => {
+		setOpenTabIds([])
+		setActiveTab("")
+		refresh()
+	}, [refresh])
 
 	function openAsset(id: string) {
 		setOpenTabIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
@@ -93,38 +94,6 @@ export function useAssetState(currentProjectId: string) {
 		setAssets((prev) => prev.filter((a) => a.id !== id))
 	}
 
-	// Not supported in file-system mode — sources come from the folder
-	function addSource() {}
-
-	// Not supported yet — artifact creation will be wired up in a future phase
-	function addArtifact() {}
-
-	function editAsset(_id: string) {}
-
-	function onTempSourceCreated(_asset: ApiAsset) {}
-
-	function onSourceSaved(asset: ApiAsset) {
-		setAssets((prev) => {
-			const exists = prev.some((a) => a.id === asset.id)
-			return exists
-				? prev.map((a) => (a.id === asset.id ? asset : a))
-				: [...prev, asset]
-		})
-	}
-
-	function onArtifactSaved(asset: ApiAsset) {
-		setAssets((prev) => {
-			const exists = prev.some((a) => a.id === asset.id)
-			return exists
-				? prev.map((a) => (a.id === asset.id ? asset : a))
-				: [...prev, asset]
-		})
-		openAsset(asset.id)
-	}
-
-	function setSourceDialogOpen(_v: boolean) {}
-	function setArtifactDialogOpen(_v: boolean) {}
-
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
 		.filter(Boolean) as ApiAsset[]
@@ -135,23 +104,12 @@ export function useAssetState(currentProjectId: string) {
 		activeTab,
 		splitView,
 		openAssets,
-		sourceDialogOpen,
-		setSourceDialogOpen,
-		sourceDialogAsset,
-		artifactDialogOpen,
-		setArtifactDialogOpen,
-		artifactDialogAsset,
+		refresh,
 		openAsset,
 		selectTab,
 		toggleSplitView,
 		closeTab,
 		updateAsset,
 		deleteAsset,
-		addSource,
-		addArtifact,
-		editAsset,
-		onTempSourceCreated,
-		onSourceSaved,
-		onArtifactSaved,
 	}
 }

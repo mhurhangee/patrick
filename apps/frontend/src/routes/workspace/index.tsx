@@ -1,4 +1,3 @@
-import type { ProjectType } from "@patrickos/shared"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { usePanelRef } from "react-resizable-panels"
@@ -6,10 +5,6 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { AssetViewer } from "@/components/asset-viewer"
 import { ChatMetaDialog } from "@/components/chat-meta-dialog"
 import { ChatPanel } from "@/components/chat-panel"
-import { EditArtifactDialog } from "@/components/edit-artifact-dialog"
-import { EditSourceDialog } from "@/components/edit-source-dialog"
-import { NewArtifactDialog } from "@/components/new-artifact-dialog"
-import { NewSourceDialog } from "@/components/new-source-dialog"
 import { OnboardingFlow } from "@/components/onboarding-flow"
 import { ProfilePicker } from "@/components/profile-picker"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
@@ -96,7 +91,6 @@ function WorkspaceContent({
 }) {
 	const ai = useAI()
 	const project = useProjectState()
-	const currentProjectType: ProjectType = "us-non-final-oa-response"
 	const asset = useAssetState(project.currentProjectId)
 	const chat = useChatState(project.currentProjectId)
 
@@ -143,9 +137,7 @@ function WorkspaceContent({
 				currentProjectId={project.currentProjectId}
 				onOpen={asset.openAsset}
 				onClose={asset.closeTab}
-				onEdit={asset.editAsset}
-				onAddArtifact={asset.addArtifact}
-				onAddSource={asset.addSource}
+				onRefreshSources={asset.refresh}
 				onOpenChat={chat.openChat}
 				onNewChat={chat.newChat}
 				onEditChat={setChatEditId}
@@ -246,54 +238,6 @@ function WorkspaceContent({
 				onRename={project.renameProject}
 				onDelete={project.deleteProject}
 			/>
-
-			{/* Source dialogs */}
-			{asset.sourceDialogAsset ? (
-				<EditSourceDialog
-					key={asset.sourceDialogAsset.id}
-					asset={asset.sourceDialogAsset}
-					open={asset.sourceDialogOpen}
-					onOpenChange={asset.setSourceDialogOpen}
-					provider={ai.provider}
-					apiKey={ai.apiKey}
-					model={ai.detailedModel}
-					onSaved={asset.onSourceSaved}
-					onDeleted={asset.deleteAsset}
-				/>
-			) : (
-				<NewSourceDialog
-					open={asset.sourceDialogOpen}
-					onOpenChange={asset.setSourceDialogOpen}
-					projectId={project.currentProjectId}
-					projectType={currentProjectType}
-					provider={ai.provider}
-					apiKey={ai.apiKey}
-					model={ai.detailedModel}
-					onCreated={asset.onSourceSaved}
-					onTempCreated={asset.onTempSourceCreated}
-				/>
-			)}
-
-			{/* Artifact dialogs */}
-			{asset.artifactDialogAsset ? (
-				<EditArtifactDialog
-					key={asset.artifactDialogAsset.id}
-					asset={asset.artifactDialogAsset}
-					open={asset.artifactDialogOpen}
-					onOpenChange={asset.setArtifactDialogOpen}
-					projectType={currentProjectType}
-					onSaved={asset.onArtifactSaved}
-					onDeleted={asset.deleteAsset}
-				/>
-			) : (
-				<NewArtifactDialog
-					open={asset.artifactDialogOpen}
-					onOpenChange={asset.setArtifactDialogOpen}
-					projectId={project.currentProjectId}
-					projectType={currentProjectType}
-					onCreated={asset.onArtifactSaved}
-				/>
-			)}
 
 			<ChatMetaDialog
 				open={chatEditId !== null}

@@ -1,7 +1,12 @@
 import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/shared"
-import { ASSET_CONFIGS } from "@patrickos/shared"
 import { Link } from "@tanstack/react-router"
-import { ChevronsUpDown, CircleHelp, Plus, Settings2 } from "lucide-react"
+import {
+	ChevronsUpDown,
+	CircleHelp,
+	Plus,
+	RefreshCw,
+	Settings2,
+} from "lucide-react"
 import { useState } from "react"
 import { Logo } from "@/components/logo"
 import { Badge } from "@/components/ui/badge"
@@ -36,9 +41,7 @@ export function AppSidebar({
 	currentProjectId,
 	onOpen,
 	onClose,
-	onEdit,
-	onAddArtifact,
-	onAddSource,
+	onRefreshSources,
 	onOpenChat,
 	onNewChat,
 	onEditChat,
@@ -59,9 +62,7 @@ export function AppSidebar({
 	currentProjectId: string
 	onOpen: (id: string) => void
 	onClose: (id: string) => void
-	onEdit: (id: string) => void
-	onAddArtifact: () => void
-	onAddSource: () => void
+	onRefreshSources: () => void
 	onOpenChat: (id: string) => void
 	onNewChat: () => void
 	onEditChat: (id: string) => void
@@ -81,15 +82,17 @@ export function AppSidebar({
 			kind: "source" as const,
 			label: "Sources",
 			items: sorted.filter((a) => a.kind === "source"),
-			onAdd: onAddSource,
-			addLabel: "Add source",
+			action: {
+				icon: <RefreshCw />,
+				label: "Refresh sources",
+				onClick: onRefreshSources,
+			},
 		},
 		{
 			kind: "artifact" as const,
 			label: "Artifacts",
 			items: sorted.filter((a) => a.kind === "artifact"),
-			onAdd: onAddArtifact,
-			addLabel: "New artifact",
+			action: undefined,
 		},
 	]
 	const sortedChats = [...chats].sort(
@@ -129,13 +132,18 @@ export function AppSidebar({
 			<SidebarContent>
 				{/* Sources + Artifacts — only shown when a project is selected */}
 				{currentProjectId &&
-					assetGroups.map(({ kind, label, items, onAdd, addLabel }) => (
+					assetGroups.map(({ kind, label, items, action }) => (
 						<SidebarGroup key={kind}>
 							<SidebarGroupLabel>{label}</SidebarGroupLabel>
-							<SidebarGroupAction title={addLabel} onClick={onAdd}>
-								<Plus />
-								<span className="sr-only">{addLabel}</span>
-							</SidebarGroupAction>
+							{action && (
+								<SidebarGroupAction
+									title={action.label}
+									onClick={action.onClick}
+								>
+									{action.icon}
+									<span className="sr-only">{action.label}</span>
+								</SidebarGroupAction>
+							)}
 							<SidebarMenu className="mb-2 ml-2">
 								{projectsLoading ? (
 									<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
@@ -143,39 +151,33 @@ export function AppSidebar({
 										<Skeleton className="h-3 w-1/2" />
 									</div>
 								) : null}
-								{items.map((asset) => (
-									<SidebarMenuSubItem key={asset.id}>
-										<SidebarMenuSubButton
-											onClick={() => {
-												const isInView = splitView
-													? openSet.has(asset.id)
-													: asset.id === activeTabId
-
-												if (isInView) onClose(asset.id)
-												else onOpen(asset.id)
-											}}
-											className={cn(
-												"flex items-center justify-between h-5 rounded-none gap-1.5 mr-2",
-											)}
-										>
-											<span className="capitalize min-w-0 flex-1 truncate">
-												{asset.title}
-											</span>
-
-											<Badge
-												variant="secondary"
-												className="shrink-0 text-xxs font-normal cursor-pointer hover:bg-secondary/80"
-												onClick={(e) => {
-													e.stopPropagation()
-													onEdit(asset.id)
+								{items.map((asset) => {
+									const isInView = splitView
+										? openSet.has(asset.id)
+										: asset.id === activeTabId
+									return (
+										<SidebarMenuSubItem key={asset.id}>
+											<SidebarMenuSubButton
+												onClick={() => {
+													if (isInView) onClose(asset.id)
+													else onOpen(asset.id)
 												}}
+												className={cn(
+													"flex items-center justify-between h-5 rounded-none gap-1.5 mr-2",
+													isInView
+														? "border-l-2 border-primary pl-2 font-medium"
+														: openSet.has(asset.id)
+															? "border-l-2 border-primary/30 pl-2"
+															: "",
+												)}
 											>
-												{ASSET_CONFIGS.find((c) => c.id === asset.type)
-													?.groupLabel ?? asset.type}
-											</Badge>
-										</SidebarMenuSubButton>
-									</SidebarMenuSubItem>
-								))}
+												<span className="capitalize min-w-0 flex-1 truncate">
+													{asset.title}
+												</span>
+											</SidebarMenuSubButton>
+										</SidebarMenuSubItem>
+									)
+								})}
 							</SidebarMenu>
 						</SidebarGroup>
 					))}

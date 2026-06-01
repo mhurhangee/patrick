@@ -113,7 +113,7 @@ export function ProfilePicker({
 		<div className="flex h-full flex-col items-center justify-center bg-background p-8">
 			<div className="w-full max-w-md space-y-8">
 				<div>
-					<h1 className="text-2xl font-bold font-heading tracking-tight">
+					<h1 className="text-4xl font-semibold font-heading tracking-tight">
 						PatrickOS
 					</h1>
 					<p className="mt-2 text-sm text-muted-foreground">
