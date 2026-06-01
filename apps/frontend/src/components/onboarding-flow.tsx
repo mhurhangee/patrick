@@ -3,9 +3,14 @@ import {
 	DEFAULT_PROMPT_ASKPAT,
 	DEFAULT_PROMPT_EXTRACTPAT,
 } from "@patrickos/shared"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { ChevronDown, Eye, EyeOff, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -82,6 +87,66 @@ const PROVIDER_PLACEHOLDER: Record<Provider, string> = {
 	gateway: "aig_...",
 }
 
+// ─── More info collapsible ────────────────────────────────────────────────────
+
+function MoreInfo({ items }: { items: string[] }) {
+	const [open, setOpen] = useState(false)
+	return (
+		<Collapsible open={open} onOpenChange={setOpen}>
+			<CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-2">
+				<ChevronDown
+					size={12}
+					className={cn(
+						"transition-transform duration-200",
+						open && "rotate-180",
+					)}
+				/>
+				More info
+			</CollapsibleTrigger>
+			<CollapsibleContent className="mt-3">
+				<ul className="space-y-1.5 border-l-2 border-muted pl-4">
+					{items.map((item) => (
+						<li key={item} className="text-xs text-muted-foreground">
+							{item}
+						</li>
+					))}
+				</ul>
+			</CollapsibleContent>
+		</Collapsible>
+	)
+}
+
+// ─── Per-step more-info content ───────────────────────────────────────────────
+
+const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
+	you: [
+		"Your name and firm appear in every AI-drafted document.",
+		"This information is included in every AI request to help personalize responses.",
+		"Stored in settings.yaml on your machine — never sent to PatrickOS.",
+	],
+	ai: [
+		"You pay the provider directly — PatrickOS never touches your billing.",
+		"Your API key is stored in settings.yaml in your profile folder, not on any server.",
+		"Data retention and prompt training are controlled by you in the provider's dashboard — look for Zero Data Retention (ZDR) options.",
+		"Get a key: Anthropic → console.anthropic.com · OpenAI → platform.openai.com · Google → aistudio.google.com",
+	],
+	agentpat: [
+		"This is the system prompt prepended to every AgentPat conversation.",
+		"The default prompt instructs AgentPat on patent prosecution conventions and response format.",
+		"You can edit it here or reset to the default any time in Settings.",
+	],
+	askpat: [
+		"This prompt is used by the in-editor AI assistant (AskPat).",
+		"It shapes how AskPat drafts, strengthens, and reformats document sections.",
+	],
+	extractpat: [
+		"ExtractPat reads PDFs and extracts structured metadata into analysis/ in your matter folder.",
+		"The default prompt targets common patent prosecution fields — office action dates, claim numbers, cited references.",
+	],
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function OnboardingFlow({
 	open,
 	onComplete,
@@ -139,9 +204,9 @@ export function OnboardingFlow({
 			})
 			setQuickModel(s.ai.quickModel || DEFAULT_QUICK_MODEL[p])
 			setDetailedModel(s.ai.model || DEFAULT_DETAILED_MODEL[p])
-			setAgentPatPrompt(s.prompts.agentpat || "")
-			setAskPatPrompt(s.prompts.askpat || "")
-			setExtractPatPrompt(s.prompts.extractpat || "")
+			setAgentPatPrompt(s.prompts.agentpat || DEFAULT_PROMPT_AGENTPAT)
+			setAskPatPrompt(s.prompts.askpat || DEFAULT_PROMPT_ASKPAT)
+			setExtractPatPrompt(s.prompts.extractpat || DEFAULT_PROMPT_EXTRACTPAT)
 		})
 	}, [open])
 
@@ -283,9 +348,14 @@ export function OnboardingFlow({
 								<h2 className="text-2xl font-bold font-heading tracking-tight mb-2">
 									{heading.title}
 								</h2>
-								<p className="text-sm text-muted-foreground mb-8">
+								<p className="text-sm text-muted-foreground mb-2">
 									{heading.description}
 								</p>
+								{STEP_MORE_INFO[stepId] && (
+									<div className="mb-6">
+										<MoreInfo items={STEP_MORE_INFO[stepId] as string[]} />
+									</div>
+								)}
 
 								{stepId === "you" && (
 									<div className="flex flex-col gap-4">
@@ -484,7 +554,6 @@ export function OnboardingFlow({
 									<Textarea
 										value={agentPatPrompt}
 										onChange={(e) => setAgentPatPrompt(e.target.value)}
-										placeholder={DEFAULT_PROMPT_AGENTPAT}
 										className="min-h-[280px] font-mono text-xs"
 									/>
 								)}
@@ -493,7 +562,6 @@ export function OnboardingFlow({
 									<Textarea
 										value={askPatPrompt}
 										onChange={(e) => setAskPatPrompt(e.target.value)}
-										placeholder={DEFAULT_PROMPT_ASKPAT}
 										className="min-h-[280px] font-mono text-xs"
 									/>
 								)}
@@ -502,7 +570,6 @@ export function OnboardingFlow({
 									<Textarea
 										value={extractPatPrompt}
 										onChange={(e) => setExtractPatPrompt(e.target.value)}
-										placeholder={DEFAULT_PROMPT_EXTRACTPAT}
 										className="min-h-[280px] font-mono text-xs"
 									/>
 								)}
