@@ -14,6 +14,7 @@ import { OnboardingFlow } from "@/components/onboarding-flow"
 import { ProfilePicker } from "@/components/profile-picker"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsPanel } from "@/components/settings-panel"
+import { TutorialOverlay } from "@/components/tutorial-overlay"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
@@ -106,6 +107,7 @@ function WorkspaceContent({
 		"empty" | "new"
 	>("empty")
 	const [settingsOpen, setSettingsOpen] = useState(false)
+	const [tutorialOpen, setTutorialOpen] = useState(false)
 
 	function openProjects(panel: "empty" | "new" = "empty") {
 		setProjectsDefaultPanel(panel)
@@ -149,6 +151,7 @@ function WorkspaceContent({
 				onEditChat={setChatEditId}
 				onManageProjects={() => openProjects()}
 				onSettingsOpen={() => setSettingsOpen(true)}
+				onTutorialOpen={() => setTutorialOpen(true)}
 				connectedToAI={ai.connectedToAI}
 			/>
 			<SidebarInset className="flex flex-col overflow-hidden">
@@ -316,6 +319,10 @@ function WorkspaceContent({
 				open={settingsOpen}
 				onClose={() => setSettingsOpen(false)}
 				onSwitchProfile={onSwitchProfile}
+			/>
+			<TutorialOverlay
+				open={tutorialOpen}
+				onClose={() => setTutorialOpen(false)}
 			/>
 		</SidebarProvider>
 	)

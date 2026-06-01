@@ -1,7 +1,7 @@
 import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/shared"
 import { ASSET_CONFIGS } from "@patrickos/shared"
 import { Link } from "@tanstack/react-router"
-import { ChevronsUpDown, Plus, Settings2 } from "lucide-react"
+import { ChevronsUpDown, CircleHelp, Plus, Settings2 } from "lucide-react"
 import { useState } from "react"
 import { Logo } from "@/components/logo"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +44,7 @@ export function AppSidebar({
 	onEditChat,
 	onManageProjects,
 	onSettingsOpen,
+	onTutorialOpen,
 	connectedToAI,
 }: {
 	assets: ApiAsset[]
@@ -66,6 +67,7 @@ export function AppSidebar({
 	onEditChat: (id: string) => void
 	onManageProjects: () => void
 	onSettingsOpen: () => void
+	onTutorialOpen: () => void
 	connectedToAI: boolean
 }) {
 	const CHAT_LIMIT = 5
@@ -259,11 +261,22 @@ export function AppSidebar({
 								{connectedToAI ? "connected" : "not connected"}
 							</SidebarMenuButton>
 						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton onClick={onSettingsOpen} className="gap-2">
-								<Settings2 size={14} />
-							</SidebarMenuButton>
-						</SidebarMenuItem>
+						<div className="flex items-center">
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									onClick={onTutorialOpen}
+									className="gap-2 text-muted-foreground hover:text-foreground"
+									title="How it works"
+								>
+									<CircleHelp size={14} />
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<SidebarMenuButton onClick={onSettingsOpen} className="gap-2">
+									<Settings2 size={14} />
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						</div>
 					</div>
 				</SidebarMenu>
 			</SidebarFooter>
