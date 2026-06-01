@@ -1,81 +1,112 @@
-import {
-	assets,
-	chatMessages,
-	chats,
-	eq,
-	type ProjectType,
-	projects,
-} from "@patrickos/db"
+import { readdir, stat } from "node:fs/promises"
+import { extname, join } from "node:path"
+import type { ProjectEntry } from "@patrickos/shared"
 import { Hono } from "hono"
-import { db } from "../lib/db"
+import {
+	ensureProjectDirs,
+	readProjects,
+	writeProjects,
+} from "../lib/fs"
 
 export const projectsRouter = new Hono()
 
-projectsRouter.get("/", async (c) => {
-	const rows = await db.select().from(projects)
-	return c.json(rows)
-})
+// ─── Project registry ─────────────────────────────────────────────────────────
 
-projectsRouter.get("/:id", async (c) => {
-	const [row] = await db
-		.select()
-		.from(projects)
-		.where(eq(projects.id, c.req.param("id")))
-	if (!row) return c.json({ error: "Not found" }, 404)
-	return c.json(row)
+projectsRouter.get("/", async (c) => {
+	const projects = await readProjects()
+	return c.json(projects)
 })
 
 projectsRouter.post("/", async (c) => {
-	const { name, type = "us-non-final-oa-response" } = await c.req.json<{
-		name: string
-		type?: ProjectType
-	}>()
-	const now = new Date()
-	const [row] = await db
-		.insert(projects)
-		.values({
-			id: crypto.randomUUID(),
-			name,
-			type,
-			createdAt: now,
-			updatedAt: now,
-		})
-		.returning()
-	return c.json(row, 201)
-})
-
-projectsRouter.put("/:id", async (c) => {
-	const body = await c.req.json<{
-		name?: string
-		type?: ProjectType
-		clientName?: string
-		clientIndustry?: string
-		clientPreferences?: string
-	}>()
-	const patch = Object.fromEntries(
-		Object.entries(body).filter(([, v]) => v !== undefined),
-	)
-	const [row] = await db
-		.update(projects)
-		.set({ ...patch, updatedAt: new Date() })
-		.where(eq(projects.id, c.req.param("id")))
-		.returning()
-	if (!row) return c.json({ error: "Not found" }, 404)
-	return c.json(row)
-})
-
-projectsRouter.delete("/:id", async (c) => {
-	const id = c.req.param("id")
-	const projectChats = await db
-		.select({ id: chats.id })
-		.from(chats)
-		.where(eq(chats.projectId, id))
-	for (const chat of projectChats) {
-		await db.delete(chatMessages).where(eq(chatMessages.chatId, chat.id))
+	const { path, name } = await c.req.json<{ path: string; name?: string }>()
+	const projects = await readProjects()
+	if (projects.find((p) => p.path === path)) {
+		return c.json(projects.find((p) => p.path === path))
 	}
-	await db.delete(chats).where(eq(chats.projectId, id))
-	await db.delete(assets).where(eq(assets.projectId, id))
-	const [row] = await db.delete(projects).where(eq(projects.id, id)).returning()
-	if (!row) return c.json({ error: "Not found" }, 404)
+	await ensureProjectDirs(path)
+	const entry: ProjectEntry = {
+		path,
+		name: name ?? path.split("/").at(-1) ?? path,
+		addedAt: new Date().toISOString(),
+	}
+	await writeProjects([...projects, entry])
+	return c.json(entry, 201)
+})
+
+projectsRouter.patch("/", async (c) => {
+	const { path, name } = await c.req.json<{ path: string; name: string }>()
+	const projects = await readProjects()
+	const updated = projects.map((p) => (p.path === path ? { ...p, name } : p))
+	await writeProjects(updated)
+	const entry = updated.find((p) => p.path === path)
+	if (!entry) return c.json({ error: "not found" }, 404)
+	return c.json(entry)
+})
+
+projectsRouter.delete("/", async (c) => {
+	const { path } = await c.req.json<{ path: string }>()
+	const projects = await readProjects()
+	await writeProjects(projects.filter((p) => p.path !== path))
 	return c.json({ ok: true })
 })
+
+// ─── Folder file listing ──────────────────────────────────────────────────────
+
+const SOURCE_EXTS = new Set([".pdf", ".docx", ".doc"])
+const SKIP_DIRS = new Set(["artifacts", "chats", "analysis"])
+
+projectsRouter.get("/files", async (c) => {
+	const path = c.req.query("path")
+	if (!path) return c.json({ error: "path required" }, 400)
+
+	const [sources, artifacts] = await Promise.all([
+		listSources(path),
+		listArtifacts(path),
+	])
+
+	return c.json({ sources, artifacts })
+})
+
+async function listSources(projectPath: string) {
+	try {
+		const entries = await readdir(projectPath, { withFileTypes: true })
+		const files = []
+		for (const entry of entries) {
+			if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue
+			if (!entry.isFile()) continue
+			const ext = extname(entry.name).toLowerCase()
+			if (!SOURCE_EXTS.has(ext)) continue
+			files.push({ filename: entry.name, path: join(projectPath, entry.name), ext: ext.slice(1) })
+		}
+		return files
+	} catch {
+		return []
+	}
+}
+
+const ARTIFACT_EXTS = new Set([".json", ".docx"])
+
+async function listArtifacts(projectPath: string) {
+	const artifactsPath = join(projectPath, "artifacts")
+	try {
+		const entries = await readdir(artifactsPath, { withFileTypes: true })
+		const files = []
+		for (const entry of entries) {
+			if (!entry.isFile()) continue
+			const ext = extname(entry.name).toLowerCase()
+			if (!ARTIFACT_EXTS.has(ext)) continue
+			const filePath = join(artifactsPath, entry.name)
+			const s = await stat(filePath)
+			files.push({
+				filename: entry.name,
+				path: filePath,
+				ext: ext.slice(1),
+				createdAt: s.birthtime.toISOString(),
+				updatedAt: s.mtime.toISOString(),
+			})
+		}
+		return files
+	} catch {
+		return []
+	}
+}

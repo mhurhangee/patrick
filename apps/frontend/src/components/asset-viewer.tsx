@@ -1,4 +1,4 @@
-import type { ApiAsset } from "@patrickos/db"
+import type { ApiAsset } from "@patrickos/shared"
 import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
 import type { Value } from "platejs"
 import { Fragment, useEffect, useRef } from "react"
@@ -17,7 +17,7 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { api, BASE_URL } from "@/lib/api"
+import { BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 function ArtifactEditor({
@@ -32,9 +32,18 @@ function ArtifactEditor({
 	const isDirty = useRef(false)
 
 	function save(value: Value) {
-		api.assets
-			.update(asset.id, { content: JSON.stringify(value) })
-			.then(onAssetUpdate)
+		// Persist Plate JSON via file API — asset.id is the file path, asset.projectId is the project path
+		fetch(`${BASE_URL}/artifacts/content`, {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				projectPath: asset.projectId,
+				filename: asset.filename,
+				content: JSON.stringify(value),
+			}),
+		})
+			.then((r) => r.json())
+			.then(() => onAssetUpdate({ ...asset, content: JSON.stringify(value) }))
 	}
 
 	function handleChange(value: Value) {
@@ -85,7 +94,7 @@ function AssetPane({
 	onAssetUpdate: (updated: ApiAsset) => void
 }) {
 	if (asset.kind === "source") {
-		return <SourceViewer src={`${BASE_URL}/assets/${asset.id}/file`} />
+		return <SourceViewer src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`} />
 	}
 
 	return (
@@ -196,6 +205,7 @@ export function AssetViewer({
 							<EmptyContent>Add or open docs from the sidebar</EmptyContent>
 						</EmptyHeader>
 					</Empty>
+					<div className="min-h-[64px]" />
 				</div>
 			) : splitView && openAssets.length > 1 ? (
 				<ResizablePanelGroup orientation="horizontal" className="flex-1">

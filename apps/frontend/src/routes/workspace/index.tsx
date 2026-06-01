@@ -1,3 +1,4 @@
+import type { ProjectType } from "@patrickos/shared"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { usePanelRef } from "react-resizable-panels"
@@ -45,9 +46,8 @@ function WorkspacePage() {
 function WorkspaceContent() {
 	const ai = useAI()
 	const project = useProjectState()
-	const currentProjectType =
-		project.projects.find((p) => p.id === project.currentProjectId)?.type ??
-		"us-non-final-oa-response"
+	// Legacy: asset dialogs still need a ProjectType — defaults until they are rewritten
+	const currentProjectType: ProjectType = "us-non-final-oa-response"
 	const asset = useAssetState(project.currentProjectId)
 	const chat = useChatState(project.currentProjectId)
 
@@ -189,11 +189,11 @@ function WorkspaceContent() {
 				open={projectsOpen}
 				onOpenChange={setProjectsOpen}
 				projects={project.projects}
-				currentProjectId={project.currentProjectId}
+				currentProjectPath={project.currentProjectId}
 				defaultPanel={projectsDefaultPanel}
 				onSelect={project.setCurrentProjectId}
 				onCreate={project.createProject}
-				onUpdate={project.updateProject}
+				onRename={project.renameProject}
 				onDelete={project.deleteProject}
 			/>
 			<SettingsDialog

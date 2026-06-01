@@ -5,6 +5,7 @@ import {
 	streamText,
 } from "ai"
 import { Hono } from "hono"
+import { readSettings } from "../lib/fs"
 import { buildAskPatPrompt, createModel } from "../lib/patent-prompt"
 
 export const askpatRouter = new Hono()
@@ -60,7 +61,8 @@ askpatRouter.post("/command", async (c) => {
 			? "edit"
 			: "generate"
 
-	const system = await buildAskPatPrompt({ assetType })
+	const settings = await readSettings()
+	const system = await buildAskPatPrompt({ settings, assetType })
 
 	const model = createModel(provider, apiKey, modelId)
 	const prompt = buildUserPrompt(

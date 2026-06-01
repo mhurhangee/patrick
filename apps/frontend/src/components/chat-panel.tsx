@@ -7,7 +7,7 @@ import {
 } from "ai"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
-import type { ApiAsset, ApiChat } from "@patrickos/db"
+import type { ApiAsset, ApiChat } from "@patrickos/shared"
 import { ArrowUp, Loader2, Plus, X } from "lucide-react"
 import {
 	Fragment,
@@ -242,13 +242,13 @@ function ChatPane({
 	const { messages, sendMessage, status } = useChat({
 		transport: new DefaultChatTransport({
 			api: `${BASE_URL}/chats/${chatId}/messages`,
-			body: { projectId, provider, apiKey, detailedModel },
+			body: { projectPath: projectId, provider, apiKey, detailedModel },
 			prepareSendMessagesRequest: ({ body, messages: uiMessages, id }) => ({
 				body: {
 					...body,
 					id,
 					messages: uiMessages,
-					openAssetIds: openAssetIdsRef.current,
+					openFilePaths: openAssetIdsRef.current,
 				},
 			}),
 		}),
@@ -617,7 +617,7 @@ function ChatPaneLoader({
 	useEffect(() => {
 		setInitialMessages(null)
 		api.chats
-			.getMessages(chatId)
+			.getMessages(chatId, rest.projectId)
 			.then((msgs) =>
 				setInitialMessages(
 					msgs.map((m) => ({

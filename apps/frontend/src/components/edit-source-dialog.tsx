@@ -1,4 +1,4 @@
-import type { ApiAsset } from "@patrickos/db"
+import type { ApiAsset } from "@patrickos/shared"
 import {
 	type AssetType,
 	emptyDetails,
@@ -6,7 +6,7 @@ import {
 	getFormFields,
 	isExtractable,
 	mergeExtracted,
-} from "@patrickos/db"
+} from "@patrickos/shared"
 import { Clover, Loader2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -156,14 +156,14 @@ export function EditSourceDialog({
 	onSaved: (asset: ApiAsset) => void
 	onDeleted: (id: string) => void
 }) {
-	const [type, setType] = useState<AssetType>(asset.type)
+	const [type, setType] = useState<AssetType>(asset.type as AssetType)
 	const [details, setDetails] = useState<Record<string, unknown>>(() => ({
 		...emptyDetails(asset.type),
-		...(asset.details
+		...(typeof asset.details === "string"
 			? (JSON.parse(asset.details) as Record<string, unknown>)
-			: {}),
+			: (asset.details ?? {})),
 	}))
-	const [savedType, setSavedType] = useState<AssetType>(asset.type)
+	const [savedType, setSavedType] = useState<AssetType>(asset.type as AssetType)
 	const [savedDetails, setSavedDetails] =
 		useState<Record<string, unknown>>(details)
 	const [deleteOpen, setDeleteOpen] = useState(false)
@@ -178,9 +178,9 @@ export function EditSourceDialog({
 		const t = asset.type as AssetType
 		const merged = {
 			...emptyDetails(t),
-			...(asset.details
+			...(typeof asset.details === "string"
 				? (JSON.parse(asset.details) as Record<string, unknown>)
-				: {}),
+				: (asset.details ?? {})),
 		}
 		setType(t)
 		setDetails(merged)
@@ -204,7 +204,8 @@ export function EditSourceDialog({
 		setExtractError(null)
 		try {
 			const result = await api.extractpat.extract(
-				asset.id,
+				asset.path ?? asset.id,
+				asset.type,
 				provider,
 				apiKey,
 				model,
@@ -219,12 +220,13 @@ export function EditSourceDialog({
 
 	async function handleSave() {
 		await wrap(async () => {
-			const updated = await api.assets.update(asset.id, {
+			// biome-ignore lint/suspicious/noExplicitAny: legacy dialog, being rewritten
+			const updated = await (api.assets.update as any)(asset.id, {
 				title: String(details.title ?? "").trim() || "Untitled",
 				date: String(details.date ?? ""),
 				notes: String(details.notes ?? ""),
 				type,
-				details: JSON.stringify(details),
+				details,
 			})
 			setSavedType(updated.type as AssetType)
 			setSavedDetails(details)

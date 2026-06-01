@@ -1,44 +1,23 @@
 # PatrickOS
 
-Open-source, local-first patent drafting assistant. Inspired by [MikeOSS](https://mikeoss.com).
-
-Works fully offline, self-hosted, or in the cloud — same codebase, same experience.
+Open-source, agent-first patent prosecution assistant. Runs on your machine, your API keys, your files.
 
 ## Monorepo
 
 ```
-apps/frontend   Frontend (React + Vite) — browser + Tauri webview
-apps/api        API server (Hono on Bun)
-apps/desktop    Desktop app (Tauri)
-packages/db     Database schema (Drizzle)
+apps/frontend   React + Vite — browser + Tauri webview
+apps/api        Hono on Bun — API server / Tauri sidecar
+apps/desktop    Tauri desktop wrapper
+packages/db     Drizzle schema + shared types
 ```
 
 ## Quick start
 
 ```bash
 pnpm install
-
-# Browser dev (frontend + API)
-pnpm dev
-
-# Desktop dev (build API binary first, then Tauri)
-pnpm build:api
-pnpm dev:desktop
+pnpm dev           # browser dev (frontend + API)
+pnpm build:api     # compile API binary
+pnpm dev:desktop   # Tauri desktop dev
 ```
 
-## Root scripts
-
-| Script | What it does |
-|---|---|
-| `pnpm dev` | Start frontend + API in parallel (browser dev) |
-| `pnpm dev:desktop` | Start Tauri desktop dev (frontend launched automatically) |
-| `pnpm build:api` | Compile API binary and copy to desktop binaries |
-| `pnpm typecheck` | Type-check all packages |
-| `pnpm lint` | Biome lint all packages |
-| `pnpm lint:fix` | Auto-fix lint issues |
-| `pnpm format` | Auto-format all files |
-| `pnpm check` | Typecheck + lint together |
-
-## Docs
-
-Full developer docs are built into the app — open `/docs` after starting the frontend, or read the MDX source in `apps/frontend/src/content/docs/`.
+See `CLAUDE.md` for full architecture and development context.

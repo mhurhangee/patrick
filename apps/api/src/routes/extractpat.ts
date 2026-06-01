@@ -1,46 +1,51 @@
-import { ASSET_CONFIGS, assets, eq } from "@patrickos/db"
+import { readFile } from "node:fs/promises"
+import { ASSET_CONFIGS } from "@patrickos/shared"
 import { generateText, Output } from "ai"
 import { Hono } from "hono"
 import type { z } from "zod"
-import { db } from "../lib/db"
+import { readSettings } from "../lib/fs"
 import { buildExtractPatPrompt, createModel } from "../lib/patent-prompt"
 
 export const extractpatRouter = new Hono()
 
 extractpatRouter.post("/extract", async (c) => {
 	const {
-		assetId,
+		filePath,
+		assetType,
 		provider,
 		apiKey,
 		model: modelId,
 	} = await c.req.json<{
-		assetId: string
+		filePath: string
+		assetType: string
 		provider: string
 		apiKey: string
 		model: string
 	}>()
 
-	const [asset] = await db.select().from(assets).where(eq(assets.id, assetId))
-	if (!asset) return c.json({ error: "Asset not found" }, 404)
-	if (!asset.data) return c.json({ error: "Asset has no file data" }, 400)
-
-	const match = ASSET_CONFIGS.find((c) => c.id === asset.type)
+	const match = ASSET_CONFIGS.find((cfg) => cfg.id === assetType)
 	if (!match || !("schema" in match))
-		return c.json(
-			{ error: `No extraction schema for type: ${asset.type}` },
-			400,
-		)
+		return c.json({ error: `No extraction schema for type: ${assetType}` }, 400)
 
 	// biome-ignore lint/suspicious/noExplicitAny: schema presence verified above
 	const schema = (match as any).schema as z.ZodObject<z.ZodRawShape>
 	if (!schema.description)
-		return c.json(
-			{ error: `No extraction schema for type: ${asset.type}` },
-			400,
-		)
-	const systemStr = await buildExtractPatPrompt()
+		return c.json({ error: `No extraction schema for type: ${assetType}` }, 400)
 
-	const model = createModel(provider, apiKey, modelId)
+	let fileData: Buffer
+	try {
+		fileData = await readFile(filePath)
+	} catch {
+		return c.json({ error: "File not found or unreadable" }, 404)
+	}
+
+	const settings = await readSettings()
+	const systemStr = await buildExtractPatPrompt(settings)
+	const resolvedProvider = provider || settings.ai.provider
+	const keyField = `${resolvedProvider}Key` as "anthropicKey" | "openaiKey" | "gatewayKey"
+	const resolvedKey = apiKey || settings.ai[keyField] || ""
+	const resolvedModel = modelId || settings.ai.model
+	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)
 
 	const { output: object } = await generateText({
 		model,
@@ -51,17 +56,11 @@ extractpatRouter.post("/extract", async (c) => {
 				role: "user",
 				content: [
 					{ type: "text", text: schema.description },
-					{
-						type: "file",
-						data: asset.data as Buffer,
-						mediaType: "application/pdf",
-					},
+					{ type: "file", data: fileData, mediaType: "application/pdf" },
 				],
 			},
 		],
 	})
 
-	console.log("Extracted PAT object:", object)
-
-	return c.json({ extracted: object, assetType: asset.type })
+	return c.json({ extracted: object, assetType })
 })

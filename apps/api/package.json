@@ -13,9 +13,10 @@
 	"dependencies": {
 		"@ai-sdk/anthropic": "^3.0.78",
 		"@ai-sdk/openai": "^3.0.64",
-		"@patrickos/db": "workspace:*",
+		"@patrickos/shared": "workspace:*",
 		"ai": "^6.0.185",
 		"hono": "^4.12.19",
+		"yaml": "^2.9.0",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {

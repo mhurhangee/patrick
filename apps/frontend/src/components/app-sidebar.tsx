@@ -1,5 +1,5 @@
-import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/db"
-import { ASSET_CONFIGS } from "@patrickos/db"
+import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/shared"
+import { ASSET_CONFIGS } from "@patrickos/shared"
 import { Link } from "@tanstack/react-router"
 import { ChevronsUpDown, Plus, Settings2 } from "lucide-react"
 import { useState } from "react"
@@ -96,7 +96,7 @@ export function AppSidebar({
 	const visibleChats = showAllChats
 		? sortedChats
 		: sortedChats.slice(0, CHAT_LIMIT)
-	const currentProject = projects.find((p) => p.id === currentProjectId)
+	const currentProject = projects.find((p) => p.path === currentProjectId)
 
 	return (
 		<Sidebar variant="inset">

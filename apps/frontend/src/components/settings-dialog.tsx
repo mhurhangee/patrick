@@ -3,7 +3,7 @@ import {
 	DEFAULT_PROMPT_ASKPAT,
 	DEFAULT_PROMPT_CONTEXT,
 	DEFAULT_PROMPT_EXTRACTPAT,
-} from "@patrickos/db"
+} from "@patrickos/shared"
 import { Check, Eye, EyeOff, Loader2 } from "lucide-react"
 import {
 	type CSSProperties,
@@ -306,40 +306,31 @@ export function SettingsDialog({
 	// ── Sync on open ──────────────────────────────────────────────────────────
 	useEffect(() => {
 		if (!open) return
-		setTempProvider(savedProvider)
-		setTempQuickModel(savedQuickModel)
-		setTempDetailedModel(savedDetailedModel)
-		const keys = {
-			gateway: localStorage.getItem("ai-gateway-key") ?? "",
-			anthropic: localStorage.getItem("ai-anthropic-key") ?? "",
-			openai: localStorage.getItem("ai-openai-key") ?? "",
-		}
-		setTempKeys(keys)
-		setSavedProviderSnap({
-			provider: savedProvider,
-			quickModel: savedQuickModel,
-			detailedModel: savedDetailedModel,
-			key: keys[savedProvider],
-		})
-
 		api.settings.get().then((s) => {
-			setName(s.name)
-			setFirm(s.firm)
-			setRole(s.role)
-			setJurisdiction(s.jurisdiction)
+			const resolvedProvider = (s.ai.provider as Provider) || savedProvider
+			const resolvedDetailed = s.ai.model || savedDetailedModel
+			const resolvedQuick = s.ai.quickModel || savedQuickModel
+			const keys = {
+				gateway: s.ai.gatewayKey ?? "",
+				anthropic: s.ai.anthropicKey ?? "",
+				openai: s.ai.openaiKey ?? "",
+			}
+
+			setName(s.profile.name)
+			setFirm(s.profile.firm)
+			setRole(s.profile.role)
+			setJurisdiction(s.profile.jurisdiction)
 			setSavedAccount({
-				name: s.name,
-				firm: s.firm,
-				role: s.role,
-				jurisdiction: s.jurisdiction,
+				name: s.profile.name,
+				firm: s.profile.firm,
+				role: s.profile.role,
+				jurisdiction: s.profile.jurisdiction,
 			})
 
-			const resolvedProvider = (s.aiProvider as Provider) ?? savedProvider
-			const resolvedQuick = s.aiQuickModel ?? savedQuickModel
-			const resolvedDetailed = s.aiDetailedModel ?? savedDetailedModel
-			if (s.aiProvider) setTempProvider(resolvedProvider)
-			if (s.aiQuickModel) setTempQuickModel(resolvedQuick)
-			if (s.aiDetailedModel) setTempDetailedModel(resolvedDetailed)
+			setTempProvider(resolvedProvider)
+			setTempDetailedModel(resolvedDetailed)
+			setTempQuickModel(resolvedQuick)
+			setTempKeys(keys)
 			setSavedProviderSnap({
 				provider: resolvedProvider,
 				quickModel: resolvedQuick,
@@ -347,14 +338,14 @@ export function SettingsDialog({
 				key: keys[resolvedProvider],
 			})
 
-			setPracticeContext(s.promptContext)
-			setSavedPracticeContext(s.promptContext)
-			setAskPatInstructions(s.promptAskpat)
-			setSavedAskPat(s.promptAskpat)
-			setAgentPatInstructions(s.promptAgentpat)
-			setSavedAgentPat(s.promptAgentpat)
-			setExtractPatInstructions(s.promptExtractpat)
-			setSavedExtractPat(s.promptExtractpat)
+			setPracticeContext(s.prompts.context)
+			setSavedPracticeContext(s.prompts.context)
+			setAskPatInstructions(s.prompts.askpat)
+			setSavedAskPat(s.prompts.askpat)
+			setAgentPatInstructions(s.prompts.agentpat)
+			setSavedAgentPat(s.prompts.agentpat)
+			setExtractPatInstructions(s.prompts.extractpat)
+			setSavedExtractPat(s.prompts.extractpat)
 		})
 	}, [open, savedProvider, savedQuickModel, savedDetailedModel])
 
@@ -404,17 +395,13 @@ export function SettingsDialog({
 	// ── Save handlers ─────────────────────────────────────────────────────────
 
 	async function saveAccount() {
-		await api.settings.update({ name, firm, role, jurisdiction })
+		await api.settings.update({ profile: { name, firm, role, jurisdiction } })
 		setSavedAccount({ name, firm, role, jurisdiction })
 	}
 
 	async function saveProvider() {
+		// onSave (ai-context.saveAiSettings) handles both React state and settings.yaml write
 		onSave(tempProvider, currentKey, tempQuickModel, tempDetailedModel)
-		await api.settings.update({
-			aiProvider: tempProvider,
-			aiQuickModel: tempQuickModel,
-			aiDetailedModel: tempDetailedModel,
-		})
 		setSavedProviderSnap({
 			provider: tempProvider,
 			quickModel: tempQuickModel,
@@ -424,19 +411,19 @@ export function SettingsDialog({
 	}
 
 	async function saveContext() {
-		await api.settings.update({ promptContext: practiceContext })
+		await api.settings.update({ prompts: { context: practiceContext } })
 		setSavedPracticeContext(practiceContext)
 	}
 	async function saveAskPat() {
-		await api.settings.update({ promptAskpat: askPatInstructions })
+		await api.settings.update({ prompts: { askpat: askPatInstructions } })
 		setSavedAskPat(askPatInstructions)
 	}
 	async function saveAgentPat() {
-		await api.settings.update({ promptAgentpat: agentPatInstructions })
+		await api.settings.update({ prompts: { agentpat: agentPatInstructions } })
 		setSavedAgentPat(agentPatInstructions)
 	}
 	async function saveExtractPat() {
-		await api.settings.update({ promptExtractpat: extractPatInstructions })
+		await api.settings.update({ prompts: { extractpat: extractPatInstructions } })
 		setSavedExtractPat(extractPatInstructions)
 	}
 
@@ -620,8 +607,8 @@ export function SettingsDialog({
 									<div className="rounded-md border bg-muted/40 p-4">
 										<p className="text-sm font-medium">Local storage</p>
 										<p className="mt-1 text-xs text-muted-foreground">
-											All data is stored locally in a SQLite database on this
-											device. Nothing leaves your machine.
+											All data is stored as files on this device — JSON, YAML,
+											and .docx. Nothing leaves your machine.
 										</p>
 									</div>
 									<p className="text-xs text-muted-foreground">
@@ -855,7 +842,7 @@ function AiProviderByokSection({
 	return (
 		<SectionLayout
 			title="BYOK"
-			description="Bring your own API key. Stored in the browser only — never sent to our servers."
+			description="Bring your own API key. Stored in settings.yaml on your machine — never sent to our servers."
 			footer={
 				<>
 					<div />

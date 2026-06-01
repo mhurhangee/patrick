@@ -3,9 +3,8 @@ import type {
 	ApiChat,
 	ApiChatMessage,
 	ApiProject,
-	ApiSettings,
-	ProjectType,
-} from "@patrickos/db"
+	Settings,
+} from "@patrickos/shared"
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
@@ -23,22 +22,27 @@ function json(body: unknown, init?: RequestInit): RequestInit {
 	}
 }
 
+type DeepPartial<T> = T extends object
+	? { [K in keyof T]?: DeepPartial<T[K]> }
+	: T
+
 export const api = {
 	settings: {
-		get: () => request<ApiSettings>("/settings"),
-		update: (patch: Partial<Omit<ApiSettings, "id">>) =>
-			request<ApiSettings>("/settings", json(patch, { method: "PUT" })),
+		get: () => request<Settings>("/settings"),
+		update: (patch: DeepPartial<Settings>) =>
+			request<Settings>("/settings", json(patch, { method: "PUT" })),
 	},
 	extractpat: {
 		extract: (
-			assetId: string,
+			filePath: string,
+			assetType: string,
 			provider: string,
 			apiKey: string,
 			model: string,
 		) =>
 			request<{ extracted: Record<string, unknown>; assetType: string }>(
 				"/ai/extractpat/extract",
-				json({ assetId, provider, apiKey, model }, { method: "POST" }),
+				json({ filePath, assetType, provider, apiKey, model }, { method: "POST" }),
 			),
 	},
 	ai: {
@@ -60,31 +64,34 @@ export const api = {
 	},
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
-		create: (name: string, type: ProjectType = "us-non-final-oa-response") =>
-			request<ApiProject>(
-				"/projects",
-				json({ name, type }, { method: "POST" }),
-			),
-		update: (id: string, patch: { name?: string; type?: ProjectType }) =>
-			request<ApiProject>(`/projects/${id}`, json(patch, { method: "PUT" })),
-		delete: (id: string) =>
-			request<{ ok: boolean }>(`/projects/${id}`, { method: "DELETE" }),
+		create: (path: string, name?: string) =>
+			request<ApiProject>("/projects", json({ path, name }, { method: "POST" })),
+		rename: (path: string, name: string) =>
+			request<ApiProject>("/projects", json({ path, name }, { method: "PATCH" })),
+		delete: (path: string) =>
+			request<{ ok: boolean }>("/projects", json({ path }, { method: "DELETE" })),
+		listFiles: (path: string) =>
+			request<{
+				sources: { filename: string; path: string; ext: string }[]
+				artifacts: { filename: string; path: string; ext: string; createdAt: string; updatedAt: string }[]
+			}>(`/projects/files?path=${encodeURIComponent(path)}`),
 	},
 	chats: {
-		list: (projectId: string) =>
-			request<ApiChat[]>(`/chats?projectId=${projectId}`),
-		create: (projectId: string, title: string, id?: string) =>
+		list: (projectPath: string) =>
+			request<ApiChat[]>(`/chats?projectPath=${encodeURIComponent(projectPath)}`),
+		create: (projectPath: string, title: string, id?: string) =>
 			request<ApiChat>(
 				"/chats",
-				json({ projectId, title, ...(id ? { id } : {}) }, { method: "POST" }),
+				json({ projectPath, title, ...(id ? { id } : {}) }, { method: "POST" }),
 			),
-		update: (id: string, title: string) =>
-			request<ApiChat>(`/chats/${id}`, json({ title }, { method: "PATCH" })),
-		delete: (id: string) =>
-			request<{ ok: boolean }>(`/chats/${id}`, { method: "DELETE" }),
-		getMessages: (chatId: string) =>
-			request<ApiChatMessage[]>(`/chats/${chatId}/messages`),
+		update: (id: string, projectPath: string, title: string) =>
+			request<ApiChat>(`/chats/${id}`, json({ projectPath, title }, { method: "PATCH" })),
+		delete: (id: string, projectPath: string) =>
+			request<{ ok: boolean }>(`/chats/${id}?projectPath=${encodeURIComponent(projectPath)}`, { method: "DELETE" }),
+		getMessages: (chatId: string, projectPath: string) =>
+			request<ApiChatMessage[]>(`/chats/${chatId}/messages?projectPath=${encodeURIComponent(projectPath)}`),
 	},
+	// Legacy asset API — components using this will be rewritten in the fs migration
 	assets: {
 		list: (projectId: string) =>
 			request<ApiAsset[]>(`/assets?projectId=${projectId}`),
@@ -96,12 +103,7 @@ export const api = {
 			request<ApiAsset>("/assets", { method: "POST", body: formData }),
 		update: (
 			id: string,
-			patch: Partial<
-				Pick<
-					ApiAsset,
-					"title" | "content" | "type" | "kind" | "date" | "notes" | "details"
-				>
-			>,
+			patch: Partial<Pick<ApiAsset, "title" | "content" | "type" | "kind" | "date" | "notes" | "details">>,
 		) => request<ApiAsset>(`/assets/${id}`, json(patch, { method: "PUT" })),
 		delete: (id: string) =>
 			request<{ ok: boolean }>(`/assets/${id}`, { method: "DELETE" }),

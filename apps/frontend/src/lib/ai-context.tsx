@@ -56,16 +56,18 @@ export function AIProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		api.settings.get().then((s) => {
-			const p = (s.aiProvider as Provider) || "anthropic"
-			const quick = s.aiQuickModel || DEFAULT_QUICK_MODEL.anthropic
+			const p = (s.ai.provider as Provider) || "anthropic"
+			const detailed = s.ai.model || DEFAULT_DETAILED_MODEL[p]
+			const quick = s.ai.quickModel || DEFAULT_QUICK_MODEL[p]
+			const key = s.ai[`${p}Key` as "anthropicKey" | "openaiKey" | "gatewayKey"] ?? ""
 			setProvider(p)
+			setDetailedModel(detailed)
 			setQuickModel(quick)
-			setDetailedModel(s.aiDetailedModel || DEFAULT_DETAILED_MODEL.anthropic)
-			const key = localStorage.getItem(`ai-${p}-key`) ?? ""
 			setApiKey(key)
-			// Sync to localStorage so copilot fetch can read them synchronously
+			// Runtime cache for editor fetch callbacks (use-chat.ts, copilot-kit.tsx)
 			localStorage.setItem("askpat-provider", p)
 			localStorage.setItem("askpat-quick-model", quick)
+			localStorage.setItem(`ai-${p}-key`, key)
 		})
 	}, [])
 
@@ -84,9 +86,11 @@ export function AIProvider({ children }: { children: ReactNode }) {
 	}
 
 	function clearApiKey() {
+		const keyField = `${provider}Key` as "anthropicKey" | "openaiKey" | "gatewayKey"
 		localStorage.removeItem(`ai-${provider}-key`)
 		setApiKey("")
 		setKeyStatus("idle")
+		api.settings.update({ ai: { [keyField]: "" } })
 	}
 
 	function saveAiSettings(
@@ -95,6 +99,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		quick: string,
 		detailed: string,
 	) {
+		const keyField = `${prov}Key` as "anthropicKey" | "openaiKey" | "gatewayKey"
+		// Runtime cache for editor fetch callbacks
 		localStorage.setItem(`ai-${prov}-key`, key)
 		localStorage.setItem("askpat-provider", prov)
 		localStorage.setItem("askpat-quick-model", quick)
@@ -102,11 +108,7 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		setApiKey(key)
 		setQuickModel(quick)
 		setDetailedModel(detailed)
-		api.settings.update({
-			aiProvider: prov,
-			aiQuickModel: quick,
-			aiDetailedModel: detailed,
-		})
+		api.settings.update({ ai: { provider: prov, model: detailed, quickModel: quick, [keyField]: key } })
 	}
 
 	const connectedBYOK = !!apiKey

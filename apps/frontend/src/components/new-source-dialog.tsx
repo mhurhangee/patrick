@@ -1,4 +1,4 @@
-import type { ApiAsset } from "@patrickos/db"
+import type { ApiAsset } from "@patrickos/shared"
 import {
 	ASSET_CONFIGS,
 	type AssetType,
@@ -11,7 +11,7 @@ import {
 	mergeExtracted,
 	PROJECT_CONFIGS,
 	type ProjectType,
-} from "@patrickos/db"
+} from "@patrickos/shared"
 import {
 	Check,
 	ChevronLeft,
@@ -324,6 +324,7 @@ export function NewSourceDialog({
 
 			const result = await api.extractpat.extract(
 				targetId,
+				type,
 				provider,
 				apiKey,
 				model,
@@ -355,12 +356,13 @@ export function NewSourceDialog({
 		try {
 			let saved: ApiAsset
 			if (tempAsset) {
-				saved = await api.assets.update(tempAsset.id, {
+				// biome-ignore lint/suspicious/noExplicitAny: legacy dialog, being rewritten
+				saved = await (api.assets.update as any)(tempAsset.id, {
 					title: titleVal,
 					date: dateVal,
 					notes: notesVal,
 					type,
-					details: detailsJson,
+					details,
 				})
 			} else {
 				const formData = new FormData()

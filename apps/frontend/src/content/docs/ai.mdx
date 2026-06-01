@@ -1,34 +1,3 @@
 # AI
 
-PatrickOS uses the [Vercel AI SDK](https://sdk.vercel.ai) in the API for AI features. Currently wired to Anthropic only — provider abstraction comes later.
-
-## Configuration
-
-```bash
-ANTHROPIC_API_KEY=sk-...   # required for AI features
-```
-
-Set in `.env` in `apps/api`. AI routes return an error if the key is missing.
-
-## Source metadata extraction
-
-When a user uploads a PDF source, the API runs a two-step extraction:
-
-1. **Detect type** — `generateObject` call with an `AssetType` enum schema. Determines whether the document is an office action, inventor disclosure, prior art, etc.
-2. **Populate metadata** — second `generateObject` call using the per-type metadata schema to extract structured fields (dates, inventors, examiner, rejected claims, summary, etc.).
-
-The metadata is stored as JSON in `assets.metadata`. It serves two purposes:
-
-- **Form** — the AssetMetaSheet renders per-type fields driven by a `{ schema, fields }` config defined alongside each Zod schema.
-- **AI context** — when a source is in context for a chat, its metadata is injected as front matter so the assistant knows what the document contains without re-reading it:
-
-```
-<source type="office-action" title="OA 2024-03-15">
-examiner: John Smith | artUnit: 2458 | rejectedClaims: 1,3,5
-summary: §103 rejection over Smith based on obviousness of steps 2–4
-</source>
-```
-
-## Planned provider support
-
-Currently hardcoded to Anthropic (`claude-haiku-4-5` for extraction, fast and cheap). Future tiers will support Ollama (local) and user-supplied API keys. The Vercel AI SDK makes this a one-line swap per call site.
+Coming soon...

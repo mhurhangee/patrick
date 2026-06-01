@@ -1,0 +1,17 @@
+profile:
+  name: ""
+  firm: ""
+  role: ""
+  jurisdiction: ""
+ai:
+  provider: anthropic
+  model: ""
+  quickModel: ""
+  anthropicKey: ""
+  openaiKey: ""
+  gatewayKey: ""
+prompts:
+  context: ""
+  agentpat: ""
+  askpat: ""
+  extractpat: ""

@@ -4,7 +4,7 @@ import {
 	type AssetType,
 	PROJECT_CONFIGS,
 	type ProjectType,
-} from "@patrickos/db"
+} from "@patrickos/shared"
 import { Loader2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -89,11 +89,11 @@ export function EditArtifactDialog({
 	).map((c) => ({ id: c.id, label: c.typeLabel }))
 
 	const [title, setTitle] = useState(asset.title)
-	const [type, setType] = useState<AssetType>(asset.type)
+	const [type, setType] = useState<AssetType>(asset.type as AssetType)
 	const [date, setDate] = useState(asset.date)
 	const [notes, setNotes] = useState(asset.notes)
 	const [savedTitle, setSavedTitle] = useState(asset.title)
-	const [savedType, setSavedType] = useState<AssetType>(asset.type)
+	const [savedType, setSavedType] = useState<AssetType>(asset.type as AssetType)
 	const [savedDate, setSavedDate] = useState(asset.date)
 	const [savedNotes, setSavedNotes] = useState(asset.notes)
 	const [deleteOpen, setDeleteOpen] = useState(false)
@@ -104,11 +104,11 @@ export function EditArtifactDialog({
 	useEffect(() => {
 		if (!open) return
 		setTitle(asset.title)
-		setType(asset.type)
+		setType(asset.type as AssetType)
 		setDate(asset.date)
 		setNotes(asset.notes)
 		setSavedTitle(asset.title)
-		setSavedType(asset.type)
+		setSavedType(asset.type as AssetType)
 		setSavedDate(asset.date)
 		setSavedNotes(asset.notes)
 		setDeleteOpen(false)
@@ -130,7 +130,7 @@ export function EditArtifactDialog({
 				notes,
 			})
 			setSavedTitle(updated.title)
-			setSavedType(updated.type)
+			setSavedType(updated.type as AssetType)
 			setSavedDate(updated.date)
 			setSavedNotes(updated.notes)
 			onSaved(updated)

@@ -1,9 +1,5 @@
-import {
-	type ApiProject,
-	PROJECT_CONFIGS,
-	type ProjectType,
-} from "@patrickos/db"
-import { Loader2, Search } from "lucide-react"
+import type { ApiProject } from "@patrickos/shared"
+import { FolderOpen, Loader2, Search } from "lucide-react"
 import { type CSSProperties, useEffect, useRef, useState } from "react"
 import {
 	AlertDialog,
@@ -32,14 +28,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -50,14 +38,29 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 } from "@/components/ui/sidebar"
-import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Tauri folder picker ──────────────────────────────────────────────────────
 
-function getProjectConfig(id: ProjectType) {
-	return PROJECT_CONFIGS.find((c) => c.id === id)
+async function pickFolderWithTauri(): Promise<string | null> {
+	if (typeof window === "undefined") return null
+	// biome-ignore lint/suspicious/noExplicitAny: Tauri v2 runtime detection
+	if (!(window as any).__TAURI_INTERNALS__) return null
+	try {
+		const { open } = await import("@tauri-apps/plugin-dialog")
+		const result = await open({ directory: true, multiple: false })
+		return typeof result === "string" ? result : null
+	} catch {
+		return null
+	}
 }
+
+const isTauri =
+	typeof window !== "undefined" &&
+	// biome-ignore lint/suspicious/noExplicitAny: Tauri v2 runtime detection
+	!!(window as any).__TAURI_INTERNALS__
+
+// ─── Save button hook ─────────────────────────────────────────────────────────
 
 type SaveStatus = "idle" | "saving" | "saved"
 
@@ -86,118 +89,163 @@ function useSaveButton() {
 	return { status, wrap }
 }
 
-// ─── Unified project form ─────────────────────────────────────────────────────
+// ─── Add folder panel ─────────────────────────────────────────────────────────
 
-type ProjectPatch = {
-	name?: string
-	type?: ProjectType
-	clientName?: string
-	clientIndustry?: string
-	clientPreferences?: string
-}
-
-function ProjectForm({
-	project,
+function AddFolderPanel({
 	onCreate,
 	onCreated,
-	onUpdate,
-	onDelete,
 }: {
-	project?: ApiProject
-	onCreate?: (name: string, type: ProjectType) => Promise<ApiProject>
-	onCreated?: (project: ApiProject) => void
-	onUpdate?: (id: string, patch: ProjectPatch) => Promise<ApiProject>
-	onDelete?: (id: string) => Promise<void>
+	onCreate: (path: string, name?: string) => Promise<ApiProject>
+	onCreated: (project: ApiProject) => void
 }) {
-	const isEdit = !!project
-
-	const [name, setName] = useState(project?.name ?? "")
-	const [type, setType] = useState<ProjectType>(
-		project?.type ?? PROJECT_CONFIGS[0].id,
-	)
-	const [clientName, setClientName] = useState(project?.clientName ?? "")
-	const [clientIndustry, setClientIndustry] = useState(
-		project?.clientIndustry ?? "",
-	)
-	const [clientPreferences, setClientPreferences] = useState(
-		project?.clientPreferences ?? "",
-	)
-
-	const [savedName, setSavedName] = useState(project?.name ?? "")
-	const [savedType, setSavedType] = useState<ProjectType>(
-		project?.type ?? PROJECT_CONFIGS[0].id,
-	)
-	const [savedClientName, setSavedClientName] = useState(
-		project?.clientName ?? "",
-	)
-	const [savedClientIndustry, setSavedClientIndustry] = useState(
-		project?.clientIndustry ?? "",
-	)
-	const [savedClientPreferences, setSavedClientPreferences] = useState(
-		project?.clientPreferences ?? "",
-	)
-
+	const [path, setPath] = useState("")
+	const [name, setName] = useState("")
+	const [picking, setPicking] = useState(false)
 	const [creating, setCreating] = useState(false)
-	const [deleteOpen, setDeleteOpen] = useState(false)
-	const [deleting, setDeleting] = useState(false)
-	const { status: saveStatus, wrap } = useSaveButton()
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on project identity only
-	useEffect(() => {
-		setName(project?.name ?? "")
-		setType(project?.type ?? PROJECT_CONFIGS[0].id)
-		setClientName(project?.clientName ?? "")
-		setClientIndustry(project?.clientIndustry ?? "")
-		setClientPreferences(project?.clientPreferences ?? "")
-		setSavedName(project?.name ?? "")
-		setSavedType(project?.type ?? PROJECT_CONFIGS[0].id)
-		setSavedClientName(project?.clientName ?? "")
-		setSavedClientIndustry(project?.clientIndustry ?? "")
-		setSavedClientPreferences(project?.clientPreferences ?? "")
-	}, [project?.id])
-
-	const isDirty =
-		isEdit &&
-		(name !== savedName ||
-			type !== savedType ||
-			clientName !== savedClientName ||
-			clientIndustry !== savedClientIndustry ||
-			clientPreferences !== savedClientPreferences)
+	async function handlePick() {
+		setPicking(true)
+		try {
+			const picked = await pickFolderWithTauri()
+			if (picked) {
+				setPath(picked)
+				if (!name) setName(picked.split("/").at(-1) ?? "")
+			}
+		} finally {
+			setPicking(false)
+		}
+	}
 
 	async function handleCreate() {
-		if (!onCreate || !onCreated) return
-		const trimmed = name.trim()
-		if (!trimmed) return
+		const trimmedPath = path.trim()
+		if (!trimmedPath) return
 		setCreating(true)
 		try {
-			const created = await onCreate(trimmed, type)
-			onCreated(created)
+			const project = await onCreate(trimmedPath, name.trim() || undefined)
+			onCreated(project)
 		} finally {
 			setCreating(false)
 		}
 	}
 
+	return (
+		<>
+			<div className="shrink-0 border-b px-6 py-4">
+				<h2 className="text-base font-semibold font-heading">
+					Add matter folder
+				</h2>
+				<p className="text-xs text-muted-foreground mt-0.5">
+					Point PatrickOS at an existing folder on your machine.
+				</p>
+			</div>
+
+			<div className="flex-1 overflow-y-auto px-6 py-4">
+				<div className="flex flex-col gap-4 max-w-md">
+					<div className="flex flex-col gap-1.5">
+						<Label>Folder path</Label>
+						{isTauri ? (
+							<div className="flex gap-2">
+								<Input
+									value={path}
+									readOnly
+									placeholder="Pick a folder…"
+									className="font-mono text-xs"
+								/>
+								<Button
+									variant="secondary"
+									onClick={handlePick}
+									disabled={picking}
+								>
+									{picking ? (
+										<Loader2 size={12} className="animate-spin" />
+									) : (
+										<>
+											<FolderOpen size={12} />
+											Browse
+										</>
+									)}
+								</Button>
+							</div>
+						) : (
+							<Input
+								value={path}
+								onChange={(e) => setPath(e.target.value)}
+								placeholder="/Users/jane/matters/smith-corp"
+								className="font-mono text-xs"
+								autoFocus
+							/>
+						)}
+						<p className="text-xs text-muted-foreground">
+							Existing files in this folder are never modified.
+						</p>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<Label>Display name</Label>
+						<Input
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Smith Corp — Office Action 2024"
+							onKeyDown={(e) => {
+								if (e.key === "Enter") handleCreate()
+							}}
+						/>
+						<p className="text-xs text-muted-foreground">
+							Optional — defaults to folder name.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="flex shrink-0 items-center justify-end border-t px-6 py-4">
+				<Button
+					variant="secondary"
+					disabled={!path.trim() || creating}
+					onClick={handleCreate}
+				>
+					{creating ? <Loader2 size={12} className="animate-spin" /> : "Add"}
+				</Button>
+			</div>
+		</>
+	)
+}
+
+// ─── Edit folder panel ────────────────────────────────────────────────────────
+
+function EditFolderPanel({
+	project,
+	onRename,
+	onDelete,
+}: {
+	project: ApiProject
+	onRename: (path: string, name: string) => Promise<ApiProject>
+	onDelete: (path: string) => Promise<void>
+}) {
+	const [name, setName] = useState(project.name)
+	const [savedName, setSavedName] = useState(project.name)
+	const [deleteOpen, setDeleteOpen] = useState(false)
+	const [deleting, setDeleting] = useState(false)
+	const { status, wrap } = useSaveButton()
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on project path only
+	useEffect(() => {
+		setName(project.name)
+		setSavedName(project.name)
+	}, [project.path])
+
+	const isDirty = name !== savedName
+
 	async function handleSave() {
-		if (!project || !onUpdate) return
-		const updated = await onUpdate(project.id, {
-			name: name.trim() || project.name,
-			type,
-			clientName,
-			clientIndustry,
-			clientPreferences,
-		})
+		const trimmed = name.trim() || project.name
+		const updated = await onRename(project.path, trimmed)
 		setSavedName(updated.name)
-		setSavedType(updated.type)
-		setSavedClientName(updated.clientName)
-		setSavedClientIndustry(updated.clientIndustry)
-		setSavedClientPreferences(updated.clientPreferences)
+		setName(updated.name)
 	}
 
 	async function handleDelete() {
-		if (!project || !onDelete) return
 		setDeleting(true)
 		try {
-			await onDelete(project.id)
+			await onDelete(project.path)
 			setDeleteOpen(false)
 		} finally {
 			setDeleting(false)
@@ -206,171 +254,81 @@ function ProjectForm({
 
 	return (
 		<>
-			{/* Sticky header */}
 			<div className="shrink-0 border-b px-6 py-4">
-				<h2 className="text-base font-semibold font-heading">
-					{isEdit ? "Edit Project" : "New Project"}
-				</h2>
-				<p className="text-xs text-muted-foreground mt-0.5">
-					{isEdit
-						? project.name
-						: "Fill in the details to create a new matter."}
+				<h2 className="text-base font-semibold font-heading">{savedName}</h2>
+				<p className="text-xs text-muted-foreground mt-0.5 font-mono truncate">
+					{project.path}
 				</p>
 			</div>
 
-			{/* Scrollable content */}
 			<div className="flex-1 overflow-y-auto px-6 py-4">
 				<div className="flex flex-col gap-4 max-w-md">
 					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="project-name">Name</Label>
+						<Label>Display name</Label>
 						<Input
-							id="project-name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							placeholder="Smith Corp — Office Action 2024"
-							autoFocus={!isEdit}
 							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									if (isEdit && isDirty) wrap(handleSave)
-									else if (!isEdit) handleCreate()
-								}
+								if (e.key === "Enter" && isDirty) wrap(handleSave)
 							}}
 						/>
 					</div>
 
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="project-type">Type</Label>
-						<Select
-							value={type}
-							onValueChange={(v) => setType(v as ProjectType)}
-						>
-							<SelectTrigger id="project-type">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{PROJECT_CONFIGS.map((cfg) => (
-									<SelectItem key={cfg.id} value={cfg.id}>
-										{cfg.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<p className="text-xs text-muted-foreground">
-							{getProjectConfig(type)?.description}
+					<div className="rounded-md border bg-muted/40 px-4 py-3">
+						<p className="text-xs font-medium text-muted-foreground mb-1">
+							Folder path
 						</p>
-					</div>
-
-					<Separator />
-
-					<div className="flex flex-col gap-1">
-						<h3 className="text-sm font-medium">Client</h3>
-						<p className="text-xs text-muted-foreground">
-							Included in AI context for this project.
-						</p>
-					</div>
-
-					<div className="grid grid-cols-2 gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="project-client-name">Client name</Label>
-							<Input
-								id="project-client-name"
-								value={clientName}
-								onChange={(e) => setClientName(e.target.value)}
-								placeholder="Acme Corp"
-							/>
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="project-client-industry">Industry</Label>
-							<Input
-								id="project-client-industry"
-								value={clientIndustry}
-								onChange={(e) => setClientIndustry(e.target.value)}
-								placeholder="Consumer electronics"
-							/>
-						</div>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="project-client-preferences">Preferences</Label>
-						<Textarea
-							id="project-client-preferences"
-							value={clientPreferences}
-							onChange={(e) => setClientPreferences(e.target.value)}
-							placeholder="Broad initial claims, conservative on amendments…"
-							className="min-h-[80px] text-sm"
-						/>
+						<p className="text-xs font-mono break-all">{project.path}</p>
 					</div>
 				</div>
 			</div>
 
-			{/* Sticky footer */}
 			<div className="flex shrink-0 items-center justify-between border-t px-6 py-4">
-				{isEdit && onDelete ? (
-					<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-						<AlertDialogTrigger asChild>
-							<Button variant="destructive">Delete</Button>
-						</AlertDialogTrigger>
-						<AlertDialogContent size="sm">
-							<AlertDialogHeader>
-								<AlertDialogTitle>Delete project?</AlertDialogTitle>
-								<AlertDialogDescription>
-									<span className="font-semibold">{project.name}</span> and all
-									its contents will be permanently deleted. This cannot be
-									undone.
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel disabled={deleting}>
-									Cancel
-								</AlertDialogCancel>
-								<AlertDialogAction
-									variant="destructive"
-									disabled={deleting}
-									onClick={(e) => {
-										e.preventDefault()
-										handleDelete()
-									}}
-								>
-									{deleting ? (
-										<Loader2 size={12} className="animate-spin" />
-									) : (
-										"Delete"
-									)}
-								</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
-				) : (
-					<div />
-				)}
+				<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+					<AlertDialogTrigger asChild>
+						<Button variant="destructive">Remove</Button>
+					</AlertDialogTrigger>
+					<AlertDialogContent size="sm">
+						<AlertDialogHeader>
+							<AlertDialogTitle>Remove from list?</AlertDialogTitle>
+							<AlertDialogDescription>
+								<span className="font-semibold">{savedName}</span> will be
+								removed from PatrickOS. Your files are not deleted.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+							<AlertDialogAction
+								variant="destructive"
+								disabled={deleting}
+								onClick={(e) => {
+									e.preventDefault()
+									handleDelete()
+								}}
+							>
+								{deleting ? (
+									<Loader2 size={12} className="animate-spin" />
+								) : (
+									"Remove"
+								)}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 
-				{isEdit ? (
-					<Button
-						variant="outline"
-						disabled={!isDirty || saveStatus === "saving"}
-						onClick={() => wrap(handleSave)}
-					>
-						{saveStatus === "saving" ? (
-							<Loader2 size={12} className="animate-spin" />
-						) : saveStatus === "saved" ? (
-							"Saved"
-						) : (
-							"Save"
-						)}
-					</Button>
-				) : (
-					<Button
-						variant="secondary"
-						disabled={!name.trim() || creating}
-						onClick={handleCreate}
-					>
-						{creating ? (
-							<Loader2 size={12} className="animate-spin" />
-						) : (
-							"Create"
-						)}
-					</Button>
-				)}
+				<Button
+					variant="outline"
+					disabled={!isDirty || status === "saving"}
+					onClick={() => wrap(handleSave)}
+				>
+					{status === "saving" ? (
+						<Loader2 size={12} className="animate-spin" />
+					) : status === "saved" ? (
+						"Saved"
+					) : (
+						"Save"
+					)}
+				</Button>
 			</div>
 		</>
 	)
@@ -378,28 +336,28 @@ function ProjectForm({
 
 // ─── Main dialog ──────────────────────────────────────────────────────────────
 
-type PanelState = "empty" | "new" | { id: string }
+type PanelState = "empty" | "new" | { path: string }
 
 export function ProjectManagerDialog({
 	open,
 	onOpenChange,
 	projects,
-	currentProjectId,
+	currentProjectPath,
 	defaultPanel = "empty",
 	onSelect,
 	onCreate,
-	onUpdate,
+	onRename,
 	onDelete,
 }: {
 	open: boolean
 	onOpenChange: (v: boolean) => void
 	projects: ApiProject[]
-	currentProjectId: string
+	currentProjectPath: string
 	defaultPanel?: "empty" | "new"
-	onSelect: (id: string) => void
-	onCreate: (name: string, type: ProjectType) => Promise<ApiProject>
-	onUpdate: (id: string, patch: ProjectPatch) => Promise<ApiProject>
-	onDelete: (id: string) => Promise<void>
+	onSelect: (path: string) => void
+	onCreate: (path: string, name?: string) => Promise<ApiProject>
+	onRename: (path: string, name: string) => Promise<ApiProject>
+	onDelete: (path: string) => Promise<void>
 }) {
 	const [panelState, setPanelState] = useState<PanelState>("empty")
 	const [search, setSearch] = useState("")
@@ -407,8 +365,8 @@ export function ProjectManagerDialog({
 	useEffect(() => {
 		if (!open) return
 		setSearch("")
-		setPanelState(currentProjectId ? { id: currentProjectId } : defaultPanel)
-	}, [open, currentProjectId, defaultPanel])
+		setPanelState(currentProjectPath ? { path: currentProjectPath } : defaultPanel)
+	}, [open, currentProjectPath, defaultPanel])
 
 	const filtered = projects.filter((p) =>
 		p.name.toLowerCase().includes(search.toLowerCase()),
@@ -416,33 +374,34 @@ export function ProjectManagerDialog({
 
 	const selectedProject =
 		panelState !== "empty" && panelState !== "new"
-			? projects.find((p) => p.id === panelState.id)
+			? projects.find((p) => p.path === panelState.path)
 			: undefined
 
-	async function handleDelete(id: string) {
-		await onDelete(id)
+	async function handleDelete(path: string) {
+		await onDelete(path)
 		setPanelState("empty")
 	}
 
-	async function handleCreate(name: string, type: ProjectType) {
-		const project = await onCreate(name, type)
-		onSelect(project.id)
+	async function handleCreate(path: string, name?: string) {
+		const project = await onCreate(path, name)
+		onSelect(project.path)
+		setPanelState({ path: project.path })
 		return project
 	}
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="overflow-hidden p-0 h-[600px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
+			<DialogContent className="overflow-hidden p-0 h-[560px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
 				<DialogTitle className="sr-only">Projects</DialogTitle>
 				<DialogDescription className="sr-only">
-					Manage your patent matters.
+					Manage your matter folders.
 				</DialogDescription>
 
 				<SidebarProvider
 					className="flex-1 h-full min-h-0 items-stretch"
 					style={{ "--sidebar-width": "13rem" } as CSSProperties}
 				>
-					{/* Left — project list */}
+					{/* Left — folder list */}
 					<Sidebar
 						collapsible="none"
 						className="flex h-full border-r border-border bg-sidebar"
@@ -469,26 +428,31 @@ export function ProjectManagerDialog({
 											const isSelected =
 												panelState !== "empty" &&
 												panelState !== "new" &&
-												panelState.id === project.id
+												panelState.path === project.path
 
 											return (
-												<SidebarMenuItem key={project.id}>
+												<SidebarMenuItem key={project.path}>
 													<SidebarMenuButton
 														onClick={() => {
-															setPanelState({ id: project.id })
-															onSelect(project.id)
+															setPanelState({ path: project.path })
+															onSelect(project.path)
 														}}
 														className={cn(
 															"rounded-none h-auto py-2",
 															isSelected
 																? "border-l-2 border-primary font-medium"
-																: project.id === currentProjectId
+																: project.path === currentProjectPath
 																	? "border-l-2 border-primary/30"
 																	: "border-l-2 border-transparent",
 														)}
 													>
-														<span className="flex-1 truncate text-left">
-															{project.name}
+														<span className="flex flex-col gap-0.5 min-w-0 text-left">
+															<span className="truncate text-sm">
+																{project.name}
+															</span>
+															<span className="truncate text-[10px] text-muted-foreground font-mono">
+																{project.path.split("/").at(-1)}
+															</span>
 														</span>
 													</SidebarMenuButton>
 												</SidebarMenuItem>
@@ -496,7 +460,7 @@ export function ProjectManagerDialog({
 										})}
 										{filtered.length === 0 && (
 											<p className="px-3 py-2 text-xs text-muted-foreground">
-												{search ? "No matches." : "No projects yet."}
+												{search ? "No matches." : "No folders added yet."}
 											</p>
 										)}
 									</SidebarMenu>
@@ -509,7 +473,7 @@ export function ProjectManagerDialog({
 								className="w-full"
 								onClick={() => setPanelState("new")}
 							>
-								New project
+								Add folder
 							</Button>
 						</SidebarFooter>
 					</Sidebar>
@@ -520,23 +484,23 @@ export function ProjectManagerDialog({
 							<div className="flex flex-1 items-center justify-center">
 								<Empty>
 									<EmptyHeader>
-										<EmptyTitle>Select a project</EmptyTitle>
+										<EmptyTitle>Select a folder</EmptyTitle>
 										<EmptyDescription>
-											Pick one from the list or create a new one.
+											Pick a matter folder or add a new one.
 										</EmptyDescription>
 									</EmptyHeader>
 								</Empty>
 							</div>
 						) : panelState === "new" ? (
-							<ProjectForm
+							<AddFolderPanel
 								onCreate={handleCreate}
-								onCreated={(project) => setPanelState({ id: project.id })}
+								onCreated={(p) => setPanelState({ path: p.path })}
 							/>
 						) : selectedProject ? (
-							<ProjectForm
-								key={selectedProject.id}
+							<EditFolderPanel
+								key={selectedProject.path}
 								project={selectedProject}
-								onUpdate={onUpdate}
+								onRename={onRename}
 								onDelete={handleDelete}
 							/>
 						) : null}

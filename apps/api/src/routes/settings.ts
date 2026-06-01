@@ -1,53 +1,45 @@
-import {
-	DEFAULT_PROMPT_AGENTPAT,
-	DEFAULT_PROMPT_ASKPAT,
-	DEFAULT_PROMPT_CONTEXT,
-	DEFAULT_PROMPT_EXTRACTPAT,
-	eq,
-	settings,
-} from "@patrickos/db"
+import type { Settings } from "@patrickos/shared"
 import { Hono } from "hono"
-import { db } from "../lib/db"
+import { readSettings, writeSettings } from "../lib/fs"
 
 export const settingsRouter = new Hono()
 
 settingsRouter.get("/", async (c) => {
-	await db
-		.insert(settings)
-		.values({
-			id: "local",
-			promptAgentpat: DEFAULT_PROMPT_AGENTPAT,
-			promptAskpat: DEFAULT_PROMPT_ASKPAT,
-			promptContext: DEFAULT_PROMPT_CONTEXT,
-			promptExtractpat: DEFAULT_PROMPT_EXTRACTPAT,
-		})
-		.onConflictDoNothing()
-	const [row] = await db.select().from(settings).where(eq(settings.id, "local"))
-	return c.json(row)
+	const settings = await readSettings()
+	return c.json(settings)
 })
 
 settingsRouter.put("/", async (c) => {
-	const patch =
-		await c.req.json<
-			Partial<{
-				name: string
-				firm: string
-				role: string
-				jurisdiction: string
-				aiProvider: string
-				aiQuickModel: string
-				aiDetailedModel: string
-				promptContext: string
-				promptAskpat: string
-				promptAgentpat: string
-				promptExtractpat: string
-			}>
-		>()
-	await db.insert(settings).values({ id: "local" }).onConflictDoNothing()
-	const [row] = await db
-		.update(settings)
-		.set(patch)
-		.where(eq(settings.id, "local"))
-		.returning()
-	return c.json(row)
+	const patch = await c.req.json<DeepPartial<Settings>>()
+	const current = await readSettings()
+	const updated = deepMerge(current, patch)
+	await writeSettings(updated)
+	return c.json(updated)
 })
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+type DeepPartial<T> = T extends object
+	? { [K in keyof T]?: DeepPartial<T[K]> }
+	: T
+
+function deepMerge<T extends object>(base: T, patch: Record<string, unknown>): T {
+	const result = { ...base } as Record<string, unknown>
+	for (const key of Object.keys(patch)) {
+		const patchVal = patch[key]
+		const baseVal = result[key]
+		if (
+			patchVal !== undefined &&
+			patchVal !== null &&
+			typeof patchVal === "object" &&
+			!Array.isArray(patchVal) &&
+			typeof baseVal === "object" &&
+			baseVal !== null
+		) {
+			result[key] = deepMerge(baseVal as object, patchVal as Record<string, unknown>)
+		} else if (patchVal !== undefined) {
+			result[key] = patchVal
+		}
+	}
+	return result as T
+}

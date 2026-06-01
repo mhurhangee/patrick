@@ -1,4 +1,4 @@
-import type { ApiChat } from "@patrickos/db"
+import type { ApiChat } from "@patrickos/shared"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
@@ -16,7 +16,7 @@ export function useChatState(currentProjectId: string) {
 		setActiveChatId("agentpat")
 		setPendingMessages({})
 		if (!currentProjectId) return
-		api.chats.list(currentProjectId).then(setChats)
+		api.chats.list(currentProjectId).then(setChats) // currentProjectId will become projectPath
 	}, [currentProjectId])
 
 	function openChat(id: string) {
@@ -42,14 +42,14 @@ export function useChatState(currentProjectId: string) {
 	}
 
 	async function deleteChat(id: string) {
-		await api.chats.delete(id)
+		await api.chats.delete(id, currentProjectId)
 		setChats((prev) => prev.filter((c) => c.id !== id))
 		closeChat(id)
 	}
 
 	function updateChat(id: string, title: string) {
 		setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)))
-		api.chats.update(id, title).catch(() => {})
+		api.chats.update(id, currentProjectId, title).catch(() => {})
 	}
 
 	function incrementMessageCount(chatId: string) {
@@ -69,12 +69,13 @@ export function useChatState(currentProjectId: string) {
 		setChats((prev) => [
 			{
 				id,
-				projectId: currentProjectId,
+				projectPath: currentProjectId,
 				title,
 				createdAt: now,
 				updatedAt: now,
+				lastMessagePreview: "",
 				messageCount: 0,
-			},
+			} as ApiChat,
 			...prev,
 		])
 		openChat(id)

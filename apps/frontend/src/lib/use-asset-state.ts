@@ -1,28 +1,53 @@
-import type { ApiAsset } from "@patrickos/db"
+import type { ApiAsset } from "@patrickos/shared"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
+
+function fileToAsset(
+	file: { filename: string; path: string; ext: string; createdAt?: string; updatedAt?: string },
+	kind: "source" | "artifact",
+	projectPath: string,
+): ApiAsset {
+	const title = file.filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ")
+	return {
+		id: file.path,
+		projectId: projectPath,
+		kind,
+		title,
+		filename: file.filename,
+		path: file.path,
+		type: "",
+		content: "",
+		date: file.createdAt ?? "",
+		notes: "",
+		metadata: {},
+		details: null,
+		tags: [],
+		createdAt: file.createdAt ?? "",
+		updatedAt: file.updatedAt ?? "",
+	}
+}
 
 export function useAssetState(currentProjectId: string) {
 	const [assets, setAssets] = useState<ApiAsset[]>([])
 	const [openTabIds, setOpenTabIds] = useState<string[]>([])
 	const [activeTab, setActiveTab] = useState("")
 	const [splitView, setSplitView] = useState(false)
-	const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
-	const [sourceDialogAsset, setSourceDialogAsset] = useState<
-		ApiAsset | undefined
-	>(undefined)
-	const [artifactDialogOpen, setArtifactDialogOpen] = useState(false)
-	const [artifactDialogAsset, setArtifactDialogAsset] = useState<
-		ApiAsset | undefined
-	>(undefined)
+	// Dialogs kept as stubs — will be rewritten as part of the artifact creation flow
+	const [sourceDialogOpen] = useState(false)
+	const [sourceDialogAsset] = useState<ApiAsset | undefined>(undefined)
+	const [artifactDialogOpen] = useState(false)
+	const [artifactDialogAsset] = useState<ApiAsset | undefined>(undefined)
 
-	// Always reset on project change, then fetch if a project is selected
 	useEffect(() => {
 		setAssets([])
 		setOpenTabIds([])
 		setActiveTab("")
 		if (!currentProjectId) return
-		api.assets.list(currentProjectId).then(setAssets)
+		api.projects.listFiles(currentProjectId).then(({ sources, artifacts }) => {
+			const sourceAssets = sources.map((f) => fileToAsset(f, "source", currentProjectId))
+			const artifactAssets = artifacts.map((f) => fileToAsset(f, "artifact", currentProjectId))
+			setAssets([...sourceAssets, ...artifactAssets])
+		})
 	}, [currentProjectId])
 
 	function openAsset(id: string) {
@@ -53,62 +78,38 @@ export function useAssetState(currentProjectId: string) {
 	}
 
 	async function deleteAsset(id: string) {
-		await api.assets.delete(id)
+		// In file-system mode, we don't delete the file — just remove from view
 		closeTab(id)
 		setAssets((prev) => prev.filter((a) => a.id !== id))
 	}
 
-	function addSource() {
-		if (!currentProjectId) return
-		setSourceDialogAsset(undefined)
-		setSourceDialogOpen(true)
-	}
+	// Not supported in file-system mode — sources come from the folder
+	function addSource() {}
 
-	function addArtifact() {
-		if (!currentProjectId) return
-		setArtifactDialogAsset(undefined)
-		setArtifactDialogOpen(true)
-	}
+	// Not supported yet — artifact creation will be wired up in a future phase
+	function addArtifact() {}
 
-	function editAsset(id: string) {
-		const a = assets.find((asset) => asset.id === id)
-		if (!a) return
-		if (a.kind === "source") {
-			setSourceDialogAsset(a)
-			setSourceDialogOpen(true)
-		} else {
-			setArtifactDialogAsset(a)
-			setArtifactDialogOpen(true)
-		}
-	}
+	function editAsset(_id: string) {}
 
-	function onTempSourceCreated(asset: ApiAsset) {
-		setAssets((prev) =>
-			prev.some((a) => a.id === asset.id) ? prev : [...prev, asset],
-		)
-	}
+	function onTempSourceCreated(_asset: ApiAsset) {}
 
 	function onSourceSaved(asset: ApiAsset) {
-		const isNew = !sourceDialogAsset
 		setAssets((prev) => {
 			const exists = prev.some((a) => a.id === asset.id)
-			return exists
-				? prev.map((a) => (a.id === asset.id ? asset : a))
-				: [...prev, asset]
+			return exists ? prev.map((a) => (a.id === asset.id ? asset : a)) : [...prev, asset]
 		})
-		if (isNew) openAsset(asset.id)
 	}
 
 	function onArtifactSaved(asset: ApiAsset) {
-		const isNew = !artifactDialogAsset
 		setAssets((prev) => {
 			const exists = prev.some((a) => a.id === asset.id)
-			return exists
-				? prev.map((a) => (a.id === asset.id ? asset : a))
-				: [...prev, asset]
+			return exists ? prev.map((a) => (a.id === asset.id ? asset : a)) : [...prev, asset]
 		})
-		if (isNew) openAsset(asset.id)
+		openAsset(asset.id)
 	}
+
+	function setSourceDialogOpen(_v: boolean) {}
+	function setArtifactDialogOpen(_v: boolean) {}
 
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))

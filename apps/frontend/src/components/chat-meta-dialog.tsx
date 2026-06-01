@@ -1,4 +1,4 @@
-import type { ApiChat, ApiChatMessage } from "@patrickos/db"
+import type { ApiChat, ApiChatMessage } from "@patrickos/shared"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import {
@@ -90,7 +90,7 @@ export function ChatMetaDialog({
 		setStats(null)
 		setLoadingStats(true)
 		api.chats
-			.getMessages(chat.id)
+			.getMessages(chat.id, "")
 			.then((msgs) => setStats(computeStats(msgs)))
 			.finally(() => setLoadingStats(false))
 	}, [open, chat?.id])

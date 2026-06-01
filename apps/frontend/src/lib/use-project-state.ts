@@ -1,4 +1,4 @@
-import type { ApiProject, ProjectType } from "@patrickos/db"
+import type { ApiProject } from "@patrickos/shared"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
@@ -12,32 +12,29 @@ export function useProjectState() {
 			.list()
 			.then((data) => {
 				setProjects(data)
-				if (data.length > 0) setCurrentProjectId(data[0].id)
+				if (data.length > 0) setCurrentProjectId(data[0].path)
 			})
 			.finally(() => setProjectsLoading(false))
 	}, [])
 
-	async function createProject(name: string, type: ProjectType) {
-		const project = await api.projects.create(name, type)
+	async function createProject(path: string, name?: string) {
+		const project = await api.projects.create(path, name)
 		setProjects((prev) => [...prev, project])
-		setCurrentProjectId(project.id)
+		setCurrentProjectId(project.path)
 		return project
 	}
 
-	async function updateProject(
-		id: string,
-		patch: { name?: string; type?: ProjectType },
-	) {
-		const updated = await api.projects.update(id, patch)
-		setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)))
+	async function renameProject(path: string, name: string) {
+		const updated = await api.projects.rename(path, name)
+		setProjects((prev) => prev.map((p) => (p.path === path ? updated : p)))
 		return updated
 	}
 
-	async function deleteProject(id: string) {
-		await api.projects.delete(id)
+	async function deleteProject(path: string) {
+		await api.projects.delete(path)
 		setProjects((prev) => {
-			const next = prev.filter((p) => p.id !== id)
-			if (currentProjectId === id) setCurrentProjectId(next[0]?.id ?? "")
+			const next = prev.filter((p) => p.path !== path)
+			if (currentProjectId === path) setCurrentProjectId(next[0]?.path ?? "")
 			return next
 		})
 	}
@@ -48,7 +45,7 @@ export function useProjectState() {
 		currentProjectId,
 		setCurrentProjectId,
 		createProject,
-		updateProject,
+		renameProject,
 		deleteProject,
 	}
 }
