@@ -305,7 +305,13 @@ function WorkspaceContent({
 			/>
 
 			{/* Full-screen overlays — rendered last so they sit on top */}
-			<OnboardingFlow open={needsOnboarding} onComplete={onSetupDone} />
+			<OnboardingFlow
+				open={needsOnboarding}
+				onComplete={async (projectPath) => {
+					if (projectPath) await project.createProject(projectPath)
+					onSetupDone()
+				}}
+			/>
 			<SettingsPanel
 				open={settingsOpen}
 				onClose={() => setSettingsOpen(false)}

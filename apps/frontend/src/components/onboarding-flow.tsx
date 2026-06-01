@@ -3,7 +3,7 @@ import {
 	DEFAULT_PROMPT_ASKPAT,
 	DEFAULT_PROMPT_EXTRACTPAT,
 } from "@patrickos/shared"
-import { ChevronDown, Eye, EyeOff, Loader2 } from "lucide-react"
+import { ChevronDown, Eye, EyeOff, FolderOpen, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,8 +33,32 @@ import {
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-type StepId = "you" | "ai" | "agentpat" | "askpat" | "extractpat"
-const STEPS: StepId[] = ["you", "ai", "agentpat", "askpat", "extractpat"]
+// Tauri v2 runtime detection
+const isTauri =
+	typeof window !== "undefined" &&
+	// biome-ignore lint/suspicious/noExplicitAny: runtime detection
+	!!(window as any).__TAURI_INTERNALS__
+
+async function pickFolderNative(): Promise<string | null> {
+	if (!isTauri) return null
+	try {
+		const { open } = await import("@tauri-apps/plugin-dialog")
+		const result = await open({ directory: true, multiple: false })
+		return typeof result === "string" ? result : null
+	} catch {
+		return null
+	}
+}
+
+type StepId = "you" | "ai" | "agentpat" | "askpat" | "extractpat" | "project"
+const STEPS: StepId[] = [
+	"you",
+	"ai",
+	"agentpat",
+	"askpat",
+	"extractpat",
+	"project",
+]
 
 const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 	you: {
@@ -61,6 +85,11 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 		title: "ExtractPat system prompt",
 		description:
 			"ExtractPat reads your PDFs and extracts structured metadata: office action dates, claim numbers, cited references. Leave blank to use the built-in default.",
+	},
+	project: {
+		title: "Load your first matter",
+		description:
+			"Point PatrickOS at an existing matter folder on your machine. Your PDFs and Word docs stay exactly where they are — PatrickOS only reads them, and creates three small subfolders for its own output.",
 	},
 }
 
@@ -143,6 +172,11 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 		"ExtractPat reads PDFs and extracts structured metadata into analysis/ in your matter folder.",
 		"The default prompt targets common patent prosecution fields — office action dates, claim numbers, cited references.",
 	],
+	project: [
+		"PatrickOS never modifies your existing files — PDFs and Word docs are read-only sources.",
+		"It creates three subfolders: chats/ (conversation history), artifacts/ (AI-drafted documents), analysis/ (extracted metadata).",
+		"You can add more matters any time from the sidebar.",
+	],
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -152,7 +186,8 @@ export function OnboardingFlow({
 	onComplete,
 }: {
 	open: boolean
-	onComplete: () => void
+	/** Called when onboarding finishes. `projectPath` is set if the user created a project. */
+	onComplete: (projectPath?: string) => void
 }) {
 	const ai = useAI()
 	const [stepIndex, setStepIndex] = useState(0)
@@ -180,6 +215,10 @@ export function OnboardingFlow({
 	const [verifyStatus, setVerifyStatus] = useState<
 		"idle" | "verifying" | "valid" | "invalid"
 	>("idle")
+
+	// Project
+	const [projectPath, setProjectPath] = useState("")
+	const [projectPicking, setProjectPicking] = useState(false)
 
 	// Prompts
 	const [agentPatPrompt, setAgentPatPrompt] = useState("")
@@ -267,13 +306,26 @@ export function OnboardingFlow({
 		} else if (step === "extractpat") {
 			await api.settings.update({ prompts: { extractpat: extractPatPrompt } })
 		}
+		// "project" is handled separately in handleNext — returns the path
 	}
 
 	async function handleNext() {
 		setSaving(true)
 		try {
+			const step = STEPS[stepIndex]
+			const isLast = stepIndex === STEPS.length - 1
+
+			if (step === "project") {
+				// Create the project if a path was entered, then finish
+				const trimmed = projectPath.trim()
+				if (trimmed) await api.projects.create(trimmed)
+				await ai.reloadSettings()
+				onComplete(trimmed || undefined)
+				return
+			}
+
 			await saveCurrentStep()
-			if (stepIndex === STEPS.length - 1) {
+			if (isLast) {
 				await ai.reloadSettings()
 				onComplete()
 			} else {
@@ -285,11 +337,23 @@ export function OnboardingFlow({
 	}
 
 	async function handleSkip() {
-		if (stepIndex === STEPS.length - 1) {
+		const step = STEPS[stepIndex]
+		const isLast = stepIndex === STEPS.length - 1
+		if (isLast || step === "project") {
 			await ai.reloadSettings()
 			onComplete()
 		} else {
 			setStepIndex((s) => s + 1)
+		}
+	}
+
+	async function handleBrowseProject() {
+		setProjectPicking(true)
+		try {
+			const picked = await pickFolderNative()
+			if (picked) setProjectPath(picked)
+		} finally {
+			setProjectPicking(false)
 		}
 	}
 
@@ -573,6 +637,57 @@ export function OnboardingFlow({
 										className="min-h-[280px] font-mono text-xs"
 									/>
 								)}
+
+								{stepId === "project" && (
+									<div className="flex flex-col gap-4">
+										<div className="flex flex-col gap-1.5">
+											<Label>Matter folder path</Label>
+											<div className="flex gap-2">
+												<Input
+													value={projectPath}
+													onChange={(e) => setProjectPath(e.target.value)}
+													placeholder="/Users/jane/matters/client-acme-123"
+													className="font-mono text-xs"
+													autoFocus
+												/>
+												{isTauri && (
+													<Button
+														type="button"
+														variant="secondary"
+														onClick={handleBrowseProject}
+														disabled={projectPicking}
+													>
+														{projectPicking ? (
+															<Loader2 size={12} className="animate-spin" />
+														) : (
+															<>
+																<FolderOpen size={12} />
+																Browse
+															</>
+														)}
+													</Button>
+												)}
+											</div>
+										</div>
+										<div className="rounded-md border bg-muted/40 px-4 py-3 text-xs text-muted-foreground space-y-1">
+											<p className="font-medium text-foreground">
+												What PatrickOS will create inside:
+											</p>
+											<p>
+												<code className="font-mono">chats/</code> — conversation
+												history (JSON, readable)
+											</p>
+											<p>
+												<code className="font-mono">artifacts/</code> —
+												AI-drafted documents (Plate JSON + .docx)
+											</p>
+											<p>
+												<code className="font-mono">analysis/</code> — extracted
+												metadata per source file
+											</p>
+										</div>
+									</div>
+								)}
 							</div>
 						</div>
 					)
@@ -598,12 +713,14 @@ export function OnboardingFlow({
 							disabled={saving}
 							className="text-muted-foreground"
 						>
-							Skip for now
+							{isLast ? "Skip — I'll add a project later" : "Skip for now"}
 						</Button>
 					)}
 					<Button type="button" onClick={handleNext} disabled={saving}>
 						{saving ? (
 							<Loader2 size={12} className="animate-spin" />
+						) : isLast && projectPath.trim() ? (
+							"Load project →"
 						) : isLast ? (
 							"Finish"
 						) : (
