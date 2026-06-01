@@ -74,8 +74,6 @@ type Section =
 	| "ai-instructions-agentpat"
 	| "ai-instructions-extractpat"
 	| "integrations-epo"
-	| "storage"
-	| "billing"
 
 type KeyStatus = "idle" | "verifying" | "valid" | "invalid"
 type SaveStatus = "idle" | "saving" | "saved"
@@ -198,13 +196,6 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Integrations",
 		items: [{ id: "integrations-epo", label: "EPO OPS", indent: true }],
-	},
-	{
-		label: "Misc",
-		items: [
-			{ id: "storage", label: "Storage" },
-			{ id: "billing", label: "Billing" },
-		],
 	},
 ]
 
@@ -619,37 +610,6 @@ export function SettingsDialog({
 								onSecretChange={setEpoSecret}
 								onSave={saveEpo}
 							/>
-						)}
-						{activeSection === "storage" && (
-							<SectionLayout
-								title="Storage"
-								description="Where your projects, sources, and artifacts are stored."
-							>
-								<div className="flex flex-col gap-4">
-									<div className="rounded-md border bg-muted/40 p-4">
-										<p className="text-sm font-medium">Local storage</p>
-										<p className="mt-1 text-xs text-muted-foreground">
-											All data is stored as files on this device — JSON, YAML,
-											and .docx. Nothing leaves your machine.
-										</p>
-									</div>
-									<p className="text-xs text-muted-foreground">
-										Cloud storage (Turso / self-hosted) — coming soon. Sync
-										across devices and share with colleagues.
-									</p>
-								</div>
-							</SectionLayout>
-						)}
-						{activeSection === "billing" && (
-							<SectionLayout
-								title="Billing"
-								description="Subscription and usage for PatrickOS Cloud."
-							>
-								<p className="text-xs text-muted-foreground">
-									PatrickOS is currently free. Cloud credits and team billing —
-									coming soon.
-								</p>
-							</SectionLayout>
 						)}
 					</main>
 				</SidebarProvider>

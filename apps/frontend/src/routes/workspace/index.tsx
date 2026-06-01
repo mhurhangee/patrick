@@ -1,6 +1,6 @@
 import type { ProjectType } from "@patrickos/shared"
 import { createFileRoute } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { AppSidebar } from "@/components/app-sidebar"
 import { AssetViewer } from "@/components/asset-viewer"
@@ -26,7 +26,9 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { SetupDialog } from "@/components/setup-dialog"
 import { AIProvider, useAI } from "@/lib/ai-context"
+import { api } from "@/lib/api"
 import { useAssetState } from "@/lib/use-asset-state"
 import { useChatState } from "@/lib/use-chat-state"
 import { useProjectState } from "@/lib/use-project-state"
@@ -59,6 +61,14 @@ function WorkspaceContent() {
 		"empty" | "new"
 	>("empty")
 	const [settingsOpen, setSettingsOpen] = useState(false)
+	const [setupOpen, setSetupOpen] = useState(false)
+
+	// Show setup on first run (no profile name set)
+	useEffect(() => {
+		api.settings.get().then((s) => {
+			if (!s.profile.name) setSetupOpen(true)
+		})
+	}, [])
 
 	function openProjects(panel: "empty" | "new" = "empty") {
 		setProjectsDefaultPanel(panel)
@@ -255,6 +265,8 @@ function WorkspaceContent() {
 					onCreated={asset.onArtifactSaved}
 				/>
 			)}
+
+			<SetupDialog open={setupOpen} onDone={() => setSetupOpen(false)} />
 
 			<ChatMetaDialog
 				open={chatEditId !== null}
