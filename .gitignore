@@ -48,3 +48,10 @@ _temp/
 apps/api/bin/
 **/.tanstack/
 IDEAS.md
+
+# Dev data (local file storage for browser dev mode)
+dev-data/
+apps/api/dev-data/
+
+# Test projects / local matter folders
+testproject/
