@@ -5,6 +5,7 @@ use tauri_plugin_shell::ShellExt;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -14,20 +15,21 @@ pub fn run() {
                 )?;
             }
 
-            // Resolve the app data dir for the database file
-            let data_dir = app
+            // Use the OS app config dir as PatrickOS config directory.
+            // On macOS: ~/Library/Application Support/com.patrickos.desktop
+            // On Linux: ~/.config/com.patrickos.desktop
+            let config_dir = app
                 .path()
-                .app_data_dir()
-                .expect("failed to resolve app data dir");
-            std::fs::create_dir_all(&data_dir)?;
-            let db_path = data_dir.join("patrickos.db");
-            let db_url = format!("file:{}", db_path.display());
+                .app_config_dir()
+                .expect("failed to resolve app config dir");
+            std::fs::create_dir_all(&config_dir)?;
 
-            // Start the API sidecar
+            // Start the API sidecar, passing config dir so it knows where
+            // to read/write settings.yaml and projects.yaml
             app.shell()
                 .sidecar("api")
                 .expect("api sidecar not found")
-                .env("DATABASE_URL", db_url)
+                .env("CONFIG_DIR", config_dir.to_string_lossy().as_ref())
                 .env("PORT", "3000")
                 .spawn()
                 .expect("failed to spawn api sidecar");
