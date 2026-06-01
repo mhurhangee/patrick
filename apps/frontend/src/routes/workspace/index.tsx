@@ -1,6 +1,6 @@
 import type { ProjectType } from "@patrickos/shared"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { AppSidebar } from "@/components/app-sidebar"
 import { AssetViewer } from "@/components/asset-viewer"
@@ -10,8 +10,10 @@ import { EditArtifactDialog } from "@/components/edit-artifact-dialog"
 import { EditSourceDialog } from "@/components/edit-source-dialog"
 import { NewArtifactDialog } from "@/components/new-artifact-dialog"
 import { NewSourceDialog } from "@/components/new-source-dialog"
+import { OnboardingFlow } from "@/components/onboarding-flow"
+import { ProfilePicker } from "@/components/profile-picker"
 import { ProjectManagerDialog } from "@/components/project-manager-dialog"
-import { SettingsDialog } from "@/components/settings-dialog"
+import { SettingsPanel } from "@/components/settings-panel"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
@@ -26,9 +28,7 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { ProfilePicker } from "@/components/profile-picker"
 import { AIProvider, useAI } from "@/lib/ai-context"
-import { api } from "@/lib/api"
 import { useAssetState } from "@/lib/use-asset-state"
 import { useChatState } from "@/lib/use-chat-state"
 import { useProjectState } from "@/lib/use-project-state"
@@ -39,33 +39,34 @@ export const Route = createFileRoute("/workspace/")({
 
 function WorkspacePage() {
 	const [configReady, setConfigReady] = useState(false)
-	const [needsSetup, setNeedsSetup] = useState(false)
+	const [needsOnboarding, setNeedsOnboarding] = useState(false)
 
-	useEffect(() => {
-		const saved = localStorage.getItem("patrickos-config-dir")
-		if (saved) {
-			api.config.setDir(saved)
-				.then(() => setConfigReady(true))
-				.catch(() => {
-					// API not ready yet — still show picker
-					localStorage.removeItem("patrickos-config-dir")
-					setConfigReady(false)
-				})
-		}
-		// If no saved dir, configReady stays false → show picker
-	}, [])
+	// Always show the picker — localStorage pre-fills the input but doesn't auto-skip.
+	// This gives users a conscious "I'm loading profile X" moment every session,
+	// which is important for multi-profile (multi-client) use.
+	const initialDir =
+		typeof window !== "undefined"
+			? (localStorage.getItem("patrickos-config-dir") ?? "")
+			: ""
+
+	function switchProfile() {
+		localStorage.removeItem("patrickos-config-dir")
+		setConfigReady(false)
+		setNeedsOnboarding(false)
+	}
 
 	if (!configReady) {
 		return (
 			<ProfilePicker
+				initialDir={initialDir}
 				onLoad={(dir) => {
 					localStorage.setItem("patrickos-config-dir", dir)
-					setNeedsSetup(false)
+					setNeedsOnboarding(false)
 					setConfigReady(true)
 				}}
 				onSetup={(dir) => {
 					localStorage.setItem("patrickos-config-dir", dir)
-					setNeedsSetup(true)
+					setNeedsOnboarding(true)
 					setConfigReady(true)
 				}}
 			/>
@@ -74,20 +75,30 @@ function WorkspacePage() {
 
 	return (
 		<AIProvider>
-			<WorkspaceContent needsSetup={needsSetup} onSetupDone={() => setNeedsSetup(false)} />
+			<WorkspaceContent
+				needsOnboarding={needsOnboarding}
+				onSetupDone={() => setNeedsOnboarding(false)}
+				onSwitchProfile={switchProfile}
+			/>
 		</AIProvider>
 	)
 }
 
-function WorkspaceContent({ needsSetup, onSetupDone }: { needsSetup: boolean; onSetupDone: () => void }) {
+function WorkspaceContent({
+	needsOnboarding,
+	onSetupDone,
+	onSwitchProfile,
+}: {
+	needsOnboarding: boolean
+	onSetupDone: () => void
+	onSwitchProfile: () => void
+}) {
 	const ai = useAI()
 	const project = useProjectState()
-	// Legacy: asset dialogs still need a ProjectType — defaults until they are rewritten
 	const currentProjectType: ProjectType = "us-non-final-oa-response"
 	const asset = useAssetState(project.currentProjectId)
 	const chat = useChatState(project.currentProjectId)
 
-	// UI
 	const [chatEditId, setChatEditId] = useState<string | null>(null)
 	const [chatCollapsed, setChatCollapsed] = useState(false)
 	const [projectsOpen, setProjectsOpen] = useState(false)
@@ -232,27 +243,8 @@ function WorkspaceContent({ needsSetup, onSetupDone }: { needsSetup: boolean; on
 				onRename={project.renameProject}
 				onDelete={project.deleteProject}
 			/>
-			<SettingsDialog
-				open={settingsOpen || needsSetup}
-				onOpenChange={(v) => {
-					if (needsSetup) return // can't close mid-setup via overlay click
-					setSettingsOpen(v)
-				}}
-				savedProvider={ai.provider}
-				keyStatus={ai.keyStatus}
-				savedQuickModel={ai.quickModel}
-				savedDetailedModel={ai.detailedModel}
-				onVerify={ai.verifyKey}
-				onSave={ai.saveAiSettings}
-				onClear={ai.clearApiKey}
-				setupMode={needsSetup}
-				onSetupComplete={async () => {
-					await ai.reloadSettings()
-					onSetupDone()
-				}}
-			/>
 
-			{/* Source dialogs — split by mode */}
+			{/* Source dialogs */}
 			{asset.sourceDialogAsset ? (
 				<EditSourceDialog
 					key={asset.sourceDialogAsset.id}
@@ -279,7 +271,7 @@ function WorkspaceContent({ needsSetup, onSetupDone }: { needsSetup: boolean; on
 				/>
 			)}
 
-			{/* Artifact dialogs — split by mode */}
+			{/* Artifact dialogs */}
 			{asset.artifactDialogAsset ? (
 				<EditArtifactDialog
 					key={asset.artifactDialogAsset.id}
@@ -310,6 +302,14 @@ function WorkspaceContent({ needsSetup, onSetupDone }: { needsSetup: boolean; on
 				onClose={() => setChatEditId(null)}
 				onUpdated={chat.updateChat}
 				onDeleted={chat.deleteChat}
+			/>
+
+			{/* Full-screen overlays — rendered last so they sit on top */}
+			<OnboardingFlow open={needsOnboarding} onComplete={onSetupDone} />
+			<SettingsPanel
+				open={settingsOpen}
+				onClose={() => setSettingsOpen(false)}
+				onSwitchProfile={onSwitchProfile}
 			/>
 		</SidebarProvider>
 	)

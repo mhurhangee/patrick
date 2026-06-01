@@ -30,16 +30,21 @@ type FolderState =
 	| { status: "error"; message: string }
 
 export function ProfilePicker({
+	initialDir = "",
 	onLoad,
 	onSetup,
 }: {
+	/** Pre-fill the folder input (e.g. from last session) without auto-continuing */
+	initialDir?: string
 	/** Profile folder chosen and existing settings loaded — go straight to workspace */
 	onLoad: (configDir: string) => void
 	/** Profile folder chosen but no settings.yaml — run setup flow */
 	onSetup: (configDir: string) => void
 }) {
-	const [dir, setDir] = useState("")
-	const [folderState, setFolderState] = useState<FolderState>({ status: "idle" })
+	const [dir, setDir] = useState(initialDir)
+	const [folderState, setFolderState] = useState<FolderState>({
+		status: "idle",
+	})
 	const [picking, setPicking] = useState(false)
 	const [confirming, setConfirming] = useState(false)
 
@@ -112,9 +117,10 @@ export function ProfilePicker({
 						PatrickOS
 					</h1>
 					<p className="mt-2 text-sm text-muted-foreground">
-						Pick a folder for your profile. Your settings, API key, and
-						preferences are stored there as plain files — readable, portable,
-						and yours.
+						Load an existing profile or create a new one. Your settings, API
+						key, and preferences are stored as plain files in the folder you
+						choose — readable, portable, and yours. Different folders =
+						different profiles.
 					</p>
 				</div>
 
