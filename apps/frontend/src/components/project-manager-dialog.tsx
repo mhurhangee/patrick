@@ -102,6 +102,7 @@ function AddFolderPanel({
 	const [name, setName] = useState("")
 	const [picking, setPicking] = useState(false)
 	const [creating, setCreating] = useState(false)
+	const [error, setError] = useState<string | null>(null)
 
 	async function handlePick() {
 		setPicking(true)
@@ -120,9 +121,12 @@ function AddFolderPanel({
 		const trimmedPath = path.trim()
 		if (!trimmedPath) return
 		setCreating(true)
+		setError(null)
 		try {
 			const project = await onCreate(trimmedPath, name.trim() || undefined)
 			onCreated(project)
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Failed to add folder")
 		} finally {
 			setCreating(false)
 		}
@@ -143,15 +147,19 @@ function AddFolderPanel({
 				<div className="flex flex-col gap-4 max-w-md">
 					<div className="flex flex-col gap-1.5">
 						<Label>Folder path</Label>
-						{isTauri ? (
-							<div className="flex gap-2">
-								<Input
-									value={path}
-									readOnly
-									placeholder="Pick a folder…"
-									className="font-mono text-xs"
-								/>
+						{/* Input is always editable — Browse button additionally available in Tauri */}
+						<div className="flex gap-2">
+							<Input
+								value={path}
+								onChange={(e) => setPath(e.target.value)}
+								placeholder="/Users/jane/matters/smith-corp"
+								className="font-mono text-xs"
+								autoFocus
+								onKeyDown={(e) => { if (e.key === "Enter") handleCreate() }}
+							/>
+							{isTauri && (
 								<Button
+									type="button"
 									variant="secondary"
 									onClick={handlePick}
 									disabled={picking}
@@ -165,15 +173,10 @@ function AddFolderPanel({
 										</>
 									)}
 								</Button>
-							</div>
-						) : (
-							<Input
-								value={path}
-								onChange={(e) => setPath(e.target.value)}
-								placeholder="/Users/jane/matters/smith-corp"
-								className="font-mono text-xs"
-								autoFocus
-							/>
+							)}
+						</div>
+						{error && (
+							<p className="text-xs text-destructive">{error}</p>
 						)}
 						<p className="text-xs text-muted-foreground">
 							Existing files in this folder are never modified.
@@ -199,6 +202,7 @@ function AddFolderPanel({
 
 			<div className="flex shrink-0 items-center justify-end border-t px-6 py-4">
 				<Button
+					type="button"
 					variant="secondary"
 					disabled={!path.trim() || creating}
 					onClick={handleCreate}
