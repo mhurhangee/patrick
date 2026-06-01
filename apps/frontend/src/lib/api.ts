@@ -30,9 +30,14 @@ export const api = {
 	config: {
 		getDir: () => request<{ configDir: string }>("/config/dir"),
 		setDir: (configDir: string) =>
-			request<{ ok: boolean; configDir: string }>("/config/dir", json({ configDir }, { method: "PUT" })),
+			request<{ ok: boolean; configDir: string }>(
+				"/config/dir",
+				json({ configDir }, { method: "PUT" }),
+			),
 		probe: (dir: string) =>
-			request<{ exists: boolean }>(`/config/probe?dir=${encodeURIComponent(dir)}`),
+			request<{ exists: boolean }>(
+				`/config/probe?dir=${encodeURIComponent(dir)}`,
+			),
 	},
 	settings: {
 		get: () => request<Settings>("/settings"),
@@ -49,7 +54,10 @@ export const api = {
 		) =>
 			request<{ extracted: Record<string, unknown>; assetType: string }>(
 				"/ai/extractpat/extract",
-				json({ filePath, assetType, provider, apiKey, model }, { method: "POST" }),
+				json(
+					{ filePath, assetType, provider, apiKey, model },
+					{ method: "POST" },
+				),
 			),
 	},
 	ai: {
@@ -72,31 +80,56 @@ export const api = {
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
 		create: (path: string, name?: string) =>
-			request<ApiProject>("/projects", json({ path, name }, { method: "POST" })),
+			request<ApiProject>(
+				"/projects",
+				json({ path, name }, { method: "POST" }),
+			),
 		rename: (path: string, name: string) =>
-			request<ApiProject>("/projects", json({ path, name }, { method: "PATCH" })),
+			request<ApiProject>(
+				"/projects",
+				json({ path, name }, { method: "PATCH" }),
+			),
 		delete: (path: string) =>
-			request<{ ok: boolean }>("/projects", json({ path }, { method: "DELETE" })),
+			request<{ ok: boolean }>(
+				"/projects",
+				json({ path }, { method: "DELETE" }),
+			),
 		listFiles: (path: string) =>
 			request<{
 				sources: { filename: string; path: string; ext: string }[]
-				artifacts: { filename: string; path: string; ext: string; createdAt: string; updatedAt: string }[]
+				artifacts: {
+					filename: string
+					path: string
+					ext: string
+					createdAt: string
+					updatedAt: string
+				}[]
 			}>(`/projects/files?path=${encodeURIComponent(path)}`),
 	},
 	chats: {
 		list: (projectPath: string) =>
-			request<ApiChat[]>(`/chats?projectPath=${encodeURIComponent(projectPath)}`),
+			request<ApiChat[]>(
+				`/chats?projectPath=${encodeURIComponent(projectPath)}`,
+			),
 		create: (projectPath: string, title: string, id?: string) =>
 			request<ApiChat>(
 				"/chats",
 				json({ projectPath, title, ...(id ? { id } : {}) }, { method: "POST" }),
 			),
 		update: (id: string, projectPath: string, title: string) =>
-			request<ApiChat>(`/chats/${id}`, json({ projectPath, title }, { method: "PATCH" })),
+			request<ApiChat>(
+				`/chats/${id}`,
+				json({ projectPath, title }, { method: "PATCH" }),
+			),
 		delete: (id: string, projectPath: string) =>
-			request<{ ok: boolean }>(`/chats/${id}?projectPath=${encodeURIComponent(projectPath)}`, { method: "DELETE" }),
+			request<{ ok: boolean }>(
+				`/chats/${id}?projectPath=${encodeURIComponent(projectPath)}`,
+				{ method: "DELETE" },
+			),
 		getMessages: (chatId: string, projectPath: string) =>
-			request<ApiChatMessage[]>(`/chats/${chatId}/messages?projectPath=${encodeURIComponent(projectPath)}`),
+			request<ApiChatMessage[]>(
+				`/chats/${chatId}/messages?projectPath=${encodeURIComponent(projectPath)}`,
+			),
 	},
 	// Legacy asset API — components using this will be rewritten in the fs migration
 	assets: {
@@ -110,7 +143,12 @@ export const api = {
 			request<ApiAsset>("/assets", { method: "POST", body: formData }),
 		update: (
 			id: string,
-			patch: Partial<Pick<ApiAsset, "title" | "content" | "type" | "kind" | "date" | "notes" | "details">>,
+			patch: Partial<
+				Pick<
+					ApiAsset,
+					"title" | "content" | "type" | "kind" | "date" | "notes" | "details"
+				>
+			>,
 		) => request<ApiAsset>(`/assets/${id}`, json(patch, { method: "PUT" })),
 		delete: (id: string) =>
 			request<{ ok: boolean }>(`/assets/${id}`, { method: "DELETE" }),

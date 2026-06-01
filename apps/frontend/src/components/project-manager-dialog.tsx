@@ -155,7 +155,9 @@ function AddFolderPanel({
 								placeholder="/Users/jane/matters/smith-corp"
 								className="font-mono text-xs"
 								autoFocus
-								onKeyDown={(e) => { if (e.key === "Enter") handleCreate() }}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") handleCreate()
+								}}
 							/>
 							{isTauri && (
 								<Button
@@ -175,9 +177,7 @@ function AddFolderPanel({
 								</Button>
 							)}
 						</div>
-						{error && (
-							<p className="text-xs text-destructive">{error}</p>
-						)}
+						{error && <p className="text-xs text-destructive">{error}</p>}
 						<p className="text-xs text-muted-foreground">
 							Existing files in this folder are never modified.
 						</p>
@@ -369,7 +369,9 @@ export function ProjectManagerDialog({
 	useEffect(() => {
 		if (!open) return
 		setSearch("")
-		setPanelState(currentProjectPath ? { path: currentProjectPath } : defaultPanel)
+		setPanelState(
+			currentProjectPath ? { path: currentProjectPath } : defaultPanel,
+		)
 	}, [open, currentProjectPath, defaultPanel])
 
 	const filtered = projects.filter((p) =>

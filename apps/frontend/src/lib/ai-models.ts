@@ -7,7 +7,10 @@ export type CuratedModel = {
 }
 
 // Anthropic / OpenAI / Google direct — flat list used for both quick and detailed selects
-export const CURATED_MODELS: Record<"anthropic" | "openai" | "google", CuratedModel[]> = {
+export const CURATED_MODELS: Record<
+	"anthropic" | "openai" | "google",
+	CuratedModel[]
+> = {
 	anthropic: [
 		{
 			id: "claude-haiku-4-5",

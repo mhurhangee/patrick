@@ -87,40 +87,76 @@ export async function fetchPatent(
 						"exchange-documents"
 					] as Record<string, unknown>
 				)?.["exchange-document"] ?? {}
-			const bd = (exchDoc as Record<string, unknown>)?.["bibliographic-data"] as Record<string, unknown> ?? {}
+			const bd =
+				((exchDoc as Record<string, unknown>)?.["bibliographic-data"] as Record<
+					string,
+					unknown
+				>) ?? {}
 
 			// Title
 			const titleField = bd?.["invention-title"]
 			if (Array.isArray(titleField)) {
-				title = extractText(titleField.find((t: Record<string, unknown>) => t?.["@lang"] === "en") ?? titleField[0])
+				title = extractText(
+					titleField.find(
+						(t: Record<string, unknown>) => t?.["@lang"] === "en",
+					) ?? titleField[0],
+				)
 			} else {
 				title = extractText(titleField)
 			}
 
 			// Dates
 			const appRef = bd?.["application-reference"] as Record<string, unknown>
-			filingDate = extractText((appRef?.["document-id"] as Record<string, unknown>)?.["date"])
+			filingDate = extractText(
+				(appRef?.["document-id"] as Record<string, unknown>)?.["date"],
+			)
 			const pubRef = bd?.["publication-reference"] as Record<string, unknown>
-			publicationDate = extractText((pubRef?.["document-id"] as Record<string, unknown>)?.["date"])
+			publicationDate = extractText(
+				(pubRef?.["document-id"] as Record<string, unknown>)?.["date"],
+			)
 
 			// Abstract (from abstract field if present in biblio)
 			abstract = extractText(bd?.["abstract"])
 
 			// Parties
-			const parties = bd?.["parties"] as Record<string, unknown> ?? {}
-			const applicantArr = (parties?.["applicants"] as Record<string, unknown>)?.["applicant"]
-			applicants = (Array.isArray(applicantArr) ? applicantArr : applicantArr ? [applicantArr] : [])
-				.map((a: unknown) => extractText((a as Record<string, unknown>)?.["applicant-name"]))
+			const parties = (bd?.["parties"] as Record<string, unknown>) ?? {}
+			const applicantArr = (
+				parties?.["applicants"] as Record<string, unknown>
+			)?.["applicant"]
+			applicants = (
+				Array.isArray(applicantArr)
+					? applicantArr
+					: applicantArr
+						? [applicantArr]
+						: []
+			)
+				.map((a: unknown) =>
+					extractText((a as Record<string, unknown>)?.["applicant-name"]),
+				)
 				.filter(Boolean)
 
-			const inventorArr = (parties?.["inventors"] as Record<string, unknown>)?.["inventor"]
-			inventors = (Array.isArray(inventorArr) ? inventorArr : inventorArr ? [inventorArr] : [])
-				.map((i: unknown) => extractText((i as Record<string, unknown>)?.["inventor-name"]))
+			const inventorArr = (parties?.["inventors"] as Record<string, unknown>)?.[
+				"inventor"
+			]
+			inventors = (
+				Array.isArray(inventorArr)
+					? inventorArr
+					: inventorArr
+						? [inventorArr]
+						: []
+			)
+				.map((i: unknown) =>
+					extractText((i as Record<string, unknown>)?.["inventor-name"]),
+				)
 				.filter(Boolean)
 
 			// IPC
-			const ipcArr = (bd?.["classification-ipc"] as Record<string, unknown>)?.["classification-symbol"]
-			ipcClasses = (Array.isArray(ipcArr) ? ipcArr : ipcArr ? [ipcArr] : []).map(extractText).filter(Boolean)
+			const ipcArr = (bd?.["classification-ipc"] as Record<string, unknown>)?.[
+				"classification-symbol"
+			]
+			ipcClasses = (Array.isArray(ipcArr) ? ipcArr : ipcArr ? [ipcArr] : [])
+				.map(extractText)
+				.filter(Boolean)
 		} catch {
 			// Partial parse failure — use what we have
 		}
@@ -128,7 +164,8 @@ export async function fetchPatent(
 
 	const descriptionText =
 		description.status === "fulfilled" ? extractText(description.value) : ""
-	const claimsText = claims.status === "fulfilled" ? extractText(claims.value) : ""
+	const claimsText =
+		claims.status === "fulfilled" ? extractText(claims.value) : ""
 
 	return {
 		publicationNumber: epodoc,

@@ -54,4 +54,5 @@ dev-data/
 apps/api/dev-data/
 
 # Test projects / local matter folders
-testproject/
+project/
+profile/

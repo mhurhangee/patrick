@@ -2,9 +2,10 @@ import { readdir, readFile, stat } from "node:fs/promises"
 import { extname, join } from "node:path"
 import type { Chat, ChatIndexEntry, ChatMessage } from "@patrickos/shared"
 import type { ModelMessage } from "ai"
-import { createAgentUIStreamResponse, tool, ToolLoopAgent } from "ai"
+import { createAgentUIStreamResponse, ToolLoopAgent, tool } from "ai"
 import { Hono } from "hono"
 import { z } from "zod"
+import { fetchPatent } from "../lib/epo-ops"
 import {
 	readChat,
 	readChatIndex,
@@ -12,7 +13,6 @@ import {
 	writeChat,
 	writeChatIndex,
 } from "../lib/fs"
-import { fetchPatent } from "../lib/epo-ops"
 import { buildAgentPatPrompt, createModel } from "../lib/patent-prompt"
 
 // No execute — loop stops when called; data lives in part.input on the client.
@@ -56,23 +56,40 @@ chatsRouter.post("/", async (c) => {
 	}>()
 	const chatId = id ?? crypto.randomUUID()
 	const now = new Date().toISOString()
-	const chat: Chat = { id: chatId, title, createdAt: now, updatedAt: now, messages: [] }
+	const chat: Chat = {
+		id: chatId,
+		title,
+		createdAt: now,
+		updatedAt: now,
+		messages: [],
+	}
 	await writeChat(projectPath, chat)
 	const index = await readChatIndex(projectPath)
-	const entry: ChatIndexEntry = { id: chatId, title, createdAt: now, updatedAt: now, lastMessagePreview: "" }
+	const entry: ChatIndexEntry = {
+		id: chatId,
+		title,
+		createdAt: now,
+		updatedAt: now,
+		lastMessagePreview: "",
+	}
 	await writeChatIndex(projectPath, [...index, entry])
 	return c.json(entry, 201)
 })
 
 chatsRouter.patch("/:id", async (c) => {
 	const chatId = c.req.param("id")
-	const { projectPath, title } = await c.req.json<{ projectPath: string; title: string }>()
+	const { projectPath, title } = await c.req.json<{
+		projectPath: string
+		title: string
+	}>()
 	const chat = await readChat(projectPath, chatId)
 	if (!chat) return c.json({ error: "Not found" }, 404)
 	const now = new Date().toISOString()
 	await writeChat(projectPath, { ...chat, title, updatedAt: now })
 	const index = await readChatIndex(projectPath)
-	const updated = index.map((e) => e.id === chatId ? { ...e, title, updatedAt: now } : e)
+	const updated = index.map((e) =>
+		e.id === chatId ? { ...e, title, updatedAt: now } : e,
+	)
 	await writeChatIndex(projectPath, updated)
 	return c.json({ ...chat, title, updatedAt: now })
 })
@@ -82,7 +99,10 @@ chatsRouter.delete("/:id", async (c) => {
 	const projectPath = c.req.query("projectPath")
 	if (!projectPath) return c.json({ error: "projectPath required" }, 400)
 	const index = await readChatIndex(projectPath)
-	await writeChatIndex(projectPath, index.filter((e) => e.id !== chatId))
+	await writeChatIndex(
+		projectPath,
+		index.filter((e) => e.id !== chatId),
+	)
 	return c.json({ ok: true })
 })
 
@@ -99,15 +119,21 @@ chatsRouter.get("/:id/messages", async (c) => {
 
 chatsRouter.post("/:id/messages", async (c) => {
 	const chatId = c.req.param("id")
-	const { messages, provider, apiKey, detailedModel, projectPath, openFilePaths } =
-		await c.req.json<{
-			messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
-			provider: string
-			apiKey: string
-			detailedModel: string
-			projectPath: string
-			openFilePaths: string[]
-		}>()
+	const {
+		messages,
+		provider,
+		apiKey,
+		detailedModel,
+		projectPath,
+		openFilePaths,
+	} = await c.req.json<{
+		messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
+		provider: string
+		apiKey: string
+		detailedModel: string
+		projectPath: string
+		openFilePaths: string[]
+	}>()
 
 	const settings = await readSettings()
 
@@ -127,20 +153,30 @@ chatsRouter.post("/:id/messages", async (c) => {
 	})
 
 	const resolvedProvider = provider || settings.ai.provider
-	const keyField = `${resolvedProvider}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"
+	const keyField = `${resolvedProvider}Key` as
+		| "anthropicKey"
+		| "openaiKey"
+		| "googleKey"
+		| "gatewayKey"
 	const resolvedKey = apiKey || settings.ai[keyField] || ""
 	const resolvedModel = detailedModel || settings.ai.model
 	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)
 
 	const fsTools = {
 		listDirectory: tool({
-			description: "List files and folders inside a directory in the matter folder",
+			description:
+				"List files and folders inside a directory in the matter folder",
 			inputSchema: z.object({
-				path: z.string().describe("Absolute path to list. Use the project path to list the root."),
+				path: z
+					.string()
+					.describe(
+						"Absolute path to list. Use the project path to list the root.",
+					),
 			}),
 			execute: async ({ path: dirPath }) => {
 				const target = dirPath || projectPath
-				if (!target.startsWith(projectPath)) return { error: "Path outside project folder" }
+				if (!target.startsWith(projectPath))
+					return { error: "Path outside project folder" }
 				try {
 					const entries = await readdir(target, { withFileTypes: true })
 					return entries.map((e) => ({
@@ -154,17 +190,22 @@ chatsRouter.post("/:id/messages", async (c) => {
 			},
 		}),
 		readFile: tool({
-			description: "Read the text content of a file in the matter folder (use for .txt, .md, .json, .docx — not PDFs, those are injected as file parts)",
+			description:
+				"Read the text content of a file in the matter folder (use for .txt, .md, .json, .docx — not PDFs, those are injected as file parts)",
 			inputSchema: z.object({
 				path: z.string().describe("Absolute path to the file"),
 			}),
 			execute: async ({ path: filePath }) => {
-				if (!filePath.startsWith(projectPath)) return { error: "Path outside project folder" }
+				if (!filePath.startsWith(projectPath))
+					return { error: "Path outside project folder" }
 				const ext = extname(filePath).toLowerCase()
 				try {
 					if (ext === ".pdf") {
 						const s = await stat(filePath)
-						return { note: "PDF file — open it in the editor to include it in AI context", size: s.size }
+						return {
+							note: "PDF file — open it in the editor to include it in AI context",
+							size: s.size,
+						}
 					}
 					const content = await readFile(filePath, "utf8")
 					return { content: content.slice(0, 20000) } // cap at 20k chars
@@ -198,7 +239,9 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const tools = {
 		generateMetadata,
 		...fsTools,
-		...(epoAuth.epoOpsKey && epoAuth.epoOpsSecret ? { fetchPatent: fetchPatentTool } : {}),
+		...(epoAuth.epoOpsKey && epoAuth.epoOpsSecret
+			? { fetchPatent: fetchPatentTool }
+			: {}),
 	}
 
 	const agent = new ToolLoopAgent({
@@ -219,13 +262,17 @@ chatsRouter.post("/:id/messages", async (c) => {
 								{
 									role: "user" as const,
 									content: [
-										{ type: "text" as const, text: "Source documents attached for reference." },
+										{
+											type: "text" as const,
+											text: "Source documents attached for reference.",
+										},
 										...fileParts,
 									],
 								},
 								{
 									role: "assistant" as const,
-									content: "I have reviewed the attached source documents and will use them as context throughout our conversation.",
+									content:
+										"I have reviewed the attached source documents and will use them as context throughout our conversation.",
 								},
 								...modelMessages,
 							] as ModelMessage[],
@@ -283,13 +330,21 @@ chatsRouter.post("/:id/messages", async (c) => {
 				| { type: string; text: string }
 				| undefined
 
-			const updatedChat: Chat = { ...chat, messages: newMessages, updatedAt: now }
+			const updatedChat: Chat = {
+				...chat,
+				messages: newMessages,
+				updatedAt: now,
+			}
 			await writeChat(projectPath, updatedChat)
 
 			const index = await readChatIndex(projectPath)
 			const updatedIndex = index.map((e) =>
 				e.id === chatId
-					? { ...e, updatedAt: now, lastMessagePreview: lastText?.text?.slice(0, 120) ?? "" }
+					? {
+							...e,
+							updatedAt: now,
+							lastMessagePreview: lastText?.text?.slice(0, 120) ?? "",
+						}
 					: e,
 			)
 			await writeChatIndex(projectPath, updatedIndex)

@@ -23,7 +23,10 @@ type DeepPartial<T> = T extends object
 	? { [K in keyof T]?: DeepPartial<T[K]> }
 	: T
 
-function deepMerge<T extends object>(base: T, patch: Record<string, unknown>): T {
+function deepMerge<T extends object>(
+	base: T,
+	patch: Record<string, unknown>,
+): T {
 	const result = { ...base } as Record<string, unknown>
 	for (const key of Object.keys(patch)) {
 		const patchVal = patch[key]
@@ -36,7 +39,10 @@ function deepMerge<T extends object>(base: T, patch: Record<string, unknown>): T
 			typeof baseVal === "object" &&
 			baseVal !== null
 		) {
-			result[key] = deepMerge(baseVal as object, patchVal as Record<string, unknown>)
+			result[key] = deepMerge(
+				baseVal as object,
+				patchVal as Record<string, unknown>,
+			)
 		} else if (patchVal !== undefined) {
 			result[key] = patchVal
 		}

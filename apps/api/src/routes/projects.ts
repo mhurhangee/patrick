@@ -2,11 +2,7 @@ import { readdir, stat } from "node:fs/promises"
 import { extname, join } from "node:path"
 import type { ProjectEntry } from "@patrickos/shared"
 import { Hono } from "hono"
-import {
-	ensureProjectDirs,
-	readProjects,
-	writeProjects,
-} from "../lib/fs"
+import { ensureProjectDirs, readProjects, writeProjects } from "../lib/fs"
 
 export const projectsRouter = new Hono()
 
@@ -76,7 +72,11 @@ async function listSources(projectPath: string) {
 			if (!entry.isFile()) continue
 			const ext = extname(entry.name).toLowerCase()
 			if (!SOURCE_EXTS.has(ext)) continue
-			files.push({ filename: entry.name, path: join(projectPath, entry.name), ext: ext.slice(1) })
+			files.push({
+				filename: entry.name,
+				path: join(projectPath, entry.name),
+				ext: ext.slice(1),
+			})
 		}
 		return files
 	} catch {

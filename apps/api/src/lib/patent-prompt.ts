@@ -4,9 +4,9 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import {
 	ASSET_CONFIGS,
-	type Settings,
 	getFormFields,
 	PROJECT_CONFIGS,
+	type Settings,
 } from "@patrickos/shared"
 import { createGateway } from "ai"
 
@@ -46,7 +46,10 @@ function plateJsonToText(content: string): string {
 	}
 }
 
-function formatDetails(assetType: string, details: Record<string, unknown>): string {
+function formatDetails(
+	assetType: string,
+	details: Record<string, unknown>,
+): string {
 	return getFormFields(assetType)
 		.map((f) => {
 			const val = details[f.key]
@@ -91,7 +94,9 @@ function userContext(s: Settings) {
 	if (!name && !firm) return null
 	const rolePart = role ? ` (${role})` : ""
 	const firmPart = firm ? ` at ${firm}` : ""
-	const jurisdictionPart = jurisdiction ? `, practising before ${jurisdiction}` : ""
+	const jurisdictionPart = jurisdiction
+		? `, practising before ${jurisdiction}`
+		: ""
 	return `# Attorney\nYou are assisting ${name}${rolePart}${firmPart}${jurisdictionPart}.`
 }
 
@@ -108,7 +113,9 @@ function extractPatInstructions(s: Settings) {
 }
 
 function sharedContext(s: Settings) {
-	return s.prompts.context ? `# Practice Preferences\n${s.prompts.context}` : null
+	return s.prompts.context
+		? `# Practice Preferences\n${s.prompts.context}`
+		: null
 }
 
 function projectContext(projectPath: string) {
@@ -118,7 +125,9 @@ function projectContext(projectPath: string) {
 
 function openFilesContext(openFilePaths: string[]) {
 	if (!openFilePaths.length) return null
-	const list = openFilePaths.map((p) => `- ${p.split("/").at(-1) ?? p}`).join("\n")
+	const list = openFilePaths
+		.map((p) => `- ${p.split("/").at(-1) ?? p}`)
+		.join("\n")
 	return `# Open Documents\n\nThe following files are currently in context:\n${list}`
 }
 
@@ -132,7 +141,11 @@ async function buildFileParts(openFilePaths: string[]): Promise<FilePart[]> {
 		if (!filePath.toLowerCase().endsWith(".pdf")) continue
 		try {
 			const data = await readFile(filePath)
-			parts.push({ type: "file", data: new Uint8Array(data), mediaType: "application/pdf" })
+			parts.push({
+				type: "file",
+				data: new Uint8Array(data),
+				mediaType: "application/pdf",
+			})
 		} catch {
 			// File not readable — skip
 		}
@@ -179,7 +192,9 @@ export async function buildAskPatPrompt(ctx: {
 	])
 }
 
-export async function buildExtractPatPrompt(settings: Settings): Promise<string> {
+export async function buildExtractPatPrompt(
+	settings: Settings,
+): Promise<string> {
 	return assemble([
 		identityExtractPat(),
 		locationInstruction(),
@@ -193,7 +208,8 @@ export async function buildExtractPatPrompt(settings: Settings): Promise<string>
 export function createModel(provider: string, apiKey: string, modelId: string) {
 	const key = apiKey.trim()
 	if (provider === "openai") return createOpenAI({ apiKey: key })(modelId)
-	if (provider === "google") return createGoogleGenerativeAI({ apiKey: key })(modelId)
+	if (provider === "google")
+		return createGoogleGenerativeAI({ apiKey: key })(modelId)
 	if (provider === "gateway") return createGateway({ apiKey: key })(modelId)
 	return createAnthropic({ apiKey: key })(modelId)
 }

@@ -94,7 +94,11 @@ function AssetPane({
 	onAssetUpdate: (updated: ApiAsset) => void
 }) {
 	if (asset.kind === "source") {
-		return <SourceViewer src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`} />
+		return (
+			<SourceViewer
+				src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
+			/>
+		)
 	}
 
 	return (

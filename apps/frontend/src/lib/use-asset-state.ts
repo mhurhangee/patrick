@@ -3,7 +3,13 @@ import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
 function fileToAsset(
-	file: { filename: string; path: string; ext: string; createdAt?: string; updatedAt?: string },
+	file: {
+		filename: string
+		path: string
+		ext: string
+		createdAt?: string
+		updatedAt?: string
+	},
 	kind: "source" | "artifact",
 	projectPath: string,
 ): ApiAsset {
@@ -44,8 +50,12 @@ export function useAssetState(currentProjectId: string) {
 		setActiveTab("")
 		if (!currentProjectId) return
 		api.projects.listFiles(currentProjectId).then(({ sources, artifacts }) => {
-			const sourceAssets = sources.map((f) => fileToAsset(f, "source", currentProjectId))
-			const artifactAssets = artifacts.map((f) => fileToAsset(f, "artifact", currentProjectId))
+			const sourceAssets = sources.map((f) =>
+				fileToAsset(f, "source", currentProjectId),
+			)
+			const artifactAssets = artifacts.map((f) =>
+				fileToAsset(f, "artifact", currentProjectId),
+			)
 			setAssets([...sourceAssets, ...artifactAssets])
 		})
 	}, [currentProjectId])
@@ -96,14 +106,18 @@ export function useAssetState(currentProjectId: string) {
 	function onSourceSaved(asset: ApiAsset) {
 		setAssets((prev) => {
 			const exists = prev.some((a) => a.id === asset.id)
-			return exists ? prev.map((a) => (a.id === asset.id ? asset : a)) : [...prev, asset]
+			return exists
+				? prev.map((a) => (a.id === asset.id ? asset : a))
+				: [...prev, asset]
 		})
 	}
 
 	function onArtifactSaved(asset: ApiAsset) {
 		setAssets((prev) => {
 			const exists = prev.some((a) => a.id === asset.id)
-			return exists ? prev.map((a) => (a.id === asset.id ? asset : a)) : [...prev, asset]
+			return exists
+				? prev.map((a) => (a.id === asset.id ? asset : a))
+				: [...prev, asset]
 		})
 		openAsset(asset.id)
 	}

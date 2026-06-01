@@ -42,7 +42,11 @@ extractpatRouter.post("/extract", async (c) => {
 	const settings = await readSettings()
 	const systemStr = await buildExtractPatPrompt(settings)
 	const resolvedProvider = provider || settings.ai.provider
-	const keyField = `${resolvedProvider}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"
+	const keyField = `${resolvedProvider}Key` as
+		| "anthropicKey"
+		| "openaiKey"
+		| "googleKey"
+		| "gatewayKey"
 	const resolvedKey = apiKey || settings.ai[keyField] || ""
 	const resolvedModel = modelId || settings.ai.model
 	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)

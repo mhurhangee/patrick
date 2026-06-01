@@ -14,7 +14,8 @@ function jsonPath(projectPath: string, filename: string): string {
 artifactsRouter.get("/content", async (c) => {
 	const projectPath = c.req.query("projectPath")
 	const filename = c.req.query("filename")
-	if (!projectPath || !filename) return c.json({ error: "projectPath and filename required" }, 400)
+	if (!projectPath || !filename)
+		return c.json({ error: "projectPath and filename required" }, 400)
 
 	try {
 		const content = await readFile(jsonPath(projectPath, filename), "utf8")
@@ -41,8 +42,14 @@ artifactsRouter.put("/content", async (c) => {
 
 // POST /artifacts — create new empty artifact
 artifactsRouter.post("/", async (c) => {
-	const { projectPath, title } = await c.req.json<{ projectPath: string; title: string }>()
-	const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+	const { projectPath, title } = await c.req.json<{
+		projectPath: string
+		title: string
+	}>()
+	const slug = title
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-|-$/g, "")
 	const filename = `${slug || "draft"}.json`
 	const path = join(artifactsDir(projectPath), filename)
 	await mkdir(artifactsDir(projectPath), { recursive: true })

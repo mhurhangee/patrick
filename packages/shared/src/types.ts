@@ -15,7 +15,7 @@ export type Settings = {
 	}
 	ai: {
 		provider: AiProvider
-		model: string      // detailed model (AgentPat)
+		model: string // detailed model (AgentPat)
 		quickModel: string // quick model (AskPat, copilot)
 		// Per-provider API keys — stored in settings.yaml, never in browser storage
 		anthropicKey: string
@@ -100,19 +100,22 @@ export type FileAnalysis = {
 
 export type ApiSettings = Settings
 export type ApiProject = ProjectEntry
-export type ApiChat = ChatIndexEntry & { projectPath: string; messageCount?: number }
+export type ApiChat = ChatIndexEntry & {
+	projectPath: string
+	messageCount?: number
+}
 export type ApiChatMessage = ChatMessage
 
 // Represents a file in the matter folder — either a source (PDF/docx) or artifact (Plate draft).
 export type ApiAsset = {
-	id: string           // relative path used as stable ID
-	projectId: string    // project folder path
+	id: string // relative path used as stable ID
+	projectId: string // project folder path
 	kind: "source" | "artifact"
 	title: string
 	filename: string
 	path: string
-	type: string         // AssetType tag (may be empty until extracted)
-	content: string      // Plate JSON for artifacts, empty for sources
+	type: string // AssetType tag (may be empty until extracted)
+	content: string // Plate JSON for artifacts, empty for sources
 	date: string
 	notes: string
 	metadata: Record<string, unknown>

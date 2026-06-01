@@ -63,7 +63,11 @@ export function SetupDialog({
 	}
 
 	async function saveAi() {
-		const keyField = `${provider}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"
+		const keyField = `${provider}Key` as
+			| "anthropicKey"
+			| "openaiKey"
+			| "googleKey"
+			| "gatewayKey"
 		await api.settings.update({
 			ai: {
 				provider,
@@ -93,7 +97,8 @@ export function SetupDialog({
 		}
 	}
 
-	const placeholder = PROVIDERS.find((p) => p.id === provider)?.placeholder ?? ""
+	const placeholder =
+		PROVIDERS.find((p) => p.id === provider)?.placeholder ?? ""
 
 	return (
 		<Dialog open={open} onOpenChange={() => {}}>
@@ -191,7 +196,8 @@ export function SetupDialog({
 							/>
 						</div>
 						<p className="text-xs text-muted-foreground">
-							Stored locally in settings.yaml — never sent anywhere except the provider you choose.
+							Stored locally in settings.yaml — never sent anywhere except the
+							provider you choose.
 						</p>
 					</div>
 				)}

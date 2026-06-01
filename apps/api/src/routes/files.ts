@@ -6,7 +6,8 @@ export const filesRouter = new Hono()
 
 const MIME: Record<string, string> = {
 	".pdf": "application/pdf",
-	".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	".docx":
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 	".doc": "application/msword",
 	".txt": "text/plain",
 	".md": "text/markdown",
