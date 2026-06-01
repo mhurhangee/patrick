@@ -313,6 +313,7 @@ function WorkspaceContent({
 					onComplete={async (projectPath) => {
 						if (projectPath) await project.createProject(projectPath)
 						onSetupDone()
+						setTutorialOpen(true)
 					}}
 				/>
 			)}
