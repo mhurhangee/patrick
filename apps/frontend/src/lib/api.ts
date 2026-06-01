@@ -27,6 +27,13 @@ type DeepPartial<T> = T extends object
 	: T
 
 export const api = {
+	config: {
+		getDir: () => request<{ configDir: string }>("/config/dir"),
+		setDir: (configDir: string) =>
+			request<{ ok: boolean; configDir: string }>("/config/dir", json({ configDir }, { method: "PUT" })),
+		probe: (dir: string) =>
+			request<{ exists: boolean }>(`/config/probe?dir=${encodeURIComponent(dir)}`),
+	},
 	settings: {
 		get: () => request<Settings>("/settings"),
 		update: (patch: DeepPartial<Settings>) =>

@@ -26,7 +26,7 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { SetupDialog } from "@/components/setup-dialog"
+import { ProfilePicker } from "@/components/profile-picker"
 import { AIProvider, useAI } from "@/lib/ai-context"
 import { api } from "@/lib/api"
 import { useAssetState } from "@/lib/use-asset-state"
@@ -38,14 +38,48 @@ export const Route = createFileRoute("/workspace/")({
 })
 
 function WorkspacePage() {
+	const [configReady, setConfigReady] = useState(false)
+	const [needsSetup, setNeedsSetup] = useState(false)
+
+	useEffect(() => {
+		const saved = localStorage.getItem("patrickos-config-dir")
+		if (saved) {
+			api.config.setDir(saved)
+				.then(() => setConfigReady(true))
+				.catch(() => {
+					// API not ready yet — still show picker
+					localStorage.removeItem("patrickos-config-dir")
+					setConfigReady(false)
+				})
+		}
+		// If no saved dir, configReady stays false → show picker
+	}, [])
+
+	if (!configReady) {
+		return (
+			<ProfilePicker
+				onLoad={(dir) => {
+					localStorage.setItem("patrickos-config-dir", dir)
+					setNeedsSetup(false)
+					setConfigReady(true)
+				}}
+				onSetup={(dir) => {
+					localStorage.setItem("patrickos-config-dir", dir)
+					setNeedsSetup(true)
+					setConfigReady(true)
+				}}
+			/>
+		)
+	}
+
 	return (
 		<AIProvider>
-			<WorkspaceContent />
+			<WorkspaceContent needsSetup={needsSetup} onSetupDone={() => setNeedsSetup(false)} />
 		</AIProvider>
 	)
 }
 
-function WorkspaceContent() {
+function WorkspaceContent({ needsSetup, onSetupDone }: { needsSetup: boolean; onSetupDone: () => void }) {
 	const ai = useAI()
 	const project = useProjectState()
 	// Legacy: asset dialogs still need a ProjectType — defaults until they are rewritten
@@ -61,14 +95,6 @@ function WorkspaceContent() {
 		"empty" | "new"
 	>("empty")
 	const [settingsOpen, setSettingsOpen] = useState(false)
-	const [setupOpen, setSetupOpen] = useState(false)
-
-	// Show setup on first run (no profile name set)
-	useEffect(() => {
-		api.settings.get().then((s) => {
-			if (!s.profile.name) setSetupOpen(true)
-		})
-	}, [])
 
 	function openProjects(panel: "empty" | "new" = "empty") {
 		setProjectsDefaultPanel(panel)
@@ -207,8 +233,11 @@ function WorkspaceContent() {
 				onDelete={project.deleteProject}
 			/>
 			<SettingsDialog
-				open={settingsOpen}
-				onOpenChange={setSettingsOpen}
+				open={settingsOpen || needsSetup}
+				onOpenChange={(v) => {
+					if (needsSetup) return // can't close mid-setup via overlay click
+					setSettingsOpen(v)
+				}}
 				savedProvider={ai.provider}
 				keyStatus={ai.keyStatus}
 				savedQuickModel={ai.quickModel}
@@ -216,6 +245,11 @@ function WorkspaceContent() {
 				onVerify={ai.verifyKey}
 				onSave={ai.saveAiSettings}
 				onClear={ai.clearApiKey}
+				setupMode={needsSetup}
+				onSetupComplete={async () => {
+					await ai.reloadSettings()
+					onSetupDone()
+				}}
 			/>
 
 			{/* Source dialogs — split by mode */}
@@ -265,8 +299,6 @@ function WorkspaceContent() {
 					onCreated={asset.onArtifactSaved}
 				/>
 			)}
-
-			<SetupDialog open={setupOpen} onDone={() => setSetupOpen(false)} />
 
 			<ChatMetaDialog
 				open={chatEditId !== null}

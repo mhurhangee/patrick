@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { aiRouter } from "./routes/ai"
+import { configRouter } from "./routes/config"
 import { artifactsRouter } from "./routes/artifacts"
 import { askpatRouter } from "./routes/askpat"
 import { chatsRouter } from "./routes/chats"
@@ -14,6 +15,7 @@ const app = new Hono()
 app.use("*", cors())
 
 app.get("/health", (c) => c.json({ ok: true }))
+app.route("/config", configRouter)
 app.route("/projects", projectsRouter)
 app.route("/chats", chatsRouter)
 app.route("/files", filesRouter)

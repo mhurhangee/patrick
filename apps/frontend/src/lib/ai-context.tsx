@@ -30,6 +30,7 @@ interface AIContextValue {
 		detailed: string,
 	) => void
 	clearApiKey: () => void
+	reloadSettings: () => Promise<void>
 }
 
 const AIContext = createContext<AIContextValue>({
@@ -43,6 +44,7 @@ const AIContext = createContext<AIContextValue>({
 	verifyKey: async () => {},
 	saveAiSettings: () => {},
 	clearApiKey: () => {},
+	reloadSettings: async () => {},
 })
 
 export function AIProvider({ children }: { children: ReactNode }) {
@@ -54,22 +56,23 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		DEFAULT_DETAILED_MODEL.anthropic,
 	)
 
-	useEffect(() => {
-		api.settings.get().then((s) => {
-			const p = (s.ai.provider as Provider) || "anthropic"
-			const detailed = s.ai.model || DEFAULT_DETAILED_MODEL[p]
-			const quick = s.ai.quickModel || DEFAULT_QUICK_MODEL[p]
-			const key = s.ai[`${p}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"] ?? ""
-			setProvider(p)
-			setDetailedModel(detailed)
-			setQuickModel(quick)
-			setApiKey(key)
-			// Runtime cache for editor fetch callbacks (use-chat.ts, copilot-kit.tsx)
-			localStorage.setItem("askpat-provider", p)
-			localStorage.setItem("askpat-quick-model", quick)
-			localStorage.setItem(`ai-${p}-key`, key)
-		})
-	}, [])
+	async function loadSettings() {
+		const s = await api.settings.get()
+		const p = (s.ai.provider as Provider) || "anthropic"
+		const detailed = s.ai.model || DEFAULT_DETAILED_MODEL[p]
+		const quick = s.ai.quickModel || DEFAULT_QUICK_MODEL[p]
+		const key = s.ai[`${p}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"] ?? ""
+		setProvider(p)
+		setDetailedModel(detailed)
+		setQuickModel(quick)
+		setApiKey(key)
+		localStorage.setItem("askpat-provider", p)
+		localStorage.setItem("askpat-quick-model", quick)
+		localStorage.setItem(`ai-${p}-key`, key)
+	}
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: loadSettings is stable
+	useEffect(() => { loadSettings() }, [])
 
 	async function verifyKey(prov: Provider, key: string) {
 		if (!key) {
@@ -128,6 +131,7 @@ export function AIProvider({ children }: { children: ReactNode }) {
 				verifyKey,
 				saveAiSettings,
 				clearApiKey,
+				reloadSettings: loadSettings,
 			}}
 		>
 			{children}

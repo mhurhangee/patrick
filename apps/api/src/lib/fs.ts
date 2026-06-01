@@ -9,15 +9,17 @@ import {
 	type Settings,
 } from "@patrickos/shared"
 
-// App config dir — Tauri sets CONFIG_DIR via env var, dev defaults to local folder
-export const CONFIG_DIR = process.env.CONFIG_DIR ?? "./dev-data"
+// Config dir — set by Tauri env var, overridden at runtime when user picks a profile folder
+let configDir = process.env.CONFIG_DIR ?? "./dev-data"
+export function getConfigDir() { return configDir }
+export function setConfigDir(dir: string) { configDir = dir }
 
 export function settingsPath() {
-	return join(CONFIG_DIR, "settings.yaml")
+	return join(configDir, "settings.yaml")
 }
 
 export function projectsPath() {
-	return join(CONFIG_DIR, "projects.yaml")
+	return join(configDir, "projects.yaml")
 }
 
 export function chatsDir(projectPath: string) {

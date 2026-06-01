@@ -236,6 +236,8 @@ export function SettingsDialog({
 	onVerify,
 	onSave,
 	onClear,
+	setupMode = false,
+	onSetupComplete,
 }: {
 	open: boolean
 	onOpenChange: (v: boolean) => void
@@ -251,9 +253,12 @@ export function SettingsDialog({
 		detailed: string,
 	) => void
 	onClear: () => void
+	setupMode?: boolean
+	onSetupComplete?: () => void
 }) {
 	const { theme, setTheme } = useTheme()
 	const [activeSection, setActiveSection] = useState<Section>("account")
+	const [setupStep, setSetupStep] = useState<1 | 2>(1)
 
 	// ── Account state ──────────────────────────────────────────────────────────
 	const [name, setName] = useState("")
@@ -441,11 +446,40 @@ export function SettingsDialog({
 		setSavedEpoSecret(epoSecret)
 	}
 
+	// ── Setup mode navigation ─────────────────────────────────────────────────
+
+	const [setupSaving, setSetupSaving] = useState(false)
+
+	async function handleSetupNext() {
+		setSetupSaving(true)
+		try {
+			await saveAccount()
+			setSetupStep(2)
+		} finally {
+			setSetupSaving(false)
+		}
+	}
+
+	async function handleSetupFinish() {
+		setSetupSaving(true)
+		try {
+			await saveProvider()
+			onSetupComplete?.()
+		} finally {
+			setSetupSaving(false)
+		}
+	}
+
 	// ── Render ────────────────────────────────────────────────────────────────
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="overflow-hidden p-0 md:max-h-[620px] md:max-w-[760px] lg:max-w-[900px]">
+		<Dialog open={open} onOpenChange={setupMode ? () => {} : onOpenChange}>
+			<DialogContent
+				className="overflow-hidden p-0 md:max-h-[620px] md:max-w-[760px] lg:max-w-[900px]"
+				{...(setupMode
+					? { onInteractOutside: (e) => e.preventDefault(), onEscapeKeyDown: (e) => e.preventDefault() }
+					: {})}
+			>
 				<DialogTitle className="sr-only">Settings</DialogTitle>
 				<DialogDescription className="sr-only">
 					Configure PatrickOS.
@@ -455,7 +489,7 @@ export function SettingsDialog({
 					className="items-start"
 					style={{ "--sidebar-width": "13rem" } as CSSProperties}
 				>
-					<Sidebar collapsible="none" className="hidden md:flex">
+					<Sidebar collapsible="none" className={setupMode ? "hidden" : "hidden md:flex"}>
 						<SidebarContent>
 							{NAV_GROUPS.map((group, gi) => (
 								// biome-ignore lint/suspicious/noArrayIndexKey: static nav
@@ -500,7 +534,78 @@ export function SettingsDialog({
 					</Sidebar>
 
 					<main className="flex h-[580px] flex-1 flex-col overflow-hidden">
-						{activeSection === "account" && (
+						{/* ── Setup mode — sequential, no individual save buttons ── */}
+						{setupMode && setupStep === 1 && (
+							<>
+								<AccountSection
+									name={name}
+									firm={firm}
+									role={role}
+									jurisdiction={jurisdiction}
+									theme={theme}
+									isDirty={false}
+									onNameChange={setName}
+									onFirmChange={setFirm}
+									onRoleChange={setRole}
+									onJurisdictionChange={setJurisdiction}
+									onThemeChange={setTheme}
+									onSave={saveAccount}
+									hideFooter
+								/>
+								<div className="flex shrink-0 items-center justify-between border-t px-6 py-3">
+									<p className="text-xs text-muted-foreground">Step 1 of 2</p>
+									<Button
+										type="button"
+										disabled={!name.trim() || setupSaving}
+										onClick={handleSetupNext}
+									>
+										{setupSaving ? <Loader2 size={12} className="animate-spin" /> : "Next →"}
+									</Button>
+								</div>
+							</>
+						)}
+						{setupMode && setupStep === 2 && (
+							<>
+								<AiProviderByokSection
+									tempProvider={tempProvider}
+									currentKey={currentKey}
+									showKey={showKey}
+									keyStatus={keyStatus}
+									tempQuickModel={tempQuickModel}
+									tempDetailedModel={tempDetailedModel}
+									quickModelOptions={quickModelOptions}
+									detailedModelOptions={detailedModelOptions}
+									isDirty={false}
+									onProviderChange={handleProviderChange}
+									onKeyChange={(v) => setTempKeys((prev) => ({ ...prev, [tempProvider]: v }))}
+									onShowKeyToggle={() => setShowKey((v) => !v)}
+									onVerify={() => onVerify(tempProvider, currentKey)}
+									onClear={() => { setTempKeys((prev) => ({ ...prev, [tempProvider]: "" })); onClear() }}
+									onQuickModelChange={setTempQuickModel}
+									onDetailedModelChange={setTempDetailedModel}
+									onSave={saveProvider}
+									hideFooter
+								/>
+								<div className="flex shrink-0 items-center justify-between border-t px-6 py-3">
+									<div className="flex items-center gap-3">
+										<Button type="button" variant="outline" onClick={() => setSetupStep(1)} disabled={setupSaving}>
+											← Back
+										</Button>
+										<p className="text-xs text-muted-foreground">Step 2 of 2</p>
+									</div>
+									<div className="flex items-center gap-2">
+										<Button type="button" variant="ghost" onClick={() => onSetupComplete?.()} className="text-muted-foreground">
+											Skip for now
+										</Button>
+										<Button type="button" disabled={setupSaving} onClick={handleSetupFinish}>
+											{setupSaving ? <Loader2 size={12} className="animate-spin" /> : "Finish"}
+										</Button>
+									</div>
+								</div>
+							</>
+						)}
+						{/* ── Normal settings mode ── */}
+						{!setupMode && activeSection === "account" && (
 							<AccountSection
 								name={name}
 								firm={firm}
@@ -516,7 +621,7 @@ export function SettingsDialog({
 								onSave={saveAccount}
 							/>
 						)}
-						{activeSection === "ai-provider-byok" && (
+						{!setupMode && activeSection === "ai-provider-byok" && (
 							<AiProviderByokSection
 								tempProvider={tempProvider}
 								currentKey={currentKey}
@@ -542,7 +647,7 @@ export function SettingsDialog({
 								onSave={saveProvider}
 							/>
 						)}
-						{activeSection === "ai-provider-cloud" && (
+						{!setupMode && activeSection === "ai-provider-cloud" && (
 							<SectionLayout
 								title="Cloud"
 								description="Buy AI credits directly from PatrickOS."
@@ -553,7 +658,7 @@ export function SettingsDialog({
 								</p>
 							</SectionLayout>
 						)}
-						{activeSection === "ai-instructions-context" && (
+						{!setupMode && activeSection === "ai-instructions-context" && (
 							<PromptSection
 								title="Practice Preferences"
 								description="Freeform context included in every AI call — prosecution style, specialisations, formatting preferences."
@@ -564,7 +669,7 @@ export function SettingsDialog({
 								onSave={saveContext}
 							/>
 						)}
-						{activeSection === "ai-instructions-askpat" && (
+						{!setupMode && activeSection === "ai-instructions-askpat" && (
 							<PromptSection
 								title="AskPat"
 								description="In-editor writing assistant. Controls how it drafts and refines document content."
@@ -576,7 +681,7 @@ export function SettingsDialog({
 								showAlert
 							/>
 						)}
-						{activeSection === "ai-instructions-agentpat" && (
+						{!setupMode && activeSection === "ai-instructions-agentpat" && (
 							<PromptSection
 								title="AgentPat"
 								description="Project-aware chat assistant. Controls how it reasons across your matter."
@@ -588,7 +693,7 @@ export function SettingsDialog({
 								showAlert
 							/>
 						)}
-						{activeSection === "ai-instructions-extractpat" && (
+						{!setupMode && activeSection === "ai-instructions-extractpat" && (
 							<PromptSection
 								title="ExtractPat"
 								description="PDF metadata extraction. Controls what fields are pulled from uploaded sources."
@@ -600,7 +705,7 @@ export function SettingsDialog({
 								showAlert
 							/>
 						)}
-						{activeSection === "integrations-epo" && (
+						{!setupMode && activeSection === "integrations-epo" && (
 							<EpoSection
 								epoKey={epoKey}
 								epoSecret={epoSecret}
@@ -633,6 +738,7 @@ function AccountSection({
 	onJurisdictionChange,
 	onThemeChange,
 	onSave,
+	hideFooter = false,
 }: {
 	name: string
 	firm: string
@@ -646,6 +752,7 @@ function AccountSection({
 	onJurisdictionChange: (v: string) => void
 	onThemeChange: (v: "light" | "dark" | "system") => void
 	onSave: () => Promise<void>
+	hideFooter?: boolean
 }) {
 	const { status, wrap } = useSaveButton()
 
@@ -653,7 +760,7 @@ function AccountSection({
 		<SectionLayout
 			title="You"
 			description="Your profile and appearance settings."
-			footer={
+			footer={hideFooter ? undefined : (
 				<>
 					<div />
 					<SaveButton
@@ -662,7 +769,7 @@ function AccountSection({
 						onClick={() => wrap(onSave)}
 					/>
 				</>
-			}
+			)}
 		>
 			<div className="flex flex-col gap-4 max-w-sm">
 				<div className="grid grid-cols-2 gap-3">
@@ -792,6 +899,7 @@ function AiProviderByokSection({
 	onQuickModelChange,
 	onDetailedModelChange,
 	onSave,
+	hideFooter = false,
 }: {
 	tempProvider: Provider
 	currentKey: string
@@ -818,6 +926,7 @@ function AiProviderByokSection({
 	onQuickModelChange: (v: string) => void
 	onDetailedModelChange: (v: string) => void
 	onSave: () => Promise<void>
+	hideFooter?: boolean
 }) {
 	const { status, wrap } = useSaveButton()
 
@@ -825,7 +934,7 @@ function AiProviderByokSection({
 		<SectionLayout
 			title="BYOK"
 			description="Bring your own API key. Stored in settings.yaml on your machine — never sent to our servers."
-			footer={
+			footer={hideFooter ? undefined : (
 				<>
 					<div />
 					<SaveButton
@@ -834,7 +943,7 @@ function AiProviderByokSection({
 						onClick={() => wrap(onSave)}
 					/>
 				</>
-			}
+			)}
 		>
 			<div className="flex flex-col gap-6 max-w-md">
 				<div className="grid grid-cols-3 gap-3">
