@@ -5,6 +5,7 @@ import {
 } from "@patrickos/shared"
 import { ChevronDown, Eye, EyeOff, FolderOpen, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
+import { ScreenshotPlaceholder, SLIDES } from "@/components/tutorial-overlay"
 import { Button } from "@/components/ui/button"
 import {
 	Collapsible,
@@ -50,13 +51,21 @@ async function pickFolderNative(): Promise<string | null> {
 	}
 }
 
-type StepId = "you" | "ai" | "agentpat" | "askpat" | "extractpat" | "project"
+type StepId =
+	| "you"
+	| "ai"
+	| "agentpat"
+	| "askpat"
+	| "extractpat"
+	| "tutorial"
+	| "project"
 const STEPS: StepId[] = [
 	"you",
 	"ai",
 	"agentpat",
 	"askpat",
 	"extractpat",
+	"tutorial",
 	"project",
 ]
 
@@ -86,10 +95,14 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 		description:
 			"ExtractPat reads your PDFs and extracts structured metadata: office action dates, claim numbers, cited references. Leave blank to use the built-in default.",
 	},
+	tutorial: {
+		title: "How it works",
+		description: "A quick walkthrough of the main features. Skip any time.",
+	},
 	project: {
 		title: "Load your first matter",
 		description:
-			"Point PatrickOS at an existing matter folder on your machine. Your PDFs and Word docs stay exactly where they are — PatrickOS only reads them, and creates three small subfolders for its own output.",
+			"Point PatrickOS at an existing matter folder. Your files stay exactly where they are — PatrickOS only reads them and creates three small subfolders.",
 	},
 }
 
@@ -214,6 +227,9 @@ export function OnboardingFlow({
 		"idle" | "verifying" | "valid" | "invalid"
 	>("idle")
 
+	// Tutorial (sub-slides within the tutorial step)
+	const [tutorialSlideIndex, setTutorialSlideIndex] = useState(0)
+
 	// Project
 	const [projectPath, setProjectPath] = useState("")
 	const [projectPicking, setProjectPicking] = useState(false)
@@ -224,7 +240,6 @@ export function OnboardingFlow({
 	const [extractPatPrompt, setExtractPatPrompt] = useState("")
 
 	// Load existing settings once on mount
-	// biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
 	useEffect(() => {
 		api.settings.get().then((s) => {
 			setName(s.profile.name || "")
@@ -308,13 +323,24 @@ export function OnboardingFlow({
 	}
 
 	async function handleNext() {
+		const step = STEPS[stepIndex]
+		const isLast = stepIndex === STEPS.length - 1
+
+		// Tutorial step: advance through sub-slides before moving on
+		if (step === "tutorial") {
+			if (tutorialSlideIndex < SLIDES.length - 1) {
+				setTutorialSlideIndex((t) => t + 1)
+				return
+			}
+			// Last tutorial slide — advance to project step
+			setTutorialSlideIndex(0)
+			setStepIndex((s) => s + 1)
+			return
+		}
+
 		setSaving(true)
 		try {
-			const step = STEPS[stepIndex]
-			const isLast = stepIndex === STEPS.length - 1
-
 			if (step === "project") {
-				// Create the project if a path was entered, then finish
 				const trimmed = projectPath.trim()
 				if (trimmed) await api.projects.create(trimmed)
 				await ai.reloadSettings()
@@ -334,9 +360,25 @@ export function OnboardingFlow({
 		}
 	}
 
+	function handleBack() {
+		const step = STEPS[stepIndex]
+		if (step === "tutorial" && tutorialSlideIndex > 0) {
+			setTutorialSlideIndex((t) => t - 1)
+			return
+		}
+		setStepIndex((s) => Math.max(0, s - 1))
+		if (step === "project") setTutorialSlideIndex(SLIDES.length - 1)
+	}
+
 	async function handleSkip() {
 		const step = STEPS[stepIndex]
 		const isLast = stepIndex === STEPS.length - 1
+		// Skip tutorial entirely
+		if (step === "tutorial") {
+			setTutorialSlideIndex(0)
+			setStepIndex((s) => s + 1)
+			return
+		}
 		if (isLast || step === "project") {
 			await ai.reloadSettings()
 			onComplete()
@@ -391,6 +433,57 @@ export function OnboardingFlow({
 					const stepId = STEPS[stepIndex]
 					const i = stepIndex
 					const heading = STEP_HEADINGS[stepId]
+
+					// Tutorial step — full-width slide layout
+					if (stepId === "tutorial") {
+						const slide = SLIDES[tutorialSlideIndex]
+						return (
+							<div
+								key={`tutorial-${tutorialSlideIndex}`}
+								className="mx-auto w-full max-w-2xl px-8 py-8 space-y-5"
+							>
+								<p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+									Step {i + 1} of {STEPS.length} — {tutorialSlideIndex + 1} /{" "}
+									{SLIDES.length}
+								</p>
+								<ScreenshotPlaceholder
+									hint={slide.screenshotHint}
+									src={slide.screenshotSrc}
+									alt={slide.title}
+								/>
+								<div>
+									<h2 className="text-xl font-bold font-heading tracking-tight mb-1">
+										{slide.title}
+									</h2>
+									<p className="text-sm text-muted-foreground">
+										{slide.description}
+									</p>
+								</div>
+								<ul className="space-y-1.5">
+									{slide.bullets.map((b) => (
+										<li key={b} className="flex items-start gap-2 text-sm">
+											<span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+											{b}
+										</li>
+									))}
+								</ul>
+								{/* Sub-slide dots */}
+								<div className="flex gap-1.5 pt-1">
+									{SLIDES.map((_, si) => (
+										<div
+											// biome-ignore lint/suspicious/noArrayIndexKey: static slides
+											key={si}
+											className={cn(
+												"h-1 w-6 rounded-full transition-colors",
+												si === tutorialSlideIndex ? "bg-primary" : "bg-muted",
+											)}
+										/>
+									))}
+								</div>
+							</div>
+						)
+					}
+
 					return (
 						<div key={stepId} className="mx-auto w-full max-w-lg px-8 py-10">
 							<p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
@@ -682,8 +775,8 @@ export function OnboardingFlow({
 				<Button
 					type="button"
 					variant="outline"
-					onClick={() => setStepIndex((s) => Math.max(0, s - 1))}
-					disabled={stepIndex === 0 || saving}
+					onClick={handleBack}
+					disabled={(stepIndex === 0 && tutorialSlideIndex === 0) || saving}
 				>
 					← Back
 				</Button>
@@ -696,7 +789,11 @@ export function OnboardingFlow({
 							disabled={saving}
 							className="text-muted-foreground"
 						>
-							{isLast ? "Skip — I'll add a project later" : "Skip for now"}
+							{STEPS[stepIndex] === "tutorial"
+								? "Skip tutorial"
+								: isLast
+									? "Skip — I'll add a project later"
+									: "Skip for now"}
 						</Button>
 					)}
 					<Button type="button" onClick={handleNext} disabled={saving}>
@@ -706,6 +803,12 @@ export function OnboardingFlow({
 							"Load project →"
 						) : isLast ? (
 							"Finish"
+						) : STEPS[stepIndex] === "tutorial" ? (
+							tutorialSlideIndex < SLIDES.length - 1 ? (
+								"Next →"
+							) : (
+								"Done →"
+							)
 						) : (
 							"Next →"
 						)}

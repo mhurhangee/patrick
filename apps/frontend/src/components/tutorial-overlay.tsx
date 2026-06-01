@@ -17,7 +17,7 @@ type Slide = {
 	bullets: string[]
 }
 
-const SLIDES: Slide[] = [
+export const SLIDES: Slide[] = [
 	{
 		id: "projects",
 		navLabel: "Projects",
@@ -106,7 +106,7 @@ const SLIDES: Slide[] = [
 
 // ─── Placeholder image ────────────────────────────────────────────────────────
 
-function ScreenshotPlaceholder({
+export function ScreenshotPlaceholder({
 	hint,
 	src,
 	alt,
@@ -202,10 +202,22 @@ export function TutorialOverlay({
 			{/* Content */}
 			<div className="flex-1 flex flex-col overflow-hidden">
 				{/* Top bar */}
-				<div className="flex items-center justify-end border-b px-4 py-2 shrink-0">
-					<Button type="button" variant="ghost" size="icon" onClick={onClose}>
-						<X size={16} />
-					</Button>
+				<div className="flex items-center justify-between border-b px-6 py-2 shrink-0">
+					<p className="text-sm font-semibold font-heading">How it works</p>
+					<div className="flex items-center gap-2">
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={onClose}
+							className="text-muted-foreground"
+						>
+							Skip
+						</Button>
+						<Button type="button" variant="ghost" size="icon" onClick={onClose}>
+							<X size={16} />
+						</Button>
+					</div>
 				</div>
 
 				{/* Slide content */}
