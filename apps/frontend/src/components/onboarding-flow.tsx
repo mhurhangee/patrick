@@ -385,306 +385,296 @@ export function OnboardingFlow({
 				))}
 			</div>
 
-			{/* Sliding steps */}
-			<div className="relative flex-1 overflow-hidden">
-				{STEPS.map((stepId, i) => {
+			{/* Step content — only current step rendered */}
+			<div className="flex-1 overflow-y-auto">
+				{(() => {
+					const stepId = STEPS[stepIndex]
+					const i = stepIndex
 					const heading = STEP_HEADINGS[stepId]
 					return (
-						<div
-							key={stepId}
-							className="absolute inset-0 overflow-y-auto"
-							style={{
-								transform: `translateX(${(i - stepIndex) * 100}%)`,
-								transition: "transform 0.3s ease-in-out",
-							}}
-						>
-							<div className="mx-auto w-full max-w-lg px-8 py-10">
-								<p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
-									Step {i + 1} of {STEPS.length}
-								</p>
-								<h2 className="text-2xl font-bold font-heading tracking-tight mb-2">
-									{heading.title}
-								</h2>
-								<p className="text-sm text-muted-foreground mb-2">
-									{heading.description}
-								</p>
-								{STEP_MORE_INFO[stepId] && (
-									<div className="mb-6">
-										<MoreInfo items={STEP_MORE_INFO[stepId] as string[]} />
-									</div>
-								)}
+						<div key={stepId} className="mx-auto w-full max-w-lg px-8 py-10">
+							<p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+								Step {i + 1} of {STEPS.length}
+							</p>
+							<h2 className="text-2xl font-bold font-heading tracking-tight mb-2">
+								{heading.title}
+							</h2>
+							<p className="text-sm text-muted-foreground mb-2">
+								{heading.description}
+							</p>
+							{STEP_MORE_INFO[stepId] && (
+								<div className="mb-6">
+									<MoreInfo items={STEP_MORE_INFO[stepId] as string[]} />
+								</div>
+							)}
 
-								{stepId === "you" && (
-									<div className="flex flex-col gap-4">
-										<div className="grid grid-cols-2 gap-3">
-											<div className="flex flex-col gap-1.5">
-												<Label htmlFor="ob-name">Name</Label>
-												<Input
-													id="ob-name"
-													value={name}
-													onChange={(e) => setName(e.target.value)}
-													placeholder="Jane Smith"
-												/>
-											</div>
-											<div className="flex flex-col gap-1.5">
-												<Label htmlFor="ob-firm">Firm</Label>
-												<Input
-													id="ob-firm"
-													value={firm}
-													onChange={(e) => setFirm(e.target.value)}
-													placeholder="Smith & Associates IP"
-												/>
-											</div>
-										</div>
-										<div className="grid grid-cols-2 gap-3">
-											<div className="flex flex-col gap-1.5">
-												<Label htmlFor="ob-role">Role</Label>
-												<Input
-													id="ob-role"
-													value={role}
-													onChange={(e) => setRole(e.target.value)}
-													placeholder="Patent Attorney"
-												/>
-											</div>
-											<div className="flex flex-col gap-1.5">
-												<Label htmlFor="ob-jur">Jurisdiction</Label>
-												<Input
-													id="ob-jur"
-													value={jurisdiction}
-													onChange={(e) => setJurisdiction(e.target.value)}
-													placeholder="USPTO, EPO…"
-												/>
-											</div>
-										</div>
-									</div>
-								)}
-
-								{stepId === "ai" && (
-									<div className="flex flex-col gap-5">
-										<div className="grid grid-cols-2 gap-3">
-											{PROVIDER_OPTIONS.map((p) => (
-												<button
-													key={p.id}
-													type="button"
-													onClick={() => handleProviderChange(p.id)}
-													className={cn(
-														"rounded-lg border p-3 text-left transition-colors",
-														provider === p.id
-															? "border-primary bg-primary/5 ring-1 ring-primary"
-															: "hover:border-foreground/20 hover:bg-muted/50",
-													)}
-												>
-													<p className="text-sm font-medium">{p.name}</p>
-													<p className="text-xs text-muted-foreground">
-														{p.description}
-													</p>
-												</button>
-											))}
-										</div>
-
+							{stepId === "you" && (
+								<div className="flex flex-col gap-4">
+									<div className="grid grid-cols-2 gap-3">
 										<div className="flex flex-col gap-1.5">
-											<Label>API Key</Label>
-											<div className="flex gap-1.5">
-												<div className="relative flex-1">
-													<Input
-														type={showKey ? "text" : "password"}
-														value={currentKey}
-														onChange={(e) =>
-															setKeys((prev) => ({
-																...prev,
-																[provider]: e.target.value,
-															}))
-														}
-														placeholder={PROVIDER_PLACEHOLDER[provider]}
-														className="pr-8"
-													/>
-													<Button
-														variant="ghost"
-														size="icon-xs"
-														type="button"
-														className="absolute right-1 top-1/2 -translate-y-1/2"
-														onClick={() => setShowKey((v) => !v)}
-													>
-														{showKey ? <EyeOff size={12} /> : <Eye size={12} />}
-													</Button>
-												</div>
+											<Label htmlFor="ob-name">Name</Label>
+											<Input
+												id="ob-name"
+												value={name}
+												onChange={(e) => setName(e.target.value)}
+												placeholder="Jane Smith"
+											/>
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<Label htmlFor="ob-firm">Firm</Label>
+											<Input
+												id="ob-firm"
+												value={firm}
+												onChange={(e) => setFirm(e.target.value)}
+												placeholder="Smith & Associates IP"
+											/>
+										</div>
+									</div>
+									<div className="grid grid-cols-2 gap-3">
+										<div className="flex flex-col gap-1.5">
+											<Label htmlFor="ob-role">Role</Label>
+											<Input
+												id="ob-role"
+												value={role}
+												onChange={(e) => setRole(e.target.value)}
+												placeholder="Patent Attorney"
+											/>
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<Label htmlFor="ob-jur">Jurisdiction</Label>
+											<Input
+												id="ob-jur"
+												value={jurisdiction}
+												onChange={(e) => setJurisdiction(e.target.value)}
+												placeholder="USPTO, EPO…"
+											/>
+										</div>
+									</div>
+								</div>
+							)}
+
+							{stepId === "ai" && (
+								<div className="flex flex-col gap-5">
+									<div className="grid grid-cols-2 gap-3">
+										{PROVIDER_OPTIONS.map((p) => (
+											<button
+												key={p.id}
+												type="button"
+												onClick={() => handleProviderChange(p.id)}
+												className={cn(
+													"rounded-lg border p-3 text-left transition-colors",
+													provider === p.id
+														? "border-primary bg-primary/5 ring-1 ring-primary"
+														: "hover:border-foreground/20 hover:bg-muted/50",
+												)}
+											>
+												<p className="text-sm font-medium">{p.name}</p>
+												<p className="text-xs text-muted-foreground">
+													{p.description}
+												</p>
+											</button>
+										))}
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<Label>API Key</Label>
+										<div className="flex gap-1.5">
+											<div className="relative flex-1">
+												<Input
+													type={showKey ? "text" : "password"}
+													value={currentKey}
+													onChange={(e) =>
+														setKeys((prev) => ({
+															...prev,
+															[provider]: e.target.value,
+														}))
+													}
+													placeholder={PROVIDER_PLACEHOLDER[provider]}
+													className="pr-8"
+												/>
 												<Button
-													variant="secondary"
-													onClick={verifyKey}
-													disabled={!currentKey || verifyStatus === "verifying"}
+													variant="ghost"
+													size="icon-xs"
+													type="button"
+													className="absolute right-1 top-1/2 -translate-y-1/2"
+													onClick={() => setShowKey((v) => !v)}
 												>
-													{verifyStatus === "verifying" ? (
-														<Loader2 size={12} className="animate-spin" />
-													) : (
-														"Verify"
-													)}
+													{showKey ? <EyeOff size={12} /> : <Eye size={12} />}
 												</Button>
 											</div>
-											{verifyStatus !== "idle" && (
-												<p
-													className={cn(
-														"text-xs",
-														verifyStatus === "valid" && "text-green-600",
-														verifyStatus === "invalid" && "text-destructive",
-														verifyStatus === "verifying" &&
-															"text-muted-foreground",
-													)}
+											<Button
+												variant="secondary"
+												onClick={verifyKey}
+												disabled={!currentKey || verifyStatus === "verifying"}
+											>
+												{verifyStatus === "verifying" ? (
+													<Loader2 size={12} className="animate-spin" />
+												) : (
+													"Verify"
+												)}
+											</Button>
+										</div>
+										{verifyStatus !== "idle" && (
+											<p
+												className={cn(
+													"text-xs",
+													verifyStatus === "valid" && "text-green-600",
+													verifyStatus === "invalid" && "text-destructive",
+													verifyStatus === "verifying" &&
+														"text-muted-foreground",
+												)}
+											>
+												{verifyStatus === "valid" && "✓ Connected"}
+												{verifyStatus === "invalid" &&
+													"Invalid key — check and try again"}
+												{verifyStatus === "verifying" && "Verifying…"}
+											</p>
+										)}
+									</div>
+
+									<div className="grid grid-cols-2 gap-4">
+										<div className="flex flex-col gap-1.5">
+											<Label>Quick model</Label>
+											<p className="text-xs text-muted-foreground">
+												AskPat, ExtractPat — fast
+											</p>
+											<Select value={quickModel} onValueChange={setQuickModel}>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													{quickModelOptions.map((o) => (
+														<SelectItem key={o.value} value={o.value}>
+															{o.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											{(() => {
+												const sel = quickModelOptions.find(
+													(o) => o.value === quickModel,
+												)
+												return sel?.pricingPerM ? (
+													<p className="text-xs tabular-nums text-muted-foreground">
+														${sel.pricingPerM.input.toFixed(2)} in · $
+														{sel.pricingPerM.output.toFixed(2)} out / M tokens
+													</p>
+												) : null
+											})()}
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<Label>Detailed model</Label>
+											<p className="text-xs text-muted-foreground">
+												AgentPat — best reasoning
+											</p>
+											<Select
+												value={detailedModel}
+												onValueChange={setDetailedModel}
+											>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													{detailedModelOptions.map((o) => (
+														<SelectItem key={o.value} value={o.value}>
+															{o.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											{(() => {
+												const sel = detailedModelOptions.find(
+													(o) => o.value === detailedModel,
+												)
+												return sel?.pricingPerM ? (
+													<p className="text-xs tabular-nums text-muted-foreground">
+														${sel.pricingPerM.input.toFixed(2)} in · $
+														{sel.pricingPerM.output.toFixed(2)} out / M tokens
+													</p>
+												) : null
+											})()}
+										</div>
+									</div>
+								</div>
+							)}
+
+							{stepId === "agentpat" && (
+								<Textarea
+									value={agentPatPrompt}
+									onChange={(e) => setAgentPatPrompt(e.target.value)}
+									className="min-h-[280px] font-mono text-xs"
+								/>
+							)}
+
+							{stepId === "askpat" && (
+								<Textarea
+									value={askPatPrompt}
+									onChange={(e) => setAskPatPrompt(e.target.value)}
+									className="min-h-[280px] font-mono text-xs"
+								/>
+							)}
+
+							{stepId === "extractpat" && (
+								<Textarea
+									value={extractPatPrompt}
+									onChange={(e) => setExtractPatPrompt(e.target.value)}
+									className="min-h-[280px] font-mono text-xs"
+								/>
+							)}
+
+							{stepId === "project" && (
+								<div className="flex flex-col gap-4">
+									<div className="flex flex-col gap-1.5">
+										<Label>Matter folder path</Label>
+										<div className="flex gap-2">
+											<Input
+												value={projectPath}
+												onChange={(e) => setProjectPath(e.target.value)}
+												placeholder="/Users/jane/matters/client-acme-123"
+												className="font-mono text-xs"
+												autoFocus
+											/>
+											{isTauri && (
+												<Button
+													type="button"
+													variant="secondary"
+													onClick={handleBrowseProject}
+													disabled={projectPicking}
 												>
-													{verifyStatus === "valid" && "✓ Connected"}
-													{verifyStatus === "invalid" &&
-														"Invalid key — check and try again"}
-													{verifyStatus === "verifying" && "Verifying…"}
-												</p>
+													{projectPicking ? (
+														<Loader2 size={12} className="animate-spin" />
+													) : (
+														<>
+															<FolderOpen size={12} />
+															Browse
+														</>
+													)}
+												</Button>
 											)}
 										</div>
-
-										<div className="grid grid-cols-2 gap-4">
-											<div className="flex flex-col gap-1.5">
-												<Label>Quick model</Label>
-												<p className="text-xs text-muted-foreground">
-													AskPat, ExtractPat — fast
-												</p>
-												<Select
-													value={quickModel}
-													onValueChange={setQuickModel}
-												>
-													<SelectTrigger>
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														{quickModelOptions.map((o) => (
-															<SelectItem key={o.value} value={o.value}>
-																{o.label}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												{(() => {
-													const sel = quickModelOptions.find(
-														(o) => o.value === quickModel,
-													)
-													return sel?.pricingPerM ? (
-														<p className="text-xs tabular-nums text-muted-foreground">
-															${sel.pricingPerM.input.toFixed(2)} in · $
-															{sel.pricingPerM.output.toFixed(2)} out / M tokens
-														</p>
-													) : null
-												})()}
-											</div>
-											<div className="flex flex-col gap-1.5">
-												<Label>Detailed model</Label>
-												<p className="text-xs text-muted-foreground">
-													AgentPat — best reasoning
-												</p>
-												<Select
-													value={detailedModel}
-													onValueChange={setDetailedModel}
-												>
-													<SelectTrigger>
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														{detailedModelOptions.map((o) => (
-															<SelectItem key={o.value} value={o.value}>
-																{o.label}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												{(() => {
-													const sel = detailedModelOptions.find(
-														(o) => o.value === detailedModel,
-													)
-													return sel?.pricingPerM ? (
-														<p className="text-xs tabular-nums text-muted-foreground">
-															${sel.pricingPerM.input.toFixed(2)} in · $
-															{sel.pricingPerM.output.toFixed(2)} out / M tokens
-														</p>
-													) : null
-												})()}
-											</div>
-										</div>
 									</div>
-								)}
-
-								{stepId === "agentpat" && (
-									<Textarea
-										value={agentPatPrompt}
-										onChange={(e) => setAgentPatPrompt(e.target.value)}
-										className="min-h-[280px] font-mono text-xs"
-									/>
-								)}
-
-								{stepId === "askpat" && (
-									<Textarea
-										value={askPatPrompt}
-										onChange={(e) => setAskPatPrompt(e.target.value)}
-										className="min-h-[280px] font-mono text-xs"
-									/>
-								)}
-
-								{stepId === "extractpat" && (
-									<Textarea
-										value={extractPatPrompt}
-										onChange={(e) => setExtractPatPrompt(e.target.value)}
-										className="min-h-[280px] font-mono text-xs"
-									/>
-								)}
-
-								{stepId === "project" && (
-									<div className="flex flex-col gap-4">
-										<div className="flex flex-col gap-1.5">
-											<Label>Matter folder path</Label>
-											<div className="flex gap-2">
-												<Input
-													value={projectPath}
-													onChange={(e) => setProjectPath(e.target.value)}
-													placeholder="/Users/jane/matters/client-acme-123"
-													className="font-mono text-xs"
-													autoFocus
-												/>
-												{isTauri && (
-													<Button
-														type="button"
-														variant="secondary"
-														onClick={handleBrowseProject}
-														disabled={projectPicking}
-													>
-														{projectPicking ? (
-															<Loader2 size={12} className="animate-spin" />
-														) : (
-															<>
-																<FolderOpen size={12} />
-																Browse
-															</>
-														)}
-													</Button>
-												)}
-											</div>
-										</div>
-										<div className="rounded-md border bg-muted/40 px-4 py-3 text-xs text-muted-foreground space-y-1">
-											<p className="font-medium text-foreground">
-												What PatrickOS will create inside:
-											</p>
-											<p>
-												<code className="font-mono">chats/</code> — conversation
-												history (JSON, readable)
-											</p>
-											<p>
-												<code className="font-mono">artifacts/</code> —
-												AI-drafted documents (Plate JSON + .docx)
-											</p>
-											<p>
-												<code className="font-mono">analysis/</code> — extracted
-												metadata per source file
-											</p>
-										</div>
+									<div className="rounded-md border bg-muted/40 px-4 py-3 text-xs text-muted-foreground space-y-1">
+										<p className="font-medium text-foreground">
+											What PatrickOS will create inside:
+										</p>
+										<p>
+											<code className="font-mono">chats/</code> — conversation
+											history (JSON, readable)
+										</p>
+										<p>
+											<code className="font-mono">artifacts/</code> — AI-drafted
+											documents (Plate JSON + .docx)
+										</p>
+										<p>
+											<code className="font-mono">analysis/</code> — extracted
+											metadata per source file
+										</p>
 									</div>
-								)}
-							</div>
+								</div>
+							)}
 						</div>
 					)
-				})}
+				})()}
 			</div>
 
 			{/* Navigation */}
