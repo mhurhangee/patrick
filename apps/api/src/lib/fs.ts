@@ -1,6 +1,5 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
-import YAML from "yaml"
 import {
 	type Chat,
 	type ChatIndexEntry,
@@ -8,11 +7,16 @@ import {
 	type ProjectEntry,
 	type Settings,
 } from "@patrickos/shared"
+import YAML from "yaml"
 
 // Config dir — set by Tauri env var, overridden at runtime when user picks a profile folder
 let configDir = process.env.CONFIG_DIR ?? "./dev-data"
-export function getConfigDir() { return configDir }
-export function setConfigDir(dir: string) { configDir = dir }
+export function getConfigDir() {
+	return configDir
+}
+export function setConfigDir(dir: string) {
+	configDir = dir
+}
 
 export function settingsPath() {
 	return join(configDir, "settings.yaml")
@@ -81,7 +85,15 @@ async function writeJson(path: string, data: unknown): Promise<void> {
 // ─── Settings ────────────────────────────────────────────────────────────────
 
 export async function readSettings(): Promise<Settings> {
-	return readYaml<Settings>(settingsPath(), DEFAULT_SETTINGS)
+	const path = settingsPath()
+	try {
+		const text = await readFile(path, "utf8")
+		return YAML.parse(text) as Settings
+	} catch {
+		// First run — write defaults so the file exists
+		await writeYaml(path, DEFAULT_SETTINGS)
+		return DEFAULT_SETTINGS
+	}
 }
 
 export async function writeSettings(data: Settings): Promise<void> {

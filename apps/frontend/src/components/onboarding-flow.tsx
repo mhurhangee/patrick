@@ -225,9 +225,13 @@ export function OnboardingFlow({
 	const [askPatPrompt, setAskPatPrompt] = useState("")
 	const [extractPatPrompt, setExtractPatPrompt] = useState("")
 
+	// Reset step immediately when opened (synchronous, before any async)
+	useEffect(() => {
+		if (open) setStepIndex(0)
+	}, [open])
+
 	useEffect(() => {
 		if (!open) return
-		setStepIndex(0)
 		api.settings.get().then((s) => {
 			setName(s.profile.name || "")
 			setFirm(s.profile.firm || "")
