@@ -1,4 +1,4 @@
-export type Provider = "gateway" | "anthropic" | "openai"
+export type Provider = "gateway" | "anthropic" | "openai" | "google"
 
 export type CuratedModel = {
 	id: string
@@ -6,8 +6,8 @@ export type CuratedModel = {
 	pricingPerM?: { input: number; output: number }
 }
 
-// Anthropic / OpenAI direct — flat list used for both quick and detailed selects
-export const CURATED_MODELS: Record<"anthropic" | "openai", CuratedModel[]> = {
+// Anthropic / OpenAI / Google direct — flat list used for both quick and detailed selects
+export const CURATED_MODELS: Record<"anthropic" | "openai" | "google", CuratedModel[]> = {
 	anthropic: [
 		{
 			id: "claude-haiku-4-5",
@@ -40,6 +40,23 @@ export const CURATED_MODELS: Record<"anthropic" | "openai", CuratedModel[]> = {
 			id: "gpt-4.1",
 			name: "GPT-4.1",
 			pricingPerM: { input: 2.0, output: 8.0 },
+		},
+	],
+	google: [
+		{
+			id: "gemini-2.5-flash",
+			name: "Gemini 2.5 Flash",
+			pricingPerM: { input: 0.3, output: 2.5 },
+		},
+		{
+			id: "gemini-2.5-pro",
+			name: "Gemini 2.5 Pro",
+			pricingPerM: { input: 1.25, output: 10.0 },
+		},
+		{
+			id: "gemini-2.0-flash",
+			name: "Gemini 2.0 Flash",
+			pricingPerM: { input: 0.1, output: 0.4 },
 		},
 	],
 }
@@ -124,11 +141,13 @@ export const GATEWAY_DETAILED_MODELS: CuratedModel[] = [
 export const DEFAULT_QUICK_MODEL: Record<Provider, string> = {
 	anthropic: "claude-haiku-4-5",
 	openai: "gpt-4o-mini",
+	google: "gemini-2.5-flash",
 	gateway: GATEWAY_QUICK_MODELS[0].id,
 }
 
 export const DEFAULT_DETAILED_MODEL: Record<Provider, string> = {
 	anthropic: "claude-sonnet-4-6",
 	openai: "gpt-4o",
+	google: "gemini-2.5-pro",
 	gateway: GATEWAY_DETAILED_MODELS[0].id,
 }

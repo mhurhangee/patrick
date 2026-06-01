@@ -179,7 +179,6 @@ const NAV_GROUPS: NavGroup[] = [
 		label: "AI Provider",
 		items: [
 			{ id: "ai-provider-byok", label: "BYOK", indent: true },
-			{ id: "ai-provider-local", label: "Local", badge: "Soon", indent: true },
 			{ id: "ai-provider-cloud", label: "Cloud", badge: "Soon", indent: true },
 		],
 	},
@@ -215,6 +214,7 @@ const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
 			description: "Direct API. Pay Anthropic.",
 		},
 		{ id: "openai", name: "OpenAI", description: "Direct API. Pay OpenAI." },
+		{ id: "google", name: "Google", description: "Direct API. Pay Google." },
 		{
 			id: "gateway",
 			name: "AI Gateway",
@@ -225,6 +225,7 @@ const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
 const PROVIDER_PLACEHOLDER: Record<Provider, string> = {
 	anthropic: "sk-ant-...",
 	openai: "sk-...",
+	google: "AIza...",
 	gateway: "aig_...",
 }
 
@@ -277,6 +278,7 @@ export function SettingsDialog({
 		gateway: "",
 		anthropic: "",
 		openai: "",
+		google: "",
 	})
 	const [tempQuickModel, setTempQuickModel] = useState(savedQuickModel)
 	const [tempDetailedModel, setTempDetailedModel] = useState(savedDetailedModel)
@@ -314,6 +316,7 @@ export function SettingsDialog({
 				gateway: s.ai.gatewayKey ?? "",
 				anthropic: s.ai.anthropicKey ?? "",
 				openai: s.ai.openaiKey ?? "",
+				google: s.ai.googleKey ?? "",
 			}
 
 			setName(s.profile.name)
@@ -354,9 +357,9 @@ export function SettingsDialog({
 	function handleProviderChange(p: Provider) {
 		setTempProvider(p)
 		const quickModels =
-			p === "gateway" ? GATEWAY_QUICK_MODELS : CURATED_MODELS[p]
+			p === "gateway" ? GATEWAY_QUICK_MODELS : CURATED_MODELS[p as "anthropic" | "openai" | "google"] ?? []
 		const detailedModels =
-			p === "gateway" ? GATEWAY_DETAILED_MODELS : CURATED_MODELS[p]
+			p === "gateway" ? GATEWAY_DETAILED_MODELS : CURATED_MODELS[p as "anthropic" | "openai" | "google"] ?? []
 		if (!quickModels.some((m) => m.id === tempQuickModel))
 			setTempQuickModel(DEFAULT_QUICK_MODEL[p])
 		if (!detailedModels.some((m) => m.id === tempDetailedModel))
@@ -369,13 +372,13 @@ export function SettingsDialog({
 	const quickModelOptions = (
 		tempProvider === "gateway"
 			? GATEWAY_QUICK_MODELS
-			: CURATED_MODELS[tempProvider]
+			: CURATED_MODELS[tempProvider as "anthropic" | "openai" | "google"] ?? []
 	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
 
 	const detailedModelOptions = (
 		tempProvider === "gateway"
 			? GATEWAY_DETAILED_MODELS
-			: CURATED_MODELS[tempProvider]
+			: CURATED_MODELS[tempProvider as "anthropic" | "openai" | "google"] ?? []
 	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
 
 	// ── Dirty flags ───────────────────────────────────────────────────────────
@@ -501,18 +504,6 @@ export function SettingsDialog({
 								onThemeChange={setTheme}
 								onSave={saveAccount}
 							/>
-						)}
-						{activeSection === "ai-provider-local" && (
-							<SectionLayout
-								title="Local"
-								description="Run models on your own machine via Ollama."
-							>
-								<p className="text-xs text-muted-foreground">
-									Local model support via Ollama — coming soon. Run Llama,
-									Mistral, and other open models with no API costs and full data
-									privacy.
-								</p>
-							</SectionLayout>
 						)}
 						{activeSection === "ai-provider-byok" && (
 							<AiProviderByokSection

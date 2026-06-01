@@ -59,7 +59,7 @@ export function AIProvider({ children }: { children: ReactNode }) {
 			const p = (s.ai.provider as Provider) || "anthropic"
 			const detailed = s.ai.model || DEFAULT_DETAILED_MODEL[p]
 			const quick = s.ai.quickModel || DEFAULT_QUICK_MODEL[p]
-			const key = s.ai[`${p}Key` as "anthropicKey" | "openaiKey" | "gatewayKey"] ?? ""
+			const key = s.ai[`${p}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"] ?? ""
 			setProvider(p)
 			setDetailedModel(detailed)
 			setQuickModel(quick)
@@ -86,7 +86,7 @@ export function AIProvider({ children }: { children: ReactNode }) {
 	}
 
 	function clearApiKey() {
-		const keyField = `${provider}Key` as "anthropicKey" | "openaiKey" | "gatewayKey"
+		const keyField = `${provider}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"
 		localStorage.removeItem(`ai-${provider}-key`)
 		setApiKey("")
 		setKeyStatus("idle")
@@ -99,7 +99,7 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		quick: string,
 		detailed: string,
 	) {
-		const keyField = `${prov}Key` as "anthropicKey" | "openaiKey" | "gatewayKey"
+		const keyField = `${prov}Key` as "anthropicKey" | "openaiKey" | "googleKey" | "gatewayKey"
 		// Runtime cache for editor fetch callbacks
 		localStorage.setItem(`ai-${prov}-key`, key)
 		localStorage.setItem("askpat-provider", prov)

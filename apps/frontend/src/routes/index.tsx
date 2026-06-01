@@ -14,7 +14,7 @@ const FEATURES = [
 		icon: Lock,
 		title: "Local-first",
 		description:
-			"Your documents never leave your machine unless you choose. Run entirely offline with Ollama, or connect to cloud AI when you need it.",
+			"Your documents never leave your machine unless you choose. Bring your own API key — keys go directly to the provider, never to us.",
 	},
 	{
 		icon: Puzzle,

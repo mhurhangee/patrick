@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises"
 import { createAnthropic } from "@ai-sdk/anthropic"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import {
 	ASSET_CONFIGS,
@@ -192,6 +193,7 @@ export async function buildExtractPatPrompt(settings: Settings): Promise<string>
 export function createModel(provider: string, apiKey: string, modelId: string) {
 	const key = apiKey.trim()
 	if (provider === "openai") return createOpenAI({ apiKey: key })(modelId)
+	if (provider === "google") return createGoogleGenerativeAI({ apiKey: key })(modelId)
 	if (provider === "gateway") return createGateway({ apiKey: key })(modelId)
 	return createAnthropic({ apiKey: key })(modelId)
 }

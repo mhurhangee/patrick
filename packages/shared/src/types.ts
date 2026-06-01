@@ -20,6 +20,7 @@ export type Settings = {
 		// Per-provider API keys — stored in settings.yaml, never in browser storage
 		anthropicKey: string
 		openaiKey: string
+		googleKey: string
 		gatewayKey: string
 	}
 	prompts: {
@@ -38,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
 		quickModel: "",
 		anthropicKey: "",
 		openaiKey: "",
+		googleKey: "",
 		gatewayKey: "",
 	},
 	prompts: { context: "", agentpat: "", askpat: "", extractpat: "" },
