@@ -182,10 +182,8 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function OnboardingFlow({
-	open,
 	onComplete,
 }: {
-	open: boolean
 	/** Called when onboarding finishes. `projectPath` is set if the user created a project. */
 	onComplete: (projectPath?: string) => void
 }) {
@@ -225,13 +223,9 @@ export function OnboardingFlow({
 	const [askPatPrompt, setAskPatPrompt] = useState("")
 	const [extractPatPrompt, setExtractPatPrompt] = useState("")
 
-	// Reset step immediately when opened (synchronous, before any async)
+	// Load existing settings once on mount
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
 	useEffect(() => {
-		if (open) setStepIndex(0)
-	}, [open])
-
-	useEffect(() => {
-		if (!open) return
 		api.settings.get().then((s) => {
 			setName(s.profile.name || "")
 			setFirm(s.profile.firm || "")
@@ -251,7 +245,7 @@ export function OnboardingFlow({
 			setAskPatPrompt(s.prompts.askpat || DEFAULT_PROMPT_ASKPAT)
 			setExtractPatPrompt(s.prompts.extractpat || DEFAULT_PROMPT_EXTRACTPAT)
 		})
-	}, [open])
+	}, [])
 
 	const currentKey = keys[provider]
 
@@ -376,12 +370,7 @@ export function OnboardingFlow({
 	const isLast = stepIndex === STEPS.length - 1
 
 	return (
-		<div
-			className={cn(
-				"fixed inset-0 z-50 bg-background flex flex-col transition-opacity duration-200",
-				open ? "opacity-100" : "opacity-0 pointer-events-none",
-			)}
-		>
+		<div className="fixed inset-0 z-50 bg-background flex flex-col">
 			{/* Progress bar */}
 			<div className="flex gap-1.5 px-8 pt-8 shrink-0">
 				{STEPS.map((_, i) => (
