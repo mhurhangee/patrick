@@ -18,23 +18,23 @@ export function setConfigDir(dir: string) {
 	configDir = dir
 }
 
-export function settingsPath() {
+function settingsPath() {
 	return join(configDir, "settings.yaml")
 }
 
-export function projectsPath() {
+function projectsPath() {
 	return join(configDir, "projects.yaml")
 }
 
-export function chatsDir(projectPath: string) {
+function chatsDir(projectPath: string) {
 	return join(projectPath, "chats")
 }
 
-export function chatIndexPath(projectPath: string) {
+function chatIndexPath(projectPath: string) {
 	return join(projectPath, "chats", "index.json")
 }
 
-export function chatFilePath(projectPath: string, chatId: string) {
+function chatFilePath(projectPath: string, chatId: string) {
 	return join(projectPath, "chats", `chat-${chatId}.json`)
 }
 
@@ -42,7 +42,7 @@ export function artifactsDir(projectPath: string) {
 	return join(projectPath, "artifacts")
 }
 
-export function analysisDir(projectPath: string) {
+function analysisDir(projectPath: string) {
 	return join(projectPath, "analysis")
 }
 

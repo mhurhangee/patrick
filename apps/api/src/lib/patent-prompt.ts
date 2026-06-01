@@ -2,12 +2,7 @@ import { readFile } from "node:fs/promises"
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
-import {
-	ASSET_CONFIGS,
-	getFormFields,
-	PROJECT_CONFIGS,
-	type Settings,
-} from "@patrickos/shared"
+import { ASSET_CONFIGS, type Settings } from "@patrickos/shared"
 import { createGateway } from "ai"
 
 // PDF binary parts — injected as message content via prepareCall, not system prompt
@@ -27,41 +22,6 @@ export type AgentPatContext = {
 
 function assemble(parts: (string | null | undefined)[]): string {
 	return parts.filter(Boolean).join("\n\n")
-}
-
-function extractNodeText(node: unknown): string {
-	if (typeof node !== "object" || node === null) return ""
-	const n = node as Record<string, unknown>
-	if (typeof n.text === "string") return n.text
-	if (Array.isArray(n.children)) return n.children.map(extractNodeText).join("")
-	return ""
-}
-
-function plateJsonToText(content: string): string {
-	try {
-		const nodes = JSON.parse(content) as unknown[]
-		return nodes.map(extractNodeText).filter(Boolean).join("\n")
-	} catch {
-		return content
-	}
-}
-
-function formatDetails(
-	assetType: string,
-	details: Record<string, unknown>,
-): string {
-	return getFormFields(assetType)
-		.map((f) => {
-			const val = details[f.key]
-			if (val === undefined || val === null || val === "") return ""
-			if (Array.isArray(val)) {
-				if (val.length === 0) return ""
-				return `${f.label}:\n${val.map((v) => `  - ${v}`).join("\n")}`
-			}
-			return `${f.label}: ${val}`
-		})
-		.filter(Boolean)
-		.join("\n")
 }
 
 // ─── Parts ────────────────────────────────────────────────────────────────────

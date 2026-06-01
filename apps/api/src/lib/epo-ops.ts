@@ -36,7 +36,7 @@ function extractText(field: unknown): string {
 	if (Array.isArray(field)) return field.map(extractText).join("\n")
 	if (typeof field === "object") {
 		const f = field as Record<string, unknown>
-		return extractText(f["$"] ?? f["_"] ?? f["p"] ?? "")
+		return extractText(f.$ ?? f._ ?? f.p ?? "")
 	}
 	return String(field)
 }
@@ -108,21 +108,20 @@ export async function fetchPatent(
 			// Dates
 			const appRef = bd?.["application-reference"] as Record<string, unknown>
 			filingDate = extractText(
-				(appRef?.["document-id"] as Record<string, unknown>)?.["date"],
+				(appRef?.["document-id"] as Record<string, unknown>)?.date,
 			)
 			const pubRef = bd?.["publication-reference"] as Record<string, unknown>
 			publicationDate = extractText(
-				(pubRef?.["document-id"] as Record<string, unknown>)?.["date"],
+				(pubRef?.["document-id"] as Record<string, unknown>)?.date,
 			)
 
 			// Abstract (from abstract field if present in biblio)
-			abstract = extractText(bd?.["abstract"])
+			abstract = extractText(bd?.abstract)
 
 			// Parties
-			const parties = (bd?.["parties"] as Record<string, unknown>) ?? {}
-			const applicantArr = (
-				parties?.["applicants"] as Record<string, unknown>
-			)?.["applicant"]
+			const parties = (bd?.parties as Record<string, unknown>) ?? {}
+			const applicantArr = (parties?.applicants as Record<string, unknown>)
+				?.applicant
 			applicants = (
 				Array.isArray(applicantArr)
 					? applicantArr
@@ -135,9 +134,8 @@ export async function fetchPatent(
 				)
 				.filter(Boolean)
 
-			const inventorArr = (parties?.["inventors"] as Record<string, unknown>)?.[
-				"inventor"
-			]
+			const inventorArr = (parties?.inventors as Record<string, unknown>)
+				?.inventor
 			inventors = (
 				Array.isArray(inventorArr)
 					? inventorArr

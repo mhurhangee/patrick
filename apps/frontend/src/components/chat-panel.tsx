@@ -630,7 +630,7 @@ function ChatPaneLoader({
 				),
 			)
 			.catch(() => setInitialMessages([]))
-	}, [chatId])
+	}, [chatId, rest.projectId])
 
 	if (initialMessages === null) {
 		return (
