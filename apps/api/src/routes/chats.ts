@@ -12,6 +12,7 @@ import {
 	writeChat,
 	writeChatIndex,
 } from "../lib/fs"
+import { fetchPatent } from "../lib/epo-ops"
 import { buildAgentPatPrompt, createModel } from "../lib/patent-prompt"
 
 // No execute — loop stops when called; data lives in part.input on the client.
@@ -174,10 +175,36 @@ chatsRouter.post("/:id/messages", async (c) => {
 		}),
 	}
 
+	const epoAuth = settings.integrations
+	const epoOpsAuth = {
+		consumerKey: epoAuth.epoOpsKey,
+		consumerSecret: epoAuth.epoOpsSecret,
+	}
+	const fetchPatentTool = tool({
+		description:
+			"Fetch structured patent data from EPO OPS by publication number (e.g. EP1234567, US9876543, WO2020123456)",
+		inputSchema: z.object({
+			publicationNumber: z.string().describe("Patent publication number"),
+		}),
+		execute: async ({ publicationNumber }) => {
+			try {
+				return await fetchPatent(publicationNumber, epoOpsAuth)
+			} catch (err) {
+				return { error: String(err) }
+			}
+		},
+	})
+
+	const tools = {
+		generateMetadata,
+		...fsTools,
+		...(epoAuth.epoOpsKey && epoAuth.epoOpsSecret ? { fetchPatent: fetchPatentTool } : {}),
+	}
+
 	const agent = new ToolLoopAgent({
 		model,
 		instructions: system,
-		tools: { generateMetadata, ...fsTools },
+		tools,
 		prepareCall:
 			fileParts.length > 0
 				? (baseArgs) => {

@@ -29,6 +29,10 @@ export type Settings = {
 		askpat: string
 		extractpat: string
 	}
+	integrations: {
+		epoOpsKey: string
+		epoOpsSecret: string
+	}
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -43,6 +47,7 @@ export const DEFAULT_SETTINGS: Settings = {
 		gatewayKey: "",
 	},
 	prompts: { context: "", agentpat: "", askpat: "", extractpat: "" },
+	integrations: { epoOpsKey: "", epoOpsSecret: "" },
 }
 
 // ─── Project registry (projects.yaml) ────────────────────────────────────────

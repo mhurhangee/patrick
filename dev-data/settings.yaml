@@ -9,9 +9,13 @@ ai:
   quickModel: ""
   anthropicKey: ""
   openaiKey: ""
+  googleKey: ""
   gatewayKey: ""
 prompts:
   context: ""
   agentpat: ""
   askpat: ""
   extractpat: ""
+integrations:
+  epoOpsKey: ""
+  epoOpsSecret: ""

@@ -67,13 +67,13 @@ import { cn } from "@/lib/utils"
 
 type Section =
 	| "account"
-	| "ai-provider-local"
 	| "ai-provider-byok"
 	| "ai-provider-cloud"
 	| "ai-instructions-context"
 	| "ai-instructions-askpat"
 	| "ai-instructions-agentpat"
 	| "ai-instructions-extractpat"
+	| "integrations-epo"
 	| "storage"
 	| "billing"
 
@@ -196,6 +196,10 @@ const NAV_GROUPS: NavGroup[] = [
 		],
 	},
 	{
+		label: "Integrations",
+		items: [{ id: "integrations-epo", label: "EPO OPS", indent: true }],
+	},
+	{
 		label: "Misc",
 		items: [
 			{ id: "storage", label: "Storage" },
@@ -305,6 +309,12 @@ export function SettingsDialog({
 	const [savedAgentPat, setSavedAgentPat] = useState("")
 	const [savedExtractPat, setSavedExtractPat] = useState("")
 
+	// ── EPO OPS state ──────────────────────────────────────────────────────────
+	const [epoKey, setEpoKey] = useState("")
+	const [epoSecret, setEpoSecret] = useState("")
+	const [savedEpoKey, setSavedEpoKey] = useState("")
+	const [savedEpoSecret, setSavedEpoSecret] = useState("")
+
 	// ── Sync on open ──────────────────────────────────────────────────────────
 	useEffect(() => {
 		if (!open) return
@@ -349,6 +359,10 @@ export function SettingsDialog({
 			setSavedAgentPat(s.prompts.agentpat)
 			setExtractPatInstructions(s.prompts.extractpat)
 			setSavedExtractPat(s.prompts.extractpat)
+			setEpoKey(s.integrations?.epoOpsKey ?? "")
+			setSavedEpoKey(s.integrations?.epoOpsKey ?? "")
+			setEpoSecret(s.integrations?.epoOpsSecret ?? "")
+			setSavedEpoSecret(s.integrations?.epoOpsSecret ?? "")
 		})
 	}, [open, savedProvider, savedQuickModel, savedDetailedModel])
 
@@ -428,6 +442,12 @@ export function SettingsDialog({
 	async function saveExtractPat() {
 		await api.settings.update({ prompts: { extractpat: extractPatInstructions } })
 		setSavedExtractPat(extractPatInstructions)
+	}
+
+	async function saveEpo() {
+		await api.settings.update({ integrations: { epoOpsKey: epoKey, epoOpsSecret: epoSecret } })
+		setSavedEpoKey(epoKey)
+		setSavedEpoSecret(epoSecret)
 	}
 
 	// ── Render ────────────────────────────────────────────────────────────────
@@ -587,6 +607,17 @@ export function SettingsDialog({
 								onChange={setExtractPatInstructions}
 								onSave={saveExtractPat}
 								showAlert
+							/>
+						)}
+						{activeSection === "integrations-epo" && (
+							<EpoSection
+								epoKey={epoKey}
+								epoSecret={epoSecret}
+								savedKey={savedEpoKey}
+								savedSecret={savedEpoSecret}
+								onKeyChange={setEpoKey}
+								onSecretChange={setEpoSecret}
+								onSave={saveEpo}
 							/>
 						)}
 						{activeSection === "storage" && (
@@ -1054,5 +1085,67 @@ function PromptSection({
 				</AlertDialog>
 			)}
 		</>
+	)
+}
+
+// ─── EPO OPS section ──────────────────────────────────────────────────────────
+
+function EpoSection({
+	epoKey,
+	epoSecret,
+	savedKey,
+	savedSecret,
+	onKeyChange,
+	onSecretChange,
+	onSave,
+}: {
+	epoKey: string
+	epoSecret: string
+	savedKey: string
+	savedSecret: string
+	onKeyChange: (v: string) => void
+	onSecretChange: (v: string) => void
+	onSave: () => Promise<void>
+}) {
+	const { status, wrap } = useSaveButton()
+	const isDirty = epoKey !== savedKey || epoSecret !== savedSecret
+
+	return (
+		<SectionLayout
+			title="EPO OPS"
+			description="Fetch patent data directly from the European Patent Office. Register at developers.epo.org."
+			footer={
+				<>
+					<div />
+					<SaveButton status={status} isDirty={isDirty} onClick={() => wrap(onSave)} />
+				</>
+			}
+		>
+			<div className="flex flex-col gap-4 max-w-sm">
+				<div className="flex flex-col gap-1.5">
+					<Label htmlFor="epo-key">Consumer Key</Label>
+					<Input
+						id="epo-key"
+						value={epoKey}
+						onChange={(e) => onKeyChange(e.target.value)}
+						placeholder="your-consumer-key"
+					/>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<Label htmlFor="epo-secret">Consumer Secret</Label>
+					<Input
+						id="epo-secret"
+						type="password"
+						value={epoSecret}
+						onChange={(e) => onSecretChange(e.target.value)}
+						placeholder="your-consumer-secret"
+					/>
+				</div>
+				<p className="text-xs text-muted-foreground">
+					When set, AgentPat gains a <code className="font-mono">fetchPatent</code> tool
+					— ask it to look up any publication number (EP, US, WO, etc.).
+				</p>
+			</div>
+		</SectionLayout>
 	)
 }
