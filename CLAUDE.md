@@ -33,17 +33,17 @@ No database in local mode. Everything is inspectable, portable, and deletable.
 ```
 ~/.config/patrickos/
 ├── settings.yaml       ← user profile, API keys, preferences
-└── projects.yaml       ← list of known matter folder paths
+└── tasks.yaml          ← registry of known task folder paths (+ task type)
 
-matter-folder/          ← user selects this, already exists on their machine
+task-folder/            ← user selects this, already exists on their machine
 ├── [existing PDFs, Word docs — never modified]
-├── artifacts/          ← Plate drafts, exported as .docx
+├── artifacts/          ← Plate drafts (.json) exported as .docx
 │   └── response-draft.docx
 ├── chats/              ← conversation history
 │   ├── index.json      ← [{ id, title, date, lastMessagePreview }]
 │   └── chat-{id}.json  ← full AI SDK message history
-└── analysis/           ← ExtractPat results, tags, per-file metadata
-    └── {filename}.json
+└── analysis/           ← ExtractPat results, per-source metadata
+    └── {filename}.json ← AnalysisRecord { assetType, details, locations, … }
 ```
 
 **Why files:**
@@ -58,24 +58,27 @@ matter-folder/          ← user selects this, already exists on their machine
 
 ## Domain model
 
-**Project = a folder on disk.** No upload, no import. Point at the matter folder you already have.
+**Task = a folder on disk.** No upload, no import. Point at a folder you already have. A *task* is one discrete unit of work (e.g. responding to a specific Office Action) — **not** a generic "project" and **not** a "matter" (the whole case file). "Matter" is reserved for a possible future grouping layer (matter → tasks). Code: `TaskEntry`/`TaskType`/`TASK_CONFIGS`/`taskType`; never reintroduce `project*`.
 
-- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified.
-- **Artifacts** — documents drafted in Plate, saved to `artifacts/` as `.docx`. Attorney edits in Word if they want.
-- **Tags** — flexible labels (`office-action`, `prior-art`, `response-draft`, etc.) in `analysis/` metadata. Not a fixed enum.
-- **Chats** — full AI SDK message history as JSON. Attorney can read every message, tool call, injected document, and AI response.
+- **Task type** — `TASK_CONFIGS` (US Non-Final/Final OA Response, EP Art 94(3) Response). Chosen at folder-pick, stored in `tasks.yaml`, fed into the AgentPat system prompt to prime it.
+- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Open as `[Document | Analysis]` tabs in the viewer.
+- **Artifacts** — documents drafted in Plate, saved to `artifacts/` as `.json` (+ `.docx`). Attorney edits in Word if they want. (Creation works; AgentPat write tools still rudimentary — WIP.)
+- **Analysis** — ExtractPat results per source in `analysis/{filename}.json` (`AnalysisRecord`). Surfaced in the source's Analysis tab; un-analysed sources show an amber dot.
+- **Chats** — full AI SDK message history as JSON. The chat UI renders every part — text, reasoning, and tool call/result — as inspectable collapsibles (transparency by default), with a per-tool presenter registry for generative UI.
 
 ## AgentPat
 
 Main agent. `ToolLoopAgent` via AI SDK, streamed through Hono.
 
-**Tools:**
-- File system: `readFile`, `writeFile`, `listDirectory`, `readDocx`, `writeDocx`
-- Patent data: `fetchPatent(publicationNumber)` → EPO OPS (plain text, structured)
-- USPTO: `fetchOfficeAction`, `fetchGlobalDossier` (planned)
-- `writeArtifact(title, content)` → saves Plate JSON + exports `.docx` to `artifacts/`
+**Tools (implemented):**
+- `listDirectory`, `readFile` (text files; PDFs come in as file parts, not via readFile)
+- `analyseSource(filename, assetType?)` — human-in-the-loop: agent proposes, user confirms in a generative card, client runs ExtractPat and feeds the result back (no server `execute`)
+- `fetchPatent(publicationNumber)` → EPO OPS (only when EPO OPS keys are set)
+- `generateMetadata` — internal (suggestions/title/summary), hidden from the inline transcript
 
-**Context model:** open documents = in context. User controls what's active. Agent sees the matter folder file tree + full content of open files. PDFs injected as native file parts. No `getAsset` tool — open-doc model keeps context explicit and costs predictable.
+**Planned (not yet built):** `writeFile`/`writeArtifact`/`readDocx`/`writeDocx`, USPTO `fetchOfficeAction`/`fetchGlobalDossier`.
+
+**Context model:** open documents = in context. User controls what's active. Agent sees the task folder file tree + full content of open files. PDFs injected as native file parts. No `getAsset` tool — open-doc model keeps context explicit and costs predictable.
 
 No web search. EPO OPS gives structured patent data; that's better than unstructured web results for this domain.
 
@@ -89,7 +92,7 @@ Inline AI inside the Plate artifact editor. Working end-to-end.
 
 ## Shared types
 
-File format types (chat JSON shape, analysis JSON shape, settings YAML shape) live in `packages/shared` and are imported by both frontend and API. `packages/db` and Drizzle are being removed — do not add new DB dependencies or schema.
+File format types (chat JSON shape, `AnalysisRecord`, settings YAML shape, `TASK_CONFIGS`/`ASSET_CONFIGS`) live in `packages/shared` and are imported by both frontend and API. No database in local mode — `packages/db`/Drizzle have been removed; do not add DB dependencies or schema.
 
 ## Conventions
 
