@@ -9,6 +9,7 @@ import { fetchPatent } from "../lib/epo-ops"
 import {
 	readChat,
 	readChatIndex,
+	readProjects,
 	readSettings,
 	writeChat,
 	writeChatIndex,
@@ -164,10 +165,14 @@ chatsRouter.post("/:id/messages", async (c) => {
 		),
 	}))
 
+	const projects = await readProjects()
+	const projectType = projects.find((p) => p.path === projectPath)?.projectType
+
 	const { system, fileParts } = await buildAgentPatPrompt({
 		settings,
 		projectPath,
 		openFilePaths: openFilePaths ?? [],
+		projectType,
 	})
 
 	const resolvedProvider = provider || settings.ai.provider

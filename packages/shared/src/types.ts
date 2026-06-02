@@ -2,6 +2,8 @@
 // No database, no ORM. These are the canonical types for settings.yaml,
 // projects.yaml, chats/chat-{id}.json, and analysis/{filename}.json.
 
+import type { ProjectType } from "./project-config"
+
 // ─── Settings (settings.yaml) ────────────────────────────────────────────────
 
 export type AiProvider = "anthropic" | "openai" | "google" | "gateway"
@@ -56,6 +58,8 @@ export type ProjectEntry = {
 	path: string
 	name: string
 	addedAt: string
+	/** Project type (US OA response, EP Art 94(3), etc.) — primes AgentPat. */
+	projectType?: ProjectType
 }
 
 // ─── Chats (chats/index.json + chats/chat-{id}.json) ─────────────────────────

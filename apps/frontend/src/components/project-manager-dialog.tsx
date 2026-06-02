@@ -1,4 +1,5 @@
-import type { ApiProject } from "@patrickos/shared"
+import type { ApiProject, ProjectType } from "@patrickos/shared"
+import { PROJECT_CONFIGS } from "@patrickos/shared"
 import { FolderOpen, Loader2, Search } from "lucide-react"
 import { type CSSProperties, useEffect, useRef, useState } from "react"
 import {
@@ -27,6 +28,13 @@ import {
 } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select"
 import {
 	Sidebar,
 	SidebarContent,
@@ -95,11 +103,16 @@ function AddFolderPanel({
 	onCreate,
 	onCreated,
 }: {
-	onCreate: (path: string, name?: string) => Promise<ApiProject>
+	onCreate: (
+		path: string,
+		name?: string,
+		projectType?: ProjectType,
+	) => Promise<ApiProject>
 	onCreated: (project: ApiProject) => void
 }) {
 	const [path, setPath] = useState("")
 	const [name, setName] = useState("")
+	const [projectType, setProjectType] = useState<ProjectType | "">("")
 	const [picking, setPicking] = useState(false)
 	const [creating, setCreating] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -123,7 +136,11 @@ function AddFolderPanel({
 		setCreating(true)
 		setError(null)
 		try {
-			const project = await onCreate(trimmedPath, name.trim() || undefined)
+			const project = await onCreate(
+				trimmedPath,
+				name.trim() || undefined,
+				projectType || undefined,
+			)
 			onCreated(project)
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to add folder")
@@ -195,6 +212,29 @@ function AddFolderPanel({
 						/>
 						<p className="text-xs text-muted-foreground">
 							Optional — defaults to folder name.
+						</p>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<Label>Matter type</Label>
+						<Select
+							value={projectType}
+							onValueChange={(v) => setProjectType(v as ProjectType)}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select a matter type…" />
+							</SelectTrigger>
+							<SelectContent>
+								{PROJECT_CONFIGS.map((p) => (
+									<SelectItem key={p.id} value={p.id}>
+										{p.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<p className="text-xs text-muted-foreground">
+							Tells AgentPat what kind of response this matter is, so it can
+							tailor its help. Optional.
 						</p>
 					</div>
 				</div>
@@ -359,7 +399,11 @@ export function ProjectManagerDialog({
 	currentProjectPath: string
 	defaultPanel?: "empty" | "new"
 	onSelect: (path: string) => void
-	onCreate: (path: string, name?: string) => Promise<ApiProject>
+	onCreate: (
+		path: string,
+		name?: string,
+		projectType?: ProjectType,
+	) => Promise<ApiProject>
 	onRename: (path: string, name: string) => Promise<ApiProject>
 	onDelete: (path: string) => Promise<void>
 }) {
@@ -388,8 +432,12 @@ export function ProjectManagerDialog({
 		setPanelState("empty")
 	}
 
-	async function handleCreate(path: string, name?: string) {
-		const project = await onCreate(path, name)
+	async function handleCreate(
+		path: string,
+		name?: string,
+		projectType?: ProjectType,
+	) {
+		const project = await onCreate(path, name, projectType)
 		onSelect(project.path)
 		setPanelState({ path: project.path })
 		return project

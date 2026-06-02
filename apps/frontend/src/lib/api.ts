@@ -4,6 +4,7 @@ import type {
 	ApiChat,
 	ApiChatMessage,
 	ApiProject,
+	ProjectType,
 	Settings,
 } from "@patrickos/shared"
 
@@ -96,10 +97,10 @@ export const api = {
 	},
 	projects: {
 		list: () => request<ApiProject[]>("/projects"),
-		create: (path: string, name?: string) =>
+		create: (path: string, name?: string, projectType?: ProjectType) =>
 			request<ApiProject>(
 				"/projects",
-				json({ path, name }, { method: "POST" }),
+				json({ path, name, projectType }, { method: "POST" }),
 			),
 		rename: (path: string, name: string) =>
 			request<ApiProject>(

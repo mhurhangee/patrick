@@ -2,7 +2,12 @@ import { readFile } from "node:fs/promises"
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
-import { ASSET_CONFIGS, type Settings } from "@patrickos/shared"
+import {
+	ASSET_CONFIGS,
+	PROJECT_CONFIGS,
+	type ProjectType,
+	type Settings,
+} from "@patrickos/shared"
 import { createGateway } from "ai"
 
 // PDF binary parts — injected as message content via prepareCall, not system prompt
@@ -16,6 +21,7 @@ export type AgentPatContext = {
 	settings: Settings
 	projectPath: string
 	openFilePaths: string[]
+	projectType?: ProjectType
 }
 
 // ─── Private utilities ────────────────────────────────────────────────────────
@@ -78,9 +84,15 @@ function sharedContext(s: Settings) {
 		: null
 }
 
-function projectContext(projectPath: string) {
+function projectContext(projectPath: string, projectType?: ProjectType) {
 	const folderName = projectPath.split("/").at(-1) ?? projectPath
-	return `# Project\nMatter folder: ${folderName}\nPath: ${projectPath}`
+	const config = projectType
+		? PROJECT_CONFIGS.find((p) => p.id === projectType)
+		: undefined
+	const typeLines = config
+		? `\nMatter type: ${config.label}\n${config.aiContext}`
+		: ""
+	return `# Project\nMatter folder: ${folderName}\nPath: ${projectPath}${typeLines}`
 }
 
 function openFilesContext(openFilePaths: string[]) {
@@ -118,14 +130,14 @@ async function buildFileParts(openFilePaths: string[]): Promise<FilePart[]> {
 export async function buildAgentPatPrompt(
 	ctx: AgentPatContext,
 ): Promise<{ system: string; fileParts: FilePart[] }> {
-	const { settings, projectPath, openFilePaths } = ctx
+	const { settings, projectPath, openFilePaths, projectType } = ctx
 
 	const system = assemble([
 		identityAgentPat(),
 		userContext(settings),
 		agentPatInstructions(settings),
 		sharedContext(settings),
-		projectContext(projectPath),
+		projectContext(projectPath, projectType),
 		openFilesContext(openFilePaths),
 		metadataInstruction(),
 	])

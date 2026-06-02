@@ -1,4 +1,4 @@
-import type { ApiProject } from "@patrickos/shared"
+import type { ApiProject, ProjectType } from "@patrickos/shared"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
@@ -17,8 +17,12 @@ export function useProjectState() {
 			.finally(() => setProjectsLoading(false))
 	}, [])
 
-	async function createProject(path: string, name?: string) {
-		const project = await api.projects.create(path, name)
+	async function createProject(
+		path: string,
+		name?: string,
+		projectType?: ProjectType,
+	) {
+		const project = await api.projects.create(path, name, projectType)
 		setProjects((prev) => [...prev, project])
 		setCurrentProjectId(project.path)
 		return project

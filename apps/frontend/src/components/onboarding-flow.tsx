@@ -2,6 +2,8 @@ import {
 	DEFAULT_PROMPT_AGENTPAT,
 	DEFAULT_PROMPT_ASKPAT,
 	DEFAULT_PROMPT_EXTRACTPAT,
+	PROJECT_CONFIGS,
+	type ProjectType,
 } from "@patrickos/shared"
 import { ChevronDown, Eye, EyeOff, FolderOpen, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -232,6 +234,7 @@ export function OnboardingFlow({
 
 	// Project
 	const [projectPath, setProjectPath] = useState("")
+	const [projectType, setProjectType] = useState<ProjectType | "">("")
 	const [projectPicking, setProjectPicking] = useState(false)
 
 	// Prompts
@@ -342,7 +345,12 @@ export function OnboardingFlow({
 		try {
 			if (step === "project") {
 				const trimmed = projectPath.trim()
-				if (trimmed) await api.projects.create(trimmed)
+				if (trimmed)
+					await api.projects.create(
+						trimmed,
+						undefined,
+						projectType || undefined,
+					)
 				await ai.reloadSettings()
 				onComplete(trimmed || undefined)
 				return
@@ -745,6 +753,28 @@ export function OnboardingFlow({
 												</Button>
 											)}
 										</div>
+									</div>
+									<div className="flex flex-col gap-1.5">
+										<Label>Matter type</Label>
+										<Select
+											value={projectType}
+											onValueChange={(v) => setProjectType(v as ProjectType)}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select a matter type…" />
+											</SelectTrigger>
+											<SelectContent>
+												{PROJECT_CONFIGS.map((p) => (
+													<SelectItem key={p.id} value={p.id}>
+														{p.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<p className="text-xs text-muted-foreground">
+											Tells AgentPat what kind of response this matter is, so it
+											can tailor its help. Optional — you can set it later.
+										</p>
 									</div>
 									<div className="rounded-md border bg-muted/40 px-4 py-3 text-xs text-muted-foreground space-y-1">
 										<p className="font-medium text-foreground">

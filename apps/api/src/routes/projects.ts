@@ -1,6 +1,6 @@
 import { readdir, stat } from "node:fs/promises"
 import { extname, join } from "node:path"
-import type { ProjectEntry } from "@patrickos/shared"
+import type { ProjectEntry, ProjectType } from "@patrickos/shared"
 import { Hono } from "hono"
 import { ensureProjectDirs, readProjects, writeProjects } from "../lib/fs"
 
@@ -14,7 +14,11 @@ projectsRouter.get("/", async (c) => {
 })
 
 projectsRouter.post("/", async (c) => {
-	const { path, name } = await c.req.json<{ path: string; name?: string }>()
+	const { path, name, projectType } = await c.req.json<{
+		path: string
+		name?: string
+		projectType?: ProjectType
+	}>()
 	const projects = await readProjects()
 	if (projects.find((p) => p.path === path)) {
 		return c.json(projects.find((p) => p.path === path))
@@ -24,6 +28,7 @@ projectsRouter.post("/", async (c) => {
 		path,
 		name: name ?? path.split("/").at(-1) ?? path,
 		addedAt: new Date().toISOString(),
+		...(projectType ? { projectType } : {}),
 	}
 	await writeProjects([...projects, entry])
 	return c.json(entry, 201)
