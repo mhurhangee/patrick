@@ -284,6 +284,9 @@ export function AnalysisPanel({
 					</div>
 				) : (
 					<div className="flex flex-col gap-4 p-4">
+						<h1 className="text-lg font-semibold">
+							Extracted Data from {asset.title}
+						</h1>
 						{fields.map((field) => {
 							const v = details[field.key]
 							const hasValue = Array.isArray(v)

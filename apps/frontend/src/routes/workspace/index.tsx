@@ -236,7 +236,6 @@ function WorkspaceContent({
 								onRemoveAsset={asset.closeTab}
 								onOpenAsset={asset.selectTab}
 								doNotRead={asset.doNotRead}
-								onToggleDoNotRead={asset.toggleDoNotRead}
 								onOpenSource={(filename) => {
 									const src = asset.assets.find(
 										(a) => a.kind === "source" && a.filename === filename,

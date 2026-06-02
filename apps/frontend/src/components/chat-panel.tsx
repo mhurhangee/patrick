@@ -7,7 +7,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai"
-import { ArrowUp, Eye, EyeOff, Loader2, Plus, X } from "lucide-react"
+import { ArrowUp, Loader2, Plus, X } from "lucide-react"
 import {
 	Fragment,
 	type RefObject,
@@ -62,7 +62,6 @@ function ChatInputBar({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
-	onToggleDoNotRead,
 	input,
 	onInputChange,
 	onSend,
@@ -73,13 +72,14 @@ function ChatInputBar({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead?: Set<string>
-	onToggleDoNotRead?: (id: string) => void
 	input: string
 	onInputChange: (value: string) => void
 	onSend: () => void
 	disabled?: boolean
 	textareaRef?: RefObject<HTMLTextAreaElement | null>
 }) {
+	// Only show docs actually sent to the AI — excluded ("do not read") are hidden.
+	const visible = openAssets.filter((a) => !doNotRead?.has(a.id))
 	return (
 		<div className="shrink-0 space-y-2 pb-3 px-3 pt-0">
 			<div className="rounded-lg border bg-transparent focus-within:ring-1 focus-within:ring-ring">
@@ -99,60 +99,33 @@ function ChatInputBar({
 				/>
 
 				<div className="flex justify-between px-3 pb-2">
-					{openAssets.length === 0 ? (
+					{visible.length === 0 ? (
 						<span className="select-none pl-1 text-xxs text-muted-foreground/40 pt-2">
 							Open docs are sent to the AI
 						</span>
 					) : (
 						<div className="flex flex-wrap items-center gap-1">
-							{openAssets.map((asset) => {
-								const excluded = doNotRead?.has(asset.id) ?? false
-								return (
-									<span
-										key={asset.id}
-										className="group/chip inline-flex items-center gap-1"
+							{visible.map((asset) => (
+								<span
+									key={asset.id}
+									className="group/chip inline-flex items-center gap-1"
+								>
+									<button
+										type="button"
+										onClick={() => onOpenAsset(asset.id)}
+										className="cursor-pointer capitalize truncate text-xxs font-medium text-muted-foreground hover:text-foreground"
 									>
-										<button
-											type="button"
-											onClick={() => onOpenAsset(asset.id)}
-											className={cn(
-												"cursor-pointer capitalize truncate text-xxs font-medium hover:text-foreground",
-												excluded
-													? "text-muted-foreground/40 line-through"
-													: "text-muted-foreground",
-											)}
-										>
-											{asset.title}
-										</button>
-										{onToggleDoNotRead && (
-											<button
-												type="button"
-												onClick={() => onToggleDoNotRead(asset.id)}
-												title={
-													excluded
-														? "Excluded from AgentPat — click to include"
-														: "Included in AgentPat — click to exclude"
-												}
-												className={cn(
-													"text-muted-foreground transition-opacity",
-													excluded
-														? "opacity-100"
-														: "opacity-0 group-hover/chip:opacity-100",
-												)}
-											>
-												{excluded ? <EyeOff size={9} /> : <Eye size={9} />}
-											</button>
-										)}
-										<button
-											type="button"
-											onClick={() => onRemoveAsset(asset.id)}
-											className="opacity-0 transition-opacity group-hover/chip:opacity-100 text-muted-foreground"
-										>
-											<X size={9} />
-										</button>
-									</span>
-								)
-							})}
+										{asset.title}
+									</button>
+									<button
+										type="button"
+										onClick={() => onRemoveAsset(asset.id)}
+										className="opacity-0 transition-opacity group-hover/chip:opacity-100 text-muted-foreground"
+									>
+										<X size={9} />
+									</button>
+								</span>
+							))}
 						</div>
 					)}
 					<Button
@@ -175,11 +148,13 @@ function AgentPatPane({
 	openAssets,
 	onRemoveAsset,
 	onOpenAsset,
+	doNotRead,
 }: {
 	onSend: (message: string) => void
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	doNotRead: Set<string>
 }) {
 	const [input, setInput] = useState("")
 
@@ -204,6 +179,7 @@ function AgentPatPane({
 				openAssets={openAssets}
 				onRemoveAsset={onRemoveAsset}
 				onOpenAsset={onOpenAsset}
+				doNotRead={doNotRead}
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
@@ -226,7 +202,6 @@ function ChatPane({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
-	onToggleDoNotRead,
 	onOpenSource,
 	onAnalysed,
 	initialMessages,
@@ -243,7 +218,6 @@ function ChatPane({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
-	onToggleDoNotRead: (id: string) => void
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	initialMessages: UIMessage[]
@@ -660,7 +634,6 @@ function ChatPane({
 				onRemoveAsset={onRemoveAsset}
 				onOpenAsset={onOpenAsset}
 				doNotRead={doNotRead}
-				onToggleDoNotRead={onToggleDoNotRead}
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
@@ -681,7 +654,6 @@ function ChatPaneLoader({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
-	onToggleDoNotRead: (id: string) => void
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	initialMessage?: string | null
@@ -746,7 +718,6 @@ export function ChatPanel({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
-	onToggleDoNotRead,
 	onOpenSource,
 	onAnalysed,
 	onOpenSettings,
@@ -769,7 +740,6 @@ export function ChatPanel({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
-	onToggleDoNotRead: (id: string) => void
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	onOpenSettings: () => void
@@ -853,6 +823,7 @@ export function ChatPanel({
 					openAssets={openAssets}
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
+					doNotRead={doNotRead}
 				/>
 			) : (
 				<ChatPaneLoader
@@ -862,7 +833,6 @@ export function ChatPanel({
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
-					onToggleDoNotRead={onToggleDoNotRead}
 					onOpenSource={onOpenSource}
 					onAnalysed={onAnalysed}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
