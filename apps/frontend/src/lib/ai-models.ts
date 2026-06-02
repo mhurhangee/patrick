@@ -1,156 +1,129 @@
 export type Provider = "gateway" | "anthropic" | "openai" | "google"
 
+// Rough capability/cost tier. Order in each list is always fast → balanced → expert.
+type ModelTier = "fast" | "balanced" | "expert"
+
 export type CuratedModel = {
 	id: string
 	name: string
+	tier: ModelTier
 	pricingPerM?: { input: number; output: number }
+	contextWindow: number
 }
 
-// Anthropic / OpenAI / Google direct — flat list used for both quick and detailed selects
-export const CURATED_MODELS: Record<
+// Anthropic / OpenAI / Google direct — flat list used for both quick and detailed
+// selects. IDs carry the gateway-style `vendor/` prefix; `createModel` strips it
+// for direct providers and keeps it for the gateway (which needs the routing form).
+const CURATED_MODELS: Record<
 	"anthropic" | "openai" | "google",
 	CuratedModel[]
 > = {
 	anthropic: [
 		{
-			id: "claude-haiku-4-5",
+			id: "anthropic/claude-haiku-4.5",
 			name: "Claude Haiku 4.5",
+			tier: "fast",
 			pricingPerM: { input: 1.0, output: 5.0 },
+			contextWindow: 200_000,
 		},
 		{
-			id: "claude-sonnet-4-6",
+			id: "anthropic/claude-sonnet-4.6",
 			name: "Claude Sonnet 4.6",
+			tier: "balanced",
 			pricingPerM: { input: 3.0, output: 15.0 },
+			contextWindow: 1_000_000,
 		},
 		{
-			id: "claude-opus-4-7",
-			name: "Claude Opus 4.7",
+			id: "anthropic/claude-opus-4.8",
+			name: "Claude Opus 4.8",
+			tier: "expert",
 			pricingPerM: { input: 5.0, output: 25.0 },
+			contextWindow: 1_000_000,
 		},
 	],
 	openai: [
 		{
-			id: "gpt-4o-mini",
-			name: "GPT-4o Mini",
-			pricingPerM: { input: 0.15, output: 0.6 },
+			id: "openai/gpt-5.4-mini",
+			name: "GPT-5.4 Mini",
+			tier: "fast",
+			pricingPerM: { input: 0.75, output: 4.5 },
+			contextWindow: 400_000,
 		},
 		{
-			id: "gpt-4o",
-			name: "GPT-4o",
-			pricingPerM: { input: 2.5, output: 10.0 },
+			id: "openai/gpt-5.4",
+			name: "GPT-5.4",
+			tier: "balanced",
+			pricingPerM: { input: 2.5, output: 15.0 },
+			contextWindow: 1_100_000,
 		},
 		{
-			id: "gpt-4.1",
-			name: "GPT-4.1",
-			pricingPerM: { input: 2.0, output: 8.0 },
+			id: "openai/gpt-5.5",
+			name: "GPT-5.5",
+			tier: "expert",
+			pricingPerM: { input: 5.0, output: 30.0 },
+			contextWindow: 1_000_000,
 		},
 	],
 	google: [
 		{
-			id: "gemini-2.5-flash",
-			name: "Gemini 2.5 Flash",
-			pricingPerM: { input: 0.3, output: 2.5 },
+			id: "google/gemini-3.1-flash-lite",
+			name: "Gemini 3.1 Flash Lite",
+			tier: "fast",
+			pricingPerM: { input: 0.25, output: 1.5 },
+			contextWindow: 1_000_000,
 		},
 		{
-			id: "gemini-2.5-pro",
-			name: "Gemini 2.5 Pro",
-			pricingPerM: { input: 1.25, output: 10.0 },
+			id: "google/gemini-3.5-flash",
+			name: "Gemini 3.5 Flash",
+			tier: "balanced",
+			pricingPerM: { input: 1.5, output: 9.0 },
+			contextWindow: 1_000_000,
 		},
 		{
-			id: "gemini-2.0-flash",
-			name: "Gemini 2.0 Flash",
-			pricingPerM: { input: 0.1, output: 0.4 },
+			id: "google/gemini-3.1-pro-preview",
+			name: "Gemini 3.1 Pro Preview",
+			tier: "expert",
+			pricingPerM: { input: 2.0, output: 12.0 },
+			contextWindow: 1_000_000,
 		},
 	],
 }
 
-// AI Gateway (Vercel) — separate quick/detailed lists, IDs are gateway routing strings
-export const GATEWAY_QUICK_MODELS: CuratedModel[] = [
-	{
-		id: "google/gemini-3.1-flash-lite",
-		name: "Gemini 3.1 Flash Lite",
-		pricingPerM: { input: 0.25, output: 1.5 },
-	},
-	{
-		id: "anthropic/claude-haiku-4.5",
-		name: "Claude Haiku 4.5",
-		pricingPerM: { input: 1.0, output: 5.0 },
-	},
-	{
-		id: "openai/gpt-5.4-nano",
-		name: "GPT-5.4 Nano",
-		pricingPerM: { input: 0.2, output: 1.25 },
-	},
-	{
-		id: "deepseek/deepseek-v4-flash",
-		name: "DeepSeek V4 Flash",
-		pricingPerM: { input: 0.14, output: 0.28 },
-	},
-	{
-		id: "nvidia/nemotron-nano-9b-v2",
-		name: "Nemotron Nano 9B v2",
-		pricingPerM: { input: 0.06, output: 0.23 },
-	},
-	{
-		id: "amazon/nova-micro",
-		name: "Nova Micro",
-		pricingPerM: { input: 0.04, output: 0.14 },
-	},
-	{
-		id: "meta/llama-3.1-8b",
-		name: "Llama 3.1 8B",
-		pricingPerM: { input: 0.1, output: 0.1 },
-	},
+// AI Gateway (Vercel) — mix-and-match across vendors. We reuse the curated lists
+// rather than maintain a separate gateway catalogue; the prefixed IDs are already
+// valid gateway routing strings.
+const GATEWAY_MODELS: CuratedModel[] = [
+	...CURATED_MODELS.anthropic,
+	...CURATED_MODELS.openai,
+	...CURATED_MODELS.google,
 ]
 
-export const GATEWAY_DETAILED_MODELS: CuratedModel[] = [
-	{
-		id: "anthropic/claude-sonnet-4.6",
-		name: "Claude Sonnet 4.6",
-		pricingPerM: { input: 3.0, output: 15.0 },
-	},
-	{
-		id: "anthropic/claude-opus-4.7",
-		name: "Claude Opus 4.7",
-		pricingPerM: { input: 5.0, output: 25.0 },
-	},
-	{
-		id: "openai/gpt-5.5",
-		name: "GPT-5.5",
-		pricingPerM: { input: 5.0, output: 30.0 },
-	},
-	{
-		id: "google/gemini-3.5-flash",
-		name: "Gemini 3.5 Flash",
-		pricingPerM: { input: 1.5, output: 9.0 },
-	},
-	{
-		id: "meta/llama-4-maverick",
-		name: "Llama 4 Maverick",
-		pricingPerM: { input: 0.24, output: 0.97 },
-	},
-	{
-		id: "amazon/nova-pro",
-		name: "Nova Pro",
-		pricingPerM: { input: 0.8, output: 3.2 },
-	},
-	{
-		id: "deepseek/deepseek-v4-pro",
-		name: "DeepSeek V4 Pro",
-		pricingPerM: { input: 0.43, output: 0.87 },
-	},
-]
+// Every model, keyed by ID — for pricing/context lookups regardless of provider.
+export const MODELS_BY_ID: Record<string, CuratedModel> = Object.fromEntries(
+	GATEWAY_MODELS.map((m) => [m.id, m]),
+)
 
+const byTier = (models: CuratedModel[], tier: ModelTier) =>
+	models.find((m) => m.tier === tier) ?? models[0]
+
+// Quick model (AskPat, copilot, ExtractPat) → fast tier.
 export const DEFAULT_QUICK_MODEL: Record<Provider, string> = {
-	anthropic: "claude-haiku-4-5",
-	openai: "gpt-4o-mini",
-	google: "gemini-2.5-flash",
-	gateway: GATEWAY_QUICK_MODELS[0].id,
+	anthropic: byTier(CURATED_MODELS.anthropic, "fast").id,
+	openai: byTier(CURATED_MODELS.openai, "fast").id,
+	google: byTier(CURATED_MODELS.google, "fast").id,
+	gateway: byTier(CURATED_MODELS.anthropic, "fast").id,
 }
 
+// Detailed model (AgentPat) → balanced tier by default; user can pick expert.
 export const DEFAULT_DETAILED_MODEL: Record<Provider, string> = {
-	anthropic: "claude-sonnet-4-6",
-	openai: "gpt-4o",
-	google: "gemini-2.5-pro",
-	gateway: GATEWAY_DETAILED_MODELS[0].id,
+	anthropic: byTier(CURATED_MODELS.anthropic, "balanced").id,
+	openai: byTier(CURATED_MODELS.openai, "balanced").id,
+	google: byTier(CURATED_MODELS.google, "balanced").id,
+	gateway: byTier(CURATED_MODELS.anthropic, "balanced").id,
+}
+
+// Models available to a provider's selects.
+export function modelsForProvider(provider: Provider): CuratedModel[] {
+	if (provider === "gateway") return GATEWAY_MODELS
+	return CURATED_MODELS[provider] ?? []
 }

@@ -3,6 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import {
+	type AiEffort,
 	type AnalysisSummary,
 	ASSET_CONFIGS,
 	type Settings,
@@ -205,11 +206,84 @@ export async function buildExtractPatPrompt(
 
 // ─── Model factory ────────────────────────────────────────────────────────────
 
+// Curated model IDs carry a `vendor/` prefix (the gateway routing form).
+// Direct provider SDKs want the bare model name; the gateway wants the prefix.
+function stripVendor(modelId: string) {
+	const slash = modelId.indexOf("/")
+	return slash === -1 ? modelId : modelId.slice(slash + 1)
+}
+
+// The vendor behind a model — `provider` for direct, parsed from the ID for gateway.
+// Used to namespace providerOptions, which the gateway forwards by vendor key.
+function vendorOf(
+	provider: string,
+	modelId: string,
+): "anthropic" | "openai" | "google" {
+	const v = provider === "gateway" ? modelId.split("/")[0] : provider
+	return v === "openai" || v === "google" ? v : "anthropic"
+}
+
 export function createModel(provider: string, apiKey: string, modelId: string) {
 	const key = apiKey.trim()
-	if (provider === "openai") return createOpenAI({ apiKey: key })(modelId)
-	if (provider === "google")
-		return createGoogleGenerativeAI({ apiKey: key })(modelId)
 	if (provider === "gateway") return createGateway({ apiKey: key })(modelId)
-	return createAnthropic({ apiKey: key })(modelId)
+	const bare = stripVendor(modelId)
+	if (provider === "openai") return createOpenAI({ apiKey: key })(bare)
+	if (provider === "google")
+		return createGoogleGenerativeAI({ apiKey: key })(bare)
+	return createAnthropic({ apiKey: key })(bare)
+}
+
+// Anthropic thinking budget (tokens) per effort level. Output cap must exceed it.
+const ANTHROPIC_THINKING_BUDGET: Record<AiEffort, number> = {
+	low: 2_000,
+	medium: 6_000,
+	high: 12_000,
+}
+
+// Structural JSON type — matches the AI SDK's ProviderOptions value shape without
+// importing it (the type lives in a pnpm-hoisted transitive package).
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json }
+export type ReasoningProviderOptions = Record<string, Record<string, Json>>
+
+// Map a unified effort + thinking toggle onto each provider's reasoning options.
+// Returns providerOptions to spread into streamText/generateText/ToolLoopAgent,
+// plus a maxOutputTokens floor when Anthropic thinking needs headroom.
+export function reasoningOptions(
+	provider: string,
+	modelId: string,
+	effort: AiEffort,
+	showThinking: boolean,
+): { providerOptions: ReasoningProviderOptions; maxOutputTokens?: number } {
+	const vendor = vendorOf(provider, modelId)
+
+	if (vendor === "openai") {
+		const openai: Record<string, Json> = { reasoningEffort: effort }
+		if (showThinking) openai.reasoningSummary = "auto"
+		return { providerOptions: { openai } }
+	}
+
+	if (vendor === "google") {
+		return {
+			providerOptions: {
+				google: {
+					thinkingConfig: {
+						thinkingLevel: effort,
+						includeThoughts: showThinking,
+					},
+				},
+			},
+		}
+	}
+
+	// anthropic: thinking object surfaces reasoning; effort scalar when hidden.
+	if (showThinking) {
+		const budgetTokens = ANTHROPIC_THINKING_BUDGET[effort]
+		return {
+			providerOptions: {
+				anthropic: { thinking: { type: "enabled", budgetTokens } },
+			},
+			maxOutputTokens: budgetTokens + 4_000,
+		}
+	}
+	return { providerOptions: { anthropic: { effort } } }
 }

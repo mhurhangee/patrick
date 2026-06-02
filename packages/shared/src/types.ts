@@ -8,6 +8,10 @@ import type { TaskType } from "./task-config"
 
 export type AiProvider = "anthropic" | "openai" | "google" | "gateway"
 
+// Reasoning depth for AgentPat. Maps per-provider in createModel
+// (anthropic effort/thinking, openai reasoningEffort, google thinkingLevel).
+export type AiEffort = "low" | "medium" | "high"
+
 export type Settings = {
 	profile: {
 		name: string
@@ -18,7 +22,10 @@ export type Settings = {
 	ai: {
 		provider: AiProvider
 		model: string // detailed model (AgentPat)
-		quickModel: string // quick model (AskPat, copilot)
+		quickModel: string // quick model (AskPat, copilot, ExtractPat)
+		// AgentPat reasoning controls. Quick/extract are always low-effort.
+		effort: AiEffort
+		showThinking: boolean // surface the model's reasoning (transparency)
 		// Per-provider API keys — stored in settings.yaml, never in browser storage
 		anthropicKey: string
 		openaiKey: string
@@ -43,6 +50,8 @@ export const DEFAULT_SETTINGS: Settings = {
 		provider: "anthropic",
 		model: "",
 		quickModel: "",
+		effort: "medium",
+		showThinking: true,
 		anthropicKey: "",
 		openaiKey: "",
 		googleKey: "",

@@ -6,7 +6,11 @@ import {
 } from "ai"
 import { Hono } from "hono"
 import { readSettings } from "../lib/fs"
-import { buildAskPatPrompt, createModel } from "../lib/patent-prompt"
+import {
+	buildAskPatPrompt,
+	createModel,
+	reasoningOptions,
+} from "../lib/patent-prompt"
 
 export const askpatRouter = new Hono()
 
@@ -65,6 +69,7 @@ askpatRouter.post("/command", async (c) => {
 	const system = await buildAskPatPrompt({ settings, assetType })
 
 	const model = createModel(provider, apiKey, modelId)
+	const { providerOptions } = reasoningOptions(provider, modelId, "low", false)
 	const prompt = buildUserPrompt(
 		toolName,
 		instruction,
@@ -76,7 +81,7 @@ askpatRouter.post("/command", async (c) => {
 		execute: async ({ writer }) => {
 			writer.write({ type: "data-toolName", data: toolName })
 
-			const result = streamText({ model, system, prompt })
+			const result = streamText({ model, system, prompt, providerOptions })
 			writer.merge(result.toUIMessageStream({ sendFinish: false }))
 		},
 	})

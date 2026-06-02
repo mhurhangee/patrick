@@ -26,11 +26,9 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
 import {
-	CURATED_MODELS,
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
-	GATEWAY_DETAILED_MODELS,
-	GATEWAY_QUICK_MODELS,
+	modelsForProvider,
 	type Provider,
 } from "@/lib/ai-models"
 import { api } from "@/lib/api"
@@ -296,17 +294,10 @@ export function OnboardingFlow({
 	function handleProviderChange(p: Provider) {
 		setProvider(p)
 		setVerifyStatus("idle")
-		const quickModels =
-			p === "gateway"
-				? GATEWAY_QUICK_MODELS
-				: (CURATED_MODELS[p as "anthropic" | "openai" | "google"] ?? [])
-		const detModels =
-			p === "gateway"
-				? GATEWAY_DETAILED_MODELS
-				: (CURATED_MODELS[p as "anthropic" | "openai" | "google"] ?? [])
-		if (!quickModels.some((m) => m.id === quickModel))
+		const models = modelsForProvider(p)
+		if (!models.some((m) => m.id === quickModel))
 			setQuickModel(DEFAULT_QUICK_MODEL[p])
-		if (!detModels.some((m) => m.id === detailedModel))
+		if (!models.some((m) => m.id === detailedModel))
 			setDetailedModel(DEFAULT_DETAILED_MODEL[p])
 	}
 
@@ -339,8 +330,15 @@ export function OnboardingFlow({
 					[keyField]: currentKey,
 				},
 			})
-			// Sync AI context state + localStorage caches
-			ai.saveAiSettings(provider, currentKey, quickModel, detailedModel)
+			// Sync AI context state + localStorage caches (reasoning keeps defaults)
+			ai.saveAiSettings(
+				provider,
+				currentKey,
+				quickModel,
+				detailedModel,
+				ai.effort,
+				ai.showThinking,
+			)
 		} else if (step === "agentpat") {
 			await api.settings.update({ prompts: { agentpat: agentPatPrompt } })
 		} else if (step === "askpat") {
@@ -427,17 +425,13 @@ export function OnboardingFlow({
 		}
 	}
 
-	const quickModelOptions = (
-		provider === "gateway"
-			? GATEWAY_QUICK_MODELS
-			: (CURATED_MODELS[provider as "anthropic" | "openai" | "google"] ?? [])
-	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
-
-	const detailedModelOptions = (
-		provider === "gateway"
-			? GATEWAY_DETAILED_MODELS
-			: (CURATED_MODELS[provider as "anthropic" | "openai" | "google"] ?? [])
-	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
+	const modelOptions = modelsForProvider(provider).map((m) => ({
+		value: m.id,
+		label: m.name,
+		pricingPerM: m.pricingPerM,
+	}))
+	const quickModelOptions = modelOptions
+	const detailedModelOptions = modelOptions
 
 	const isLast = stepIndex === STEPS.length - 1
 

@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/empty"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import { CURATED_MODELS, GATEWAY_DETAILED_MODELS } from "@/lib/ai-models"
+import { MODELS_BY_ID } from "@/lib/ai-models"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { AssistantParts, type ToolContext } from "./chat-message-parts"
@@ -45,14 +45,9 @@ const FALLBACK_SUGGESTIONS = [
 	"Search prior art",
 ]
 
-function getModelPricing(provider: string, modelId: string) {
-	if (provider === "gateway") {
-		return (
-			GATEWAY_DETAILED_MODELS.find((m) => m.id === modelId)?.pricingPerM ?? null
-		)
-	}
-	const list = CURATED_MODELS[provider as "anthropic" | "openai"]
-	return list?.find((m) => m.id === modelId)?.pricingPerM ?? null
+function getModelPricing(_provider: string, modelId: string) {
+	// IDs are unique across providers (vendor-prefixed), so a flat lookup works.
+	return MODELS_BY_ID[modelId]?.pricingPerM ?? null
 }
 
 // ─── Shared input bar ─────────────────────────────────────────────────────────

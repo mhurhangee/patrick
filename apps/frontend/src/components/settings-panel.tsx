@@ -1,3 +1,4 @@
+import type { AiEffort } from "@patrickos/shared"
 import {
 	DEFAULT_PROMPT_AGENTPAT,
 	DEFAULT_PROMPT_ASKPAT,
@@ -18,6 +19,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -31,11 +33,9 @@ import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
 import {
-	CURATED_MODELS,
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
-	GATEWAY_DETAILED_MODELS,
-	GATEWAY_QUICK_MODELS,
+	modelsForProvider,
 	type Provider,
 } from "@/lib/ai-models"
 import { api } from "@/lib/api"
@@ -229,11 +229,15 @@ export function SettingsPanel({
 	})
 	const [tempQuickModel, setTempQuickModel] = useState(ai.quickModel)
 	const [tempDetailedModel, setTempDetailedModel] = useState(ai.detailedModel)
+	const [tempEffort, setTempEffort] = useState<AiEffort>(ai.effort)
+	const [tempShowThinking, setTempShowThinking] = useState(ai.showThinking)
 	const [showKey, setShowKey] = useState(false)
 	const [savedProviderSnap, setSavedProviderSnap] = useState({
 		provider: ai.provider,
 		quickModel: ai.quickModel,
 		detailedModel: ai.detailedModel,
+		effort: ai.effort,
+		showThinking: ai.showThinking,
 		key: "",
 	})
 
@@ -260,6 +264,8 @@ export function SettingsPanel({
 			const p = (s.ai.provider as Provider) || ai.provider
 			const detailed = s.ai.model || ai.detailedModel
 			const quick = s.ai.quickModel || ai.quickModel
+			const effort = s.ai.effort ?? ai.effort
+			const showThinking = s.ai.showThinking ?? ai.showThinking
 			const keys = {
 				gateway: s.ai.gatewayKey ?? "",
 				anthropic: s.ai.anthropicKey ?? "",
@@ -281,11 +287,15 @@ export function SettingsPanel({
 			setTempProvider(p)
 			setTempDetailedModel(detailed)
 			setTempQuickModel(quick)
+			setTempEffort(effort)
+			setTempShowThinking(showThinking)
 			setTempKeys(keys)
 			setSavedProviderSnap({
 				provider: p,
 				quickModel: quick,
 				detailedModel: detailed,
+				effort,
+				showThinking,
 				key: keys[p],
 			})
 
@@ -302,41 +312,36 @@ export function SettingsPanel({
 			setEpoSecret(s.integrations?.epoOpsSecret ?? "")
 			setSavedEpoSecret(s.integrations?.epoOpsSecret ?? "")
 		})
-	}, [open, ai.provider, ai.quickModel, ai.detailedModel])
+	}, [
+		open,
+		ai.provider,
+		ai.quickModel,
+		ai.detailedModel,
+		ai.effort,
+		ai.showThinking,
+	])
 
 	// AI handlers
 	const currentKey = tempKeys[tempProvider]
 
 	function handleProviderChange(p: Provider) {
 		setTempProvider(p)
-		const quickModels =
-			p === "gateway"
-				? GATEWAY_QUICK_MODELS
-				: (CURATED_MODELS[p as "anthropic" | "openai" | "google"] ?? [])
-		const detModels =
-			p === "gateway"
-				? GATEWAY_DETAILED_MODELS
-				: (CURATED_MODELS[p as "anthropic" | "openai" | "google"] ?? [])
-		if (!quickModels.some((m) => m.id === tempQuickModel))
+		const models = modelsForProvider(p)
+		if (!models.some((m) => m.id === tempQuickModel))
 			setTempQuickModel(DEFAULT_QUICK_MODEL[p])
-		if (!detModels.some((m) => m.id === tempDetailedModel))
+		if (!models.some((m) => m.id === tempDetailedModel))
 			setTempDetailedModel(DEFAULT_DETAILED_MODEL[p])
 		ai.verifyKey(p, tempKeys[p])
 	}
 
-	const quickModelOptions = (
-		tempProvider === "gateway"
-			? GATEWAY_QUICK_MODELS
-			: (CURATED_MODELS[tempProvider as "anthropic" | "openai" | "google"] ??
-				[])
-	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
-
-	const detailedModelOptions = (
-		tempProvider === "gateway"
-			? GATEWAY_DETAILED_MODELS
-			: (CURATED_MODELS[tempProvider as "anthropic" | "openai" | "google"] ??
-				[])
-	).map((m) => ({ value: m.id, label: m.name, pricingPerM: m.pricingPerM }))
+	// Same catalogue for both selects; gateway flattens all vendors' models.
+	const modelOptions = modelsForProvider(tempProvider).map((m) => ({
+		value: m.id,
+		label: m.name,
+		pricingPerM: m.pricingPerM,
+	}))
+	const quickModelOptions = modelOptions
+	const detailedModelOptions = modelOptions
 
 	// Dirty flags
 	const isAccountDirty =
@@ -349,6 +354,8 @@ export function SettingsPanel({
 		tempProvider !== savedProviderSnap.provider ||
 		tempQuickModel !== savedProviderSnap.quickModel ||
 		tempDetailedModel !== savedProviderSnap.detailedModel ||
+		tempEffort !== savedProviderSnap.effort ||
+		tempShowThinking !== savedProviderSnap.showThinking ||
 		currentKey !== savedProviderSnap.key
 
 	// Save handlers
@@ -363,11 +370,15 @@ export function SettingsPanel({
 			currentKey,
 			tempQuickModel,
 			tempDetailedModel,
+			tempEffort,
+			tempShowThinking,
 		)
 		setSavedProviderSnap({
 			provider: tempProvider,
 			quickModel: tempQuickModel,
 			detailedModel: tempDetailedModel,
+			effort: tempEffort,
+			showThinking: tempShowThinking,
 			key: currentKey,
 		})
 	}
@@ -487,10 +498,14 @@ export function SettingsPanel({
 							keyStatus={ai.keyStatus}
 							tempQuickModel={tempQuickModel}
 							tempDetailedModel={tempDetailedModel}
+							tempEffort={tempEffort}
+							tempShowThinking={tempShowThinking}
 							quickModelOptions={quickModelOptions}
 							detailedModelOptions={detailedModelOptions}
 							isDirty={isProviderDirty}
 							onProviderChange={handleProviderChange}
+							onEffortChange={setTempEffort}
+							onShowThinkingChange={setTempShowThinking}
 							onKeyChange={(v) =>
 								setTempKeys((prev) => ({ ...prev, [tempProvider]: v }))
 							}
@@ -713,6 +728,8 @@ function ByokSection({
 	keyStatus,
 	tempQuickModel,
 	tempDetailedModel,
+	tempEffort,
+	tempShowThinking,
 	quickModelOptions,
 	detailedModelOptions,
 	isDirty,
@@ -723,6 +740,8 @@ function ByokSection({
 	onClear,
 	onQuickModelChange,
 	onDetailedModelChange,
+	onEffortChange,
+	onShowThinkingChange,
 	onSave,
 }: {
 	tempProvider: Provider
@@ -731,6 +750,8 @@ function ByokSection({
 	keyStatus: "idle" | "verifying" | "valid" | "invalid"
 	tempQuickModel: string
 	tempDetailedModel: string
+	tempEffort: AiEffort
+	tempShowThinking: boolean
 	quickModelOptions: {
 		value: string
 		label: string
@@ -749,6 +770,8 @@ function ByokSection({
 	onClear: () => void
 	onQuickModelChange: (v: string) => void
 	onDetailedModelChange: (v: string) => void
+	onEffortChange: (v: AiEffort) => void
+	onShowThinkingChange: (v: boolean) => void
 	onSave: () => Promise<void>
 }) {
 	const { status, wrap } = useSaveButton()
@@ -859,6 +882,51 @@ function ByokSection({
 						options={detailedModelOptions}
 						onChange={onDetailedModelChange}
 					/>
+				</div>
+
+				<Separator />
+
+				<div className="flex flex-col gap-4">
+					<div className="flex flex-col gap-1.5">
+						<Label>AgentPat reasoning</Label>
+						<p className="text-xs text-muted-foreground">
+							How hard AgentPat thinks before answering. Higher is more thorough
+							but slower and pricier. (Quick model and analysis always run at
+							low effort.)
+						</p>
+						<Select
+							value={tempEffort}
+							onValueChange={(v) => onEffortChange(v as AiEffort)}
+						>
+							<SelectTrigger className="w-40">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="low">Low — fastest</SelectItem>
+								<SelectItem value="medium">Medium — balanced</SelectItem>
+								<SelectItem value="high">High — thorough</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div className="flex items-start gap-2.5">
+						<Checkbox
+							id="show-thinking"
+							checked={tempShowThinking}
+							onCheckedChange={(v) => onShowThinkingChange(v === true)}
+							className="mt-0.5"
+						/>
+						<Label
+							htmlFor="show-thinking"
+							className="flex flex-col gap-0.5 cursor-pointer"
+						>
+							<span className="text-sm font-medium">Show thinking</span>
+							<span className="text-xs font-normal text-muted-foreground">
+								Surface the model's reasoning in the chat. Adds latency and
+								cost.
+							</span>
+						</Label>
+					</div>
 				</div>
 			</div>
 		</SectionLayout>

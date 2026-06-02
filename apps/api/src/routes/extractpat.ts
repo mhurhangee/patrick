@@ -13,7 +13,12 @@ import { Hono } from "hono"
 import { stream } from "hono/streaming"
 import { z } from "zod"
 import { readSettings, readTasks, writeAnalysis } from "../lib/fs"
-import { buildExtractPatPrompt, createModel } from "../lib/patent-prompt"
+import {
+	buildExtractPatPrompt,
+	createModel,
+	type ReasoningProviderOptions,
+	reasoningOptions,
+} from "../lib/patent-prompt"
 
 export const extractpatRouter = new Hono()
 
@@ -35,6 +40,7 @@ async function classify(
 	model: any,
 	fileData: Buffer,
 	candidates: typeof EXTRACTABLE_SOURCES,
+	providerOptions: ReasoningProviderOptions,
 ): Promise<string> {
 	// Include an "other" escape hatch so the model isn't forced to mislabel a
 	// document (e.g. prior art) as one of the extractable types.
@@ -50,6 +56,7 @@ async function classify(
 		.join("\n")
 	const { output } = await generateText({
 		model,
+		providerOptions,
 		system:
 			'You are a patent document classifier. Choose the single best-matching type id for the attached document. If it does not clearly match one of the listed types, choose "other". Respond only via the structured output.',
 		output: Output.object({
@@ -109,14 +116,27 @@ extractpatRouter.post("/extract", async (c) => {
 		| "googleKey"
 		| "gatewayKey"
 	const resolvedKey = apiKey || settings.ai[keyField] || ""
-	const resolvedModel = modelId || settings.ai.model
+	// Extraction is structured field-filling — use the fast quick model at low
+	// effort, ignoring the (detailed) model the client may have sent.
+	const resolvedModel = settings.ai.quickModel || modelId || settings.ai.model
 	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)
+	const { providerOptions } = reasoningOptions(
+		resolvedProvider,
+		resolvedModel,
+		"low",
+		false,
+	)
 
 	// Resolve the type — auto-classify when not specified.
 	const resolvedType =
 		assetType && assetType !== "auto"
 			? assetType
-			: await classify(model, fileData, await candidatesFor(filePath))
+			: await classify(
+					model,
+					fileData,
+					await candidatesFor(filePath),
+					providerOptions,
+				)
 
 	if (resolvedType === "other")
 		return c.json(
@@ -137,6 +157,7 @@ extractpatRouter.post("/extract", async (c) => {
 	const systemStr = await buildExtractPatPrompt(settings)
 	const { output: extracted } = await generateText({
 		model,
+		providerOptions,
 		system: systemStr,
 		output: Output.object({ schema }),
 		messages: [
@@ -199,13 +220,26 @@ extractpatRouter.post("/extract/stream", async (c) => {
 		| "googleKey"
 		| "gatewayKey"
 	const resolvedKey = apiKey || settings.ai[keyField] || ""
-	const resolvedModel = modelId || settings.ai.model
+	// Extraction is structured field-filling — use the fast quick model at low
+	// effort, ignoring the (detailed) model the client may have sent.
+	const resolvedModel = settings.ai.quickModel || modelId || settings.ai.model
 	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)
+	const { providerOptions } = reasoningOptions(
+		resolvedProvider,
+		resolvedModel,
+		"low",
+		false,
+	)
 
 	const resolvedType =
 		assetType && assetType !== "auto"
 			? assetType
-			: await classify(model, fileData, await candidatesFor(filePath))
+			: await classify(
+					model,
+					fileData,
+					await candidatesFor(filePath),
+					providerOptions,
+				)
 
 	if (resolvedType === "other")
 		return c.json(
@@ -226,6 +260,7 @@ extractpatRouter.post("/extract/stream", async (c) => {
 	const systemStr = await buildExtractPatPrompt(settings)
 	const result = streamText({
 		model,
+		providerOptions,
 		system: systemStr,
 		output: Output.object({ schema }),
 		messages: [

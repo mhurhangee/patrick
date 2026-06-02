@@ -15,7 +15,11 @@ import {
 	writeChat,
 	writeChatIndex,
 } from "../lib/fs"
-import { buildAgentPatPrompt, createModel } from "../lib/patent-prompt"
+import {
+	buildAgentPatPrompt,
+	createModel,
+	reasoningOptions,
+} from "../lib/patent-prompt"
 
 // No execute — loop stops when called; data lives in part.input on the client.
 const generateMetadata = tool({
@@ -192,6 +196,12 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const resolvedKey = apiKey || settings.ai[keyField] || ""
 	const resolvedModel = detailedModel || settings.ai.model
 	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)
+	const { providerOptions, maxOutputTokens } = reasoningOptions(
+		resolvedProvider,
+		resolvedModel,
+		settings.ai.effort,
+		settings.ai.showThinking,
+	)
 
 	const fsTools = {
 		listDirectory: tool({
@@ -285,6 +295,8 @@ chatsRouter.post("/:id/messages", async (c) => {
 		model,
 		instructions: system,
 		tools,
+		providerOptions,
+		...(maxOutputTokens ? { maxOutputTokens } : {}),
 		prepareCall:
 			fileParts.length > 0
 				? (baseArgs) => {

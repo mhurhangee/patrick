@@ -1,3 +1,4 @@
+import type { AiEffort } from "@patrickos/shared"
 import {
 	createContext,
 	type ReactNode,
@@ -14,6 +15,10 @@ import { api } from "@/lib/api"
 
 type KeyStatus = "idle" | "verifying" | "valid" | "invalid"
 
+// Defaults mirror DEFAULT_SETTINGS.ai in @patrickos/shared.
+const DEFAULT_EFFORT: AiEffort = "medium"
+const DEFAULT_SHOW_THINKING = true
+
 interface AIContextValue {
 	connectedToAI: boolean
 	connectedBYOK: boolean
@@ -22,12 +27,16 @@ interface AIContextValue {
 	keyStatus: KeyStatus
 	quickModel: string
 	detailedModel: string
+	effort: AiEffort
+	showThinking: boolean
 	verifyKey: (prov: Provider, key: string) => Promise<void>
 	saveAiSettings: (
 		prov: Provider,
 		key: string,
 		quick: string,
 		detailed: string,
+		effort: AiEffort,
+		showThinking: boolean,
 	) => void
 	clearApiKey: () => void
 	reloadSettings: () => Promise<void>
@@ -41,6 +50,8 @@ const AIContext = createContext<AIContextValue>({
 	keyStatus: "idle",
 	quickModel: DEFAULT_QUICK_MODEL.anthropic,
 	detailedModel: DEFAULT_DETAILED_MODEL.anthropic,
+	effort: DEFAULT_EFFORT,
+	showThinking: DEFAULT_SHOW_THINKING,
 	verifyKey: async () => {},
 	saveAiSettings: () => {},
 	clearApiKey: () => {},
@@ -55,6 +66,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
 	const [detailedModel, setDetailedModel] = useState(
 		DEFAULT_DETAILED_MODEL.anthropic,
 	)
+	const [effort, setEffort] = useState<AiEffort>(DEFAULT_EFFORT)
+	const [showThinking, setShowThinking] = useState(DEFAULT_SHOW_THINKING)
 
 	async function loadSettings() {
 		const s = await api.settings.get()
@@ -68,6 +81,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		setProvider(p)
 		setDetailedModel(detailed)
 		setQuickModel(quick)
+		setEffort(s.ai.effort ?? DEFAULT_EFFORT)
+		setShowThinking(s.ai.showThinking ?? DEFAULT_SHOW_THINKING)
 		setApiKey(key)
 		localStorage.setItem("askpat-provider", p)
 		localStorage.setItem("askpat-quick-model", quick)
@@ -110,6 +125,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		key: string,
 		quick: string,
 		detailed: string,
+		nextEffort: AiEffort,
+		nextShowThinking: boolean,
 	) {
 		const keyField = `${prov}Key` as
 			| "anthropicKey"
@@ -124,11 +141,15 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		setApiKey(key)
 		setQuickModel(quick)
 		setDetailedModel(detailed)
+		setEffort(nextEffort)
+		setShowThinking(nextShowThinking)
 		api.settings.update({
 			ai: {
 				provider: prov,
 				model: detailed,
 				quickModel: quick,
+				effort: nextEffort,
+				showThinking: nextShowThinking,
 				[keyField]: key,
 			},
 		})
@@ -148,6 +169,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
 				keyStatus,
 				quickModel,
 				detailedModel,
+				effort,
+				showThinking,
 				verifyKey,
 				saveAiSettings,
 				clearApiKey,
