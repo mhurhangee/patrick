@@ -2,7 +2,7 @@ import type { FieldLocation, FieldZone } from "@patrickos/shared"
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -42,10 +42,15 @@ export function SourceViewer({
 	src,
 	jumpToPage,
 	highlights = [],
+	excludedFromAgent,
+	onToggleExclude,
 }: {
 	src: string | File
 	jumpToPage?: number
 	highlights?: SourceViewerHighlight[]
+	/** When set, shows an AgentPat read/exclude toggle in the toolbar. */
+	excludedFromAgent?: boolean
+	onToggleExclude?: () => void
 }) {
 	const [numPages, setNumPages] = useState(0)
 	const [pageNumber, setPageNumber] = useState(1)
@@ -140,41 +145,57 @@ export function SourceViewer({
 				</Document>
 			</div>
 
-			{/* Floating toolbar — pill near the bottom, out of the way of content */}
-			<div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
-				<div className="pointer-events-auto flex items-center gap-2 rounded-full border bg-background/90 px-2 py-1 shadow-lg backdrop-blur">
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						disabled={pageNumber <= 1}
-						onClick={() => setPageNumber((p) => p - 1)}
-					>
-						<ChevronLeft size={14} />
-					</Button>
-					<span className="tabular-nums text-xs text-muted-foreground">
-						{numPages > 0 ? `${pageNumber} / ${numPages}` : "–"}
-					</span>
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						disabled={pageNumber >= numPages}
-						onClick={() => setPageNumber((p) => p + 1)}
-					>
-						<ChevronRight size={14} />
-					</Button>
-					<div className="mx-1 h-4 w-px bg-border" />
-					<span className="w-8 text-right tabular-nums text-xs text-muted-foreground">
-						{scalePercent}%
-					</span>
-					<Slider
-						min={50}
-						max={200}
-						step={10}
-						value={[scalePercent]}
-						onValueChange={([v]) => setScalePercent(v)}
-						className="w-24"
-					/>
-				</div>
+			{/* Floating toolbar — a pill centred near the bottom, over the content */}
+			<div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border bg-background/95 px-2 py-1 shadow-lg backdrop-blur">
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					disabled={pageNumber <= 1}
+					onClick={() => setPageNumber((p) => p - 1)}
+				>
+					<ChevronLeft size={14} />
+				</Button>
+				<span className="tabular-nums text-xs text-muted-foreground">
+					{numPages > 0 ? `${pageNumber} / ${numPages}` : "–"}
+				</span>
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					disabled={pageNumber >= numPages}
+					onClick={() => setPageNumber((p) => p + 1)}
+				>
+					<ChevronRight size={14} />
+				</Button>
+				<div className="mx-1 h-4 w-px bg-border" />
+				<span className="w-8 text-right tabular-nums text-xs text-muted-foreground">
+					{scalePercent}%
+				</span>
+				<Slider
+					min={50}
+					max={200}
+					step={10}
+					value={[scalePercent]}
+					onValueChange={([v]) => setScalePercent(v)}
+					className="w-24"
+				/>
+				{onToggleExclude && (
+					<>
+						<div className="mx-1 h-4 w-px bg-border" />
+						<Button
+							variant="ghost"
+							size="icon-xs"
+							onClick={onToggleExclude}
+							title={
+								excludedFromAgent
+									? "Excluded from AgentPat — click to include"
+									: "Read by AgentPat — click to exclude"
+							}
+							className={excludedFromAgent ? "text-amber-600" : undefined}
+						>
+							{excludedFromAgent ? <EyeOff size={14} /> : <Eye size={14} />}
+						</Button>
+					</>
+				)}
 			</div>
 		</div>
 	)

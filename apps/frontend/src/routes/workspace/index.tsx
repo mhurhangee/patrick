@@ -141,6 +141,7 @@ function WorkspaceContent({
 				tasksLoading={task.tasksLoading}
 				currentTaskId={task.currentTaskId}
 				analysedFilenames={asset.analysedFilenames}
+				excludedIds={asset.doNotRead}
 				onOpen={asset.openAsset}
 				onOpenAnalysis={openAnalysis}
 				onClose={asset.closeTab}

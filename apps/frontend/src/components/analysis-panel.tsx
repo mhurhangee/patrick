@@ -7,7 +7,7 @@ import {
 	isExtractable,
 	mergeExtracted,
 } from "@patrickos/shared"
-import { Clover, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Clover, Loader2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +18,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select"
 import { api } from "@/lib/api"
-import { cn } from "@/lib/utils"
 import { DetailsField } from "./details-field"
 
 const SOURCE_TYPES = ASSET_CONFIGS.filter(
@@ -35,8 +34,6 @@ export function AnalysisPanel({
 	model,
 	onLocate,
 	onAnalysed,
-	excludedFromAgent,
-	onToggleExclude,
 }: {
 	asset: ApiAsset
 	provider: string
@@ -45,9 +42,6 @@ export function AnalysisPanel({
 	onLocate: (locations: FieldLocation[]) => void
 	/** Notify the workspace that an analysis record now exists (refresh badges). */
 	onAnalysed: () => void
-	/** Whether this source is excluded from AgentPat context. */
-	excludedFromAgent: boolean
-	onToggleExclude: () => void
 }) {
 	const [selectedType, setSelectedType] = useState("auto")
 	const [resolvedType, setResolvedType] = useState<string | null>(null)
@@ -215,31 +209,11 @@ export function AnalysisPanel({
 					{extractedAt ? "Re-run" : "Run ExtractPat"}
 				</Button>
 
-				<Button
-					variant="ghost"
-					size="sm"
-					className={cn(
-						"ml-auto gap-1.5",
-						excludedFromAgent
-							? "text-amber-600 hover:text-amber-600"
-							: "text-muted-foreground",
-					)}
-					onClick={onToggleExclude}
-					title={
-						excludedFromAgent
-							? "Excluded from AgentPat — click to include"
-							: "Read by AgentPat — click to exclude"
-					}
-				>
-					{excludedFromAgent ? <EyeOff size={12} /> : <Eye size={12} />}
-					{excludedFromAgent ? "Excluded" : "Read"}
-				</Button>
-
 				{extractedAt && (
 					<Button
 						variant="ghost"
 						size="sm"
-						className="text-muted-foreground"
+						className="ml-auto text-muted-foreground"
 						onClick={clearAnalysis}
 						disabled={isExtracting}
 						title="Delete this analysis"
@@ -251,6 +225,7 @@ export function AnalysisPanel({
 				<Button
 					variant="ghost"
 					size="sm"
+					className={extractedAt ? undefined : "ml-auto"}
 					onClick={save}
 					disabled={!effectiveType || saveStatus === "saving"}
 				>

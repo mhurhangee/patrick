@@ -106,6 +106,7 @@ export function AppSidebar({
 	tasksLoading,
 	currentTaskId,
 	analysedFilenames,
+	excludedIds,
 	onOpen,
 	onOpenAnalysis,
 	onClose,
@@ -130,6 +131,7 @@ export function AppSidebar({
 	tasksLoading: boolean
 	currentTaskId: string
 	analysedFilenames: Set<string>
+	excludedIds: Set<string>
 	onOpen: (id: string) => void
 	onOpenAnalysis: (sourceId: string) => void
 	onClose: (id: string) => void
@@ -242,7 +244,19 @@ export function AppSidebar({
 														: "",
 											)}
 										>
-											<span className="capitalize min-w-0 flex-1 truncate">
+											<span
+												className={cn(
+													"capitalize min-w-0 flex-1 truncate",
+													kind === "source" &&
+														excludedIds.has(asset.id) &&
+														"text-muted-foreground/40 line-through",
+												)}
+												title={
+													kind === "source" && excludedIds.has(asset.id)
+														? "Excluded from AgentPat"
+														: undefined
+												}
+											>
 												{asset.title}
 											</span>
 										</SidebarMenuSubButton>

@@ -108,12 +108,16 @@ function DocumentPane({
 	onLocatePrev,
 	onLocateNext,
 	onLocateClear,
+	excludedFromAgent,
+	onToggleExclude,
 }: {
 	asset: ApiAsset
 	locate: LocateState | null
 	onLocatePrev: () => void
 	onLocateNext: () => void
 	onLocateClear: () => void
+	excludedFromAgent: boolean
+	onToggleExclude: () => void
 }) {
 	const mine = locate && locate.sourcePath === asset.path ? locate : null
 	const highlights = mine
@@ -155,6 +159,8 @@ function DocumentPane({
 					src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
 					jumpToPage={jumpToPage}
 					highlights={highlights}
+					excludedFromAgent={excludedFromAgent}
+					onToggleExclude={onToggleExclude}
 				/>
 			</div>
 		</div>
@@ -200,8 +206,6 @@ function AssetPane({
 				model={model}
 				onAnalysed={onAnalysed}
 				onLocate={(locs) => onLocate(asset.path, locs)}
-				excludedFromAgent={doNotRead.has(asset.path)}
-				onToggleExclude={() => onToggleDoNotRead(asset.path)}
 			/>
 		)
 	}
@@ -215,6 +219,8 @@ function AssetPane({
 				onLocatePrev={onLocatePrev}
 				onLocateNext={onLocateNext}
 				onLocateClear={onLocateClear}
+				excludedFromAgent={doNotRead.has(asset.id)}
+				onToggleExclude={() => onToggleDoNotRead(asset.id)}
 			/>
 		)
 	}
