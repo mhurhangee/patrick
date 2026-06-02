@@ -1,13 +1,11 @@
 import { useChat } from "@ai-sdk/react"
+import type { ApiAsset, ApiChat } from "@patrickos/shared"
 import {
 	DefaultChatTransport,
 	getToolName,
 	isToolUIPart,
 	type UIMessage,
 } from "ai"
-import { Streamdown } from "streamdown"
-import "streamdown/styles.css"
-import type { ApiAsset, ApiChat } from "@patrickos/shared"
 import { ArrowUp, Loader2, Plus, X } from "lucide-react"
 import {
 	Fragment,
@@ -31,6 +29,7 @@ import { useAI } from "@/lib/ai-context"
 import { CURATED_MODELS, GATEWAY_DETAILED_MODELS } from "@/lib/ai-models"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { AssistantParts } from "./chat-message-parts"
 import {
 	ExchangePanel,
 	type ExchangePanelData,
@@ -541,19 +540,11 @@ function ChatPane({
 								{assistantMsg !== null && (
 									<div className="flex justify-start px-3 pt-3 pb-2">
 										<div className="prose prose-sm tracking-tight leading-normalS max-w-[88%] dark:prose-invert [&_h1]:text-[17px] [&_h1]:font-bold [&_h1]:mb-1.5 [&_h1]:mt-4 [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:mb-1 [&_h2]:mt-3 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:mb-0.5 [&_h3]:mt-2 [&_hr]:my-3 [&_hr]:border-border/40 [&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:my-0.5">
-											{assistantMsg.parts.map((part, i) => {
-												if (part.type !== "text") return null
-												const isLastPart = i === assistantMsg.parts.length - 1
-												return (
-													<Streamdown
-														// biome-ignore lint/suspicious/noArrayIndexKey: parts are stable ordered array
-														key={i}
-														isAnimating={isStreaming && isLatest && isLastPart}
-													>
-														{part.text}
-													</Streamdown>
-												)
-											})}
+											<AssistantParts
+												parts={assistantMsg.parts}
+												isStreaming={isStreaming}
+												isLatest={isLatest}
+											/>
 										</div>
 									</div>
 								)}

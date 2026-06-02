@@ -284,6 +284,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 	return createAgentUIStreamResponse({
 		agent,
 		uiMessages: cleanedMessages,
+		sendReasoning: true,
 		generateMessageId: () => crypto.randomUUID(),
 		messageMetadata: ({ part }) => {
 			if (part.type === "finish" && "totalUsage" in part) {
