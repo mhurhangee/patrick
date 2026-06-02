@@ -102,6 +102,11 @@ function WorkspaceContent({
 	)
 	const [settingsOpen, setSettingsOpen] = useState(false)
 	const [tutorialOpen, setTutorialOpen] = useState(false)
+	// Signal a source to open straight to its Analysis tab (nonce re-fires it)
+	const [reviewSignal, setReviewSignal] = useState<{
+		id: string
+		n: number
+	} | null>(null)
 
 	function openTasks(panel: "empty" | "new" = "empty") {
 		setTasksDefaultPanel(panel)
@@ -194,6 +199,7 @@ function WorkspaceContent({
 								apiKey={ai.apiKey}
 								model={ai.detailedModel}
 								onAnalysed={asset.refresh}
+								reviewSignal={reviewSignal}
 							/>
 						</ResizablePanel>
 						<ResizableHandle
@@ -228,7 +234,10 @@ function WorkspaceContent({
 									const src = asset.assets.find(
 										(a) => a.kind === "source" && a.filename === filename,
 									)
-									if (src) asset.openAsset(src.id)
+									if (src) {
+										asset.openAsset(src.id)
+										setReviewSignal({ id: src.id, n: Date.now() })
+									}
 								}}
 								onAnalysed={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}

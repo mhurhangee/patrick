@@ -122,16 +122,25 @@ function SourcePane({
 	apiKey,
 	model,
 	onAnalysed,
+	reviewSignal,
 }: {
 	asset: ApiAsset
 	provider: string
 	apiKey: string
 	model: string
 	onAnalysed: () => void
+	reviewSignal: { id: string; n: number } | null
 }) {
 	const [tab, setTab] = useState<"document" | "analysis">("document")
 	const [jumpToPage, setJumpToPage] = useState<number | undefined>()
 	const [highlights, setHighlights] = useState<SourceViewerHighlight[]>([])
+
+	// A "Review" action elsewhere (e.g. AgentPat's analyseSource card) asks this
+	// source to open straight to its Analysis tab. reviewSignal is a fresh object
+	// each fire, so the effect re-runs even for the same source.
+	useEffect(() => {
+		if (reviewSignal?.id === asset.id) setTab("analysis")
+	}, [reviewSignal, asset.id])
 
 	function locate(locations: FieldLocation[]) {
 		setHighlights(locationsToHighlights(locations))
@@ -180,6 +189,7 @@ function AssetPane({
 	apiKey,
 	model,
 	onAnalysed,
+	reviewSignal,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
@@ -187,6 +197,7 @@ function AssetPane({
 	apiKey: string
 	model: string
 	onAnalysed: () => void
+	reviewSignal: { id: string; n: number } | null
 }) {
 	if (asset.kind === "source") {
 		return (
@@ -197,6 +208,7 @@ function AssetPane({
 				apiKey={apiKey}
 				model={model}
 				onAnalysed={onAnalysed}
+				reviewSignal={reviewSignal}
 			/>
 		)
 	}
@@ -225,6 +237,7 @@ export function AssetViewer({
 	apiKey,
 	model,
 	onAnalysed,
+	reviewSignal,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -240,6 +253,7 @@ export function AssetViewer({
 	apiKey: string
 	model: string
 	onAnalysed: () => void
+	reviewSignal: { id: string; n: number } | null
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -338,6 +352,7 @@ export function AssetViewer({
 									apiKey={apiKey}
 									model={model}
 									onAnalysed={onAnalysed}
+									reviewSignal={reviewSignal}
 								/>
 							</ResizablePanel>
 						</Fragment>
@@ -354,6 +369,7 @@ export function AssetViewer({
 							apiKey={apiKey}
 							model={model}
 							onAnalysed={onAnalysed}
+							reviewSignal={reviewSignal}
 						/>
 					)}
 				</div>

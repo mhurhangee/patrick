@@ -97,12 +97,6 @@ export function useAssetState(currentTaskId: string) {
 		setAssets((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
 	}
 
-	async function deleteAsset(id: string) {
-		// In file-system mode, we don't delete the file — just remove from view
-		closeTab(id)
-		setAssets((prev) => prev.filter((a) => a.id !== id))
-	}
-
 	async function createArtifact() {
 		if (!currentTaskId) return
 		// Pick a unique title so the backend's slug → filename doesn't overwrite.
@@ -135,7 +129,6 @@ export function useAssetState(currentTaskId: string) {
 		toggleSplitView,
 		closeTab,
 		updateAsset,
-		deleteAsset,
 		createArtifact,
 	}
 }
