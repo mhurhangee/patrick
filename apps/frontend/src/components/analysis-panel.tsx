@@ -204,7 +204,18 @@ export function AnalysisPanel({
 					</p>
 				) : null}
 
-				{!loading && !effectiveType ? (
+				{isExtracting && !effectiveType ? (
+					<div className="flex h-full flex-col items-center justify-center gap-2 px-8 text-center">
+						<Loader2
+							size={20}
+							className="animate-spin text-muted-foreground/50"
+						/>
+						<p className="text-sm text-muted-foreground">Analysing…</p>
+						<p className="max-w-xs text-xs text-muted-foreground/70">
+							Auto-detecting the document type, then extracting structured data.
+						</p>
+					</div>
+				) : !loading && !effectiveType ? (
 					<div className="flex h-full flex-col items-center justify-center gap-2 px-8 text-center">
 						<Clover size={24} className="text-muted-foreground/30" />
 						<p className="text-sm text-muted-foreground">No analysis yet</p>
