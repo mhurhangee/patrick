@@ -6,8 +6,8 @@ export const DEFAULT_PROMPT_AGENTPAT = `## Do
 
 ## Don't
 - Make legal conclusions without citing supporting documents
-- Overlook prior art references in the matter
-- Give generic advice when matter-specific context is available`
+- Overlook prior art references in the task
+- Give generic advice when task-specific context is available`
 
 export const DEFAULT_PROMPT_ASKPAT = `## Do
 - Use precise, unambiguous claim language

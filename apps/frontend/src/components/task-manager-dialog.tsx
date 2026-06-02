@@ -153,7 +153,7 @@ function AddFolderPanel({
 		<>
 			<div className="shrink-0 border-b px-6 py-4">
 				<h2 className="text-base font-semibold font-heading">
-					Add matter folder
+					Add task folder
 				</h2>
 				<p className="text-xs text-muted-foreground mt-0.5">
 					Point PatrickOS at an existing folder on your machine.
@@ -169,7 +169,7 @@ function AddFolderPanel({
 							<Input
 								value={path}
 								onChange={(e) => setPath(e.target.value)}
-								placeholder="/Users/jane/matters/smith-corp"
+								placeholder="/Users/jane/tasks/smith-corp"
 								className="font-mono text-xs"
 								autoFocus
 								onKeyDown={(e) => {
@@ -216,13 +216,13 @@ function AddFolderPanel({
 					</div>
 
 					<div className="flex flex-col gap-1.5">
-						<Label>Matter type</Label>
+						<Label>Task type</Label>
 						<Select
 							value={taskType}
 							onValueChange={(v) => setTaskType(v as TaskType)}
 						>
 							<SelectTrigger>
-								<SelectValue placeholder="Select a matter type…" />
+								<SelectValue placeholder="Select a task type…" />
 							</SelectTrigger>
 							<SelectContent>
 								{TASK_CONFIGS.map((p) => (
@@ -233,7 +233,7 @@ function AddFolderPanel({
 							</SelectContent>
 						</Select>
 						<p className="text-xs text-muted-foreground">
-							Tells AgentPat what kind of response this matter is, so it can
+							Tells AgentPat what kind of response this task is, so it can
 							tailor its help. Optional.
 						</p>
 					</div>
@@ -446,7 +446,7 @@ export function TaskManagerDialog({
 			<DialogContent className="overflow-hidden p-0 h-[560px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
 				<DialogTitle className="sr-only">Tasks</DialogTitle>
 				<DialogDescription className="sr-only">
-					Manage your matter folders.
+					Manage your task folders.
 				</DialogDescription>
 
 				<SidebarProvider
@@ -538,7 +538,7 @@ export function TaskManagerDialog({
 									<EmptyHeader>
 										<EmptyTitle>Select a folder</EmptyTitle>
 										<EmptyDescription>
-											Pick a matter folder or add a new one.
+											Pick a task folder or add a new one.
 										</EmptyDescription>
 									</EmptyHeader>
 								</Empty>

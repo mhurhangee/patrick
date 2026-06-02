@@ -21,15 +21,15 @@ export const SLIDES: Slide[] = [
 	{
 		id: "tasks",
 		navLabel: "Tasks",
-		title: "Your matter folder is your task",
+		title: "A task is a folder",
 		description:
-			"PatrickOS works with folders you already have — no import, no upload. Point it at a matter folder and everything inside becomes available. Your files are never modified.",
+			"PatrickOS works with folders you already have — no import, no upload. Point it at a task folder and everything inside becomes available. Your files are never modified.",
 		screenshotHint:
 			"Sidebar showing a task selected with the file tree visible — sources (PDFs, Word docs) listed under the task name",
 		bullets: [
 			"Sources are existing files — PDFs, Word documents, anything in your folder",
 			"PatrickOS creates chats/, artifacts/, and analysis/ subfolders for its own output",
-			"Switch between matters from the sidebar — each is a separate folder",
+			"Switch between tasks from the sidebar — each is a separate folder",
 		],
 	},
 	{
@@ -37,7 +37,7 @@ export const SLIDES: Slide[] = [
 		navLabel: "Sources",
 		title: "Sources are your existing files",
 		description:
-			"PDFs and Word documents in your matter folder appear as sources in the sidebar. PatrickOS reads them for context — the originals are never touched.",
+			"PDFs and Word documents in your task folder appear as sources in the sidebar. PatrickOS reads them for context — the originals are never touched.",
 		screenshotHint:
 			"A PDF open in the document viewer panel, showing the source file with page navigation controls",
 		bullets: [
@@ -70,14 +70,14 @@ export const SLIDES: Slide[] = [
 			"The extract action on a source file, followed by the structured result showing fields like office action date, claims, and cited references",
 		bullets: [
 			"Click the extract button on any source to run ExtractPat",
-			"Results are saved to analysis/{filename}.json in your matter folder",
+			"Results are saved to analysis/{filename}.json in your task folder",
 			"AgentPat can reference extracted metadata in conversations",
 		],
 	},
 	{
 		id: "agentpat",
 		navLabel: "AgentPat",
-		title: "Chat with your matter",
+		title: "Chat with your task",
 		description:
 			"AgentPat is your task-aware research assistant. Ask it anything about the open documents, request a draft response strategy, or get a summary of cited prior art.",
 		screenshotHint:

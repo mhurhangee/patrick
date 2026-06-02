@@ -90,9 +90,9 @@ function taskContext(taskPath: string, taskType?: TaskType) {
 		? TASK_CONFIGS.find((p) => p.id === taskType)
 		: undefined
 	const typeLines = config
-		? `\nMatter type: ${config.label}\n${config.aiContext}`
+		? `\nTask type: ${config.label}\n${config.aiContext}`
 		: ""
-	return `# Task\nMatter folder: ${folderName}\nPath: ${taskPath}${typeLines}`
+	return `# Task\nTask folder: ${folderName}\nPath: ${taskPath}${typeLines}`
 }
 
 function openFilesContext(openFilePaths: string[]) {

@@ -63,6 +63,9 @@ function getInputType(
 
 export const ASSET_CONFIGS = [
 	// ─── US Sources ──────────────────────────────────────────────────────────────
+	// Schemas are deliberately lean: only fields AgentPat can actually use to draft
+	// a response. Bibliographic "window dressing" (examiner name, art unit, filing
+	// date, assignee) is omitted on purpose.
 	{
 		id: "us-office-action" as const,
 		kind: "source" as const,
@@ -74,32 +77,36 @@ export const ASSET_CONFIGS = [
 			.object({
 				title: zExtractField(
 					z.string().max(200),
-					"Descriptive title (e.g. 'Office Action — App. 12/664,771 (Brown et al.)')",
+					"Short descriptive title (e.g. 'Non-Final OA — App. 17/123,456')",
 				),
-				date: zExtractField(zDate(), "Mailing date"),
+				date: zExtractField(zDate(), "Mailing date of the office action"),
 				applicationNumber: zExtractField(
 					z.string().max(30),
 					"Application number",
 				),
-				filingDate: zExtractField(zDate(), "Filing date"),
-				examinerName: zExtractField(z.string().max(100), "Examiner name"),
-				artUnit: zExtractField(z.string().max(10), "Art unit"),
+				dueDate: zExtractField(
+					zDate(),
+					"Date the response is due (the shortened statutory period — usually 3 months from mailing, extendable to 6)",
+				),
 				rejections: zExtractField(
 					z.array(z.string()),
-					"Each rejection: statutory basis (§101/102/103/112), claims affected, cited references",
-				),
-				allowedClaims: zExtractField(
-					z.array(z.string()),
-					"Claim numbers indicated as allowed",
+					"One entry per rejection. For each: the statutory basis (§101/§102/§103/§112), the claims affected, the cited reference(s), and a concise summary of the examiner's reasoning",
 				),
 				objections: zExtractField(
 					z.array(z.string()),
-					"Non-rejection objections to drawings or specification",
+					"Objections to the claims, specification, or drawings (lesser issues, not full rejections)",
 				),
-				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
+				allowedClaims: zExtractField(
+					z.array(z.string()),
+					"Claims indicated as allowed or as containing allowable subject matter",
+				),
+				notes: zExtractField(
+					zTextarea("Anything else relevant to drafting the response", 1000),
+					"Notes",
+				),
 			})
 			.describe(
-				"Extract structured data from this USPTO Office Action. For each field return { content, locations } where locations is an array of { page, zone } indicating where the value was found.",
+				"Extract the prosecution-relevant content of this USPTO Office Action — what is needed to draft a response: the rejections and the examiner's reasoning, objections, allowed claims, and the response due date. For each field return { content, locations } where locations is an array of { page, zone }.",
 			),
 	},
 	{
@@ -109,14 +116,33 @@ export const ASSET_CONFIGS = [
 		typeLabel: "US Prior Art Reference",
 		aiContext:
 			"Prior art reference cited against the US application in support of rejections",
-		schema: z.object({
-			title: z.string().max(200).describe("Title"),
-			publicationNumber: z.string().max(30).describe("Publication number"),
-			publicationDate: zDate().describe("Publication date"),
-			authors: z.string().max(200).describe("Authors / inventors"),
-			abstract: zTextarea("Abstract"),
-			notes: zTextarea("Notes", 1000),
-		}),
+		schema: z
+			.object({
+				title: zExtractField(z.string().max(300), "Title of the reference"),
+				publicationNumber: zExtractField(
+					z.string().max(40),
+					"Publication or patent number (e.g. US 9,876,543 B2)",
+				),
+				publicationDate: zExtractField(
+					zDate(),
+					"Publication date (relevant to §102 vs §103 and to priority)",
+				),
+				citedAgainstClaims: zExtractField(
+					z.array(z.string()),
+					"Which claims of the application this reference is cited against, if stated in the office action",
+				),
+				relevantDisclosure: zExtractField(
+					zTextarea(
+						"What this reference teaches that matters for the rejection — the key passages, figures, or embodiments relied on — and, importantly, what it does NOT disclose",
+						3000,
+					),
+					"Relevant disclosure",
+				),
+				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
+			})
+			.describe(
+				"Extract what is needed to assess and distinguish this prior-art reference: its identity, date, what it discloses relative to the rejected claims, and the gaps in its teaching. For each field return { content, locations } where locations is an array of { page, zone }.",
+			),
 	},
 	{
 		id: "us-application" as const,
@@ -125,14 +151,29 @@ export const ASSET_CONFIGS = [
 		typeLabel: "US Patent Application",
 		aiContext:
 			"US patent application as filed, including specification and original claims",
-		schema: z.object({
-			title: z.string().max(200).describe("Invention title"),
-			applicationNumber: z.string().max(30).describe("Application number"),
-			filingDate: zDate().describe("Filing date"),
-			inventors: z.string().max(200).describe("Inventors"),
-			assignee: z.string().max(200).describe("Assignee"),
-			notes: zTextarea("Notes", 1000),
-		}),
+		schema: z
+			.object({
+				title: zExtractField(z.string().max(200), "Title of the invention"),
+				applicationNumber: zExtractField(
+					z.string().max(30),
+					"Application number",
+				),
+				independentClaims: zExtractField(
+					z.array(z.string()),
+					"The full text of each independent claim as currently pending",
+				),
+				keyFeatures: zExtractField(
+					zTextarea(
+						"The technical problem addressed and the inventive features/embodiments most useful for arguing patentability or supporting amendments — cite specification support (paragraph or figure references) where possible",
+						3000,
+					),
+					"Key features and specification support",
+				),
+				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
+			})
+			.describe(
+				"Extract what is needed to amend and argue the claims: the independent claims as pending, and the inventive features with their support in the specification. For each field return { content, locations } where locations is an array of { page, zone }.",
+			),
 	},
 	// ─── EP Sources ───────────────────────────────────────────────────────────────
 	{
@@ -146,30 +187,32 @@ export const ASSET_CONFIGS = [
 			.object({
 				title: zExtractField(
 					z.string().max(200),
-					"Descriptive title (e.g. 'EPO Examination Report — App. 20123456.7 (Smith et al.)')",
+					"Short descriptive title (e.g. 'Art 94(3) Communication — App. 20123456.7')",
 				),
-				date: zExtractField(zDate(), "Communication date"),
+				date: zExtractField(zDate(), "Date of the communication"),
 				applicationNumber: zExtractField(
 					z.string().max(30),
 					"Application number",
 				),
-				filingDate: zExtractField(zDate(), "Filing date"),
-				examiningDivision: zExtractField(
-					z.string().max(100),
-					"Examining division",
+				dueDate: zExtractField(
+					zDate(),
+					"Date the response is due (the period set in the communication)",
 				),
 				objections: zExtractField(
 					z.array(z.string()),
-					"Each objection: EPC article/rule raised, claims affected, cited documents, grounds",
+					"One entry per objection. For each: the EPC article/rule (e.g. Art 54, Art 56, Art 84, Rule 137), the claims affected, the cited document(s), and a concise summary of the reasoning",
 				),
 				allowedSubjectMatter: zExtractField(
 					z.array(z.string()),
-					"Claims or subject matter considered allowable",
+					"Claims or subject matter the examiner considers allowable",
 				),
-				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
+				notes: zExtractField(
+					zTextarea("Anything else relevant to drafting the response", 1000),
+					"Notes",
+				),
 			})
 			.describe(
-				"Extract structured data from this EPO examination report. For each field return { content, locations } where locations is an array of { page, zone } indicating where the value was found.",
+				"Extract the prosecution-relevant content of this EPO examination report (Art 94(3) EPC) — what is needed to draft a response: the objections and reasoning, allowable subject matter, and the response due date. For each field return { content, locations } where locations is an array of { page, zone }.",
 			),
 	},
 	{
@@ -179,14 +222,33 @@ export const ASSET_CONFIGS = [
 		typeLabel: "EP Prior Art Reference",
 		aiContext:
 			"Prior art reference cited against the EP application by the examining division",
-		schema: z.object({
-			title: z.string().max(200).describe("Title"),
-			publicationNumber: z.string().max(30).describe("Publication number"),
-			publicationDate: zDate().describe("Publication date"),
-			authors: z.string().max(200).describe("Authors / inventors"),
-			abstract: zTextarea("Abstract"),
-			notes: zTextarea("Notes", 1000),
-		}),
+		schema: z
+			.object({
+				title: zExtractField(z.string().max(300), "Title of the reference"),
+				publicationNumber: zExtractField(
+					z.string().max(40),
+					"Publication or patent number (e.g. EP 1 234 567 A1)",
+				),
+				publicationDate: zExtractField(
+					zDate(),
+					"Publication date (relevant to Art 54(2)/(3) EPC and to priority)",
+				),
+				citedAgainstClaims: zExtractField(
+					z.array(z.string()),
+					"Which claims of the application this document is cited against, if stated",
+				),
+				relevantDisclosure: zExtractField(
+					zTextarea(
+						"What this document teaches that matters for the objection — the key passages, figures, or embodiments relied on — and, importantly, what it does NOT disclose",
+						3000,
+					),
+					"Relevant disclosure",
+				),
+				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
+			})
+			.describe(
+				"Extract what is needed to assess and distinguish this prior-art document: its identity, date, what it discloses relative to the objected claims, and the gaps in its teaching. For each field return { content, locations } where locations is an array of { page, zone }.",
+			),
 	},
 	{
 		id: "ep-application" as const,
@@ -195,14 +257,29 @@ export const ASSET_CONFIGS = [
 		typeLabel: "EP Patent Application",
 		aiContext:
 			"EP patent application as filed, including description and original claims",
-		schema: z.object({
-			title: z.string().max(200).describe("Invention title"),
-			applicationNumber: z.string().max(30).describe("Application number"),
-			filingDate: zDate().describe("Filing date"),
-			inventors: z.string().max(200).describe("Inventors"),
-			applicant: z.string().max(200).describe("Applicant"),
-			notes: zTextarea("Notes", 1000),
-		}),
+		schema: z
+			.object({
+				title: zExtractField(z.string().max(200), "Title of the invention"),
+				applicationNumber: zExtractField(
+					z.string().max(30),
+					"Application number",
+				),
+				independentClaims: zExtractField(
+					z.array(z.string()),
+					"The full text of each independent claim as currently pending",
+				),
+				keyFeatures: zExtractField(
+					zTextarea(
+						"The technical problem addressed and the inventive features/embodiments most useful for arguing inventive step or supporting amendments — cite description support (paragraph or figure references), bearing in mind Art 123(2) EPC added-matter constraints",
+						3000,
+					),
+					"Key features and description support",
+				),
+				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
+			})
+			.describe(
+				"Extract what is needed to amend and argue the claims: the independent claims as pending, and the inventive features with their support in the description (mindful of Art 123(2) EPC). For each field return { content, locations } where locations is an array of { page, zone }.",
+			),
 	},
 	// ─── US Artifacts ─────────────────────────────────────────────────────────────
 	{

@@ -110,7 +110,7 @@ export type ApiChat = ChatIndexEntry & {
 }
 export type ApiChatMessage = ChatMessage
 
-// Represents a file in the matter folder — either a source (PDF/docx) or artifact (Plate draft).
+// Represents a file in the task folder — either a source (PDF/docx) or artifact (Plate draft).
 export type ApiAsset = {
 	id: string // relative path used as stable ID
 	taskId: string // task folder path

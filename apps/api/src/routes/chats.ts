@@ -182,7 +182,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const fsTools = {
 		listDirectory: tool({
 			description:
-				"List files and folders inside a directory in the matter folder",
+				"List files and folders inside a directory in the task folder",
 			inputSchema: z.object({
 				path: z
 					.string()
@@ -208,7 +208,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 		}),
 		readFile: tool({
 			description:
-				"Read the text content of a file in the matter folder (use for .txt, .md, .json, .docx — not PDFs, those are injected as file parts)",
+				"Read the text content of a file in the task folder (use for .txt, .md, .json, .docx — not PDFs, those are injected as file parts)",
 			inputSchema: z.object({
 				path: z.string().describe("Absolute path to the file"),
 			}),

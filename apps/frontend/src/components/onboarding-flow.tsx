@@ -85,7 +85,7 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 	agentpat: {
 		title: "AgentPat system prompt",
 		description:
-			"AgentPat is your task-aware research assistant. This prompt shapes how it reasons across your matter — prosecution style, claim strategy, response tone. The built-in default works well; customize it to your practice.",
+			"AgentPat is your task-aware research assistant. This prompt shapes how it reasons across your task — prosecution style, claim strategy, response tone. The built-in default works well; customize it to your practice.",
 	},
 	askpat: {
 		title: "AskPat system prompt",
@@ -102,9 +102,9 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 		description: "A quick walkthrough of the main features. Skip any time.",
 	},
 	task: {
-		title: "Load your first matter",
+		title: "Load your first task",
 		description:
-			"Point PatrickOS at an existing matter folder. Your files stay exactly where they are — PatrickOS only reads them and creates three small subfolders.",
+			"Point PatrickOS at an existing task folder. Your files stay exactly where they are — PatrickOS only reads them and creates three small subfolders.",
 	},
 }
 
@@ -184,13 +184,13 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 		"It shapes how AskPat drafts, strengthens, and reformats document sections.",
 	],
 	extractpat: [
-		"ExtractPat reads PDFs and extracts structured metadata into analysis/ in your matter folder.",
+		"ExtractPat reads PDFs and extracts structured metadata into analysis/ in your task folder.",
 		"The default prompt targets common patent prosecution fields — office action dates, claim numbers, cited references.",
 	],
 	task: [
 		"PatrickOS never modifies your existing files — PDFs and Word docs are read-only sources.",
 		"It creates three subfolders: chats/ (conversation history), artifacts/ (AI-drafted documents), analysis/ (extracted metadata).",
-		"You can add more matters any time from the sidebar.",
+		"You can add more tasks any time from the sidebar.",
 	],
 }
 
@@ -722,12 +722,12 @@ export function OnboardingFlow({
 							{stepId === "task" && (
 								<div className="flex flex-col gap-4">
 									<div className="flex flex-col gap-1.5">
-										<Label>Matter folder path</Label>
+										<Label>Task folder path</Label>
 										<div className="flex gap-2">
 											<Input
 												value={taskPath}
 												onChange={(e) => setTaskPath(e.target.value)}
-												placeholder="/Users/jane/matters/client-acme-123"
+												placeholder="/Users/jane/tasks/client-acme-123"
 												className="font-mono text-xs"
 												autoFocus
 											/>
@@ -751,13 +751,13 @@ export function OnboardingFlow({
 										</div>
 									</div>
 									<div className="flex flex-col gap-1.5">
-										<Label>Matter type</Label>
+										<Label>Task type</Label>
 										<Select
 											value={taskType}
 											onValueChange={(v) => setTaskType(v as TaskType)}
 										>
 											<SelectTrigger>
-												<SelectValue placeholder="Select a matter type…" />
+												<SelectValue placeholder="Select a task type…" />
 											</SelectTrigger>
 											<SelectContent>
 												{TASK_CONFIGS.map((p) => (
@@ -768,7 +768,7 @@ export function OnboardingFlow({
 											</SelectContent>
 										</Select>
 										<p className="text-xs text-muted-foreground">
-											Tells AgentPat what kind of response this matter is, so it
+											Tells AgentPat what kind of response this task is, so it
 											can tailor its help. Optional — you can set it later.
 										</p>
 									</div>
