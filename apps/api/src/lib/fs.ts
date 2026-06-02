@@ -1,6 +1,8 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
-import { dirname, join } from "node:path"
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises"
+import { basename, dirname, join } from "node:path"
 import {
+	type AnalysisRecord,
+	type AnalysisSummary,
 	type Chat,
 	type ChatIndexEntry,
 	DEFAULT_SETTINGS,
@@ -138,6 +140,56 @@ export async function writeChat(
 ): Promise<void> {
 	await mkdir(chatsDir(projectPath), { recursive: true })
 	await writeJson(chatFilePath(projectPath, chat.id), chat)
+}
+
+// ─── Analysis (ExtractPat results) ─────────────────────────────────────────────
+
+function analysisFilePath(projectPath: string, sourceFilename: string) {
+	return join(analysisDir(projectPath), `${sourceFilename}.json`)
+}
+
+export async function readAnalysis(
+	projectPath: string,
+	sourceFilename: string,
+): Promise<AnalysisRecord | null> {
+	return readJson<AnalysisRecord | null>(
+		analysisFilePath(projectPath, sourceFilename),
+		null,
+	)
+}
+
+export async function writeAnalysis(
+	projectPath: string,
+	record: AnalysisRecord,
+): Promise<void> {
+	await writeJson(analysisFilePath(projectPath, record.filename), record)
+}
+
+export async function listAnalysis(
+	projectPath: string,
+): Promise<AnalysisSummary[]> {
+	try {
+		const entries = await readdir(analysisDir(projectPath), {
+			withFileTypes: true,
+		})
+		const summaries: AnalysisSummary[] = []
+		for (const entry of entries) {
+			if (!entry.isFile() || !entry.name.endsWith(".json")) continue
+			const record = await readJson<AnalysisRecord | null>(
+				join(analysisDir(projectPath), entry.name),
+				null,
+			)
+			if (!record) continue
+			summaries.push({
+				filename: record.filename ?? basename(entry.name, ".json"),
+				assetType: record.assetType,
+				updatedAt: record.updatedAt,
+			})
+		}
+		return summaries
+	} catch {
+		return []
+	}
 }
 
 export async function ensureProjectDirs(projectPath: string): Promise<void> {

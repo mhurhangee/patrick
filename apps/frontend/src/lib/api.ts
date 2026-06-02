@@ -1,4 +1,6 @@
 import type {
+	AnalysisRecord,
+	AnalysisSummary,
 	ApiChat,
 	ApiChatMessage,
 	ApiProject,
@@ -44,6 +46,7 @@ export const api = {
 			request<Settings>("/settings", json(patch, { method: "PUT" })),
 	},
 	extractpat: {
+		// assetType: a specific source type id, or "auto" to classify first
 		extract: (
 			filePath: string,
 			assetType: string,
@@ -51,12 +54,27 @@ export const api = {
 			apiKey: string,
 			model: string,
 		) =>
-			request<{ extracted: Record<string, unknown>; assetType: string }>(
+			request<AnalysisRecord>(
 				"/ai/extractpat/extract",
 				json(
 					{ filePath, assetType, provider, apiKey, model },
 					{ method: "POST" },
 				),
+			),
+	},
+	analysis: {
+		list: (projectPath: string) =>
+			request<AnalysisSummary[]>(
+				`/analysis?projectPath=${encodeURIComponent(projectPath)}`,
+			),
+		get: (projectPath: string, filename: string) =>
+			request<AnalysisRecord | null>(
+				`/analysis/file?projectPath=${encodeURIComponent(projectPath)}&filename=${encodeURIComponent(filename)}`,
+			),
+		save: (projectPath: string, record: AnalysisRecord) =>
+			request<AnalysisRecord>(
+				"/analysis/file",
+				json({ projectPath, record }, { method: "PUT" }),
 			),
 	},
 	ai: {
@@ -104,6 +122,15 @@ export const api = {
 					updatedAt: string
 				}[]
 			}>(`/projects/files?path=${encodeURIComponent(path)}`),
+	},
+	artifacts: {
+		create: (projectPath: string, title: string) =>
+			request<{
+				filename: string
+				path: string
+				projectPath: string
+				title: string
+			}>("/artifacts", json({ projectPath, title }, { method: "POST" })),
 	},
 	chats: {
 		list: (projectPath: string) =>

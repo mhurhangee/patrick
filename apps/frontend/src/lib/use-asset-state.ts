@@ -94,6 +94,21 @@ export function useAssetState(currentProjectId: string) {
 		setAssets((prev) => prev.filter((a) => a.id !== id))
 	}
 
+	async function createArtifact() {
+		if (!currentProjectId) return
+		// Pick a unique title so the backend's slug → filename doesn't overwrite.
+		const taken = new Set(
+			assets
+				.filter((a) => a.kind === "artifact")
+				.map((a) => a.title.toLowerCase()),
+		)
+		let title = "Untitled"
+		for (let n = 2; taken.has(title.toLowerCase()); n++) title = `Untitled ${n}`
+		const created = await api.artifacts.create(currentProjectId, title)
+		refresh()
+		openAsset(created.path)
+	}
+
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
 		.filter(Boolean) as ApiAsset[]
@@ -111,5 +126,6 @@ export function useAssetState(currentProjectId: string) {
 		closeTab,
 		updateAsset,
 		deleteAsset,
+		createArtifact,
 	}
 }

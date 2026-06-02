@@ -138,6 +138,7 @@ function WorkspaceContent({
 				onOpen={asset.openAsset}
 				onClose={asset.closeTab}
 				onRefreshSources={asset.refresh}
+				onCreateArtifact={asset.createArtifact}
 				onOpenChat={chat.openChat}
 				onNewChat={chat.newChat}
 				onEditChat={setChatEditId}

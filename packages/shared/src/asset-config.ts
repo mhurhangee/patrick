@@ -304,6 +304,29 @@ export function mergeExtracted(
 	return { ...emptyDetails(assetType), ...clean }
 }
 
+// Persisted ExtractPat result for one source file → analysis/{filename}.json
+export type AnalysisRecord = {
+	/** Source filename this analysis belongs to (e.g. "office-action.pdf"). */
+	filename: string
+	/** Resolved source asset type (chosen by the user or by auto-classification). */
+	assetType: string
+	/** Flat, editable field values (content unwrapped from extraction wrappers). */
+	details: Record<string, unknown>
+	/** Per-field page locations, for highlighting in the document viewer. */
+	locations: Record<string, FieldLocation[]>
+	/** ISO timestamp of the last ExtractPat run. */
+	extractedAt: string
+	/** ISO timestamp of the last edit/save. */
+	updatedAt: string
+}
+
+// Summary entry for listing which sources have been analysed.
+export type AnalysisSummary = {
+	filename: string
+	assetType: string
+	updatedAt: string
+}
+
 // Pull location arrays out of { content, locations } wrapped fields into a flat map.
 export function extractLocationMap(
 	extracted: Record<string, unknown>,
