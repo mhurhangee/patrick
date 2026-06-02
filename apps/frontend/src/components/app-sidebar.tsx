@@ -4,6 +4,8 @@ import {
 	ChevronRight,
 	ChevronsUpDown,
 	CircleHelp,
+	Eye,
+	EyeOff,
 	Microscope,
 	Plus,
 	RefreshCw,
@@ -107,6 +109,7 @@ export function AppSidebar({
 	currentTaskId,
 	analysedFilenames,
 	excludedIds,
+	onToggleDoNotRead,
 	onOpen,
 	onOpenAnalysis,
 	onClose,
@@ -132,6 +135,7 @@ export function AppSidebar({
 	currentTaskId: string
 	analysedFilenames: Set<string>
 	excludedIds: Set<string>
+	onToggleDoNotRead: (id: string) => void
 	onOpen: (id: string) => void
 	onOpenAnalysis: (sourceId: string) => void
 	onClose: (id: string) => void
@@ -225,6 +229,9 @@ export function AppSidebar({
 								const isInView = splitView
 									? openSet.has(asset.id)
 									: asset.id === activeTabId
+								const excluded = kind === "source" && excludedIds.has(asset.id)
+								// Open/active border goes grey for excluded sources.
+								const borderColor = excluded ? "border-muted-foreground/40" : ""
 								return (
 									<SidebarMenuSubItem
 										key={asset.id}
@@ -238,46 +245,62 @@ export function AppSidebar({
 											className={cn(
 												"flex min-w-0 flex-1 items-center h-5 rounded-none",
 												isInView
-													? "border-l-2 border-primary pl-2 font-medium"
+													? `border-l-2 ${borderColor || "border-primary"} pl-2 font-medium`
 													: openSet.has(asset.id)
-														? "border-l-2 border-primary/30 pl-2"
+														? `border-l-2 ${borderColor || "border-primary/30"} pl-2`
 														: "",
 											)}
 										>
 											<span
 												className={cn(
 													"capitalize min-w-0 flex-1 truncate",
-													kind === "source" &&
-														excludedIds.has(asset.id) &&
-														"text-muted-foreground/40 line-through",
+													excluded && "text-muted-foreground/40 line-through",
 												)}
-												title={
-													kind === "source" && excludedIds.has(asset.id)
-														? "Excluded from AgentPat"
-														: undefined
-												}
+												title={excluded ? "Excluded from AgentPat" : undefined}
 											>
 												{asset.title}
 											</span>
 										</SidebarMenuSubButton>
 										{kind === "source" && (
-											<button
-												type="button"
-												title={
-													analysedFilenames.has(asset.filename)
-														? "View analysis"
-														: "Not analysed — open to run ExtractPat"
-												}
-												onClick={() => onOpenAnalysis(asset.id)}
-												className={cn(
-													"shrink-0 rounded p-0.5 transition-colors hover:bg-accent",
-													analysedFilenames.has(asset.filename)
-														? "text-primary"
-														: "text-amber-500 hover:text-amber-600",
-												)}
-											>
-												<Microscope size={12} />
-											</button>
+											<>
+												<button
+													type="button"
+													title={
+														excluded
+															? "Excluded from AgentPat — click to include"
+															: "Read by AgentPat — click to exclude"
+													}
+													onClick={() => onToggleDoNotRead(asset.id)}
+													className={cn(
+														"shrink-0 rounded p-0.5 transition-colors hover:bg-accent",
+														excluded
+															? "text-amber-600"
+															: "text-muted-foreground/50 hover:text-foreground",
+													)}
+												>
+													{excluded ? <EyeOff size={12} /> : <Eye size={12} />}
+												</button>
+												<button
+													type="button"
+													disabled={excluded}
+													title={
+														excluded
+															? "Excluded — include it to analyse"
+															: analysedFilenames.has(asset.filename)
+																? "View analysis"
+																: "Not analysed — open to run ExtractPat"
+													}
+													onClick={() => onOpenAnalysis(asset.id)}
+													className={cn(
+														"shrink-0 rounded p-0.5 transition-colors hover:bg-accent disabled:opacity-30 disabled:hover:bg-transparent",
+														analysedFilenames.has(asset.filename)
+															? "text-primary"
+															: "text-amber-500 hover:text-amber-600",
+													)}
+												>
+													<Microscope size={12} />
+												</button>
+											</>
 										)}
 									</SidebarMenuSubItem>
 								)

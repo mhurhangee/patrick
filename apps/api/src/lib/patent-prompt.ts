@@ -24,6 +24,7 @@ export type AgentPatContext = {
 	openFilePaths: string[]
 	taskType?: TaskType
 	analysedSources?: AnalysisSummary[]
+	excludedFiles?: string[]
 }
 
 // ─── Private utilities ────────────────────────────────────────────────────────
@@ -115,6 +116,12 @@ function analysisContext(analysed: AnalysisSummary[] | undefined) {
 	return `# Existing Analysis\nThese sources have already been analysed by ExtractPat. The structured result is saved as JSON — read it with the readFile tool (it is far cheaper than re-reading the PDF). Do NOT propose analyseSource for a source listed here; only offer it for sources that are NOT yet analysed.\n${list}`
 }
 
+function excludedContext(excluded: string[] | undefined) {
+	if (!excluded?.length) return null
+	const list = excluded.map((f) => `- ${f}`).join("\n")
+	return `# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose analysing them, and do NOT rely on them in your response:\n${list}`
+}
+
 function metadataInstruction() {
 	return "\n\nAfter providing your complete response, you MUST call generateMetadata exactly once as your final action. Provide exactly 3 short follow-up suggestions (under 8 words each), a concise chat title, and a one-sentence summary of your last response."
 }
@@ -142,7 +149,14 @@ async function buildFileParts(openFilePaths: string[]): Promise<FilePart[]> {
 export async function buildAgentPatPrompt(
 	ctx: AgentPatContext,
 ): Promise<{ system: string; fileParts: FilePart[] }> {
-	const { settings, taskPath, openFilePaths, taskType, analysedSources } = ctx
+	const {
+		settings,
+		taskPath,
+		openFilePaths,
+		taskType,
+		analysedSources,
+		excludedFiles,
+	} = ctx
 
 	const system = assemble([
 		identityAgentPat(),
@@ -152,6 +166,7 @@ export async function buildAgentPatPrompt(
 		taskContext(taskPath, taskType),
 		openFilesContext(openFilePaths),
 		analysisContext(analysedSources),
+		excludedContext(excludedFiles),
 		metadataInstruction(),
 	])
 

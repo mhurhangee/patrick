@@ -139,15 +139,25 @@ chatsRouter.get("/:id/messages", async (c) => {
 
 chatsRouter.post("/:id/messages", async (c) => {
 	const chatId = c.req.param("id")
-	const { messages, provider, apiKey, detailedModel, taskPath, openFilePaths } =
-		await c.req.json<{
-			messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
-			provider: string
-			apiKey: string
-			detailedModel: string
-			taskPath: string
-			openFilePaths: string[]
-		}>()
+	const {
+		messages,
+		provider,
+		apiKey,
+		detailedModel,
+		taskPath,
+		openFilePaths,
+		excludedPaths,
+	} = await c.req.json<{
+		messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
+		provider: string
+		apiKey: string
+		detailedModel: string
+		taskPath: string
+		openFilePaths: string[]
+		excludedPaths?: string[]
+	}>()
+
+	const excludedSet = new Set(excludedPaths ?? [])
 
 	const settings = await readSettings()
 
@@ -170,6 +180,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 		openFilePaths: openFilePaths ?? [],
 		taskType,
 		analysedSources,
+		excludedFiles: [...excludedSet].map((p) => p.split("/").at(-1) ?? p),
 	})
 
 	const resolvedProvider = provider || settings.ai.provider
@@ -218,6 +229,11 @@ chatsRouter.post("/:id/messages", async (c) => {
 			execute: async ({ path: filePath }) => {
 				if (!filePath.startsWith(taskPath))
 					return { error: "Path outside task folder" }
+				if (excludedSet.has(filePath))
+					return {
+						error:
+							"This document is excluded from AgentPat by the attorney. Do not read or use it.",
+					}
 				const ext = extname(filePath).toLowerCase()
 				try {
 					if (ext === ".pdf") {

@@ -142,6 +142,7 @@ function WorkspaceContent({
 				currentTaskId={task.currentTaskId}
 				analysedFilenames={asset.analysedFilenames}
 				excludedIds={asset.doNotRead}
+				onToggleDoNotRead={asset.toggleDoNotRead}
 				onOpen={asset.openAsset}
 				onOpenAnalysis={openAnalysis}
 				onClose={asset.closeTab}

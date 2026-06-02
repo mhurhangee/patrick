@@ -34,6 +34,7 @@ export function AnalysisPanel({
 	model,
 	onLocate,
 	onAnalysed,
+	excludedFromAgent,
 }: {
 	asset: ApiAsset
 	provider: string
@@ -42,6 +43,8 @@ export function AnalysisPanel({
 	onLocate: (locations: FieldLocation[]) => void
 	/** Notify the workspace that an analysis record now exists (refresh badges). */
 	onAnalysed: () => void
+	/** Source is excluded from AgentPat — block running ExtractPat. */
+	excludedFromAgent: boolean
 }) {
 	const [selectedType, setSelectedType] = useState("auto")
 	const [resolvedType, setResolvedType] = useState<string | null>(null)
@@ -198,8 +201,14 @@ export function AnalysisPanel({
 					variant="default"
 					size="sm"
 					onClick={run}
-					disabled={isExtracting || !apiKey}
-					title={!apiKey ? "Connect an AI provider in settings" : undefined}
+					disabled={isExtracting || !apiKey || excludedFromAgent}
+					title={
+						excludedFromAgent
+							? "This source is excluded from AgentPat — include it to analyse"
+							: !apiKey
+								? "Connect an AI provider in settings"
+								: undefined
+					}
 				>
 					{isExtracting ? (
 						<Loader2 size={12} className="animate-spin" />
@@ -239,6 +248,12 @@ export function AnalysisPanel({
 
 			{/* Body */}
 			<div className="flex-1 overflow-y-auto">
+				{excludedFromAgent && (
+					<p className="m-4 rounded-md bg-amber-100/50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-500">
+						This source is excluded from AgentPat. Include it (eye toggle in the
+						document toolbar) to run ExtractPat.
+					</p>
+				)}
 				{loading ? (
 					<div className="p-4 text-xs text-muted-foreground">Loading…</div>
 				) : extractError ? (

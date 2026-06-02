@@ -260,6 +260,9 @@ function ChatPane({
 	openAssetIdsRef.current = openAssets
 		.filter((a) => !doNotRead.has(a.id))
 		.map((a) => a.id)
+	// Excluded source paths — sent so the server can block the agent's tools too.
+	const excludedPathsRef = useRef<string[]>([])
+	excludedPathsRef.current = Array.from(doNotRead)
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null)
 	const lastUserMsgRef = useRef<HTMLDivElement>(null)
@@ -291,6 +294,7 @@ function ChatPane({
 					id,
 					messages: uiMessages,
 					openFilePaths: openAssetIdsRef.current,
+					excludedPaths: excludedPathsRef.current,
 				},
 			}),
 		}),

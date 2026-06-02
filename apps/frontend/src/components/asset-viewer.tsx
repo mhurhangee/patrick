@@ -206,6 +206,7 @@ function AssetPane({
 				model={model}
 				onAnalysed={onAnalysed}
 				onLocate={(locs) => onLocate(asset.path, locs)}
+				excludedFromAgent={doNotRead.has(asset.path)}
 			/>
 		)
 	}
@@ -325,35 +326,51 @@ export function AssetViewer({
 					<SidebarTrigger className="h-6 w-6" />
 				</div>
 				<div className="tab-scroll flex flex-1 items-end gap-1 overflow-x-auto px-1">
-					{openAssets.map((asset) => (
-						<div
-							key={asset.id}
-							className={cn(
-								"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-2 pr-1 text-xs transition-colors cursor-default rounded-t-sm",
-								!splitView && activeTab === asset.id
-									? "border-t-2 border-primary shadow-sm bg-background text-foreground"
-									: "border-t-2 border-primary/30 shadow-sm text-muted-foreground hover:text-foreground",
-							)}
-						>
-							{asset.kind === "analysis" && (
-								<Microscope size={11} className="shrink-0 text-primary" />
-							)}
-							<button
-								type="button"
-								onClick={() => onTabClick(asset.id)}
-								className="max-w-[120px] cursor-pointer truncate capitalize font-medium"
+					{openAssets.map((asset) => {
+						const tabExcluded = doNotRead.has(
+							asset.kind === "analysis" ? asset.path : asset.id,
+						)
+						const tabActive = !splitView && activeTab === asset.id
+						return (
+							<div
+								key={asset.id}
+								className={cn(
+									"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-2 pr-1 text-xs transition-colors cursor-default rounded-t-sm shadow-sm",
+									tabActive
+										? cn(
+												"bg-background text-foreground",
+												tabExcluded
+													? "border-t-2 border-muted-foreground/40"
+													: "border-t-2 border-primary",
+											)
+										: cn(
+												"text-muted-foreground hover:text-foreground",
+												tabExcluded
+													? "border-t-2 border-muted-foreground/25"
+													: "border-t-2 border-primary/30",
+											),
+								)}
 							>
-								{asset.title}
-							</button>
-							<button
-								type="button"
-								onClick={() => onTabClose(asset.id)}
-								className="shrink-0 opacity-0 transition-opacity group-hover/tab:opacity-100"
-							>
-								<X size={8} />
-							</button>
-						</div>
-					))}
+								{asset.kind === "analysis" && (
+									<Microscope size={11} className="shrink-0 text-primary" />
+								)}
+								<button
+									type="button"
+									onClick={() => onTabClick(asset.id)}
+									className="max-w-[120px] cursor-pointer truncate capitalize font-medium"
+								>
+									{asset.title}
+								</button>
+								<button
+									type="button"
+									onClick={() => onTabClose(asset.id)}
+									className="shrink-0 opacity-0 transition-opacity group-hover/tab:opacity-100"
+								>
+									<X size={8} />
+								</button>
+							</div>
+						)
+					})}
 					{openAssets.length >= 1 && (
 						<div
 							className={cn(
