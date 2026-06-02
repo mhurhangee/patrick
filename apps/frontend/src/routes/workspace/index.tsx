@@ -193,6 +193,7 @@ function WorkspaceContent({
 								provider={ai.provider}
 								apiKey={ai.apiKey}
 								model={ai.detailedModel}
+								onAnalysed={asset.refresh}
 							/>
 						</ResizablePanel>
 						<ResizableHandle

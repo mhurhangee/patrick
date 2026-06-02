@@ -121,11 +121,13 @@ function SourcePane({
 	provider,
 	apiKey,
 	model,
+	onAnalysed,
 }: {
 	asset: ApiAsset
 	provider: string
 	apiKey: string
 	model: string
+	onAnalysed: () => void
 }) {
 	const [tab, setTab] = useState<"document" | "analysis">("document")
 	const [jumpToPage, setJumpToPage] = useState<number | undefined>()
@@ -163,6 +165,7 @@ function SourcePane({
 						apiKey={apiKey}
 						model={model}
 						onLocate={locate}
+						onAnalysed={onAnalysed}
 					/>
 				</div>
 			</div>
@@ -176,12 +179,14 @@ function AssetPane({
 	provider,
 	apiKey,
 	model,
+	onAnalysed,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
 	provider: string
 	apiKey: string
 	model: string
+	onAnalysed: () => void
 }) {
 	if (asset.kind === "source") {
 		return (
@@ -191,6 +196,7 @@ function AssetPane({
 				provider={provider}
 				apiKey={apiKey}
 				model={model}
+				onAnalysed={onAnalysed}
 			/>
 		)
 	}
@@ -218,6 +224,7 @@ export function AssetViewer({
 	provider,
 	apiKey,
 	model,
+	onAnalysed,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -232,6 +239,7 @@ export function AssetViewer({
 	provider: string
 	apiKey: string
 	model: string
+	onAnalysed: () => void
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -329,6 +337,7 @@ export function AssetViewer({
 									provider={provider}
 									apiKey={apiKey}
 									model={model}
+									onAnalysed={onAnalysed}
 								/>
 							</ResizablePanel>
 						</Fragment>
@@ -344,6 +353,7 @@ export function AssetViewer({
 							provider={provider}
 							apiKey={apiKey}
 							model={model}
+							onAnalysed={onAnalysed}
 						/>
 					)}
 				</div>

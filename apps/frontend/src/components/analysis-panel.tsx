@@ -31,12 +31,15 @@ export function AnalysisPanel({
 	apiKey,
 	model,
 	onLocate,
+	onAnalysed,
 }: {
 	asset: ApiAsset
 	provider: string
 	apiKey: string
 	model: string
 	onLocate: (locations: FieldLocation[]) => void
+	/** Notify the workspace that an analysis record now exists (refresh badges). */
+	onAnalysed: () => void
 }) {
 	const [selectedType, setSelectedType] = useState("auto")
 	const [resolvedType, setResolvedType] = useState<string | null>(null)
@@ -115,6 +118,7 @@ export function AnalysisPanel({
 			setLocations(rec.locations ?? {})
 			setExtractedAt(rec.extractedAt)
 			setExtractState("idle")
+			onAnalysed()
 		} catch (err) {
 			setExtractError(err instanceof Error ? err.message : "Extraction failed.")
 			setExtractState("error")
@@ -135,6 +139,7 @@ export function AnalysisPanel({
 			}
 			await api.analysis.save(asset.projectId, record)
 			setSaveStatus("saved")
+			onAnalysed()
 			saveTimer.current = setTimeout(() => setSaveStatus("idle"), 2000)
 		} catch {
 			setSaveStatus("idle")
