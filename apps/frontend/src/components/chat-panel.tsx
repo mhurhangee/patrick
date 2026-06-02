@@ -291,17 +291,31 @@ function ChatPane({
 		return () => ro.disconnect()
 	}, [])
 
-	// Group flat messages into user/assistant exchange pairs
+	// Group flat messages into exchanges: one user message + all the assistant
+	// messages that follow it (a client-side tool confirmation can split the
+	// assistant's turn into more than one message). Merge their parts so the tool
+	// card and the post-confirmation answer render together under one exchange.
 	const exchanges = useMemo<Exchange[]>(() => {
 		const result: Exchange[] = []
 		let i = 0
 		while (i < messages.length) {
 			const msg = messages[i]
 			if (msg.role === "user") {
-				const next = messages[i + 1]
-				const assistantMsg = next?.role === "assistant" ? next : null
+				i++
+				let first: UIMessage | null = null
+				let last: UIMessage | null = null
+				const parts: UIMessage["parts"] = []
+				while (i < messages.length && messages[i].role === "assistant") {
+					const a = messages[i]
+					first ??= a
+					last = a
+					parts.push(...a.parts)
+					i++
+				}
+				const assistantMsg: UIMessage | null = first
+					? { ...first, parts, metadata: last?.metadata }
+					: null
 				result.push({ id: msg.id, userMsg: msg, assistantMsg })
-				i += assistantMsg ? 2 : 1
 			} else {
 				i++
 			}

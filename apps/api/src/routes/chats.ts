@@ -318,28 +318,46 @@ chatsRouter.post("/:id/messages", async (c) => {
 				messages: [],
 			}
 
-			// Persist incoming user message if not already saved
-			const userMsg = cleanedMessages.at(-1)
-			const existingIds = new Set(chat.messages.map((m) => m.id))
-			const newMessages: ChatMessage[] = [...chat.messages]
+			// The client's message list is authoritative for the conversation so far —
+			// it includes client-added tool outputs (e.g. analyseSource confirmation)
+			// that the server never re-emits. We rebuild from it, preserving original
+			// timestamps, then upsert the freshly generated assistant message by id.
+			// (Use the un-stripped `messages` so generateMetadata parts survive reload.)
+			const existingById = new Map(chat.messages.map((m) => [m.id, m]))
+			const toMsg = (m: {
+				id: string
+				role: "user" | "assistant"
+				parts: unknown[]
+				metadata?: unknown
+			}): ChatMessage => ({
+				id: m.id,
+				role: m.role,
+				parts: m.parts,
+				metadata:
+					(m.metadata as Record<string, unknown>) ??
+					existingById.get(m.id)?.metadata ??
+					{},
+				createdAt:
+					existingById.get(m.id)?.createdAt ?? new Date().toISOString(),
+			})
 
-			if (userMsg?.role === "user" && !existingIds.has(userMsg.id)) {
-				newMessages.push({
-					id: userMsg.id,
-					role: "user",
-					parts: userMsg.parts,
-					metadata: {},
-					createdAt: new Date().toISOString(),
-				})
-			}
+			const byId = new Map<string, ChatMessage>()
+			for (const m of messages) byId.set(m.id, toMsg(m))
 
-			newMessages.push({
-				id: responseMessage.id || crypto.randomUUID(),
+			const respId = responseMessage.id || crypto.randomUUID()
+			byId.set(respId, {
+				id: respId,
 				role: "assistant",
 				parts: responseMessage.parts as unknown[],
-				metadata: (responseMessage.metadata as Record<string, unknown>) ?? {},
-				createdAt: new Date().toISOString(),
+				metadata:
+					(responseMessage.metadata as Record<string, unknown>) ??
+					existingById.get(respId)?.metadata ??
+					{},
+				createdAt:
+					existingById.get(respId)?.createdAt ?? new Date().toISOString(),
 			})
+
+			const newMessages = [...byId.values()]
 
 			const now = new Date().toISOString()
 			const lastText = newMessages
