@@ -173,6 +173,8 @@ function AssetPane({
 	onLocatePrev,
 	onLocateNext,
 	onLocateClear,
+	doNotRead,
+	onToggleDoNotRead,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
@@ -185,6 +187,8 @@ function AssetPane({
 	onLocatePrev: () => void
 	onLocateNext: () => void
 	onLocateClear: () => void
+	doNotRead: Set<string>
+	onToggleDoNotRead: (id: string) => void
 }) {
 	if (asset.kind === "analysis") {
 		return (
@@ -196,6 +200,8 @@ function AssetPane({
 				model={model}
 				onAnalysed={onAnalysed}
 				onLocate={(locs) => onLocate(asset.path, locs)}
+				excludedFromAgent={doNotRead.has(asset.path)}
+				onToggleExclude={() => onToggleDoNotRead(asset.path)}
 			/>
 		)
 	}
@@ -238,6 +244,8 @@ export function AssetViewer({
 	apiKey,
 	model,
 	onAnalysed,
+	doNotRead,
+	onToggleDoNotRead,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -254,6 +262,8 @@ export function AssetViewer({
 	apiKey: string
 	model: string
 	onAnalysed: () => void
+	doNotRead: Set<string>
+	onToggleDoNotRead: (id: string) => void
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -296,6 +306,8 @@ export function AssetViewer({
 		onLocatePrev: locatePrev,
 		onLocateNext: locateNext,
 		onLocateClear: () => setLocate(null),
+		doNotRead,
+		onToggleDoNotRead,
 	}
 
 	return (

@@ -201,6 +201,8 @@ function WorkspaceContent({
 								apiKey={ai.apiKey}
 								model={ai.detailedModel}
 								onAnalysed={asset.refresh}
+								doNotRead={asset.doNotRead}
+								onToggleDoNotRead={asset.toggleDoNotRead}
 							/>
 						</ResizablePanel>
 						<ResizableHandle
