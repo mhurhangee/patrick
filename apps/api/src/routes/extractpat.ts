@@ -33,14 +33,23 @@ async function classify(
 	model: any,
 	fileData: Buffer,
 ): Promise<string> {
-	const ids = EXTRACTABLE_SOURCES.map((c) => c.id) as [string, ...string[]]
+	// Include an "other" escape hatch so the model isn't forced to mislabel a
+	// document (e.g. prior art) as one of the extractable types.
+	const ids: [string, ...string[]] = [
+		"other",
+		...EXTRACTABLE_SOURCES.map((c) => c.id as string),
+	]
 	const list = EXTRACTABLE_SOURCES.map(
 		(c) => `- ${c.id}: ${c.typeLabel} — ${c.aiContext}`,
-	).join("\n")
+	)
+		.concat(
+			"- other: anything that does not clearly match one of the above (prior art, the application itself, client correspondence, etc.)",
+		)
+		.join("\n")
 	const { output } = await generateText({
 		model,
 		system:
-			"You are a patent document classifier. Choose the single best-matching type id for the attached document. Respond only via the structured output.",
+			'You are a patent document classifier. Choose the single best-matching type id for the attached document. If it does not clearly match one of the listed types, choose "other". Respond only via the structured output.',
 		output: Output.object({
 			schema: z.object({ assetType: z.enum(ids) }),
 		}),
@@ -95,6 +104,15 @@ extractpatRouter.post("/extract", async (c) => {
 		assetType && assetType !== "auto"
 			? assetType
 			: await classify(model, fileData)
+
+	if (resolvedType === "other")
+		return c.json(
+			{
+				error:
+					"Couldn't match this document to a supported type (currently US Office Actions and EP Examination Reports). Pick a type manually if you know it, or leave it un-analysed for now.",
+			},
+			422,
+		)
 
 	const schema = schemaFor(resolvedType)
 	if (!schema)

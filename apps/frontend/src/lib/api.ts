@@ -12,7 +12,17 @@ export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const res = await fetch(`${BASE_URL}${path}`, init)
-	if (!res.ok) throw new Error(`API ${res.status}: ${path}`)
+	if (!res.ok) {
+		// Surface the server's { error } message when present
+		let detail = ""
+		try {
+			const body = (await res.json()) as { error?: string }
+			if (body?.error) detail = ` — ${body.error}`
+		} catch {
+			// non-JSON body
+		}
+		throw new Error(`API ${res.status}: ${path}${detail}`)
+	}
 	return res.json() as Promise<T>
 }
 
