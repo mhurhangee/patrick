@@ -233,57 +233,46 @@ export function createModel(provider: string, apiKey: string, modelId: string) {
 	return createAnthropic({ apiKey: key })(bare)
 }
 
-// Anthropic thinking budget (tokens) per effort level. Output cap must exceed it.
-const ANTHROPIC_THINKING_BUDGET: Record<AiEffort, number> = {
-	low: 2_000,
-	medium: 6_000,
-	high: 12_000,
-}
-
 // Structural JSON type — matches the AI SDK's ProviderOptions value shape without
 // importing it (the type lives in a pnpm-hoisted transitive package).
 type Json = string | number | boolean | null | Json[] | { [k: string]: Json }
 export type ReasoningProviderOptions = Record<string, Record<string, Json>>
 
-// Map a unified effort + thinking toggle onto each provider's reasoning options.
-// Returns providerOptions to spread into streamText/generateText/ToolLoopAgent,
-// plus a maxOutputTokens floor when Anthropic thinking needs headroom.
+// Map a unified effort + thinking toggle onto each provider's reasoning options,
+// to spread into streamText/generateText/ToolLoopAgent.
+// `effort: "off"` minimises reasoning for latency-sensitive tasks (ExtractPat):
+// OpenAI → minimal, Google → thinking disabled, Anthropic → low (its floor).
 export function reasoningOptions(
 	provider: string,
 	modelId: string,
-	effort: AiEffort,
+	effort: AiEffort | "off",
 	showThinking: boolean,
-): { providerOptions: ReasoningProviderOptions; maxOutputTokens?: number } {
+): { providerOptions: ReasoningProviderOptions } {
 	const vendor = vendorOf(provider, modelId)
+	const reason = showThinking && effort !== "off"
 
 	if (vendor === "openai") {
-		const openai: Record<string, Json> = { reasoningEffort: effort }
-		if (showThinking) openai.reasoningSummary = "auto"
+		const openai: Record<string, Json> = {
+			reasoningEffort: effort === "off" ? "minimal" : effort,
+		}
+		if (reason) openai.reasoningSummary = "auto"
 		return { providerOptions: { openai } }
 	}
 
 	if (vendor === "google") {
-		return {
-			providerOptions: {
-				google: {
-					thinkingConfig: {
-						thinkingLevel: effort,
-						includeThoughts: showThinking,
-					},
-				},
-			},
-		}
+		const thinkingConfig: Record<string, Json> =
+			effort === "off"
+				? { thinkingBudget: 0 }
+				: { thinkingLevel: effort, includeThoughts: showThinking }
+		return { providerOptions: { google: { thinkingConfig } } }
 	}
 
-	// anthropic: thinking object surfaces reasoning; effort scalar when hidden.
-	if (showThinking) {
-		const budgetTokens = ANTHROPIC_THINKING_BUDGET[effort]
-		return {
-			providerOptions: {
-				anthropic: { thinking: { type: "enabled", budgetTokens } },
-			},
-			maxOutputTokens: budgetTokens + 4_000,
-		}
+	// anthropic: current models (Opus 4.7+) use adaptive thinking + `effort`
+	// (output_config.effort). The legacy thinking:{type:"enabled",budgetTokens}
+	// is rejected by these models. Adaptive's `display` controls visibility.
+	const anthropic: Record<string, Json> = {
+		effort: effort === "off" ? "low" : effort,
 	}
-	return { providerOptions: { anthropic: { effort } } }
+	if (reason) anthropic.thinking = { type: "adaptive", display: "summarized" }
+	return { providerOptions: { anthropic } }
 }

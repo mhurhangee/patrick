@@ -196,7 +196,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const resolvedKey = apiKey || settings.ai[keyField] || ""
 	const resolvedModel = detailedModel || settings.ai.model
 	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)
-	const { providerOptions, maxOutputTokens } = reasoningOptions(
+	const { providerOptions } = reasoningOptions(
 		resolvedProvider,
 		resolvedModel,
 		settings.ai.effort,
@@ -296,7 +296,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 		instructions: system,
 		tools,
 		providerOptions,
-		...(maxOutputTokens ? { maxOutputTokens } : {}),
 		prepareCall:
 			fileParts.length > 0
 				? (baseArgs) => {

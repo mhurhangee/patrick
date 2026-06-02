@@ -7,7 +7,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai"
-import { ArrowUp, Loader2, Plus, X } from "lucide-react"
+import { ArrowUp, Loader2, Plus, Square, X } from "lucide-react"
 import {
 	Fragment,
 	type RefObject,
@@ -61,6 +61,8 @@ function ChatInputBar({
 	onInputChange,
 	onSend,
 	disabled,
+	isStreaming,
+	onStop,
 	textareaRef,
 }: {
 	openAssets: ApiAsset[]
@@ -71,6 +73,8 @@ function ChatInputBar({
 	onInputChange: (value: string) => void
 	onSend: () => void
 	disabled?: boolean
+	isStreaming?: boolean
+	onStop?: () => void
 	textareaRef?: RefObject<HTMLTextAreaElement | null>
 }) {
 	// Only show docs actually sent to the AI — excluded ("do not read") are hidden.
@@ -123,13 +127,25 @@ function ChatInputBar({
 							))}
 						</div>
 					)}
-					<Button
-						size="icon"
-						onClick={onSend}
-						disabled={disabled || !input.trim()}
-					>
-						<ArrowUp />
-					</Button>
+					{isStreaming ? (
+						<Button
+							size="icon"
+							variant="secondary"
+							onClick={onStop}
+							aria-label="Stop generating"
+						>
+							<Square />
+						</Button>
+					) : (
+						<Button
+							size="icon"
+							onClick={onSend}
+							disabled={disabled || !input.trim()}
+							aria-label="Send message"
+						>
+							<ArrowUp />
+						</Button>
+					)}
 				</div>
 			</div>
 		</div>
@@ -253,7 +269,7 @@ function ChatPane({
 		Record<string, Array<{ id: string; title: string }>>
 	>({})
 
-	const { messages, sendMessage, status, addToolOutput } = useChat({
+	const { messages, sendMessage, status, stop, addToolOutput } = useChat({
 		transport: new DefaultChatTransport({
 			api: `${BASE_URL}/chats/${chatId}/messages`,
 			body: { taskPath: taskId, provider, apiKey, detailedModel },
@@ -633,6 +649,8 @@ function ChatPane({
 				onInputChange={setInput}
 				onSend={send}
 				disabled={isStreaming}
+				isStreaming={isStreaming}
+				onStop={stop}
 				textareaRef={textareaRef}
 			/>
 		</div>

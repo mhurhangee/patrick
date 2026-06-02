@@ -97,7 +97,20 @@ export async function readSettings(): Promise<Settings> {
 	const path = settingsPath()
 	try {
 		const text = await readFile(path, "utf8")
-		return YAML.parse(text) as Settings
+		// Merge over defaults so settings.yaml files written before a field existed
+		// (e.g. ai.effort / ai.showThinking) still get sensible values.
+		const parsed = (YAML.parse(text) ?? {}) as Partial<Settings>
+		return {
+			...DEFAULT_SETTINGS,
+			...parsed,
+			profile: { ...DEFAULT_SETTINGS.profile, ...parsed.profile },
+			ai: { ...DEFAULT_SETTINGS.ai, ...parsed.ai },
+			prompts: { ...DEFAULT_SETTINGS.prompts, ...parsed.prompts },
+			integrations: {
+				...DEFAULT_SETTINGS.integrations,
+				...parsed.integrations,
+			},
+		}
 	} catch {
 		// First run — write defaults so the file exists
 		await writeYaml(path, DEFAULT_SETTINGS)

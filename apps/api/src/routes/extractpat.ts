@@ -123,7 +123,7 @@ extractpatRouter.post("/extract", async (c) => {
 	const { providerOptions } = reasoningOptions(
 		resolvedProvider,
 		resolvedModel,
-		"low",
+		"off",
 		false,
 	)
 
@@ -227,7 +227,7 @@ extractpatRouter.post("/extract/stream", async (c) => {
 	const { providerOptions } = reasoningOptions(
 		resolvedProvider,
 		resolvedModel,
-		"low",
+		"off",
 		false,
 	)
 
