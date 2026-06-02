@@ -53,9 +53,10 @@ export function useAssetState(currentTaskId: string) {
 		if (!currentTaskId) {
 			setAssets([])
 			setAnalysedFilenames(new Set())
+			setDoNotRead(new Set())
 			return
 		}
-		api.tasks.listFiles(currentTaskId).then(({ sources, artifacts }) => {
+		api.tasks.listFiles(currentTaskId).then(async ({ sources, artifacts }) => {
 			const sourceAssets = sources.map((f) =>
 				fileToAsset(f, "source", currentTaskId),
 			)
@@ -71,6 +72,17 @@ export function useAssetState(currentTaskId: string) {
 				}),
 			)
 			setAssets([...sourceAssets, ...analysisAssets, ...artifactAssets])
+			// Restore persisted "do not read" exclusions (stored by filename).
+			const excludedFilenames = new Set(
+				await api.analysis.getExcluded(currentTaskId),
+			)
+			setDoNotRead(
+				new Set(
+					sourceAssets
+						.filter((s) => excludedFilenames.has(s.filename))
+						.map((s) => s.id),
+				),
+			)
 		})
 		api.analysis
 			.list(currentTaskId)
@@ -128,12 +140,15 @@ export function useAssetState(currentTaskId: string) {
 	}
 
 	function toggleDoNotRead(id: string) {
-		setDoNotRead((prev) => {
-			const next = new Set(prev)
-			if (next.has(id)) next.delete(id)
-			else next.add(id)
-			return next
-		})
+		const next = new Set(doNotRead)
+		if (next.has(id)) next.delete(id)
+		else next.add(id)
+		setDoNotRead(next)
+		// Persist by filename so it travels with the task folder.
+		const filenames = [...next]
+			.map((x) => assets.find((a) => a.id === x)?.filename)
+			.filter((f): f is string => !!f)
+		api.analysis.setExcluded(currentTaskId, filenames).catch(() => {})
 	}
 
 	// Open documents for chat context/chips — real docs only, not analysis tabs.

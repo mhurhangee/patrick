@@ -176,6 +176,23 @@ export async function deleteAnalysis(
 	await rm(analysisFilePath(taskPath, sourceFilename), { force: true })
 }
 
+// Sources the attorney has flagged "do not read" — by filename, so it travels
+// with the folder. Stored in analysis/_excluded.json.
+function excludedPath(taskPath: string) {
+	return join(analysisDir(taskPath), "_excluded.json")
+}
+
+export async function readExcluded(taskPath: string): Promise<string[]> {
+	return readJson<string[]>(excludedPath(taskPath), [])
+}
+
+export async function writeExcluded(
+	taskPath: string,
+	filenames: string[],
+): Promise<void> {
+	await writeJson(excludedPath(taskPath), filenames)
+}
+
 export async function listAnalysis(
 	taskPath: string,
 ): Promise<AnalysisSummary[]> {
@@ -186,6 +203,7 @@ export async function listAnalysis(
 		const summaries: AnalysisSummary[] = []
 		for (const entry of entries) {
 			if (!entry.isFile() || !entry.name.endsWith(".json")) continue
+			if (entry.name.startsWith("_")) continue // reserved (e.g. _excluded.json)
 			const record = await readJson<AnalysisRecord | null>(
 				join(analysisDir(taskPath), entry.name),
 				null,

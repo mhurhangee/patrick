@@ -151,6 +151,15 @@ export const api = {
 				`/analysis/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
 				{ method: "DELETE" },
 			),
+		getExcluded: (taskPath: string) =>
+			request<string[]>(
+				`/analysis/excluded?taskPath=${encodeURIComponent(taskPath)}`,
+			),
+		setExcluded: (taskPath: string, filenames: string[]) =>
+			request<{ ok: boolean }>(
+				"/analysis/excluded",
+				json({ taskPath, filenames }, { method: "PUT" }),
+			),
 	},
 	ai: {
 		verifyKey: (provider: string, apiKey: string) =>

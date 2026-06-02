@@ -4,7 +4,9 @@ import {
 	deleteAnalysis,
 	listAnalysis,
 	readAnalysis,
+	readExcluded,
 	writeAnalysis,
+	writeExcluded,
 } from "../lib/fs"
 
 export const analysisRouter = new Hono()
@@ -39,6 +41,24 @@ analysisRouter.put("/file", async (c) => {
 	}
 	await writeAnalysis(taskPath, saved)
 	return c.json(saved)
+})
+
+// GET /analysis/excluded?taskPath=...  → filenames flagged do-not-read
+analysisRouter.get("/excluded", async (c) => {
+	const taskPath = c.req.query("taskPath")
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+	return c.json(await readExcluded(taskPath))
+})
+
+// PUT /analysis/excluded  → replace the do-not-read list
+analysisRouter.put("/excluded", async (c) => {
+	const { taskPath, filenames } = await c.req.json<{
+		taskPath: string
+		filenames: string[]
+	}>()
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+	await writeExcluded(taskPath, filenames ?? [])
+	return c.json({ ok: true })
 })
 
 // DELETE /analysis/file?taskPath=...&filename=...  → remove a source's analysis
