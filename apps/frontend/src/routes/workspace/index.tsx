@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/resizable"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AIProvider, useAI } from "@/lib/ai-context"
-import { useAssetState } from "@/lib/use-asset-state"
+import { analysisIdFor, useAssetState } from "@/lib/use-asset-state"
 import { useChatState } from "@/lib/use-chat-state"
 import { useTaskState } from "@/lib/use-task-state"
 
@@ -102,11 +102,11 @@ function WorkspaceContent({
 	)
 	const [settingsOpen, setSettingsOpen] = useState(false)
 	const [tutorialOpen, setTutorialOpen] = useState(false)
-	// Signal a source to open straight to its Analysis tab (nonce re-fires it)
-	const [reviewSignal, setReviewSignal] = useState<{
-		id: string
-		n: number
-	} | null>(null)
+
+	// Open a source's Analysis tab (used by the sidebar icon and the Review button)
+	function openAnalysis(sourceId: string) {
+		asset.openAsset(analysisIdFor(sourceId))
+	}
 
 	function openTasks(panel: "empty" | "new" = "empty") {
 		setTasksDefaultPanel(panel)
@@ -142,6 +142,7 @@ function WorkspaceContent({
 				currentTaskId={task.currentTaskId}
 				analysedFilenames={asset.analysedFilenames}
 				onOpen={asset.openAsset}
+				onOpenAnalysis={openAnalysis}
 				onClose={asset.closeTab}
 				onRefreshSources={asset.refresh}
 				onCreateArtifact={asset.createArtifact}
@@ -191,6 +192,7 @@ function WorkspaceContent({
 								splitView={asset.splitView}
 								onTabClick={asset.selectTab}
 								onTabClose={asset.closeTab}
+								onOpen={asset.openAsset}
 								onSplitToggle={asset.toggleSplitView}
 								onChatToggle={toggleChat}
 								onAssetUpdate={asset.updateAsset}
@@ -199,7 +201,6 @@ function WorkspaceContent({
 								apiKey={ai.apiKey}
 								model={ai.detailedModel}
 								onAnalysed={asset.refresh}
-								reviewSignal={reviewSignal}
 							/>
 						</ResizablePanel>
 						<ResizableHandle
@@ -230,14 +231,13 @@ function WorkspaceContent({
 								onSendInAgentPat={chat.sendInAgentPat}
 								onRemoveAsset={asset.closeTab}
 								onOpenAsset={asset.selectTab}
+								doNotRead={asset.doNotRead}
+								onToggleDoNotRead={asset.toggleDoNotRead}
 								onOpenSource={(filename) => {
 									const src = asset.assets.find(
 										(a) => a.kind === "source" && a.filename === filename,
 									)
-									if (src) {
-										asset.openAsset(src.id)
-										setReviewSignal({ id: src.id, n: Date.now() })
-									}
+									if (src) openAnalysis(src.id)
 								}}
 								onAnalysed={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}

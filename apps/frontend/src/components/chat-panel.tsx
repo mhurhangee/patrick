@@ -7,7 +7,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai"
-import { ArrowUp, Loader2, Plus, X } from "lucide-react"
+import { ArrowUp, Eye, EyeOff, Loader2, Plus, X } from "lucide-react"
 import {
 	Fragment,
 	type RefObject,
@@ -61,6 +61,8 @@ function ChatInputBar({
 	openAssets,
 	onRemoveAsset,
 	onOpenAsset,
+	doNotRead,
+	onToggleDoNotRead,
 	input,
 	onInputChange,
 	onSend,
@@ -70,6 +72,8 @@ function ChatInputBar({
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	doNotRead?: Set<string>
+	onToggleDoNotRead?: (id: string) => void
 	input: string
 	onInputChange: (value: string) => void
 	onSend: () => void
@@ -101,27 +105,54 @@ function ChatInputBar({
 						</span>
 					) : (
 						<div className="flex flex-wrap items-center gap-1">
-							{openAssets.map((asset) => (
-								<span
-									key={asset.id}
-									className="group/chip inline-flex items-center gap-1"
-								>
-									<button
-										type="button"
-										onClick={() => onOpenAsset(asset.id)}
-										className="cursor-pointer capitalize truncate text-xxs font-medium text-muted-foreground hover:text-foreground"
+							{openAssets.map((asset) => {
+								const excluded = doNotRead?.has(asset.id) ?? false
+								return (
+									<span
+										key={asset.id}
+										className="group/chip inline-flex items-center gap-1"
 									>
-										{asset.title}
-									</button>
-									<button
-										type="button"
-										onClick={() => onRemoveAsset(asset.id)}
-										className="opacity-0 transition-opacity group-hover/chip:opacity-100 text-muted-foreground"
-									>
-										<X size={9} />
-									</button>
-								</span>
-							))}
+										<button
+											type="button"
+											onClick={() => onOpenAsset(asset.id)}
+											className={cn(
+												"cursor-pointer capitalize truncate text-xxs font-medium hover:text-foreground",
+												excluded
+													? "text-muted-foreground/40 line-through"
+													: "text-muted-foreground",
+											)}
+										>
+											{asset.title}
+										</button>
+										{onToggleDoNotRead && (
+											<button
+												type="button"
+												onClick={() => onToggleDoNotRead(asset.id)}
+												title={
+													excluded
+														? "Excluded from AgentPat — click to include"
+														: "Included in AgentPat — click to exclude"
+												}
+												className={cn(
+													"text-muted-foreground transition-opacity",
+													excluded
+														? "opacity-100"
+														: "opacity-0 group-hover/chip:opacity-100",
+												)}
+											>
+												{excluded ? <EyeOff size={9} /> : <Eye size={9} />}
+											</button>
+										)}
+										<button
+											type="button"
+											onClick={() => onRemoveAsset(asset.id)}
+											className="opacity-0 transition-opacity group-hover/chip:opacity-100 text-muted-foreground"
+										>
+											<X size={9} />
+										</button>
+									</span>
+								)
+							})}
 						</div>
 					)}
 					<Button
@@ -194,6 +225,8 @@ function ChatPane({
 	openAssets,
 	onRemoveAsset,
 	onOpenAsset,
+	doNotRead,
+	onToggleDoNotRead,
 	onOpenSource,
 	onAnalysed,
 	initialMessages,
@@ -209,6 +242,8 @@ function ChatPane({
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	doNotRead: Set<string>
+	onToggleDoNotRead: (id: string) => void
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	initialMessages: UIMessage[]
@@ -221,7 +256,10 @@ function ChatPane({
 	onMessageSent: () => void
 }) {
 	const openAssetIdsRef = useRef<string[]>([])
-	openAssetIdsRef.current = openAssets.map((a) => a.id)
+	// Exclude "do not read" sources from what AgentPat receives as context.
+	openAssetIdsRef.current = openAssets
+		.filter((a) => !doNotRead.has(a.id))
+		.map((a) => a.id)
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null)
 	const lastUserMsgRef = useRef<HTMLDivElement>(null)
@@ -617,6 +655,8 @@ function ChatPane({
 				openAssets={openAssets}
 				onRemoveAsset={onRemoveAsset}
 				onOpenAsset={onOpenAsset}
+				doNotRead={doNotRead}
+				onToggleDoNotRead={onToggleDoNotRead}
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
@@ -636,6 +676,8 @@ function ChatPaneLoader({
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	doNotRead: Set<string>
+	onToggleDoNotRead: (id: string) => void
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	initialMessage?: string | null
@@ -699,6 +741,8 @@ export function ChatPanel({
 	onSendInAgentPat,
 	onRemoveAsset,
 	onOpenAsset,
+	doNotRead,
+	onToggleDoNotRead,
 	onOpenSource,
 	onAnalysed,
 	onOpenSettings,
@@ -720,6 +764,8 @@ export function ChatPanel({
 	onSendInAgentPat: (message: string) => void
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	doNotRead: Set<string>
+	onToggleDoNotRead: (id: string) => void
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	onOpenSettings: () => void
@@ -811,6 +857,8 @@ export function ChatPanel({
 					openAssets={openAssets}
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
+					doNotRead={doNotRead}
+					onToggleDoNotRead={onToggleDoNotRead}
 					onOpenSource={onOpenSource}
 					onAnalysed={onAnalysed}
 					initialMessage={pendingMessages[activeChat.id] ?? null}

@@ -2,6 +2,11 @@ import type { ApiAsset } from "@patrickos/shared"
 import { useCallback, useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
+// A source's Analysis opens as its own tab; this is its synthetic asset id.
+export function analysisIdFor(sourceId: string) {
+	return `${sourceId}::analysis`
+}
+
 function fileToAsset(
 	file: {
 		filename: string
@@ -41,6 +46,8 @@ export function useAssetState(currentTaskId: string) {
 	const [analysedFilenames, setAnalysedFilenames] = useState<Set<string>>(
 		new Set(),
 	)
+	// Sources the user has flagged "do not read" — excluded from AgentPat context.
+	const [doNotRead, setDoNotRead] = useState<Set<string>>(new Set())
 
 	const refresh = useCallback(() => {
 		if (!currentTaskId) {
@@ -55,7 +62,15 @@ export function useAssetState(currentTaskId: string) {
 			const artifactAssets = artifacts.map((f) =>
 				fileToAsset(f, "artifact", currentTaskId),
 			)
-			setAssets([...sourceAssets, ...artifactAssets])
+			// One synthetic "analysis" asset per source — opens as its own tab.
+			const analysisAssets = sourceAssets.map(
+				(s): ApiAsset => ({
+					...s,
+					id: analysisIdFor(s.id),
+					kind: "analysis",
+				}),
+			)
+			setAssets([...sourceAssets, ...analysisAssets, ...artifactAssets])
 		})
 		api.analysis
 			.list(currentTaskId)
@@ -112,9 +127,21 @@ export function useAssetState(currentTaskId: string) {
 		openAsset(created.path)
 	}
 
-	const openAssets = openTabIds
-		.map((id) => assets.find((a) => a.id === id))
-		.filter(Boolean) as ApiAsset[]
+	function toggleDoNotRead(id: string) {
+		setDoNotRead((prev) => {
+			const next = new Set(prev)
+			if (next.has(id)) next.delete(id)
+			else next.add(id)
+			return next
+		})
+	}
+
+	// Open documents for chat context/chips — real docs only, not analysis tabs.
+	const openAssets = (
+		openTabIds
+			.map((id) => assets.find((a) => a.id === id))
+			.filter(Boolean) as ApiAsset[]
+	).filter((a) => a.kind !== "analysis")
 
 	return {
 		assets,
@@ -123,6 +150,7 @@ export function useAssetState(currentTaskId: string) {
 		splitView,
 		openAssets,
 		analysedFilenames,
+		doNotRead,
 		refresh,
 		openAsset,
 		selectTab,
@@ -130,5 +158,6 @@ export function useAssetState(currentTaskId: string) {
 		closeTab,
 		updateAsset,
 		createArtifact,
+		toggleDoNotRead,
 	}
 }

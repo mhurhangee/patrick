@@ -4,6 +4,7 @@ import {
 	ChevronRight,
 	ChevronsUpDown,
 	CircleHelp,
+	Clover,
 	Plus,
 	RefreshCw,
 	Settings2,
@@ -106,6 +107,7 @@ export function AppSidebar({
 	currentTaskId,
 	analysedFilenames,
 	onOpen,
+	onOpenAnalysis,
 	onClose,
 	onRefreshSources,
 	onCreateArtifact,
@@ -129,6 +131,7 @@ export function AppSidebar({
 	currentTaskId: string
 	analysedFilenames: Set<string>
 	onOpen: (id: string) => void
+	onOpenAnalysis: (sourceId: string) => void
 	onClose: (id: string) => void
 	onRefreshSources: () => void
 	onCreateArtifact: () => void
@@ -221,14 +224,17 @@ export function AppSidebar({
 									? openSet.has(asset.id)
 									: asset.id === activeTabId
 								return (
-									<SidebarMenuSubItem key={asset.id}>
+									<SidebarMenuSubItem
+										key={asset.id}
+										className="flex items-center mr-2"
+									>
 										<SidebarMenuSubButton
 											onClick={() => {
 												if (isInView) onClose(asset.id)
 												else onOpen(asset.id)
 											}}
 											className={cn(
-												"flex items-center justify-between h-5 rounded-none gap-1.5 mr-2",
+												"flex min-w-0 flex-1 items-center h-5 rounded-none",
 												isInView
 													? "border-l-2 border-primary pl-2 font-medium"
 													: openSet.has(asset.id)
@@ -239,14 +245,26 @@ export function AppSidebar({
 											<span className="capitalize min-w-0 flex-1 truncate">
 												{asset.title}
 											</span>
-											{kind === "source" &&
-												!analysedFilenames.has(asset.filename) && (
-													<span
-														title="Not analysed — run ExtractPat"
-														className="size-1.5 shrink-0 rounded-full bg-amber-500/70"
-													/>
-												)}
 										</SidebarMenuSubButton>
+										{kind === "source" && (
+											<button
+												type="button"
+												title={
+													analysedFilenames.has(asset.filename)
+														? "View analysis"
+														: "Not analysed — open to run ExtractPat"
+												}
+												onClick={() => onOpenAnalysis(asset.id)}
+												className={cn(
+													"shrink-0 rounded p-0.5 transition-colors hover:bg-accent",
+													analysedFilenames.has(asset.filename)
+														? "text-primary"
+														: "text-amber-500 hover:text-amber-600",
+												)}
+											>
+												<Clover size={12} />
+											</button>
+										)}
 									</SidebarMenuSubItem>
 								)
 							})}

@@ -28,11 +28,13 @@ const ZONE_BAND: Record<FieldZone, { yStart: number; yEnd: number }> = {
 
 export function locationsToHighlights(
 	locations: FieldLocation[],
+	activeIndex?: number,
 ): SourceViewerHighlight[] {
-	return locations.map((l) => ({
+	return locations.map((l, i) => ({
 		page: l.page,
 		...ZONE_BAND[l.zone],
-		active: true,
+		// When an active index is given, only that one is bright; the rest dim.
+		active: activeIndex === undefined ? true : i === activeIndex,
 	}))
 }
 

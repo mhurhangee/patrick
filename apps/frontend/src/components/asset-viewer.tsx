@@ -1,14 +1,10 @@
 import type { ApiAsset, FieldLocation } from "@patrickos/shared"
-import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clover, Columns3, X } from "lucide-react"
 import type { Value } from "platejs"
 import { Fragment, useEffect, useRef, useState } from "react"
 import { AnalysisPanel } from "@/components/analysis-panel"
 import { PlateEditor } from "@/components/editor/plate-editor"
-import {
-	locationsToHighlights,
-	SourceViewer,
-	type SourceViewerHighlight,
-} from "@/components/source-viewer"
+import { locationsToHighlights, SourceViewer } from "@/components/source-viewer"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
@@ -24,6 +20,13 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
+
+// A field's locations being shown in the Document tab — drives highlights + page jump.
+type LocateState = {
+	sourcePath: string
+	locations: FieldLocation[]
+	index: number
+}
 
 function ArtifactEditor({
 	asset,
@@ -91,92 +94,62 @@ function ArtifactEditor({
 	)
 }
 
-function SubTab({
-	active,
-	onClick,
-	children,
-}: {
-	active: boolean
-	onClick: () => void
-	children: React.ReactNode
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className={cn(
-				"rounded px-2.5 py-1 text-xs transition-colors",
-				active
-					? "bg-accent font-medium text-accent-foreground"
-					: "text-muted-foreground hover:text-foreground",
-			)}
-		>
-			{children}
-		</button>
-	)
-}
-
-function SourcePane({
+// The Document tab — a PDF/source viewer, plus a transient locate bar when a
+// field's location is being shown.
+function DocumentPane({
 	asset,
-	provider,
-	apiKey,
-	model,
-	onAnalysed,
-	reviewSignal,
+	locate,
+	onLocatePrev,
+	onLocateNext,
+	onLocateClear,
 }: {
 	asset: ApiAsset
-	provider: string
-	apiKey: string
-	model: string
-	onAnalysed: () => void
-	reviewSignal: { id: string; n: number } | null
+	locate: LocateState | null
+	onLocatePrev: () => void
+	onLocateNext: () => void
+	onLocateClear: () => void
 }) {
-	const [tab, setTab] = useState<"document" | "analysis">("document")
-	const [jumpToPage, setJumpToPage] = useState<number | undefined>()
-	const [highlights, setHighlights] = useState<SourceViewerHighlight[]>([])
-
-	// A "Review" action elsewhere (e.g. AgentPat's analyseSource card) asks this
-	// source to open straight to its Analysis tab. reviewSignal is a fresh object
-	// each fire, so the effect re-runs even for the same source.
-	useEffect(() => {
-		if (reviewSignal?.id === asset.id) setTab("analysis")
-	}, [reviewSignal, asset.id])
-
-	function locate(locations: FieldLocation[]) {
-		setHighlights(locationsToHighlights(locations))
-		setJumpToPage(locations[0]?.page)
-		setTab("document")
-	}
+	const mine = locate && locate.sourcePath === asset.path ? locate : null
+	const highlights = mine
+		? locationsToHighlights(mine.locations, mine.index)
+		: []
+	const jumpToPage = mine ? mine.locations[mine.index]?.page : undefined
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<div className="flex shrink-0 items-center gap-1 border-b px-2 py-1">
-				<SubTab active={tab === "document"} onClick={() => setTab("document")}>
-					Document
-				</SubTab>
-				<SubTab active={tab === "analysis"} onClick={() => setTab("analysis")}>
-					Analysis
-				</SubTab>
-			</div>
+			{mine && (
+				<div className="flex shrink-0 items-center gap-1.5 border-b bg-amber-100/40 px-3 py-1 text-xs dark:bg-amber-500/10">
+					<span className="text-muted-foreground">Located</span>
+					{mine.locations.length > 1 && (
+						<div className="flex items-center gap-1">
+							<Button variant="ghost" size="icon-xs" onClick={onLocatePrev}>
+								<ChevronLeft size={12} />
+							</Button>
+							<span className="tabular-nums text-muted-foreground">
+								{mine.index + 1} / {mine.locations.length}
+							</span>
+							<Button variant="ghost" size="icon-xs" onClick={onLocateNext}>
+								<ChevronRight size={12} />
+							</Button>
+						</div>
+					)}
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						className="ml-auto"
+						onClick={onLocateClear}
+						title="Clear highlight"
+					>
+						<X size={12} />
+					</Button>
+				</div>
+			)}
 			<div className="flex-1 overflow-hidden">
-				{/* Both panes stay mounted so PDF state and unsaved edits survive tab switches */}
-				<div className={cn("h-full", tab !== "document" && "hidden")}>
-					<SourceViewer
-						src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
-						jumpToPage={jumpToPage}
-						highlights={highlights}
-					/>
-				</div>
-				<div className={cn("h-full", tab !== "analysis" && "hidden")}>
-					<AnalysisPanel
-						asset={asset}
-						provider={provider}
-						apiKey={apiKey}
-						model={model}
-						onLocate={locate}
-						onAnalysed={onAnalysed}
-					/>
-				</div>
+				<SourceViewer
+					src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
+					jumpToPage={jumpToPage}
+					highlights={highlights}
+				/>
 			</div>
 		</div>
 	)
@@ -189,7 +162,11 @@ function AssetPane({
 	apiKey,
 	model,
 	onAnalysed,
-	reviewSignal,
+	locate,
+	onLocate,
+	onLocatePrev,
+	onLocateNext,
+	onLocateClear,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
@@ -197,18 +174,35 @@ function AssetPane({
 	apiKey: string
 	model: string
 	onAnalysed: () => void
-	reviewSignal: { id: string; n: number } | null
+	locate: LocateState | null
+	onLocate: (sourcePath: string, locations: FieldLocation[]) => void
+	onLocatePrev: () => void
+	onLocateNext: () => void
+	onLocateClear: () => void
 }) {
-	if (asset.kind === "source") {
+	if (asset.kind === "analysis") {
 		return (
-			<SourcePane
+			<AnalysisPanel
 				key={asset.id}
 				asset={asset}
 				provider={provider}
 				apiKey={apiKey}
 				model={model}
 				onAnalysed={onAnalysed}
-				reviewSignal={reviewSignal}
+				onLocate={(locs) => onLocate(asset.path, locs)}
+			/>
+		)
+	}
+
+	if (asset.kind === "source") {
+		return (
+			<DocumentPane
+				key={asset.id}
+				asset={asset}
+				locate={locate}
+				onLocatePrev={onLocatePrev}
+				onLocateNext={onLocateNext}
+				onLocateClear={onLocateClear}
 			/>
 		)
 	}
@@ -229,6 +223,7 @@ export function AssetViewer({
 	splitView,
 	onTabClick,
 	onTabClose,
+	onOpen,
 	onSplitToggle,
 	onChatToggle,
 	onAssetUpdate,
@@ -237,7 +232,6 @@ export function AssetViewer({
 	apiKey,
 	model,
 	onAnalysed,
-	reviewSignal,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -245,6 +239,7 @@ export function AssetViewer({
 	splitView: boolean
 	onTabClick: (id: string) => void
 	onTabClose: (id: string) => void
+	onOpen: (id: string) => void
 	onSplitToggle: () => void
 	onChatToggle: () => void
 	onAssetUpdate: (updated: ApiAsset) => void
@@ -253,13 +248,49 @@ export function AssetViewer({
 	apiKey: string
 	model: string
 	onAnalysed: () => void
-	reviewSignal: { id: string; n: number } | null
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
 		.filter(Boolean) as ApiAsset[]
 	const activeAsset =
 		openAssets.find((a) => a.id === activeTab) ?? openAssets[0]
+
+	const [locate, setLocate] = useState<LocateState | null>(null)
+
+	function handleLocate(sourcePath: string, locations: FieldLocation[]) {
+		if (!locations.length) return
+		// Make sure the document tab is open + focused so the highlight is visible.
+		onOpen(sourcePath)
+		setLocate({ sourcePath, locations, index: 0 })
+	}
+	function locatePrev() {
+		setLocate((l) =>
+			l
+				? {
+						...l,
+						index: (l.index - 1 + l.locations.length) % l.locations.length,
+					}
+				: l,
+		)
+	}
+	function locateNext() {
+		setLocate((l) =>
+			l ? { ...l, index: (l.index + 1) % l.locations.length } : l,
+		)
+	}
+
+	const paneProps = {
+		onAssetUpdate,
+		provider,
+		apiKey,
+		model,
+		onAnalysed,
+		locate,
+		onLocate: handleLocate,
+		onLocatePrev: locatePrev,
+		onLocateNext: locateNext,
+		onLocateClear: () => setLocate(null),
+	}
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
@@ -274,12 +305,15 @@ export function AssetViewer({
 						<div
 							key={asset.id}
 							className={cn(
-								"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-3 pr-1 text-xs transition-colors cursor-default rounded-t-sm",
+								"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-2 pr-1 text-xs transition-colors cursor-default rounded-t-sm",
 								!splitView && activeTab === asset.id
 									? "border-t-2 border-primary shadow-sm bg-background text-foreground"
 									: "border-t-2 border-primary/30 shadow-sm text-muted-foreground hover:text-foreground",
 							)}
 						>
+							{asset.kind === "analysis" && (
+								<Clover size={11} className="shrink-0 text-primary" />
+							)}
 							<button
 								type="button"
 								onClick={() => onTabClick(asset.id)}
@@ -344,16 +378,7 @@ export function AssetViewer({
 								collapsedSize="0%"
 								minSize="10%"
 							>
-								<AssetPane
-									key={asset.id}
-									asset={asset}
-									onAssetUpdate={onAssetUpdate}
-									provider={provider}
-									apiKey={apiKey}
-									model={model}
-									onAnalysed={onAnalysed}
-									reviewSignal={reviewSignal}
-								/>
+								<AssetPane key={asset.id} asset={asset} {...paneProps} />
 							</ResizablePanel>
 						</Fragment>
 					))}
@@ -364,12 +389,7 @@ export function AssetViewer({
 						<AssetPane
 							key={activeAsset.id}
 							asset={activeAsset}
-							onAssetUpdate={onAssetUpdate}
-							provider={provider}
-							apiKey={apiKey}
-							model={model}
-							onAnalysed={onAnalysed}
-							reviewSignal={reviewSignal}
+							{...paneProps}
 						/>
 					)}
 				</div>
