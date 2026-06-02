@@ -224,6 +224,13 @@ function WorkspaceContent({
 								onSendInAgentPat={chat.sendInAgentPat}
 								onRemoveAsset={asset.closeTab}
 								onOpenAsset={asset.selectTab}
+								onOpenSource={(filename) => {
+									const src = asset.assets.find(
+										(a) => a.kind === "source" && a.filename === filename,
+									)
+									if (src) asset.openAsset(src.id)
+								}}
+								onAnalysed={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}
 								onChatTitleUpdate={chat.updateChat}
 								onMessageSent={chat.incrementMessageCount}

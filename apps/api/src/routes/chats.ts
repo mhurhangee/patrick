@@ -37,6 +37,24 @@ const generateMetadata = tool({
 	}),
 })
 
+// No execute — a client-side confirmation tool. The loop stops, the call is
+// forwarded to the client which runs ExtractPat and feeds the result back.
+const analyseSource = tool({
+	description:
+		"Propose running ExtractPat on a source document to extract structured data (e.g. office action dates, claims, cited references). Use when a source has not been analysed yet and structured data would help answer the user. The user must confirm before it runs. Only US Office Actions and EP Examination Reports can currently be extracted.",
+	inputSchema: z.object({
+		filename: z
+			.string()
+			.describe("The source filename to analyse, e.g. 'office-action.pdf'"),
+		assetType: z
+			.string()
+			.optional()
+			.describe(
+				"Document type id if known (e.g. 'us-office-action', 'ep-examination-report'); omit to auto-detect",
+			),
+	}),
+})
+
 export const chatsRouter = new Hono()
 
 // ─── Chat CRUD ────────────────────────────────────────────────────────────────
@@ -238,6 +256,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 
 	const tools = {
 		generateMetadata,
+		analyseSource,
 		...fsTools,
 		...(epoAuth.epoOpsKey && epoAuth.epoOpsSecret
 			? { fetchPatent: fetchPatentTool }

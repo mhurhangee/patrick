@@ -17,12 +17,39 @@ import {
 	type LucideIcon,
 	Wrench,
 } from "lucide-react"
-import { type ReactNode, useState } from "react"
+import { type FC, type ReactNode, useState } from "react"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
 import { cn } from "@/lib/utils"
+import { AnalyseSourceTool } from "./analyse-source-tool"
 
 type Part = UIMessage["parts"][number]
+
+// Actions/context made available to interactive tool presenters (generative UI).
+export type ToolContext = {
+	provider: string
+	apiKey: string
+	model: string
+	projectId: string
+	addToolOutput: (args: {
+		tool: string
+		toolCallId: string
+		output: unknown
+	}) => void
+	/** Open a source by filename so the user can review its analysis. */
+	onReview: (filename: string) => void
+	/** Notify the workspace that analysis changed (refresh badges). */
+	onAnalysed: () => void
+}
+
+// Tools with bespoke, interactive UI — these render their own card (not the
+// generic collapsible) so confirmations and actions are visible, not hidden.
+const TOOL_COMPONENTS: Record<
+	string,
+	FC<{ part: ToolUIPart | DynamicToolUIPart; ctx: ToolContext }>
+> = {
+	analyseSource: AnalyseSourceTool,
+}
 
 // ─── Tool presenters (generative UI) ───────────────────────────────────────────
 // A presenter turns a tool's raw input/output into something readable. Each tool
@@ -121,10 +148,15 @@ function JsonView({ value }: { value: unknown }) {
 function ToolPart({
 	part,
 	name,
+	ctx,
 }: {
 	part: ToolUIPart | DynamicToolUIPart
 	name: string
+	ctx: ToolContext
 }) {
+	const Custom = TOOL_COMPONENTS[name]
+	if (Custom) return <Custom part={part} ctx={ctx} />
+
 	const presenter = PRESENTERS[name]
 	const Icon = presenter?.icon ?? Wrench
 	const running =
@@ -182,10 +214,12 @@ export function AssistantParts({
 	parts,
 	isStreaming,
 	isLatest,
+	ctx,
 }: {
 	parts: Part[]
 	isStreaming: boolean
 	isLatest: boolean
+	ctx: ToolContext
 }) {
 	return (
 		<>
@@ -226,6 +260,7 @@ export function AssistantParts({
 							key={i}
 							part={part}
 							name={part.toolName}
+							ctx={ctx}
 						/>
 					)
 				}
@@ -240,6 +275,7 @@ export function AssistantParts({
 							key={i}
 							part={part}
 							name={name}
+							ctx={ctx}
 						/>
 					)
 				}

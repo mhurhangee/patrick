@@ -4,6 +4,7 @@ import {
 	DefaultChatTransport,
 	getToolName,
 	isToolUIPart,
+	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai"
 import { ArrowUp, Loader2, Plus, X } from "lucide-react"
@@ -29,7 +30,7 @@ import { useAI } from "@/lib/ai-context"
 import { CURATED_MODELS, GATEWAY_DETAILED_MODELS } from "@/lib/ai-models"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { AssistantParts } from "./chat-message-parts"
+import { AssistantParts, type ToolContext } from "./chat-message-parts"
 import {
 	ExchangePanel,
 	type ExchangePanelData,
@@ -193,6 +194,8 @@ function ChatPane({
 	openAssets,
 	onRemoveAsset,
 	onOpenAsset,
+	onOpenSource,
+	onAnalysed,
 	initialMessages,
 	initialMessage,
 	projectId,
@@ -206,6 +209,8 @@ function ChatPane({
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	onOpenSource: (filename: string) => void
+	onAnalysed: () => void
 	initialMessages: UIMessage[]
 	initialMessage?: string | null
 	projectId: string
@@ -238,7 +243,7 @@ function ChatPane({
 		Record<string, Array<{ id: string; title: string }>>
 	>({})
 
-	const { messages, sendMessage, status } = useChat({
+	const { messages, sendMessage, status, addToolOutput } = useChat({
 		transport: new DefaultChatTransport({
 			api: `${BASE_URL}/chats/${chatId}/messages`,
 			body: { projectPath: projectId, provider, apiKey, detailedModel },
@@ -252,7 +257,21 @@ function ChatPane({
 			}),
 		}),
 		messages: initialMessages,
+		// After the user answers a client-side tool (e.g. analyseSource), resubmit
+		// so the agent continues with the tool result.
+		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 	})
+
+	const toolCtx: ToolContext = {
+		provider,
+		apiKey,
+		model: detailedModel,
+		projectId,
+		addToolOutput: (args) =>
+			addToolOutput(args as Parameters<typeof addToolOutput>[0]),
+		onReview: onOpenSource,
+		onAnalysed,
+	}
 
 	const isStreaming = status === "streaming" || status === "submitted"
 
@@ -544,6 +563,7 @@ function ChatPane({
 												parts={assistantMsg.parts}
 												isStreaming={isStreaming}
 												isLatest={isLatest}
+												ctx={toolCtx}
 											/>
 										</div>
 									</div>
@@ -593,6 +613,8 @@ function ChatPaneLoader({
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	onOpenSource: (filename: string) => void
+	onAnalysed: () => void
 	initialMessage?: string | null
 	projectId: string
 	provider: string
@@ -654,6 +676,8 @@ export function ChatPanel({
 	onSendInAgentPat,
 	onRemoveAsset,
 	onOpenAsset,
+	onOpenSource,
+	onAnalysed,
 	onOpenSettings,
 	onChatTitleUpdate,
 	onMessageSent,
@@ -673,6 +697,8 @@ export function ChatPanel({
 	onSendInAgentPat: (message: string) => void
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
+	onOpenSource: (filename: string) => void
+	onAnalysed: () => void
 	onOpenSettings: () => void
 	onChatTitleUpdate: (chatId: string, title: string) => void
 	onMessageSent: (chatId: string) => void
@@ -762,6 +788,8 @@ export function ChatPanel({
 					openAssets={openAssets}
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
+					onOpenSource={onOpenSource}
+					onAnalysed={onAnalysed}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
 					projectId={projectId}
 					provider={provider}
