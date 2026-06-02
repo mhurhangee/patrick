@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { Skeleton } from "./ui/skeleton"
 
 // Tauri v2 runtime detection
 const isTauri =
@@ -156,11 +157,7 @@ export function ProfilePicker({
 					</div>
 
 					{/* Folder status */}
-					{folderState.status === "checking" && (
-						<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-							<Loader2 size={10} className="animate-spin" /> Checking…
-						</p>
-					)}
+					{folderState.status === "checking" && <Skeleton className="h-13" />}
 					{folderState.status === "exists" && (
 						<div className="rounded-md border bg-muted/40 px-3 py-2">
 							<p className="text-xs font-medium">

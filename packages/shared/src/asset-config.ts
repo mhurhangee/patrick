@@ -127,21 +127,17 @@ export const ASSET_CONFIGS = [
 					zDate(),
 					"Publication date (relevant to §102 vs §103 and to priority)",
 				),
-				citedAgainstClaims: zExtractField(
-					z.array(z.string()),
-					"Which claims of the application this reference is cited against, if stated in the office action",
-				),
-				relevantDisclosure: zExtractField(
+				keyTeachings: zExtractField(
 					zTextarea(
-						"What this reference teaches that matters for the rejection — the key passages, figures, or embodiments relied on — and, importantly, what it does NOT disclose",
+						"Concise summary of what this reference actually discloses — the problem it addresses, its core technical teaching, and the main embodiments. Note the most salient passages/figures. (Summarise the document on its own terms; do NOT speculate about which application claims it might be cited against — that comparison happens elsewhere.)",
 						3000,
 					),
-					"Relevant disclosure",
+					"Key teachings",
 				),
 				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
 			})
 			.describe(
-				"Extract what is needed to assess and distinguish this prior-art reference: its identity, date, what it discloses relative to the rejected claims, and the gaps in its teaching. For each field return { content, locations } where locations is an array of { page, zone }.",
+				"Summarise this prior-art reference from the document alone: its identity, date, and what it teaches. For each field return { content, locations } where locations is an array of { page, zone }.",
 			),
 	},
 	{
@@ -233,21 +229,17 @@ export const ASSET_CONFIGS = [
 					zDate(),
 					"Publication date (relevant to Art 54(2)/(3) EPC and to priority)",
 				),
-				citedAgainstClaims: zExtractField(
-					z.array(z.string()),
-					"Which claims of the application this document is cited against, if stated",
-				),
-				relevantDisclosure: zExtractField(
+				keyTeachings: zExtractField(
 					zTextarea(
-						"What this document teaches that matters for the objection — the key passages, figures, or embodiments relied on — and, importantly, what it does NOT disclose",
+						"Concise summary of what this document actually discloses — the problem it addresses, its core technical teaching, and the main embodiments. Note the most salient passages/figures. (Summarise the document on its own terms; do NOT speculate about which application claims it might be cited against — that comparison happens elsewhere.)",
 						3000,
 					),
-					"Relevant disclosure",
+					"Key teachings",
 				),
 				notes: zExtractField(zTextarea("Notes", 1000), "Notes"),
 			})
 			.describe(
-				"Extract what is needed to assess and distinguish this prior-art document: its identity, date, what it discloses relative to the objected claims, and the gaps in its teaching. For each field return { content, locations } where locations is an array of { page, zone }.",
+				"Summarise this prior-art document from the document alone: its identity, date, and what it teaches. For each field return { content, locations } where locations is an array of { page, zone }.",
 			),
 	},
 	{

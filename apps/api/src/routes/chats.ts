@@ -7,6 +7,7 @@ import { Hono } from "hono"
 import { z } from "zod"
 import { fetchPatent } from "../lib/epo-ops"
 import {
+	listAnalysis,
 	readChat,
 	readChatIndex,
 	readSettings,
@@ -161,12 +162,14 @@ chatsRouter.post("/:id/messages", async (c) => {
 
 	const tasks = await readTasks()
 	const taskType = tasks.find((p) => p.path === taskPath)?.taskType
+	const analysedSources = await listAnalysis(taskPath)
 
 	const { system, fileParts } = await buildAgentPatPrompt({
 		settings,
 		taskPath,
 		openFilePaths: openFilePaths ?? [],
 		taskType,
+		analysedSources,
 	})
 
 	const resolvedProvider = provider || settings.ai.provider

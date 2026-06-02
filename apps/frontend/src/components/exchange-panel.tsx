@@ -35,11 +35,17 @@ function formatTokens(n: number): string {
 }
 
 // Shown during streaming — holds the space so the user message stays at top
-export function StreamingSpacer({ minHeight }: { minHeight: number }) {
+export function StreamingSpacer({
+	minHeight,
+	label = "Thinking…",
+}: {
+	minHeight: number
+	label?: string
+}) {
 	return (
 		<div style={{ minHeight }} className="flex items-start px-5 pt-5">
 			<span className="animate-pulse text-xs text-muted-foreground/40">
-				Thinking…
+				{label}
 			</span>
 		</div>
 	)

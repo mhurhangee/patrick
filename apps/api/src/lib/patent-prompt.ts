@@ -3,6 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import {
+	type AnalysisSummary,
 	ASSET_CONFIGS,
 	type Settings,
 	TASK_CONFIGS,
@@ -22,6 +23,7 @@ export type AgentPatContext = {
 	taskPath: string
 	openFilePaths: string[]
 	taskType?: TaskType
+	analysedSources?: AnalysisSummary[]
 }
 
 // ─── Private utilities ────────────────────────────────────────────────────────
@@ -103,6 +105,16 @@ function openFilesContext(openFilePaths: string[]) {
 	return `# Open Documents\n\nThe following files are currently in context:\n${list}`
 }
 
+function analysisContext(analysed: AnalysisSummary[] | undefined) {
+	if (!analysed?.length) return null
+	const list = analysed
+		.map(
+			(a) => `- ${a.filename} (${a.assetType}) → analysis/${a.filename}.json`,
+		)
+		.join("\n")
+	return `# Existing Analysis\nThese sources have already been analysed by ExtractPat. The structured result is saved as JSON — read it with the readFile tool (it is far cheaper than re-reading the PDF). Do NOT propose analyseSource for a source listed here; only offer it for sources that are NOT yet analysed.\n${list}`
+}
+
 function metadataInstruction() {
 	return "\n\nAfter providing your complete response, you MUST call generateMetadata exactly once as your final action. Provide exactly 3 short follow-up suggestions (under 8 words each), a concise chat title, and a one-sentence summary of your last response."
 }
@@ -130,7 +142,7 @@ async function buildFileParts(openFilePaths: string[]): Promise<FilePart[]> {
 export async function buildAgentPatPrompt(
 	ctx: AgentPatContext,
 ): Promise<{ system: string; fileParts: FilePart[] }> {
-	const { settings, taskPath, openFilePaths, taskType } = ctx
+	const { settings, taskPath, openFilePaths, taskType, analysedSources } = ctx
 
 	const system = assemble([
 		identityAgentPat(),
@@ -139,6 +151,7 @@ export async function buildAgentPatPrompt(
 		sharedContext(settings),
 		taskContext(taskPath, taskType),
 		openFilesContext(openFilePaths),
+		analysisContext(analysedSources),
 		metadataInstruction(),
 	])
 

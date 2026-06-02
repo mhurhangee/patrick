@@ -586,7 +586,16 @@ function ChatPane({
 								{/* StreamingSpacer during streaming, ExchangePanel after.
 								    Both use minHeight=containerHeight — no layout shift on swap. */}
 								{showSpacer ? (
-									<StreamingSpacer minHeight={containerHeight} />
+									<StreamingSpacer
+										minHeight={containerHeight}
+										label={
+											assistantMsg?.parts.some(
+												(p) => p.type === "tool-generateMetadata",
+											)
+												? "Finishing up…"
+												: "Thinking…"
+										}
+									/>
 								) : (
 									<ExchangePanel
 										data={getPanelData(exchange)}
