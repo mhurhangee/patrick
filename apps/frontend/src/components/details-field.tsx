@@ -1,4 +1,5 @@
 import type { FieldMeta } from "@patrickos/shared"
+import { MapPin } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -50,9 +51,10 @@ export function DetailsField({
 					<button
 						type="button"
 						onClick={onLocate}
-						className="text-xxs text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
+						title="Locate in document"
+						className="text-muted-foreground hover:text-primary"
 					>
-						locate
+						<MapPin size={12} />
 					</button>
 				)}
 			</div>

@@ -1,4 +1,11 @@
-import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises"
+import {
+	mkdir,
+	readdir,
+	readFile,
+	rename,
+	rm,
+	writeFile,
+} from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
 import {
 	type AnalysisRecord,
@@ -160,6 +167,13 @@ export async function writeAnalysis(
 	record: AnalysisRecord,
 ): Promise<void> {
 	await writeJson(analysisFilePath(taskPath, record.filename), record)
+}
+
+export async function deleteAnalysis(
+	taskPath: string,
+	sourceFilename: string,
+): Promise<void> {
+	await rm(analysisFilePath(taskPath, sourceFilename), { force: true })
 }
 
 export async function listAnalysis(

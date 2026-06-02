@@ -1,5 +1,11 @@
 import type { ApiAsset, FieldLocation } from "@patrickos/shared"
-import { ChevronLeft, ChevronRight, Clover, Columns3, X } from "lucide-react"
+import {
+	ChevronLeft,
+	ChevronRight,
+	Columns3,
+	Microscope,
+	X,
+} from "lucide-react"
 import type { Value } from "platejs"
 import { Fragment, useEffect, useRef, useState } from "react"
 import { AnalysisPanel } from "@/components/analysis-panel"
@@ -312,7 +318,7 @@ export function AssetViewer({
 							)}
 						>
 							{asset.kind === "analysis" && (
-								<Clover size={11} className="shrink-0 text-primary" />
+								<Microscope size={11} className="shrink-0 text-primary" />
 							)}
 							<button
 								type="button"

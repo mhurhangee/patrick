@@ -4,7 +4,7 @@ import {
 	ChevronRight,
 	ChevronsUpDown,
 	CircleHelp,
-	Clover,
+	Microscope,
 	Plus,
 	RefreshCw,
 	Settings2,
@@ -262,7 +262,7 @@ export function AppSidebar({
 														: "text-amber-500 hover:text-amber-600",
 												)}
 											>
-												<Clover size={12} />
+												<Microscope size={12} />
 											</button>
 										)}
 									</SidebarMenuSubItem>

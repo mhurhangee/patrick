@@ -7,8 +7,9 @@ import {
 	isExtractable,
 	mergeExtracted,
 } from "@patrickos/shared"
-import { generateText, Output } from "ai"
+import { generateText, Output, streamText } from "ai"
 import { Hono } from "hono"
+import { stream } from "hono/streaming"
 import { z } from "zod"
 import { readSettings, writeAnalysis } from "../lib/fs"
 import { buildExtractPatPrompt, createModel } from "../lib/patent-prompt"
@@ -149,4 +150,111 @@ extractpatRouter.post("/extract", async (c) => {
 	await writeAnalysis(dirname(filePath), record)
 
 	return c.json(record)
+})
+
+// Streaming variant for the Analysis tab — emits NDJSON lines:
+//   {type:"meta", assetType}      once the type is resolved (so the UI can show skeletons)
+//   {type:"partial", object}      repeatedly as fields stream in
+//   {type:"done", record}         the final persisted AnalysisRecord
+//   {type:"error", message}       if extraction fails mid-stream
+extractpatRouter.post("/extract/stream", async (c) => {
+	const {
+		filePath,
+		assetType,
+		provider,
+		apiKey,
+		model: modelId,
+	} = await c.req.json<{
+		filePath: string
+		assetType: string
+		provider: string
+		apiKey: string
+		model: string
+	}>()
+
+	let fileData: Buffer
+	try {
+		fileData = await readFile(filePath)
+	} catch {
+		return c.json({ error: "File not found or unreadable" }, 404)
+	}
+
+	const settings = await readSettings()
+	const resolvedProvider = provider || settings.ai.provider
+	const keyField = `${resolvedProvider}Key` as
+		| "anthropicKey"
+		| "openaiKey"
+		| "googleKey"
+		| "gatewayKey"
+	const resolvedKey = apiKey || settings.ai[keyField] || ""
+	const resolvedModel = modelId || settings.ai.model
+	const model = createModel(resolvedProvider, resolvedKey, resolvedModel)
+
+	const resolvedType =
+		assetType && assetType !== "auto"
+			? assetType
+			: await classify(model, fileData)
+
+	if (resolvedType === "other")
+		return c.json(
+			{
+				error:
+					"Couldn't match this document to a supported type (currently US Office Actions and EP Examination Reports). Pick a type manually if you know it, or leave it un-analysed for now.",
+			},
+			422,
+		)
+
+	const schema = schemaFor(resolvedType)
+	if (!schema)
+		return c.json(
+			{ error: `No extraction schema for type: ${resolvedType}` },
+			400,
+		)
+
+	const systemStr = await buildExtractPatPrompt(settings)
+	const result = streamText({
+		model,
+		system: systemStr,
+		output: Output.object({ schema }),
+		messages: [
+			{
+				role: "user",
+				content: [
+					{ type: "text", text: schema.description ?? "" },
+					{ type: "file", data: fileData, mediaType: "application/pdf" },
+				],
+			},
+		],
+	})
+
+	return stream(c, async (s) => {
+		await s.writeln(JSON.stringify({ type: "meta", assetType: resolvedType }))
+		let last: Record<string, unknown> = {}
+		try {
+			for await (const partial of result.partialOutputStream) {
+				last = (partial ?? {}) as Record<string, unknown>
+				await s.writeln(JSON.stringify({ type: "partial", object: last }))
+			}
+		} catch (err) {
+			await s.writeln(
+				JSON.stringify({
+					type: "error",
+					message: err instanceof Error ? err.message : "Extraction failed.",
+				}),
+			)
+			return
+		}
+
+		const now = new Date().toISOString()
+		const record: AnalysisRecord = {
+			filename: basename(filePath),
+			assetType: resolvedType,
+			details: mergeExtracted(resolvedType, last),
+			locations: extractLocationMap(last),
+			extractedAt: now,
+			updatedAt: now,
+		}
+		await writeAnalysis(dirname(filePath), record)
+		await s.writeln(JSON.stringify({ type: "done", record }))
+	})
 })

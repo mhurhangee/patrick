@@ -2,8 +2,10 @@ import type { AnalysisRecord, ApiAsset, FieldLocation } from "@patrickos/shared"
 import {
 	ASSET_CONFIGS,
 	emptyDetails,
+	extractLocationMap,
 	getFormFields,
 	isExtractable,
+	mergeExtracted,
 } from "@patrickos/shared"
 import { Clover, Loader2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -104,25 +106,53 @@ export function AnalysisPanel({
 	async function run() {
 		setExtractState("extracting")
 		setExtractError(null)
+		// Track the resolved type locally so partials can be unwrapped as they stream.
+		let activeType = selectedType !== "auto" ? selectedType : null
 		try {
-			const rec = await api.extractpat.extract(
+			await api.extractpatStream.run(
 				asset.path,
 				selectedType,
 				provider,
 				apiKey,
 				model,
+				{
+					onMeta: (t) => {
+						activeType = t
+						setResolvedType(t)
+						setSelectedType(t)
+					},
+					onPartial: (obj) => {
+						if (!activeType) return
+						setDetails(mergeExtracted(activeType, obj))
+						setLocations(extractLocationMap(obj))
+					},
+					onDone: (rec) => {
+						setResolvedType(rec.assetType)
+						setSelectedType(rec.assetType)
+						setDetails(rec.details)
+						setLocations(rec.locations ?? {})
+						setExtractedAt(rec.extractedAt)
+						setExtractState("idle")
+						onAnalysed()
+					},
+				},
 			)
-			setResolvedType(rec.assetType)
-			setSelectedType(rec.assetType)
-			setDetails(rec.details)
-			setLocations(rec.locations ?? {})
-			setExtractedAt(rec.extractedAt)
-			setExtractState("idle")
-			onAnalysed()
 		} catch (err) {
 			setExtractError(err instanceof Error ? err.message : "Extraction failed.")
 			setExtractState("error")
 		}
+	}
+
+	async function clearAnalysis() {
+		await api.analysis.delete(asset.taskId, asset.filename)
+		setSelectedType("auto")
+		setResolvedType(null)
+		setDetails({})
+		setLocations({})
+		setExtractedAt("")
+		setExtractState("idle")
+		setExtractError(null)
+		onAnalysed()
 	}
 
 	async function save() {
@@ -165,7 +195,7 @@ export function AnalysisPanel({
 				</Select>
 
 				<Button
-					variant="outline"
+					variant="default"
 					size="sm"
 					onClick={run}
 					disabled={isExtracting || !apiKey}
@@ -176,8 +206,21 @@ export function AnalysisPanel({
 					) : (
 						<Clover size={12} />
 					)}
-					{resolvedType ? "Re-run" : "Run ExtractPat"}
+					{extractedAt ? "Re-run" : "Run ExtractPat"}
 				</Button>
+
+				{extractedAt && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-muted-foreground"
+						onClick={clearAnalysis}
+						disabled={isExtracting}
+						title="Delete this analysis"
+					>
+						Clear
+					</Button>
+				)}
 
 				<Button
 					variant="ghost"
@@ -226,24 +269,29 @@ export function AnalysisPanel({
 					</div>
 				) : (
 					<div className="flex flex-col gap-4 p-4">
-						{fields.map((field) => (
-							<DetailsField
-								key={field.key}
-								field={field}
-								value={
-									details[field.key] ?? (field.inputType === "list" ? [] : "")
-								}
-								onChange={(v) =>
-									setDetails((prev) => ({ ...prev, [field.key]: v }))
-								}
-								isExtracting={isExtracting}
-								hasLocation={!!locations[field.key]?.length}
-								onLocate={() => {
-									const locs = locations[field.key]
-									if (locs?.length) onLocate(locs)
-								}}
-							/>
-						))}
+						{fields.map((field) => {
+							const v = details[field.key]
+							const hasValue = Array.isArray(v)
+								? v.length > 0
+								: !!(v && String(v).length)
+							return (
+								<DetailsField
+									key={field.key}
+									field={field}
+									value={v ?? (field.inputType === "list" ? [] : "")}
+									onChange={(val) =>
+										setDetails((prev) => ({ ...prev, [field.key]: val }))
+									}
+									// While extracting, show a skeleton only until this field streams in.
+									isExtracting={isExtracting && !hasValue}
+									hasLocation={!!locations[field.key]?.length}
+									onLocate={() => {
+										const locs = locations[field.key]
+										if (locs?.length) onLocate(locs)
+									}}
+								/>
+							)
+						})}
 					</div>
 				)}
 			</div>

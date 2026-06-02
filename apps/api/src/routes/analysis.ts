@@ -1,6 +1,11 @@
 import type { AnalysisRecord } from "@patrickos/shared"
 import { Hono } from "hono"
-import { listAnalysis, readAnalysis, writeAnalysis } from "../lib/fs"
+import {
+	deleteAnalysis,
+	listAnalysis,
+	readAnalysis,
+	writeAnalysis,
+} from "../lib/fs"
 
 export const analysisRouter = new Hono()
 
@@ -34,4 +39,14 @@ analysisRouter.put("/file", async (c) => {
 	}
 	await writeAnalysis(taskPath, saved)
 	return c.json(saved)
+})
+
+// DELETE /analysis/file?taskPath=...&filename=...  → remove a source's analysis
+analysisRouter.delete("/file", async (c) => {
+	const taskPath = c.req.query("taskPath")
+	const filename = c.req.query("filename")
+	if (!taskPath || !filename)
+		return c.json({ error: "taskPath and filename required" }, 400)
+	await deleteAnalysis(taskPath, filename)
+	return c.json({ ok: true })
 })

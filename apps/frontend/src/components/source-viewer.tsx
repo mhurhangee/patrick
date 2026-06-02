@@ -96,42 +96,7 @@ export function SourceViewer({
 	const pageHighlights = highlights.filter((h) => h.page === pageNumber)
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden">
-			<div className="flex shrink-0 items-center gap-1 border-b px-3 py-1.5">
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					disabled={pageNumber <= 1}
-					onClick={() => setPageNumber((p) => p - 1)}
-				>
-					<ChevronLeft size={14} />
-				</Button>
-				<span className="tabular-nums text-xs text-muted-foreground">
-					{numPages > 0 ? `${pageNumber} / ${numPages}` : "–"}
-				</span>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					disabled={pageNumber >= numPages}
-					onClick={() => setPageNumber((p) => p + 1)}
-				>
-					<ChevronRight size={14} />
-				</Button>
-				<div className="ml-auto flex items-center gap-3">
-					<span className="w-8 text-right tabular-nums text-xs text-muted-foreground">
-						{scalePercent}%
-					</span>
-					<Slider
-						min={50}
-						max={200}
-						step={10}
-						value={[scalePercent]}
-						onValueChange={([v]) => setScalePercent(v)}
-						className="w-24"
-					/>
-				</div>
-			</div>
-
+		<div className="relative flex h-full flex-col overflow-hidden">
 			<div ref={containerRef} className="flex-1 overflow-auto">
 				<Document
 					file={src}
@@ -173,6 +138,43 @@ export function SourceViewer({
 							))}
 					</div>
 				</Document>
+			</div>
+
+			{/* Floating toolbar — pill near the bottom, out of the way of content */}
+			<div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
+				<div className="pointer-events-auto flex items-center gap-2 rounded-full border bg-background/90 px-2 py-1 shadow-lg backdrop-blur">
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						disabled={pageNumber <= 1}
+						onClick={() => setPageNumber((p) => p - 1)}
+					>
+						<ChevronLeft size={14} />
+					</Button>
+					<span className="tabular-nums text-xs text-muted-foreground">
+						{numPages > 0 ? `${pageNumber} / ${numPages}` : "–"}
+					</span>
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						disabled={pageNumber >= numPages}
+						onClick={() => setPageNumber((p) => p + 1)}
+					>
+						<ChevronRight size={14} />
+					</Button>
+					<div className="mx-1 h-4 w-px bg-border" />
+					<span className="w-8 text-right tabular-nums text-xs text-muted-foreground">
+						{scalePercent}%
+					</span>
+					<Slider
+						min={50}
+						max={200}
+						step={10}
+						value={[scalePercent]}
+						onValueChange={([v]) => setScalePercent(v)}
+						className="w-24"
+					/>
+				</div>
 			</div>
 		</div>
 	)
