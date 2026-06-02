@@ -2,8 +2,8 @@ import {
 	DEFAULT_PROMPT_AGENTPAT,
 	DEFAULT_PROMPT_ASKPAT,
 	DEFAULT_PROMPT_EXTRACTPAT,
-	PROJECT_CONFIGS,
-	type ProjectType,
+	TASK_CONFIGS,
+	type TaskType,
 } from "@patrickos/shared"
 import { ChevronDown, Eye, EyeOff, FolderOpen, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -60,7 +60,7 @@ type StepId =
 	| "askpat"
 	| "extractpat"
 	| "tutorial"
-	| "project"
+	| "task"
 const STEPS: StepId[] = [
 	"you",
 	"ai",
@@ -68,7 +68,7 @@ const STEPS: StepId[] = [
 	"askpat",
 	"extractpat",
 	"tutorial",
-	"project",
+	"task",
 ]
 
 const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
@@ -85,7 +85,7 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 	agentpat: {
 		title: "AgentPat system prompt",
 		description:
-			"AgentPat is your project-aware research assistant. This prompt shapes how it reasons across your matter — prosecution style, claim strategy, response tone. The built-in default works well; customize it to your practice.",
+			"AgentPat is your task-aware research assistant. This prompt shapes how it reasons across your matter — prosecution style, claim strategy, response tone. The built-in default works well; customize it to your practice.",
 	},
 	askpat: {
 		title: "AskPat system prompt",
@@ -101,7 +101,7 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 		title: "How it works",
 		description: "A quick walkthrough of the main features. Skip any time.",
 	},
-	project: {
+	task: {
 		title: "Load your first matter",
 		description:
 			"Point PatrickOS at an existing matter folder. Your files stay exactly where they are — PatrickOS only reads them and creates three small subfolders.",
@@ -187,7 +187,7 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 		"ExtractPat reads PDFs and extracts structured metadata into analysis/ in your matter folder.",
 		"The default prompt targets common patent prosecution fields — office action dates, claim numbers, cited references.",
 	],
-	project: [
+	task: [
 		"PatrickOS never modifies your existing files — PDFs and Word docs are read-only sources.",
 		"It creates three subfolders: chats/ (conversation history), artifacts/ (AI-drafted documents), analysis/ (extracted metadata).",
 		"You can add more matters any time from the sidebar.",
@@ -199,8 +199,8 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 export function OnboardingFlow({
 	onComplete,
 }: {
-	/** Called when onboarding finishes. `projectPath` is set if the user created a project. */
-	onComplete: (projectPath?: string) => void
+	/** Called when onboarding finishes. `taskPath` is set if the user created a task. */
+	onComplete: (taskPath?: string) => void
 }) {
 	const ai = useAI()
 	const [stepIndex, setStepIndex] = useState(0)
@@ -232,10 +232,10 @@ export function OnboardingFlow({
 	// Tutorial (sub-slides within the tutorial step)
 	const [tutorialSlideIndex, setTutorialSlideIndex] = useState(0)
 
-	// Project
-	const [projectPath, setProjectPath] = useState("")
-	const [projectType, setProjectType] = useState<ProjectType | "">("")
-	const [projectPicking, setProjectPicking] = useState(false)
+	// Task
+	const [taskPath, setTaskPath] = useState("")
+	const [taskType, setTaskType] = useState<TaskType | "">("")
+	const [taskPicking, setTaskPicking] = useState(false)
 
 	// Prompts
 	const [agentPatPrompt, setAgentPatPrompt] = useState("")
@@ -322,7 +322,7 @@ export function OnboardingFlow({
 		} else if (step === "extractpat") {
 			await api.settings.update({ prompts: { extractpat: extractPatPrompt } })
 		}
-		// "project" is handled separately in handleNext — returns the path
+		// "task" is handled separately in handleNext — returns the path
 	}
 
 	async function handleNext() {
@@ -335,7 +335,7 @@ export function OnboardingFlow({
 				setTutorialSlideIndex((t) => t + 1)
 				return
 			}
-			// Last tutorial slide — advance to project step
+			// Last tutorial slide — advance to task step
 			setTutorialSlideIndex(0)
 			setStepIndex((s) => s + 1)
 			return
@@ -343,14 +343,10 @@ export function OnboardingFlow({
 
 		setSaving(true)
 		try {
-			if (step === "project") {
-				const trimmed = projectPath.trim()
+			if (step === "task") {
+				const trimmed = taskPath.trim()
 				if (trimmed)
-					await api.projects.create(
-						trimmed,
-						undefined,
-						projectType || undefined,
-					)
+					await api.tasks.create(trimmed, undefined, taskType || undefined)
 				await ai.reloadSettings()
 				onComplete(trimmed || undefined)
 				return
@@ -375,7 +371,7 @@ export function OnboardingFlow({
 			return
 		}
 		setStepIndex((s) => Math.max(0, s - 1))
-		if (step === "project") setTutorialSlideIndex(SLIDES.length - 1)
+		if (step === "task") setTutorialSlideIndex(SLIDES.length - 1)
 	}
 
 	async function handleSkip() {
@@ -387,7 +383,7 @@ export function OnboardingFlow({
 			setStepIndex((s) => s + 1)
 			return
 		}
-		if (isLast || step === "project") {
+		if (isLast || step === "task") {
 			await ai.reloadSettings()
 			onComplete()
 		} else {
@@ -395,13 +391,13 @@ export function OnboardingFlow({
 		}
 	}
 
-	async function handleBrowseProject() {
-		setProjectPicking(true)
+	async function handleBrowseTask() {
+		setTaskPicking(true)
 		try {
 			const picked = await pickFolderNative()
-			if (picked) setProjectPath(picked)
+			if (picked) setTaskPath(picked)
 		} finally {
-			setProjectPicking(false)
+			setTaskPicking(false)
 		}
 	}
 
@@ -723,14 +719,14 @@ export function OnboardingFlow({
 								/>
 							)}
 
-							{stepId === "project" && (
+							{stepId === "task" && (
 								<div className="flex flex-col gap-4">
 									<div className="flex flex-col gap-1.5">
 										<Label>Matter folder path</Label>
 										<div className="flex gap-2">
 											<Input
-												value={projectPath}
-												onChange={(e) => setProjectPath(e.target.value)}
+												value={taskPath}
+												onChange={(e) => setTaskPath(e.target.value)}
 												placeholder="/Users/jane/matters/client-acme-123"
 												className="font-mono text-xs"
 												autoFocus
@@ -739,10 +735,10 @@ export function OnboardingFlow({
 												<Button
 													type="button"
 													variant="secondary"
-													onClick={handleBrowseProject}
-													disabled={projectPicking}
+													onClick={handleBrowseTask}
+													disabled={taskPicking}
 												>
-													{projectPicking ? (
+													{taskPicking ? (
 														<Loader2 size={12} className="animate-spin" />
 													) : (
 														<>
@@ -757,14 +753,14 @@ export function OnboardingFlow({
 									<div className="flex flex-col gap-1.5">
 										<Label>Matter type</Label>
 										<Select
-											value={projectType}
-											onValueChange={(v) => setProjectType(v as ProjectType)}
+											value={taskType}
+											onValueChange={(v) => setTaskType(v as TaskType)}
 										>
 											<SelectTrigger>
 												<SelectValue placeholder="Select a matter type…" />
 											</SelectTrigger>
 											<SelectContent>
-												{PROJECT_CONFIGS.map((p) => (
+												{TASK_CONFIGS.map((p) => (
 													<SelectItem key={p.id} value={p.id}>
 														{p.label}
 													</SelectItem>
@@ -822,15 +818,15 @@ export function OnboardingFlow({
 							{STEPS[stepIndex] === "tutorial"
 								? "Skip tutorial"
 								: isLast
-									? "Skip — I'll add a project later"
+									? "Skip — I'll add a task later"
 									: "Skip for now"}
 						</Button>
 					)}
 					<Button type="button" onClick={handleNext} disabled={saving}>
 						{saving ? (
 							<Loader2 size={12} className="animate-spin" />
-						) : isLast && projectPath.trim() ? (
-							"Load project →"
+						) : isLast && taskPath.trim() ? (
+							"Load task →"
 						) : isLast ? (
 							"Finish"
 						) : STEPS[stepIndex] === "tutorial" ? (

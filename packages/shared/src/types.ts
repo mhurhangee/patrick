@@ -1,8 +1,8 @@
 // File format types — shapes of everything written to disk.
 // No database, no ORM. These are the canonical types for settings.yaml,
-// projects.yaml, chats/chat-{id}.json, and analysis/{filename}.json.
+// tasks.yaml, chats/chat-{id}.json, and analysis/{filename}.json.
 
-import type { ProjectType } from "./project-config"
+import type { TaskType } from "./task-config"
 
 // ─── Settings (settings.yaml) ────────────────────────────────────────────────
 
@@ -52,14 +52,14 @@ export const DEFAULT_SETTINGS: Settings = {
 	integrations: { epoOpsKey: "", epoOpsSecret: "" },
 }
 
-// ─── Project registry (projects.yaml) ────────────────────────────────────────
+// ─── Task registry (tasks.yaml) ──────────────────────────────────────────────
 
-export type ProjectEntry = {
+export type TaskEntry = {
 	path: string
 	name: string
 	addedAt: string
-	/** Project type (US OA response, EP Art 94(3), etc.) — primes AgentPat. */
-	projectType?: ProjectType
+	/** Task type (US OA response, EP Art 94(3), etc.) — primes AgentPat. */
+	taskType?: TaskType
 }
 
 // ─── Chats (chats/index.json + chats/chat-{id}.json) ─────────────────────────
@@ -103,9 +103,9 @@ export type FileAnalysis = {
 // These will be replaced as components are rewritten.
 
 export type ApiSettings = Settings
-export type ApiProject = ProjectEntry
+export type ApiTask = TaskEntry
 export type ApiChat = ChatIndexEntry & {
-	projectPath: string
+	taskPath: string
 	messageCount?: number
 }
 export type ApiChatMessage = ChatMessage
@@ -113,7 +113,7 @@ export type ApiChatMessage = ChatMessage
 // Represents a file in the matter folder — either a source (PDF/docx) or artifact (Plate draft).
 export type ApiAsset = {
 	id: string // relative path used as stable ID
-	projectId: string // project folder path
+	taskId: string // task folder path
 	kind: "source" | "artifact"
 	title: string
 	filename: string

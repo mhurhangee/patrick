@@ -2,7 +2,7 @@ import type { ApiChat } from "@patrickos/shared"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
-export function useChatState(currentProjectId: string) {
+export function useChatState(currentTaskId: string) {
 	const [chats, setChats] = useState<ApiChat[]>([])
 	const [openChatIds, setOpenChatIds] = useState<string[]>([])
 	const [activeChatId, setActiveChatId] = useState("agentpat")
@@ -15,9 +15,9 @@ export function useChatState(currentProjectId: string) {
 		setOpenChatIds([])
 		setActiveChatId("agentpat")
 		setPendingMessages({})
-		if (!currentProjectId) return
-		api.chats.list(currentProjectId).then(setChats) // currentProjectId will become projectPath
-	}, [currentProjectId])
+		if (!currentTaskId) return
+		api.chats.list(currentTaskId).then(setChats) // currentTaskId will become taskPath
+	}, [currentTaskId])
 
 	function openChat(id: string) {
 		setOpenChatIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
@@ -35,21 +35,21 @@ export function useChatState(currentProjectId: string) {
 	}
 
 	async function newChat() {
-		if (!currentProjectId) return
-		const chat = await api.chats.create(currentProjectId, "New Chat")
+		if (!currentTaskId) return
+		const chat = await api.chats.create(currentTaskId, "New Chat")
 		setChats((prev) => [chat, ...prev])
 		openChat(chat.id)
 	}
 
 	async function deleteChat(id: string) {
-		await api.chats.delete(id, currentProjectId)
+		await api.chats.delete(id, currentTaskId)
 		setChats((prev) => prev.filter((c) => c.id !== id))
 		closeChat(id)
 	}
 
 	function updateChat(id: string, title: string) {
 		setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)))
-		api.chats.update(id, currentProjectId, title).catch(() => {})
+		api.chats.update(id, currentTaskId, title).catch(() => {})
 	}
 
 	function incrementMessageCount(chatId: string) {
@@ -61,7 +61,7 @@ export function useChatState(currentProjectId: string) {
 	}
 
 	function sendInAgentPat(message: string) {
-		if (!currentProjectId) return
+		if (!currentTaskId) return
 		const id = crypto.randomUUID()
 		const title = message.length > 50 ? `${message.slice(0, 50)}…` : message
 		const now = new Date().toISOString()
@@ -69,7 +69,7 @@ export function useChatState(currentProjectId: string) {
 		setChats((prev) => [
 			{
 				id,
-				projectPath: currentProjectId,
+				taskPath: currentTaskId,
 				title,
 				createdAt: now,
 				updatedAt: now,
@@ -80,7 +80,7 @@ export function useChatState(currentProjectId: string) {
 		])
 		openChat(id)
 		// Persist in background — only seed the message once the chat exists in DB
-		api.chats.create(currentProjectId, title, id).then(() => {
+		api.chats.create(currentTaskId, title, id).then(() => {
 			setPendingMessages((prev) => ({ ...prev, [id]: message }))
 		})
 	}

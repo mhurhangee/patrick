@@ -5,20 +5,20 @@ import { artifactsDir } from "../lib/fs"
 
 export const artifactsRouter = new Hono()
 
-function jsonPath(projectPath: string, filename: string): string {
+function jsonPath(taskPath: string, filename: string): string {
 	const stem = basename(filename, extname(filename))
-	return join(artifactsDir(projectPath), `${stem}.json`)
+	return join(artifactsDir(taskPath), `${stem}.json`)
 }
 
-// GET /artifacts/content?projectPath=...&filename=...
+// GET /artifacts/content?taskPath=...&filename=...
 artifactsRouter.get("/content", async (c) => {
-	const projectPath = c.req.query("projectPath")
+	const taskPath = c.req.query("taskPath")
 	const filename = c.req.query("filename")
-	if (!projectPath || !filename)
-		return c.json({ error: "projectPath and filename required" }, 400)
+	if (!taskPath || !filename)
+		return c.json({ error: "taskPath and filename required" }, 400)
 
 	try {
-		const content = await readFile(jsonPath(projectPath, filename), "utf8")
+		const content = await readFile(jsonPath(taskPath, filename), "utf8")
 		return c.json({ content })
 	} catch {
 		return c.json({ content: "" })
@@ -27,13 +27,13 @@ artifactsRouter.get("/content", async (c) => {
 
 // PUT /artifacts/content — save Plate JSON
 artifactsRouter.put("/content", async (c) => {
-	const { projectPath, filename, content } = await c.req.json<{
-		projectPath: string
+	const { taskPath, filename, content } = await c.req.json<{
+		taskPath: string
 		filename: string
 		content: string
 	}>()
-	const path = jsonPath(projectPath, filename)
-	await mkdir(artifactsDir(projectPath), { recursive: true })
+	const path = jsonPath(taskPath, filename)
+	await mkdir(artifactsDir(taskPath), { recursive: true })
 	const tmp = `${path}.tmp`
 	await writeFile(tmp, content, "utf8")
 	await rename(tmp, path)
@@ -42,8 +42,8 @@ artifactsRouter.put("/content", async (c) => {
 
 // POST /artifacts — create new empty artifact
 artifactsRouter.post("/", async (c) => {
-	const { projectPath, title } = await c.req.json<{
-		projectPath: string
+	const { taskPath, title } = await c.req.json<{
+		taskPath: string
 		title: string
 	}>()
 	const slug = title
@@ -51,10 +51,10 @@ artifactsRouter.post("/", async (c) => {
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-|-$/g, "")
 	const filename = `${slug || "draft"}.json`
-	const path = join(artifactsDir(projectPath), filename)
-	await mkdir(artifactsDir(projectPath), { recursive: true })
+	const path = join(artifactsDir(taskPath), filename)
+	await mkdir(artifactsDir(taskPath), { recursive: true })
 	const tmp = `${path}.tmp`
 	await writeFile(tmp, "[]", "utf8")
 	await rename(tmp, path)
-	return c.json({ filename, path, projectPath, title }, 201)
+	return c.json({ filename, path, taskPath, title }, 201)
 })

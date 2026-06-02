@@ -7,8 +7,8 @@ import { ChatMetaDialog } from "@/components/chat-meta-dialog"
 import { ChatPanel } from "@/components/chat-panel"
 import { OnboardingFlow } from "@/components/onboarding-flow"
 import { ProfilePicker } from "@/components/profile-picker"
-import { ProjectManagerDialog } from "@/components/project-manager-dialog"
 import { SettingsPanel } from "@/components/settings-panel"
+import { TaskManagerDialog } from "@/components/task-manager-dialog"
 import { TutorialOverlay } from "@/components/tutorial-overlay"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,7 +27,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AIProvider, useAI } from "@/lib/ai-context"
 import { useAssetState } from "@/lib/use-asset-state"
 import { useChatState } from "@/lib/use-chat-state"
-import { useProjectState } from "@/lib/use-project-state"
+import { useTaskState } from "@/lib/use-task-state"
 
 export const Route = createFileRoute("/workspace/")({
 	component: WorkspacePage,
@@ -90,22 +90,22 @@ function WorkspaceContent({
 	onSwitchProfile: () => void
 }) {
 	const ai = useAI()
-	const project = useProjectState()
-	const asset = useAssetState(project.currentProjectId)
-	const chat = useChatState(project.currentProjectId)
+	const task = useTaskState()
+	const asset = useAssetState(task.currentTaskId)
+	const chat = useChatState(task.currentTaskId)
 
 	const [chatEditId, setChatEditId] = useState<string | null>(null)
 	const [chatCollapsed, setChatCollapsed] = useState(false)
-	const [projectsOpen, setProjectsOpen] = useState(false)
-	const [projectsDefaultPanel, setProjectsDefaultPanel] = useState<
-		"empty" | "new"
-	>("empty")
+	const [tasksOpen, setTasksOpen] = useState(false)
+	const [tasksDefaultPanel, setTasksDefaultPanel] = useState<"empty" | "new">(
+		"empty",
+	)
 	const [settingsOpen, setSettingsOpen] = useState(false)
 	const [tutorialOpen, setTutorialOpen] = useState(false)
 
-	function openProjects(panel: "empty" | "new" = "empty") {
-		setProjectsDefaultPanel(panel)
-		setProjectsOpen(true)
+	function openTasks(panel: "empty" | "new" = "empty") {
+		setTasksDefaultPanel(panel)
+		setTasksOpen(true)
 	}
 
 	const chatPanelRef = usePanelRef()
@@ -132,9 +132,9 @@ function WorkspaceContent({
 				chats={chat.chats}
 				openChatIds={chat.openChatIds}
 				activeChatId={chat.activeChatId}
-				projects={project.projects}
-				projectsLoading={project.projectsLoading}
-				currentProjectId={project.currentProjectId}
+				tasks={task.tasks}
+				tasksLoading={task.tasksLoading}
+				currentTaskId={task.currentTaskId}
 				analysedFilenames={asset.analysedFilenames}
 				onOpen={asset.openAsset}
 				onClose={asset.closeTab}
@@ -143,26 +143,26 @@ function WorkspaceContent({
 				onOpenChat={chat.openChat}
 				onNewChat={chat.newChat}
 				onEditChat={setChatEditId}
-				onManageProjects={() => openProjects()}
+				onManageTasks={() => openTasks()}
 				onSettingsOpen={() => setSettingsOpen(true)}
 				onTutorialOpen={() => setTutorialOpen(true)}
 				connectedToAI={ai.connectedToAI}
 			/>
 			<SidebarInset className="flex flex-col overflow-hidden">
-				{!project.currentProjectId ? (
+				{!task.currentTaskId ? (
 					<div className="flex flex-1 items-center justify-center">
 						<Empty>
 							<EmptyHeader>
-								<EmptyTitle>No project selected</EmptyTitle>
+								<EmptyTitle>No task selected</EmptyTitle>
 								<EmptyDescription>
-									Select or create a project to get started.
+									Select or create a task to get started.
 								</EmptyDescription>
 							</EmptyHeader>
 							<EmptyContent className="flex flex-row items-center justify-center gap-2">
-								<Button variant="outline" onClick={() => openProjects()}>
+								<Button variant="outline" onClick={() => openTasks()}>
 									Select
 								</Button>
-								<Button variant="secondary" onClick={() => openProjects("new")}>
+								<Button variant="secondary" onClick={() => openTasks("new")}>
 									Create
 								</Button>
 							</EmptyContent>
@@ -214,7 +214,7 @@ function WorkspaceContent({
 								activeChatId={chat.activeChatId}
 								openAssets={asset.openAssets}
 								pendingMessages={chat.pendingMessages}
-								projectId={project.currentProjectId}
+								taskId={task.currentTaskId}
 								provider={ai.provider}
 								apiKey={ai.apiKey}
 								detailedModel={ai.detailedModel}
@@ -240,16 +240,16 @@ function WorkspaceContent({
 				)}
 			</SidebarInset>
 
-			<ProjectManagerDialog
-				open={projectsOpen}
-				onOpenChange={setProjectsOpen}
-				projects={project.projects}
-				currentProjectPath={project.currentProjectId}
-				defaultPanel={projectsDefaultPanel}
-				onSelect={project.setCurrentProjectId}
-				onCreate={project.createProject}
-				onRename={project.renameProject}
-				onDelete={project.deleteProject}
+			<TaskManagerDialog
+				open={tasksOpen}
+				onOpenChange={setTasksOpen}
+				tasks={task.tasks}
+				currentTaskPath={task.currentTaskId}
+				defaultPanel={tasksDefaultPanel}
+				onSelect={task.setCurrentTaskId}
+				onCreate={task.createTask}
+				onRename={task.renameTask}
+				onDelete={task.deleteTask}
 			/>
 
 			<ChatMetaDialog
@@ -267,8 +267,8 @@ function WorkspaceContent({
 			{/* Full-screen overlays — rendered last so they sit on top */}
 			{needsOnboarding && (
 				<OnboardingFlow
-					onComplete={async (projectPath) => {
-						if (projectPath) await project.createProject(projectPath)
+					onComplete={async (taskPath) => {
+						if (taskPath) await task.createTask(taskPath)
 						onSetupDone()
 					}}
 				/>

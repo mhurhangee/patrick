@@ -1,53 +1,53 @@
 import { readdir, stat } from "node:fs/promises"
 import { extname, join } from "node:path"
-import type { ProjectEntry, ProjectType } from "@patrickos/shared"
+import type { TaskEntry, TaskType } from "@patrickos/shared"
 import { Hono } from "hono"
-import { ensureProjectDirs, readProjects, writeProjects } from "../lib/fs"
+import { ensureTaskDirs, readTasks, writeTasks } from "../lib/fs"
 
-export const projectsRouter = new Hono()
+export const tasksRouter = new Hono()
 
-// ─── Project registry ─────────────────────────────────────────────────────────
+// ─── Task registry ─────────────────────────────────────────────────────────
 
-projectsRouter.get("/", async (c) => {
-	const projects = await readProjects()
-	return c.json(projects)
+tasksRouter.get("/", async (c) => {
+	const tasks = await readTasks()
+	return c.json(tasks)
 })
 
-projectsRouter.post("/", async (c) => {
-	const { path, name, projectType } = await c.req.json<{
+tasksRouter.post("/", async (c) => {
+	const { path, name, taskType } = await c.req.json<{
 		path: string
 		name?: string
-		projectType?: ProjectType
+		taskType?: TaskType
 	}>()
-	const projects = await readProjects()
-	if (projects.find((p) => p.path === path)) {
-		return c.json(projects.find((p) => p.path === path))
+	const tasks = await readTasks()
+	if (tasks.find((p) => p.path === path)) {
+		return c.json(tasks.find((p) => p.path === path))
 	}
-	await ensureProjectDirs(path)
-	const entry: ProjectEntry = {
+	await ensureTaskDirs(path)
+	const entry: TaskEntry = {
 		path,
 		name: name ?? path.split("/").at(-1) ?? path,
 		addedAt: new Date().toISOString(),
-		...(projectType ? { projectType } : {}),
+		...(taskType ? { taskType } : {}),
 	}
-	await writeProjects([...projects, entry])
+	await writeTasks([...tasks, entry])
 	return c.json(entry, 201)
 })
 
-projectsRouter.patch("/", async (c) => {
+tasksRouter.patch("/", async (c) => {
 	const { path, name } = await c.req.json<{ path: string; name: string }>()
-	const projects = await readProjects()
-	const updated = projects.map((p) => (p.path === path ? { ...p, name } : p))
-	await writeProjects(updated)
+	const tasks = await readTasks()
+	const updated = tasks.map((p) => (p.path === path ? { ...p, name } : p))
+	await writeTasks(updated)
 	const entry = updated.find((p) => p.path === path)
 	if (!entry) return c.json({ error: "not found" }, 404)
 	return c.json(entry)
 })
 
-projectsRouter.delete("/", async (c) => {
+tasksRouter.delete("/", async (c) => {
 	const { path } = await c.req.json<{ path: string }>()
-	const projects = await readProjects()
-	await writeProjects(projects.filter((p) => p.path !== path))
+	const tasks = await readTasks()
+	await writeTasks(tasks.filter((p) => p.path !== path))
 	return c.json({ ok: true })
 })
 
@@ -56,7 +56,7 @@ projectsRouter.delete("/", async (c) => {
 const SOURCE_EXTS = new Set([".pdf", ".docx", ".doc"])
 const SKIP_DIRS = new Set(["artifacts", "chats", "analysis"])
 
-projectsRouter.get("/files", async (c) => {
+tasksRouter.get("/files", async (c) => {
 	const path = c.req.query("path")
 	if (!path) return c.json({ error: "path required" }, 400)
 
@@ -68,9 +68,9 @@ projectsRouter.get("/files", async (c) => {
 	return c.json({ sources, artifacts })
 })
 
-async function listSources(projectPath: string) {
+async function listSources(taskPath: string) {
 	try {
-		const entries = await readdir(projectPath, { withFileTypes: true })
+		const entries = await readdir(taskPath, { withFileTypes: true })
 		const files = []
 		for (const entry of entries) {
 			if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue
@@ -79,7 +79,7 @@ async function listSources(projectPath: string) {
 			if (!SOURCE_EXTS.has(ext)) continue
 			files.push({
 				filename: entry.name,
-				path: join(projectPath, entry.name),
+				path: join(taskPath, entry.name),
 				ext: ext.slice(1),
 			})
 		}
@@ -91,8 +91,8 @@ async function listSources(projectPath: string) {
 
 const ARTIFACT_EXTS = new Set([".json", ".docx"])
 
-async function listArtifacts(projectPath: string) {
-	const artifactsPath = join(projectPath, "artifacts")
+async function listArtifacts(taskPath: string) {
+	const artifactsPath = join(taskPath, "artifacts")
 	try {
 		const entries = await readdir(artifactsPath, { withFileTypes: true })
 		const files = []

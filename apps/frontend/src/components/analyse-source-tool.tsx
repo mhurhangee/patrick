@@ -42,7 +42,7 @@ export function AnalyseSourceTool({
 		setError(null)
 		try {
 			const rec = await api.extractpat.extract(
-				`${ctx.projectId}/${filename}`,
+				`${ctx.taskId}/${filename}`,
 				assetType || "auto",
 				ctx.provider,
 				ctx.apiKey,

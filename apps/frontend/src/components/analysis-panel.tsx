@@ -65,7 +65,7 @@ export function AnalysisPanel({
 	useEffect(() => {
 		let cancelled = false
 		setLoading(true)
-		api.analysis.get(asset.projectId, asset.filename).then((rec) => {
+		api.analysis.get(asset.taskId, asset.filename).then((rec) => {
 			if (cancelled) return
 			if (rec) {
 				setSelectedType(rec.assetType)
@@ -87,7 +87,7 @@ export function AnalysisPanel({
 		return () => {
 			cancelled = true
 		}
-	}, [asset.projectId, asset.filename])
+	}, [asset.taskId, asset.filename])
 
 	const effectiveType = selectedType !== "auto" ? selectedType : resolvedType
 	const fields = effectiveType ? getFormFields(effectiveType) : []
@@ -137,7 +137,7 @@ export function AnalysisPanel({
 				extractedAt: extractedAt || new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 			}
-			await api.analysis.save(asset.projectId, record)
+			await api.analysis.save(asset.taskId, record)
 			setSaveStatus("saved")
 			onAnalysed()
 			saveTimer.current = setTimeout(() => setSaveStatus("idle"), 2000)

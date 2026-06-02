@@ -30,7 +30,7 @@ export type ToolContext = {
 	provider: string
 	apiKey: string
 	model: string
-	projectId: string
+	taskId: string
 	addToolOutput: (args: {
 		tool: string
 		toolCallId: string

@@ -11,12 +11,12 @@ function fileToAsset(
 		updatedAt?: string
 	},
 	kind: "source" | "artifact",
-	projectPath: string,
+	taskPath: string,
 ): ApiAsset {
 	const title = file.filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ")
 	return {
 		id: file.path,
-		projectId: projectPath,
+		taskId: taskPath,
 		kind,
 		title,
 		filename: file.filename,
@@ -33,7 +33,7 @@ function fileToAsset(
 	}
 }
 
-export function useAssetState(currentProjectId: string) {
+export function useAssetState(currentTaskId: string) {
 	const [assets, setAssets] = useState<ApiAsset[]>([])
 	const [openTabIds, setOpenTabIds] = useState<string[]>([])
 	const [activeTab, setActiveTab] = useState("")
@@ -43,26 +43,26 @@ export function useAssetState(currentProjectId: string) {
 	)
 
 	const refresh = useCallback(() => {
-		if (!currentProjectId) {
+		if (!currentTaskId) {
 			setAssets([])
 			setAnalysedFilenames(new Set())
 			return
 		}
-		api.projects.listFiles(currentProjectId).then(({ sources, artifacts }) => {
+		api.tasks.listFiles(currentTaskId).then(({ sources, artifacts }) => {
 			const sourceAssets = sources.map((f) =>
-				fileToAsset(f, "source", currentProjectId),
+				fileToAsset(f, "source", currentTaskId),
 			)
 			const artifactAssets = artifacts.map((f) =>
-				fileToAsset(f, "artifact", currentProjectId),
+				fileToAsset(f, "artifact", currentTaskId),
 			)
 			setAssets([...sourceAssets, ...artifactAssets])
 		})
 		api.analysis
-			.list(currentProjectId)
+			.list(currentTaskId)
 			.then((summaries) =>
 				setAnalysedFilenames(new Set(summaries.map((s) => s.filename))),
 			)
-	}, [currentProjectId])
+	}, [currentTaskId])
 
 	useEffect(() => {
 		setOpenTabIds([])
@@ -104,7 +104,7 @@ export function useAssetState(currentProjectId: string) {
 	}
 
 	async function createArtifact() {
-		if (!currentProjectId) return
+		if (!currentTaskId) return
 		// Pick a unique title so the backend's slug → filename doesn't overwrite.
 		const taken = new Set(
 			assets
@@ -113,7 +113,7 @@ export function useAssetState(currentProjectId: string) {
 		)
 		let title = "Untitled"
 		for (let n = 2; taken.has(title.toLowerCase()); n++) title = `Untitled ${n}`
-		const created = await api.artifacts.create(currentProjectId, title)
+		const created = await api.artifacts.create(currentTaskId, title)
 		refresh()
 		openAsset(created.path)
 	}

@@ -37,12 +37,12 @@ function ArtifactEditor({
 	const isDirty = useRef(false)
 
 	function save(value: Value) {
-		// Persist Plate JSON via file API — asset.id is the file path, asset.projectId is the project path
+		// Persist Plate JSON via file API — asset.id is the file path, asset.taskId is the task path
 		fetch(`${BASE_URL}/artifacts/content`, {
 			method: "PUT",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
-				projectPath: asset.projectId,
+				taskPath: asset.taskId,
 				filename: asset.filename,
 				content: JSON.stringify(value),
 			}),

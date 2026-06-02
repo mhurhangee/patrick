@@ -19,13 +19,13 @@ type Slide = {
 
 export const SLIDES: Slide[] = [
 	{
-		id: "projects",
-		navLabel: "Projects",
-		title: "Your matter folder is your project",
+		id: "tasks",
+		navLabel: "Tasks",
+		title: "Your matter folder is your task",
 		description:
 			"PatrickOS works with folders you already have — no import, no upload. Point it at a matter folder and everything inside becomes available. Your files are never modified.",
 		screenshotHint:
-			"Sidebar showing a project selected with the file tree visible — sources (PDFs, Word docs) listed under the project name",
+			"Sidebar showing a task selected with the file tree visible — sources (PDFs, Word docs) listed under the task name",
 		bullets: [
 			"Sources are existing files — PDFs, Word documents, anything in your folder",
 			"PatrickOS creates chats/, artifacts/, and analysis/ subfolders for its own output",
@@ -79,7 +79,7 @@ export const SLIDES: Slide[] = [
 		navLabel: "AgentPat",
 		title: "Chat with your matter",
 		description:
-			"AgentPat is your project-aware research assistant. Ask it anything about the open documents, request a draft response strategy, or get a summary of cited prior art.",
+			"AgentPat is your task-aware research assistant. Ask it anything about the open documents, request a draft response strategy, or get a summary of cited prior art.",
 		screenshotHint:
 			"AgentPat chat panel showing a conversation — a question about an office action and a detailed response citing specific claims from the open source files",
 		bullets: [

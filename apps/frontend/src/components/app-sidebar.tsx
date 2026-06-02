@@ -1,4 +1,4 @@
-import type { ApiAsset, ApiChat, ApiProject } from "@patrickos/shared"
+import type { ApiAsset, ApiChat, ApiTask } from "@patrickos/shared"
 import { Link } from "@tanstack/react-router"
 import {
 	ChevronRight,
@@ -101,9 +101,9 @@ export function AppSidebar({
 	chats,
 	activeChatId,
 	openChatIds,
-	projects,
-	projectsLoading,
-	currentProjectId,
+	tasks,
+	tasksLoading,
+	currentTaskId,
 	analysedFilenames,
 	onOpen,
 	onClose,
@@ -112,7 +112,7 @@ export function AppSidebar({
 	onOpenChat,
 	onNewChat,
 	onEditChat,
-	onManageProjects,
+	onManageTasks,
 	onSettingsOpen,
 	onTutorialOpen,
 	connectedToAI,
@@ -124,9 +124,9 @@ export function AppSidebar({
 	chats: ApiChat[]
 	openChatIds: string[]
 	activeChatId: string
-	projects: ApiProject[]
-	projectsLoading: boolean
-	currentProjectId: string
+	tasks: ApiTask[]
+	tasksLoading: boolean
+	currentTaskId: string
 	analysedFilenames: Set<string>
 	onOpen: (id: string) => void
 	onClose: (id: string) => void
@@ -135,7 +135,7 @@ export function AppSidebar({
 	onOpenChat: (id: string) => void
 	onNewChat: () => void
 	onEditChat: (id: string) => void
-	onManageProjects: () => void
+	onManageTasks: () => void
 	onSettingsOpen: () => void
 	onTutorialOpen: () => void
 	connectedToAI: boolean
@@ -179,7 +179,7 @@ export function AppSidebar({
 	const visibleChats = showAllChats
 		? sortedChats
 		: sortedChats.slice(0, CHAT_LIMIT)
-	const currentProject = projects.find((p) => p.path === currentProjectId)
+	const currentTask = tasks.find((p) => p.path === currentTaskId)
 
 	return (
 		<Sidebar variant="inset">
@@ -189,7 +189,7 @@ export function AppSidebar({
 						<Logo size={20} />
 					</Link>
 					<Button
-						onClick={onManageProjects}
+						onClick={onManageTasks}
 						variant="ghost"
 						className="text-base font-semibold capitalize tracking-tight shrink-0"
 						size="default"
@@ -199,20 +199,18 @@ export function AppSidebar({
 							className="shrink-0 text-muted-foreground"
 						/>
 						<span className="flex items-center">
-							{projectsLoading
-								? "Loading…"
-								: (currentProject?.name ?? "Select project")}
+							{tasksLoading ? "Loading…" : (currentTask?.name ?? "Select task")}
 						</span>
 					</Button>
 				</div>
 			</SidebarHeader>
 
 			<SidebarContent>
-				{/* Sources + Artifacts — only shown when a project is selected */}
-				{currentProjectId &&
+				{/* Sources + Artifacts — only shown when a task is selected */}
+				{currentTaskId &&
 					assetGroups.map(({ kind, label, items, action }) => (
 						<CollapsibleSection key={kind} label={label} action={action}>
-							{projectsLoading ? (
+							{tasksLoading ? (
 								<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
 									<Skeleton className="h-3 w-3/4" />
 									<Skeleton className="h-3 w-1/2" />
@@ -255,8 +253,8 @@ export function AppSidebar({
 						</CollapsibleSection>
 					))}
 
-				{/* Chats — only shown when a project is selected */}
-				{currentProjectId && (
+				{/* Chats — only shown when a task is selected */}
+				{currentTaskId && (
 					<CollapsibleSection
 						label="Chats"
 						action={{
@@ -266,7 +264,7 @@ export function AppSidebar({
 							disabled: !connectedToAI,
 						}}
 					>
-						{projectsLoading ? (
+						{tasksLoading ? (
 							<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
 								<Skeleton className="h-3 w-2/3" />
 								<Skeleton className="h-3 w-1/2" />

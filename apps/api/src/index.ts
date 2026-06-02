@@ -8,8 +8,8 @@ import { chatsRouter } from "./routes/chats"
 import { configRouter } from "./routes/config"
 import { extractpatRouter } from "./routes/extractpat"
 import { filesRouter } from "./routes/files"
-import { projectsRouter } from "./routes/projects"
 import { settingsRouter } from "./routes/settings"
+import { tasksRouter } from "./routes/tasks"
 
 const app = new Hono()
 
@@ -17,7 +17,7 @@ app.use("*", cors())
 
 app.get("/health", (c) => c.json({ ok: true }))
 app.route("/config", configRouter)
-app.route("/projects", projectsRouter)
+app.route("/tasks", tasksRouter)
 app.route("/analysis", analysisRouter)
 app.route("/chats", chatsRouter)
 app.route("/files", filesRouter)

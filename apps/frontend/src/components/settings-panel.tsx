@@ -530,7 +530,7 @@ export function SettingsPanel({
 					{activeTab === "prompts-agent" && (
 						<PromptSection
 							title="AgentPat"
-							description="Project-aware research assistant. Controls how it reasons across your matter."
+							description="Task-aware research assistant. Controls how it reasons across your matter."
 							defaultPrompt={DEFAULT_PROMPT_AGENTPAT}
 							value={agentPatInstructions}
 							savedValue={savedAgentPat}

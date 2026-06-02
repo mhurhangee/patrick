@@ -9,8 +9,8 @@ import { fetchPatent } from "../lib/epo-ops"
 import {
 	readChat,
 	readChatIndex,
-	readProjects,
 	readSettings,
+	readTasks,
 	writeChat,
 	writeChatIndex,
 } from "../lib/fs"
@@ -61,15 +61,15 @@ export const chatsRouter = new Hono()
 // ─── Chat CRUD ────────────────────────────────────────────────────────────────
 
 chatsRouter.get("/", async (c) => {
-	const projectPath = c.req.query("projectPath")
-	if (!projectPath) return c.json({ error: "projectPath required" }, 400)
-	const index = await readChatIndex(projectPath)
+	const taskPath = c.req.query("taskPath")
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+	const index = await readChatIndex(taskPath)
 	return c.json(index)
 })
 
 chatsRouter.post("/", async (c) => {
-	const { projectPath, title, id } = await c.req.json<{
-		projectPath: string
+	const { taskPath, title, id } = await c.req.json<{
+		taskPath: string
 		title: string
 		id?: string
 	}>()
@@ -82,8 +82,8 @@ chatsRouter.post("/", async (c) => {
 		updatedAt: now,
 		messages: [],
 	}
-	await writeChat(projectPath, chat)
-	const index = await readChatIndex(projectPath)
+	await writeChat(taskPath, chat)
+	const index = await readChatIndex(taskPath)
 	const entry: ChatIndexEntry = {
 		id: chatId,
 		title,
@@ -91,35 +91,35 @@ chatsRouter.post("/", async (c) => {
 		updatedAt: now,
 		lastMessagePreview: "",
 	}
-	await writeChatIndex(projectPath, [...index, entry])
+	await writeChatIndex(taskPath, [...index, entry])
 	return c.json(entry, 201)
 })
 
 chatsRouter.patch("/:id", async (c) => {
 	const chatId = c.req.param("id")
-	const { projectPath, title } = await c.req.json<{
-		projectPath: string
+	const { taskPath, title } = await c.req.json<{
+		taskPath: string
 		title: string
 	}>()
-	const chat = await readChat(projectPath, chatId)
+	const chat = await readChat(taskPath, chatId)
 	if (!chat) return c.json({ error: "Not found" }, 404)
 	const now = new Date().toISOString()
-	await writeChat(projectPath, { ...chat, title, updatedAt: now })
-	const index = await readChatIndex(projectPath)
+	await writeChat(taskPath, { ...chat, title, updatedAt: now })
+	const index = await readChatIndex(taskPath)
 	const updated = index.map((e) =>
 		e.id === chatId ? { ...e, title, updatedAt: now } : e,
 	)
-	await writeChatIndex(projectPath, updated)
+	await writeChatIndex(taskPath, updated)
 	return c.json({ ...chat, title, updatedAt: now })
 })
 
 chatsRouter.delete("/:id", async (c) => {
 	const chatId = c.req.param("id")
-	const projectPath = c.req.query("projectPath")
-	if (!projectPath) return c.json({ error: "projectPath required" }, 400)
-	const index = await readChatIndex(projectPath)
+	const taskPath = c.req.query("taskPath")
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+	const index = await readChatIndex(taskPath)
 	await writeChatIndex(
-		projectPath,
+		taskPath,
 		index.filter((e) => e.id !== chatId),
 	)
 	return c.json({ ok: true })
@@ -129,30 +129,24 @@ chatsRouter.delete("/:id", async (c) => {
 
 chatsRouter.get("/:id/messages", async (c) => {
 	const chatId = c.req.param("id")
-	const projectPath = c.req.query("projectPath")
-	if (!projectPath) return c.json({ error: "projectPath required" }, 400)
-	const chat = await readChat(projectPath, chatId)
+	const taskPath = c.req.query("taskPath")
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+	const chat = await readChat(taskPath, chatId)
 	if (!chat) return c.json({ error: "Not found" }, 404)
 	return c.json(chat.messages)
 })
 
 chatsRouter.post("/:id/messages", async (c) => {
 	const chatId = c.req.param("id")
-	const {
-		messages,
-		provider,
-		apiKey,
-		detailedModel,
-		projectPath,
-		openFilePaths,
-	} = await c.req.json<{
-		messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
-		provider: string
-		apiKey: string
-		detailedModel: string
-		projectPath: string
-		openFilePaths: string[]
-	}>()
+	const { messages, provider, apiKey, detailedModel, taskPath, openFilePaths } =
+		await c.req.json<{
+			messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
+			provider: string
+			apiKey: string
+			detailedModel: string
+			taskPath: string
+			openFilePaths: string[]
+		}>()
 
 	const settings = await readSettings()
 
@@ -165,14 +159,14 @@ chatsRouter.post("/:id/messages", async (c) => {
 		),
 	}))
 
-	const projects = await readProjects()
-	const projectType = projects.find((p) => p.path === projectPath)?.projectType
+	const tasks = await readTasks()
+	const taskType = tasks.find((p) => p.path === taskPath)?.taskType
 
 	const { system, fileParts } = await buildAgentPatPrompt({
 		settings,
-		projectPath,
+		taskPath,
 		openFilePaths: openFilePaths ?? [],
-		projectType,
+		taskType,
 	})
 
 	const resolvedProvider = provider || settings.ai.provider
@@ -193,13 +187,13 @@ chatsRouter.post("/:id/messages", async (c) => {
 				path: z
 					.string()
 					.describe(
-						"Absolute path to list. Use the project path to list the root.",
+						"Absolute path to list. Use the task path to list the root.",
 					),
 			}),
 			execute: async ({ path: dirPath }) => {
-				const target = dirPath || projectPath
-				if (!target.startsWith(projectPath))
-					return { error: "Path outside project folder" }
+				const target = dirPath || taskPath
+				if (!target.startsWith(taskPath))
+					return { error: "Path outside task folder" }
 				try {
 					const entries = await readdir(target, { withFileTypes: true })
 					return entries.map((e) => ({
@@ -219,8 +213,8 @@ chatsRouter.post("/:id/messages", async (c) => {
 				path: z.string().describe("Absolute path to the file"),
 			}),
 			execute: async ({ path: filePath }) => {
-				if (!filePath.startsWith(projectPath))
-					return { error: "Path outside project folder" }
+				if (!filePath.startsWith(taskPath))
+					return { error: "Path outside task folder" }
 				const ext = extname(filePath).toLowerCase()
 				try {
 					if (ext === ".pdf") {
@@ -316,7 +310,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 			}
 		},
 		onFinish: async ({ responseMessage }) => {
-			const chat = (await readChat(projectPath, chatId)) ?? {
+			const chat = (await readChat(taskPath, chatId)) ?? {
 				id: chatId,
 				title: "Untitled",
 				createdAt: new Date().toISOString(),
@@ -360,9 +354,9 @@ chatsRouter.post("/:id/messages", async (c) => {
 				messages: newMessages,
 				updatedAt: now,
 			}
-			await writeChat(projectPath, updatedChat)
+			await writeChat(taskPath, updatedChat)
 
-			const index = await readChatIndex(projectPath)
+			const index = await readChatIndex(taskPath)
 			const updatedIndex = index.map((e) =>
 				e.id === chatId
 					? {
@@ -372,7 +366,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 						}
 					: e,
 			)
-			await writeChatIndex(projectPath, updatedIndex)
+			await writeChatIndex(taskPath, updatedIndex)
 		},
 	})
 })

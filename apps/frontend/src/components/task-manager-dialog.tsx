@@ -1,5 +1,5 @@
-import type { ApiProject, ProjectType } from "@patrickos/shared"
-import { PROJECT_CONFIGS } from "@patrickos/shared"
+import type { ApiTask, TaskType } from "@patrickos/shared"
+import { TASK_CONFIGS } from "@patrickos/shared"
 import { FolderOpen, Loader2, Search } from "lucide-react"
 import { type CSSProperties, useEffect, useRef, useState } from "react"
 import {
@@ -106,13 +106,13 @@ function AddFolderPanel({
 	onCreate: (
 		path: string,
 		name?: string,
-		projectType?: ProjectType,
-	) => Promise<ApiProject>
-	onCreated: (project: ApiProject) => void
+		taskType?: TaskType,
+	) => Promise<ApiTask>
+	onCreated: (task: ApiTask) => void
 }) {
 	const [path, setPath] = useState("")
 	const [name, setName] = useState("")
-	const [projectType, setProjectType] = useState<ProjectType | "">("")
+	const [taskType, setTaskType] = useState<TaskType | "">("")
 	const [picking, setPicking] = useState(false)
 	const [creating, setCreating] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -136,12 +136,12 @@ function AddFolderPanel({
 		setCreating(true)
 		setError(null)
 		try {
-			const project = await onCreate(
+			const task = await onCreate(
 				trimmedPath,
 				name.trim() || undefined,
-				projectType || undefined,
+				taskType || undefined,
 			)
-			onCreated(project)
+			onCreated(task)
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to add folder")
 		} finally {
@@ -218,14 +218,14 @@ function AddFolderPanel({
 					<div className="flex flex-col gap-1.5">
 						<Label>Matter type</Label>
 						<Select
-							value={projectType}
-							onValueChange={(v) => setProjectType(v as ProjectType)}
+							value={taskType}
+							onValueChange={(v) => setTaskType(v as TaskType)}
 						>
 							<SelectTrigger>
 								<SelectValue placeholder="Select a matter type…" />
 							</SelectTrigger>
 							<SelectContent>
-								{PROJECT_CONFIGS.map((p) => (
+								{TASK_CONFIGS.map((p) => (
 									<SelectItem key={p.id} value={p.id}>
 										{p.label}
 									</SelectItem>
@@ -257,31 +257,31 @@ function AddFolderPanel({
 // ─── Edit folder panel ────────────────────────────────────────────────────────
 
 function EditFolderPanel({
-	project,
+	task,
 	onRename,
 	onDelete,
 }: {
-	project: ApiProject
-	onRename: (path: string, name: string) => Promise<ApiProject>
+	task: ApiTask
+	onRename: (path: string, name: string) => Promise<ApiTask>
 	onDelete: (path: string) => Promise<void>
 }) {
-	const [name, setName] = useState(project.name)
-	const [savedName, setSavedName] = useState(project.name)
+	const [name, setName] = useState(task.name)
+	const [savedName, setSavedName] = useState(task.name)
 	const [deleteOpen, setDeleteOpen] = useState(false)
 	const [deleting, setDeleting] = useState(false)
 	const { status, wrap } = useSaveButton()
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on project path only
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sync on task path only
 	useEffect(() => {
-		setName(project.name)
-		setSavedName(project.name)
-	}, [project.path])
+		setName(task.name)
+		setSavedName(task.name)
+	}, [task.path])
 
 	const isDirty = name !== savedName
 
 	async function handleSave() {
-		const trimmed = name.trim() || project.name
-		const updated = await onRename(project.path, trimmed)
+		const trimmed = name.trim() || task.name
+		const updated = await onRename(task.path, trimmed)
 		setSavedName(updated.name)
 		setName(updated.name)
 	}
@@ -289,7 +289,7 @@ function EditFolderPanel({
 	async function handleDelete() {
 		setDeleting(true)
 		try {
-			await onDelete(project.path)
+			await onDelete(task.path)
 			setDeleteOpen(false)
 		} finally {
 			setDeleting(false)
@@ -301,7 +301,7 @@ function EditFolderPanel({
 			<div className="shrink-0 border-b px-6 py-4">
 				<h2 className="text-base font-semibold font-heading">{savedName}</h2>
 				<p className="text-xs text-muted-foreground mt-0.5 font-mono truncate">
-					{project.path}
+					{task.path}
 				</p>
 			</div>
 
@@ -322,7 +322,7 @@ function EditFolderPanel({
 						<p className="text-xs font-medium text-muted-foreground mb-1">
 							Folder path
 						</p>
-						<p className="text-xs font-mono break-all">{project.path}</p>
+						<p className="text-xs font-mono break-all">{task.path}</p>
 					</div>
 				</div>
 			</div>
@@ -382,11 +382,11 @@ function EditFolderPanel({
 
 type PanelState = "empty" | "new" | { path: string }
 
-export function ProjectManagerDialog({
+export function TaskManagerDialog({
 	open,
 	onOpenChange,
-	projects,
-	currentProjectPath,
+	tasks,
+	currentTaskPath,
 	defaultPanel = "empty",
 	onSelect,
 	onCreate,
@@ -395,16 +395,16 @@ export function ProjectManagerDialog({
 }: {
 	open: boolean
 	onOpenChange: (v: boolean) => void
-	projects: ApiProject[]
-	currentProjectPath: string
+	tasks: ApiTask[]
+	currentTaskPath: string
 	defaultPanel?: "empty" | "new"
 	onSelect: (path: string) => void
 	onCreate: (
 		path: string,
 		name?: string,
-		projectType?: ProjectType,
-	) => Promise<ApiProject>
-	onRename: (path: string, name: string) => Promise<ApiProject>
+		taskType?: TaskType,
+	) => Promise<ApiTask>
+	onRename: (path: string, name: string) => Promise<ApiTask>
 	onDelete: (path: string) => Promise<void>
 }) {
 	const [panelState, setPanelState] = useState<PanelState>("empty")
@@ -413,18 +413,16 @@ export function ProjectManagerDialog({
 	useEffect(() => {
 		if (!open) return
 		setSearch("")
-		setPanelState(
-			currentProjectPath ? { path: currentProjectPath } : defaultPanel,
-		)
-	}, [open, currentProjectPath, defaultPanel])
+		setPanelState(currentTaskPath ? { path: currentTaskPath } : defaultPanel)
+	}, [open, currentTaskPath, defaultPanel])
 
-	const filtered = projects.filter((p) =>
+	const filtered = tasks.filter((p) =>
 		p.name.toLowerCase().includes(search.toLowerCase()),
 	)
 
-	const selectedProject =
+	const selectedTask =
 		panelState !== "empty" && panelState !== "new"
-			? projects.find((p) => p.path === panelState.path)
+			? tasks.find((p) => p.path === panelState.path)
 			: undefined
 
 	async function handleDelete(path: string) {
@@ -435,18 +433,18 @@ export function ProjectManagerDialog({
 	async function handleCreate(
 		path: string,
 		name?: string,
-		projectType?: ProjectType,
+		taskType?: TaskType,
 	) {
-		const project = await onCreate(path, name, projectType)
-		onSelect(project.path)
-		setPanelState({ path: project.path })
-		return project
+		const task = await onCreate(path, name, taskType)
+		onSelect(task.path)
+		setPanelState({ path: task.path })
+		return task
 	}
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="overflow-hidden p-0 h-[560px] md:max-w-[760px] lg:max-w-[900px] flex flex-col">
-				<DialogTitle className="sr-only">Projects</DialogTitle>
+				<DialogTitle className="sr-only">Tasks</DialogTitle>
 				<DialogDescription className="sr-only">
 					Manage your matter folders.
 				</DialogDescription>
@@ -478,34 +476,34 @@ export function ProjectManagerDialog({
 							<SidebarGroup>
 								<SidebarGroupContent>
 									<SidebarMenu>
-										{filtered.map((project) => {
+										{filtered.map((task) => {
 											const isSelected =
 												panelState !== "empty" &&
 												panelState !== "new" &&
-												panelState.path === project.path
+												panelState.path === task.path
 
 											return (
-												<SidebarMenuItem key={project.path}>
+												<SidebarMenuItem key={task.path}>
 													<SidebarMenuButton
 														onClick={() => {
-															setPanelState({ path: project.path })
-															onSelect(project.path)
+															setPanelState({ path: task.path })
+															onSelect(task.path)
 														}}
 														className={cn(
 															"rounded-none h-auto py-2",
 															isSelected
 																? "border-l-2 border-primary font-medium"
-																: project.path === currentProjectPath
+																: task.path === currentTaskPath
 																	? "border-l-2 border-primary/30"
 																	: "border-l-2 border-transparent",
 														)}
 													>
 														<span className="flex flex-col gap-0.5 min-w-0 text-left">
 															<span className="truncate text-sm">
-																{project.name}
+																{task.name}
 															</span>
 															<span className="truncate text-[10px] text-muted-foreground font-mono">
-																{project.path.split("/").at(-1)}
+																{task.path.split("/").at(-1)}
 															</span>
 														</span>
 													</SidebarMenuButton>
@@ -550,10 +548,10 @@ export function ProjectManagerDialog({
 								onCreate={handleCreate}
 								onCreated={(p) => setPanelState({ path: p.path })}
 							/>
-						) : selectedProject ? (
+						) : selectedTask ? (
 							<EditFolderPanel
-								key={selectedProject.path}
-								project={selectedProject}
+								key={selectedTask.path}
+								task={selectedTask}
 								onRename={onRename}
 								onDelete={handleDelete}
 							/>

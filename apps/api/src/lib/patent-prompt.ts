@@ -4,9 +4,9 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import {
 	ASSET_CONFIGS,
-	PROJECT_CONFIGS,
-	type ProjectType,
 	type Settings,
+	TASK_CONFIGS,
+	type TaskType,
 } from "@patrickos/shared"
 import { createGateway } from "ai"
 
@@ -19,9 +19,9 @@ type FilePart = {
 
 export type AgentPatContext = {
 	settings: Settings
-	projectPath: string
+	taskPath: string
 	openFilePaths: string[]
-	projectType?: ProjectType
+	taskType?: TaskType
 }
 
 // ─── Private utilities ────────────────────────────────────────────────────────
@@ -84,15 +84,15 @@ function sharedContext(s: Settings) {
 		: null
 }
 
-function projectContext(projectPath: string, projectType?: ProjectType) {
-	const folderName = projectPath.split("/").at(-1) ?? projectPath
-	const config = projectType
-		? PROJECT_CONFIGS.find((p) => p.id === projectType)
+function taskContext(taskPath: string, taskType?: TaskType) {
+	const folderName = taskPath.split("/").at(-1) ?? taskPath
+	const config = taskType
+		? TASK_CONFIGS.find((p) => p.id === taskType)
 		: undefined
 	const typeLines = config
 		? `\nMatter type: ${config.label}\n${config.aiContext}`
 		: ""
-	return `# Project\nMatter folder: ${folderName}\nPath: ${projectPath}${typeLines}`
+	return `# Task\nMatter folder: ${folderName}\nPath: ${taskPath}${typeLines}`
 }
 
 function openFilesContext(openFilePaths: string[]) {
@@ -130,14 +130,14 @@ async function buildFileParts(openFilePaths: string[]): Promise<FilePart[]> {
 export async function buildAgentPatPrompt(
 	ctx: AgentPatContext,
 ): Promise<{ system: string; fileParts: FilePart[] }> {
-	const { settings, projectPath, openFilePaths, projectType } = ctx
+	const { settings, taskPath, openFilePaths, taskType } = ctx
 
 	const system = assemble([
 		identityAgentPat(),
 		userContext(settings),
 		agentPatInstructions(settings),
 		sharedContext(settings),
-		projectContext(projectPath, projectType),
+		taskContext(taskPath, taskType),
 		openFilesContext(openFilePaths),
 		metadataInstruction(),
 	])

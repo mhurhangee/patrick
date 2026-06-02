@@ -3,9 +3,9 @@ import type {
 	AnalysisSummary,
 	ApiChat,
 	ApiChatMessage,
-	ApiProject,
-	ProjectType,
+	ApiTask,
 	Settings,
+	TaskType,
 } from "@patrickos/shared"
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
@@ -64,18 +64,18 @@ export const api = {
 			),
 	},
 	analysis: {
-		list: (projectPath: string) =>
+		list: (taskPath: string) =>
 			request<AnalysisSummary[]>(
-				`/analysis?projectPath=${encodeURIComponent(projectPath)}`,
+				`/analysis?taskPath=${encodeURIComponent(taskPath)}`,
 			),
-		get: (projectPath: string, filename: string) =>
+		get: (taskPath: string, filename: string) =>
 			request<AnalysisRecord | null>(
-				`/analysis/file?projectPath=${encodeURIComponent(projectPath)}&filename=${encodeURIComponent(filename)}`,
+				`/analysis/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
 			),
-		save: (projectPath: string, record: AnalysisRecord) =>
+		save: (taskPath: string, record: AnalysisRecord) =>
 			request<AnalysisRecord>(
 				"/analysis/file",
-				json({ projectPath, record }, { method: "PUT" }),
+				json({ taskPath, record }, { method: "PUT" }),
 			),
 	},
 	ai: {
@@ -95,23 +95,17 @@ export const api = {
 				}[]
 			}>("/ai/models", json({ apiKey }, { method: "POST" })),
 	},
-	projects: {
-		list: () => request<ApiProject[]>("/projects"),
-		create: (path: string, name?: string, projectType?: ProjectType) =>
-			request<ApiProject>(
-				"/projects",
-				json({ path, name, projectType }, { method: "POST" }),
+	tasks: {
+		list: () => request<ApiTask[]>("/tasks"),
+		create: (path: string, name?: string, taskType?: TaskType) =>
+			request<ApiTask>(
+				"/tasks",
+				json({ path, name, taskType }, { method: "POST" }),
 			),
 		rename: (path: string, name: string) =>
-			request<ApiProject>(
-				"/projects",
-				json({ path, name }, { method: "PATCH" }),
-			),
+			request<ApiTask>("/tasks", json({ path, name }, { method: "PATCH" })),
 		delete: (path: string) =>
-			request<{ ok: boolean }>(
-				"/projects",
-				json({ path }, { method: "DELETE" }),
-			),
+			request<{ ok: boolean }>("/tasks", json({ path }, { method: "DELETE" })),
 		listFiles: (path: string) =>
 			request<{
 				sources: { filename: string; path: string; ext: string }[]
@@ -122,40 +116,38 @@ export const api = {
 					createdAt: string
 					updatedAt: string
 				}[]
-			}>(`/projects/files?path=${encodeURIComponent(path)}`),
+			}>(`/tasks/files?path=${encodeURIComponent(path)}`),
 	},
 	artifacts: {
-		create: (projectPath: string, title: string) =>
+		create: (taskPath: string, title: string) =>
 			request<{
 				filename: string
 				path: string
-				projectPath: string
+				taskPath: string
 				title: string
-			}>("/artifacts", json({ projectPath, title }, { method: "POST" })),
+			}>("/artifacts", json({ taskPath, title }, { method: "POST" })),
 	},
 	chats: {
-		list: (projectPath: string) =>
-			request<ApiChat[]>(
-				`/chats?projectPath=${encodeURIComponent(projectPath)}`,
-			),
-		create: (projectPath: string, title: string, id?: string) =>
+		list: (taskPath: string) =>
+			request<ApiChat[]>(`/chats?taskPath=${encodeURIComponent(taskPath)}`),
+		create: (taskPath: string, title: string, id?: string) =>
 			request<ApiChat>(
 				"/chats",
-				json({ projectPath, title, ...(id ? { id } : {}) }, { method: "POST" }),
+				json({ taskPath, title, ...(id ? { id } : {}) }, { method: "POST" }),
 			),
-		update: (id: string, projectPath: string, title: string) =>
+		update: (id: string, taskPath: string, title: string) =>
 			request<ApiChat>(
 				`/chats/${id}`,
-				json({ projectPath, title }, { method: "PATCH" }),
+				json({ taskPath, title }, { method: "PATCH" }),
 			),
-		delete: (id: string, projectPath: string) =>
+		delete: (id: string, taskPath: string) =>
 			request<{ ok: boolean }>(
-				`/chats/${id}?projectPath=${encodeURIComponent(projectPath)}`,
+				`/chats/${id}?taskPath=${encodeURIComponent(taskPath)}`,
 				{ method: "DELETE" },
 			),
-		getMessages: (chatId: string, projectPath: string) =>
+		getMessages: (chatId: string, taskPath: string) =>
 			request<ApiChatMessage[]>(
-				`/chats/${chatId}/messages?projectPath=${encodeURIComponent(projectPath)}`,
+				`/chats/${chatId}/messages?taskPath=${encodeURIComponent(taskPath)}`,
 			),
 	},
 }

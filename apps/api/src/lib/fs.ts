@@ -6,8 +6,8 @@ import {
 	type Chat,
 	type ChatIndexEntry,
 	DEFAULT_SETTINGS,
-	type ProjectEntry,
 	type Settings,
+	type TaskEntry,
 } from "@patrickos/shared"
 import YAML from "yaml"
 
@@ -24,28 +24,28 @@ function settingsPath() {
 	return join(configDir, "settings.yaml")
 }
 
-function projectsPath() {
-	return join(configDir, "projects.yaml")
+function tasksPath() {
+	return join(configDir, "tasks.yaml")
 }
 
-function chatsDir(projectPath: string) {
-	return join(projectPath, "chats")
+function chatsDir(taskPath: string) {
+	return join(taskPath, "chats")
 }
 
-function chatIndexPath(projectPath: string) {
-	return join(projectPath, "chats", "index.json")
+function chatIndexPath(taskPath: string) {
+	return join(taskPath, "chats", "index.json")
 }
 
-function chatFilePath(projectPath: string, chatId: string) {
-	return join(projectPath, "chats", `chat-${chatId}.json`)
+function chatFilePath(taskPath: string, chatId: string) {
+	return join(taskPath, "chats", `chat-${chatId}.json`)
 }
 
-export function artifactsDir(projectPath: string) {
-	return join(projectPath, "artifacts")
+export function artifactsDir(taskPath: string) {
+	return join(taskPath, "artifacts")
 }
 
-function analysisDir(projectPath: string) {
-	return join(projectPath, "analysis")
+function analysisDir(taskPath: string) {
+	return join(taskPath, "analysis")
 }
 
 // ─── YAML ────────────────────────────────────────────────────────────────────
@@ -102,81 +102,78 @@ export async function writeSettings(data: Settings): Promise<void> {
 	await writeYaml(settingsPath(), data)
 }
 
-// ─── Projects registry ───────────────────────────────────────────────────────
+// ─── Tasks registry ───────────────────────────────────────────────────────
 
-export async function readProjects(): Promise<ProjectEntry[]> {
-	return readYaml<ProjectEntry[]>(projectsPath(), [])
+export async function readTasks(): Promise<TaskEntry[]> {
+	return readYaml<TaskEntry[]>(tasksPath(), [])
 }
 
-export async function writeProjects(projects: ProjectEntry[]): Promise<void> {
-	await writeYaml(projectsPath(), projects)
+export async function writeTasks(tasks: TaskEntry[]): Promise<void> {
+	await writeYaml(tasksPath(), tasks)
 }
 
 // ─── Chats ───────────────────────────────────────────────────────────────────
 
 export async function readChatIndex(
-	projectPath: string,
+	taskPath: string,
 ): Promise<ChatIndexEntry[]> {
-	return readJson<ChatIndexEntry[]>(chatIndexPath(projectPath), [])
+	return readJson<ChatIndexEntry[]>(chatIndexPath(taskPath), [])
 }
 
 export async function writeChatIndex(
-	projectPath: string,
+	taskPath: string,
 	index: ChatIndexEntry[],
 ): Promise<void> {
-	await writeJson(chatIndexPath(projectPath), index)
+	await writeJson(chatIndexPath(taskPath), index)
 }
 
 export async function readChat(
-	projectPath: string,
+	taskPath: string,
 	chatId: string,
 ): Promise<Chat | null> {
-	return readJson<Chat | null>(chatFilePath(projectPath, chatId), null)
+	return readJson<Chat | null>(chatFilePath(taskPath, chatId), null)
 }
 
-export async function writeChat(
-	projectPath: string,
-	chat: Chat,
-): Promise<void> {
-	await mkdir(chatsDir(projectPath), { recursive: true })
-	await writeJson(chatFilePath(projectPath, chat.id), chat)
+export async function writeChat(taskPath: string, chat: Chat): Promise<void> {
+	await mkdir(chatsDir(taskPath), { recursive: true })
+	await writeJson(chatFilePath(taskPath, chat.id), chat)
 }
 
 // ─── Analysis (ExtractPat results) ─────────────────────────────────────────────
 
-function analysisFilePath(projectPath: string, sourceFilename: string) {
-	return join(analysisDir(projectPath), `${sourceFilename}.json`)
+function analysisFilePath(taskPath: string, sourceFilename: string) {
+	return join(analysisDir(taskPath), `${sourceFilename}.json`)
 }
 
 export async function readAnalysis(
-	projectPath: string,
+	taskPath: string,
 	sourceFilename: string,
 ): Promise<AnalysisRecord | null> {
 	return readJson<AnalysisRecord | null>(
-		analysisFilePath(projectPath, sourceFilename),
+		analysisFilePath(taskPath, sourceFilename),
 		null,
 	)
 }
 
 export async function writeAnalysis(
-	projectPath: string,
+	taskPath: string,
 	record: AnalysisRecord,
 ): Promise<void> {
-	await writeJson(analysisFilePath(projectPath, record.filename), record)
+	await writeJson(analysisFilePath(taskPath, record.filename), record)
 }
 
 export async function listAnalysis(
-	projectPath: string,
+	taskPath: string,
 ): Promise<AnalysisSummary[]> {
 	try {
-		const entries = await readdir(analysisDir(projectPath), {
+		const entries = await readdir(analysisDir(taskPath), {
 			withFileTypes: true,
 		})
 		const summaries: AnalysisSummary[] = []
 		for (const entry of entries) {
 			if (!entry.isFile() || !entry.name.endsWith(".json")) continue
 			const record = await readJson<AnalysisRecord | null>(
-				join(analysisDir(projectPath), entry.name),
+				join(analysisDir(taskPath), entry.name),
 				null,
 			)
 			if (!record) continue
@@ -192,10 +189,10 @@ export async function listAnalysis(
 	}
 }
 
-export async function ensureProjectDirs(projectPath: string): Promise<void> {
+export async function ensureTaskDirs(taskPath: string): Promise<void> {
 	await Promise.all([
-		mkdir(artifactsDir(projectPath), { recursive: true }),
-		mkdir(chatsDir(projectPath), { recursive: true }),
-		mkdir(analysisDir(projectPath), { recursive: true }),
+		mkdir(artifactsDir(taskPath), { recursive: true }),
+		mkdir(chatsDir(taskPath), { recursive: true }),
+		mkdir(analysisDir(taskPath), { recursive: true }),
 	])
 }

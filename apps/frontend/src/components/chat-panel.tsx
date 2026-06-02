@@ -198,7 +198,7 @@ function ChatPane({
 	onAnalysed,
 	initialMessages,
 	initialMessage,
-	projectId,
+	taskId,
 	provider,
 	apiKey,
 	detailedModel,
@@ -213,7 +213,7 @@ function ChatPane({
 	onAnalysed: () => void
 	initialMessages: UIMessage[]
 	initialMessage?: string | null
-	projectId: string
+	taskId: string
 	provider: string
 	apiKey: string
 	detailedModel: string
@@ -246,7 +246,7 @@ function ChatPane({
 	const { messages, sendMessage, status, addToolOutput } = useChat({
 		transport: new DefaultChatTransport({
 			api: `${BASE_URL}/chats/${chatId}/messages`,
-			body: { projectPath: projectId, provider, apiKey, detailedModel },
+			body: { taskPath: taskId, provider, apiKey, detailedModel },
 			prepareSendMessagesRequest: ({ body, messages: uiMessages, id }) => ({
 				body: {
 					...body,
@@ -266,7 +266,7 @@ function ChatPane({
 		provider,
 		apiKey,
 		model: detailedModel,
-		projectId,
+		taskId,
 		addToolOutput: (args) =>
 			addToolOutput(args as Parameters<typeof addToolOutput>[0]),
 		onReview: onOpenSource,
@@ -616,7 +616,7 @@ function ChatPaneLoader({
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	initialMessage?: string | null
-	projectId: string
+	taskId: string
 	provider: string
 	apiKey: string
 	detailedModel: string
@@ -630,7 +630,7 @@ function ChatPaneLoader({
 	useEffect(() => {
 		setInitialMessages(null)
 		api.chats
-			.getMessages(chatId, rest.projectId)
+			.getMessages(chatId, rest.taskId)
 			.then((msgs) =>
 				setInitialMessages(
 					msgs.map((m) => ({
@@ -643,7 +643,7 @@ function ChatPaneLoader({
 				),
 			)
 			.catch(() => setInitialMessages([]))
-	}, [chatId, rest.projectId])
+	}, [chatId, rest.taskId])
 
 	if (initialMessages === null) {
 		return (
@@ -666,7 +666,7 @@ export function ChatPanel({
 	activeChatId,
 	openAssets,
 	pendingMessages,
-	projectId,
+	taskId,
 	provider,
 	apiKey,
 	detailedModel,
@@ -687,7 +687,7 @@ export function ChatPanel({
 	activeChatId: string
 	openAssets: ApiAsset[]
 	pendingMessages: Record<string, string>
-	projectId: string
+	taskId: string
 	provider: string
 	apiKey: string
 	detailedModel: string
@@ -752,7 +752,7 @@ export function ChatPanel({
 						size="icon"
 						onClick={onNewChat}
 						title="New chat"
-						disabled={!connectedToAI || !projectId}
+						disabled={!connectedToAI || !taskId}
 					>
 						<Plus size={12} />
 					</Button>
@@ -791,7 +791,7 @@ export function ChatPanel({
 					onOpenSource={onOpenSource}
 					onAnalysed={onAnalysed}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
-					projectId={projectId}
+					taskId={taskId}
 					provider={provider}
 					apiKey={apiKey}
 					detailedModel={detailedModel}
