@@ -171,6 +171,10 @@ export const api = {
 	},
 	tasks: {
 		list: () => request<ApiTask[]>("/tasks"),
+		probe: (path: string) =>
+			request<{ exists: boolean; sourceCount: number }>(
+				`/tasks/probe?path=${encodeURIComponent(path)}`,
+			),
 		create: (path: string, name?: string, taskType?: TaskType) =>
 			request<ApiTask>(
 				"/tasks",

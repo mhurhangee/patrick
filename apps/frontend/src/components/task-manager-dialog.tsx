@@ -46,6 +46,7 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 } from "@/components/ui/sidebar"
+import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 // ─── Tauri folder picker ──────────────────────────────────────────────────────
@@ -116,6 +117,32 @@ function AddFolderPanel({
 	const [picking, setPicking] = useState(false)
 	const [creating, setCreating] = useState(false)
 	const [error, setError] = useState<string | null>(null)
+	const [probe, setProbe] = useState<{
+		status: "idle" | "checking" | "found" | "missing"
+		count: number
+	}>({ status: "idle", count: 0 })
+
+	// Probe the typed folder (debounced) — does it exist, how many source docs?
+	useEffect(() => {
+		const trimmed = path.trim()
+		if (!trimmed) {
+			setProbe({ status: "idle", count: 0 })
+			return
+		}
+		setProbe((p) => ({ ...p, status: "checking" }))
+		const timer = setTimeout(async () => {
+			try {
+				const { exists, sourceCount } = await api.tasks.probe(trimmed)
+				setProbe({
+					status: exists ? "found" : "missing",
+					count: sourceCount,
+				})
+			} catch {
+				setProbe({ status: "missing", count: 0 })
+			}
+		}, 400)
+		return () => clearTimeout(timer)
+	}, [path])
 
 	async function handlePick() {
 		setPicking(true)
@@ -195,6 +222,21 @@ function AddFolderPanel({
 							)}
 						</div>
 						{error && <p className="text-xs text-destructive">{error}</p>}
+						{path.trim() && probe.status === "checking" && (
+							<p className="text-xs text-muted-foreground">Checking folder…</p>
+						)}
+						{probe.status === "found" && (
+							<p className="text-xs text-primary">
+								{probe.count > 0
+									? `✓ ${probe.count} source document${probe.count === 1 ? "" : "s"} found (PDFs & Word docs)`
+									: "✓ Folder found — no PDFs or Word docs yet"}
+							</p>
+						)}
+						{probe.status === "missing" && (
+							<p className="text-xs text-amber-600">
+								Folder not found — it will be created.
+							</p>
+						)}
 						<p className="text-xs text-muted-foreground">
 							Existing files in this folder are never modified.
 						</p>

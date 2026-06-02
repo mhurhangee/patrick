@@ -236,6 +236,32 @@ export function OnboardingFlow({
 	const [taskPath, setTaskPath] = useState("")
 	const [taskType, setTaskType] = useState<TaskType | "">("")
 	const [taskPicking, setTaskPicking] = useState(false)
+	const [taskProbe, setTaskProbe] = useState<{
+		status: "idle" | "checking" | "found" | "missing"
+		count: number
+	}>({ status: "idle", count: 0 })
+
+	// Probe the typed task folder (debounced) — exists? how many source docs?
+	useEffect(() => {
+		const trimmed = taskPath.trim()
+		if (!trimmed) {
+			setTaskProbe({ status: "idle", count: 0 })
+			return
+		}
+		setTaskProbe((p) => ({ ...p, status: "checking" }))
+		const timer = setTimeout(async () => {
+			try {
+				const { exists, sourceCount } = await api.tasks.probe(trimmed)
+				setTaskProbe({
+					status: exists ? "found" : "missing",
+					count: sourceCount,
+				})
+			} catch {
+				setTaskProbe({ status: "missing", count: 0 })
+			}
+		}, 400)
+		return () => clearTimeout(timer)
+	}, [taskPath])
 
 	// Prompts
 	const [agentPatPrompt, setAgentPatPrompt] = useState("")
@@ -749,6 +775,23 @@ export function OnboardingFlow({
 												</Button>
 											)}
 										</div>
+										{taskPath.trim() && taskProbe.status === "checking" && (
+											<p className="text-xs text-muted-foreground">
+												Checking folder…
+											</p>
+										)}
+										{taskProbe.status === "found" && (
+											<p className="text-xs text-primary">
+												{taskProbe.count > 0
+													? `✓ ${taskProbe.count} source document${taskProbe.count === 1 ? "" : "s"} found (PDFs & Word docs)`
+													: "✓ Folder found — no PDFs or Word docs yet"}
+											</p>
+										)}
+										{taskProbe.status === "missing" && (
+											<p className="text-xs text-amber-600">
+												Folder not found — it will be created.
+											</p>
+										)}
 									</div>
 									<div className="flex flex-col gap-1.5">
 										<Label>Task type</Label>

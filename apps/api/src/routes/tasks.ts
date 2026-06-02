@@ -68,6 +68,20 @@ tasksRouter.get("/files", async (c) => {
 	return c.json({ sources, artifacts })
 })
 
+// Probe a folder path before adding it — does it exist, and how many source docs?
+tasksRouter.get("/probe", async (c) => {
+	const path = c.req.query("path")
+	if (!path) return c.json({ error: "path required" }, 400)
+	try {
+		const s = await stat(path)
+		if (!s.isDirectory()) return c.json({ exists: false, sourceCount: 0 })
+		const sources = await listSources(path)
+		return c.json({ exists: true, sourceCount: sources.length })
+	} catch {
+		return c.json({ exists: false, sourceCount: 0 })
+	}
+})
+
 async function listSources(taskPath: string) {
 	try {
 		const entries = await readdir(taskPath, { withFileTypes: true })
