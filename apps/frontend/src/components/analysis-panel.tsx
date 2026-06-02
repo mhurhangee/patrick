@@ -1,6 +1,12 @@
-import type { AnalysisRecord, ApiAsset, FieldLocation } from "@patrickos/shared"
+import type {
+	AnalysisRecord,
+	ApiAsset,
+	FieldLocation,
+	TaskType,
+} from "@patrickos/shared"
 import {
 	ASSET_CONFIGS,
+	allowedAssetTypesFor,
 	emptyDetails,
 	extractLocationMap,
 	getFormFields,
@@ -35,6 +41,7 @@ export function AnalysisPanel({
 	onLocate,
 	onAnalysed,
 	excludedFromAgent,
+	taskType,
 }: {
 	asset: ApiAsset
 	provider: string
@@ -45,6 +52,8 @@ export function AnalysisPanel({
 	onAnalysed: () => void
 	/** Source is excluded from AgentPat — block running ExtractPat. */
 	excludedFromAgent: boolean
+	/** Current task type — narrows the source types offered to the relevant ones. */
+	taskType?: TaskType
 }) {
 	const [selectedType, setSelectedType] = useState("auto")
 	const [resolvedType, setResolvedType] = useState<string | null>(null)
@@ -97,6 +106,13 @@ export function AnalysisPanel({
 	const effectiveType = selectedType !== "auto" ? selectedType : resolvedType
 	const fields = effectiveType ? getFormFields(effectiveType) : []
 	const isExtracting = extractState === "extracting"
+
+	// Narrow the offered source types to the task's relevant ones (keep the
+	// currently-resolved type visible even if it falls outside the task scope).
+	const allowed = allowedAssetTypesFor(taskType)
+	const typeOptions = SOURCE_TYPES.filter(
+		(t) => !allowed || allowed.includes(t.id) || t.id === resolvedType,
+	)
 
 	function changeType(t: string) {
 		setSelectedType(t)
@@ -189,7 +205,7 @@ export function AnalysisPanel({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="auto">Auto-detect</SelectItem>
-						{SOURCE_TYPES.map((t) => (
+						{typeOptions.map((t) => (
 							<SelectItem key={t.id} value={t.id}>
 								{t.typeLabel}
 							</SelectItem>

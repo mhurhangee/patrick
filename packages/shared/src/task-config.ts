@@ -46,3 +46,11 @@ export const TASK_CONFIGS = [
 ]
 
 export type TaskType = (typeof TASK_CONFIGS)[number]["id"]
+
+// Asset types relevant to a task type — null means "no task type set, allow all".
+export function allowedAssetTypesFor(
+	taskType: string | undefined,
+): AssetType[] | null {
+	if (!taskType) return null
+	return TASK_CONFIGS.find((t) => t.id === taskType)?.allowedAssetTypes ?? null
+}

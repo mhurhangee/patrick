@@ -1,4 +1,4 @@
-import type { ApiAsset, FieldLocation } from "@patrickos/shared"
+import type { ApiAsset, FieldLocation, TaskType } from "@patrickos/shared"
 import {
 	ChevronLeft,
 	ChevronRight,
@@ -181,6 +181,7 @@ function AssetPane({
 	onLocateClear,
 	doNotRead,
 	onToggleDoNotRead,
+	taskType,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
@@ -195,6 +196,7 @@ function AssetPane({
 	onLocateClear: () => void
 	doNotRead: Set<string>
 	onToggleDoNotRead: (id: string) => void
+	taskType?: TaskType
 }) {
 	if (asset.kind === "analysis") {
 		return (
@@ -207,6 +209,7 @@ function AssetPane({
 				onAnalysed={onAnalysed}
 				onLocate={(locs) => onLocate(asset.path, locs)}
 				excludedFromAgent={doNotRead.has(asset.path)}
+				taskType={taskType}
 			/>
 		)
 	}
@@ -253,6 +256,7 @@ export function AssetViewer({
 	onAnalysed,
 	doNotRead,
 	onToggleDoNotRead,
+	taskType,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -271,6 +275,7 @@ export function AssetViewer({
 	onAnalysed: () => void
 	doNotRead: Set<string>
 	onToggleDoNotRead: (id: string) => void
+	taskType?: TaskType
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -315,6 +320,7 @@ export function AssetViewer({
 		onLocateClear: () => setLocate(null),
 		doNotRead,
 		onToggleDoNotRead,
+		taskType,
 	}
 
 	return (

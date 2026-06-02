@@ -301,10 +301,12 @@ function AddFolderPanel({
 function EditFolderPanel({
 	task,
 	onRename,
+	onSetTaskType,
 	onDelete,
 }: {
 	task: ApiTask
 	onRename: (path: string, name: string) => Promise<ApiTask>
+	onSetTaskType: (path: string, taskType: TaskType) => Promise<ApiTask>
 	onDelete: (path: string) => Promise<void>
 }) {
 	const [name, setName] = useState(task.name)
@@ -358,6 +360,28 @@ function EditFolderPanel({
 								if (e.key === "Enter" && isDirty) wrap(handleSave)
 							}}
 						/>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<Label>Task type</Label>
+						<Select
+							value={task.taskType ?? ""}
+							onValueChange={(v) => onSetTaskType(task.path, v as TaskType)}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select a task type…" />
+							</SelectTrigger>
+							<SelectContent>
+								{TASK_CONFIGS.map((p) => (
+									<SelectItem key={p.id} value={p.id}>
+										{p.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<p className="text-xs text-muted-foreground">
+							Primes AgentPat and narrows which source types ExtractPat offers.
+						</p>
 					</div>
 
 					<div className="rounded-md border bg-muted/40 px-4 py-3">
@@ -433,6 +457,7 @@ export function TaskManagerDialog({
 	onSelect,
 	onCreate,
 	onRename,
+	onSetTaskType,
 	onDelete,
 }: {
 	open: boolean
@@ -447,6 +472,7 @@ export function TaskManagerDialog({
 		taskType?: TaskType,
 	) => Promise<ApiTask>
 	onRename: (path: string, name: string) => Promise<ApiTask>
+	onSetTaskType: (path: string, taskType: TaskType) => Promise<ApiTask>
 	onDelete: (path: string) => Promise<void>
 }) {
 	const [panelState, setPanelState] = useState<PanelState>("empty")
@@ -595,6 +621,7 @@ export function TaskManagerDialog({
 								key={selectedTask.path}
 								task={selectedTask}
 								onRename={onRename}
+								onSetTaskType={onSetTaskType}
 								onDelete={handleDelete}
 							/>
 						) : null}

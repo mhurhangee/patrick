@@ -205,6 +205,10 @@ function WorkspaceContent({
 								onAnalysed={asset.refresh}
 								doNotRead={asset.doNotRead}
 								onToggleDoNotRead={asset.toggleDoNotRead}
+								taskType={
+									task.tasks.find((t) => t.path === task.currentTaskId)
+										?.taskType
+								}
 							/>
 						</ResizablePanel>
 						<ResizableHandle
@@ -261,6 +265,7 @@ function WorkspaceContent({
 				onSelect={task.setCurrentTaskId}
 				onCreate={task.createTask}
 				onRename={task.renameTask}
+				onSetTaskType={task.setTaskType}
 				onDelete={task.deleteTask}
 			/>
 

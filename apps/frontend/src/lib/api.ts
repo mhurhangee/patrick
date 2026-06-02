@@ -189,8 +189,8 @@ export const api = {
 				"/tasks",
 				json({ path, name, taskType }, { method: "POST" }),
 			),
-		rename: (path: string, name: string) =>
-			request<ApiTask>("/tasks", json({ path, name }, { method: "PATCH" })),
+		update: (path: string, patch: { name?: string; taskType?: TaskType }) =>
+			request<ApiTask>("/tasks", json({ path, ...patch }, { method: "PATCH" })),
 		delete: (path: string) =>
 			request<{ ok: boolean }>("/tasks", json({ path }, { method: "DELETE" })),
 		listFiles: (path: string) =>

@@ -25,7 +25,13 @@ export function useTaskState() {
 	}
 
 	async function renameTask(path: string, name: string) {
-		const updated = await api.tasks.rename(path, name)
+		const updated = await api.tasks.update(path, { name })
+		setTasks((prev) => prev.map((p) => (p.path === path ? updated : p)))
+		return updated
+	}
+
+	async function setTaskType(path: string, taskType: TaskType) {
+		const updated = await api.tasks.update(path, { taskType })
 		setTasks((prev) => prev.map((p) => (p.path === path ? updated : p)))
 		return updated
 	}
@@ -46,6 +52,7 @@ export function useTaskState() {
 		setCurrentTaskId,
 		createTask,
 		renameTask,
+		setTaskType,
 		deleteTask,
 	}
 }

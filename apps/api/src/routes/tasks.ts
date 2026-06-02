@@ -35,9 +35,21 @@ tasksRouter.post("/", async (c) => {
 })
 
 tasksRouter.patch("/", async (c) => {
-	const { path, name } = await c.req.json<{ path: string; name: string }>()
+	const { path, name, taskType } = await c.req.json<{
+		path: string
+		name?: string
+		taskType?: TaskType
+	}>()
 	const tasks = await readTasks()
-	const updated = tasks.map((p) => (p.path === path ? { ...p, name } : p))
+	const updated = tasks.map((p) =>
+		p.path === path
+			? {
+					...p,
+					...(name !== undefined ? { name } : {}),
+					...(taskType !== undefined ? { taskType } : {}),
+				}
+			: p,
+	)
 	await writeTasks(updated)
 	const entry = updated.find((p) => p.path === path)
 	if (!entry) return c.json({ error: "not found" }, 404)

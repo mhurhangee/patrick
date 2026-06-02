@@ -3,6 +3,7 @@ import { basename, dirname } from "node:path"
 import {
 	type AnalysisRecord,
 	ASSET_CONFIGS,
+	allowedAssetTypesFor,
 	extractLocationMap,
 	isExtractable,
 	mergeExtracted,
@@ -11,7 +12,7 @@ import { generateText, Output, streamText } from "ai"
 import { Hono } from "hono"
 import { stream } from "hono/streaming"
 import { z } from "zod"
-import { readSettings, writeAnalysis } from "../lib/fs"
+import { readSettings, readTasks, writeAnalysis } from "../lib/fs"
 import { buildExtractPatPrompt, createModel } from "../lib/patent-prompt"
 
 export const extractpatRouter = new Hono()
@@ -33,16 +34,16 @@ async function classify(
 	// biome-ignore lint/suspicious/noExplicitAny: model type from createModel
 	model: any,
 	fileData: Buffer,
+	candidates: typeof EXTRACTABLE_SOURCES,
 ): Promise<string> {
 	// Include an "other" escape hatch so the model isn't forced to mislabel a
 	// document (e.g. prior art) as one of the extractable types.
 	const ids: [string, ...string[]] = [
 		"other",
-		...EXTRACTABLE_SOURCES.map((c) => c.id as string),
+		...candidates.map((c) => c.id as string),
 	]
-	const list = EXTRACTABLE_SOURCES.map(
-		(c) => `- ${c.id}: ${c.typeLabel} — ${c.aiContext}`,
-	)
+	const list = candidates
+		.map((c) => `- ${c.id}: ${c.typeLabel} — ${c.aiContext}`)
 		.concat(
 			"- other: anything that does not clearly match one of the above (prior art, the application itself, client correspondence, etc.)",
 		)
@@ -65,6 +66,17 @@ async function classify(
 		],
 	})
 	return output.assetType
+}
+
+// Extractable source types relevant to the file's task (falls back to all).
+async function candidatesFor(filePath: string) {
+	const tasks = await readTasks()
+	const taskType = tasks.find((t) => t.path === dirname(filePath))?.taskType
+	const allowed = allowedAssetTypesFor(taskType)
+	const filtered = allowed
+		? EXTRACTABLE_SOURCES.filter((c) => allowed.includes(c.id))
+		: EXTRACTABLE_SOURCES
+	return filtered.length ? filtered : EXTRACTABLE_SOURCES
 }
 
 extractpatRouter.post("/extract", async (c) => {
@@ -104,7 +116,7 @@ extractpatRouter.post("/extract", async (c) => {
 	const resolvedType =
 		assetType && assetType !== "auto"
 			? assetType
-			: await classify(model, fileData)
+			: await classify(model, fileData, await candidatesFor(filePath))
 
 	if (resolvedType === "other")
 		return c.json(
@@ -193,7 +205,7 @@ extractpatRouter.post("/extract/stream", async (c) => {
 	const resolvedType =
 		assetType && assetType !== "auto"
 			? assetType
-			: await classify(model, fileData)
+			: await classify(model, fileData, await candidatesFor(filePath))
 
 	if (resolvedType === "other")
 		return c.json(
