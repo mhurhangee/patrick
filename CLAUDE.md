@@ -43,7 +43,8 @@ task-folder/            ← user selects this, already exists on their machine
 │   ├── index.json      ← [{ id, title, date, lastMessagePreview }]
 │   └── chat-{id}.json  ← full AI SDK message history
 └── analysis/           ← ExtractPat results, per-source metadata
-    └── {filename}.json ← AnalysisRecord { assetType, details, locations, … }
+    ├── {filename}.json ← AnalysisRecord { assetType, details, locations, … }
+    └── _excluded.json  ← filenames flagged "do not read" (excluded from AgentPat)
 ```
 
 **Why files:**
@@ -60,10 +61,11 @@ task-folder/            ← user selects this, already exists on their machine
 
 **Task = a folder on disk.** No upload, no import. Point at a folder you already have. A *task* is one discrete unit of work (e.g. responding to a specific Office Action) — **not** a generic "project" and **not** a "matter" (the whole case file). "Matter" is reserved for a possible future grouping layer (matter → tasks). Code: `TaskEntry`/`TaskType`/`TASK_CONFIGS`/`taskType`; never reintroduce `project*`.
 
-- **Task type** — `TASK_CONFIGS` (US Non-Final/Final OA Response, EP Art 94(3) Response). Chosen at folder-pick, stored in `tasks.yaml`, fed into the AgentPat system prompt to prime it.
-- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Open as `[Document | Analysis]` tabs in the viewer.
+- **Task type** — `TASK_CONFIGS` (US Non-Final/Final OA Response, EP Art 94(3) Response). Chosen at folder-pick, editable later in the task manager, stored in `tasks.yaml`. Primes the AgentPat system prompt **and** narrows which source types ExtractPat offers/classifies (`allowedAssetTypes` → `allowedAssetTypesFor()`).
+- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Each opens as its own **Document** tab; its **Analysis** is a separate tab (synthetic `kind:"analysis"` asset). Sidebar shows a microscope icon per source (amber = un-analysed, green = analysed) that opens the Analysis tab.
 - **Artifacts** — documents drafted in Plate, saved to `artifacts/` as `.json` (+ `.docx`). Attorney edits in Word if they want. (Creation works; AgentPat write tools still rudimentary — WIP.)
-- **Analysis** — ExtractPat results per source in `analysis/{filename}.json` (`AnalysisRecord`). Surfaced in the source's Analysis tab; un-analysed sources show an amber dot.
+- **Analysis** — ExtractPat results per source in `analysis/{filename}.json` (`AnalysisRecord`). Run from the Analysis tab (type dropdown defaults Auto-detect, **streams** field-by-field) or proposed by AgentPat's `analyseSource`. Per-field "locate" highlights the value in the Document tab.
+- **Source exclusion ("do not read")** — per-source flag toggled from the sidebar (eye) or PDF toolbar; persisted in `analysis/_excluded.json`. Excluded sources are dropped from AgentPat context, blocked from the `readFile` tool, named in the prompt as off-limits, and can't be analysed.
 - **Chats** — full AI SDK message history as JSON. The chat UI renders every part — text, reasoning, and tool call/result — as inspectable collapsibles (transparency by default), with a per-tool presenter registry for generative UI.
 
 ## AgentPat
