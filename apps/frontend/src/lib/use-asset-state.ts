@@ -38,10 +38,14 @@ export function useAssetState(currentProjectId: string) {
 	const [openTabIds, setOpenTabIds] = useState<string[]>([])
 	const [activeTab, setActiveTab] = useState("")
 	const [splitView, setSplitView] = useState(false)
+	const [analysedFilenames, setAnalysedFilenames] = useState<Set<string>>(
+		new Set(),
+	)
 
 	const refresh = useCallback(() => {
 		if (!currentProjectId) {
 			setAssets([])
+			setAnalysedFilenames(new Set())
 			return
 		}
 		api.projects.listFiles(currentProjectId).then(({ sources, artifacts }) => {
@@ -53,6 +57,11 @@ export function useAssetState(currentProjectId: string) {
 			)
 			setAssets([...sourceAssets, ...artifactAssets])
 		})
+		api.analysis
+			.list(currentProjectId)
+			.then((summaries) =>
+				setAnalysedFilenames(new Set(summaries.map((s) => s.filename))),
+			)
 	}, [currentProjectId])
 
 	useEffect(() => {
@@ -119,6 +128,7 @@ export function useAssetState(currentProjectId: string) {
 		activeTab,
 		splitView,
 		openAssets,
+		analysedFilenames,
 		refresh,
 		openAsset,
 		selectTab,

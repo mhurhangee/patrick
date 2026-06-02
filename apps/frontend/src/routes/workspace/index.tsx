@@ -135,6 +135,7 @@ function WorkspaceContent({
 				projects={project.projects}
 				projectsLoading={project.projectsLoading}
 				currentProjectId={project.currentProjectId}
+				analysedFilenames={asset.analysedFilenames}
 				onOpen={asset.openAsset}
 				onClose={asset.closeTab}
 				onRefreshSources={asset.refresh}
@@ -189,6 +190,9 @@ function WorkspaceContent({
 								onChatToggle={toggleChat}
 								onAssetUpdate={asset.updateAsset}
 								chatCollapsed={chatCollapsed}
+								provider={ai.provider}
+								apiKey={ai.apiKey}
+								model={ai.detailedModel}
 							/>
 						</ResizablePanel>
 						<ResizableHandle

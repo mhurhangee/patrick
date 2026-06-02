@@ -1,3 +1,4 @@
+import type { FieldLocation, FieldZone } from "@patrickos/shared"
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/Page/AnnotationLayer.css"
 import "react-pdf/dist/Page/TextLayer.css"
@@ -14,6 +15,25 @@ export type SourceViewerHighlight = {
 	yStart: number // 0–100, percentage from top of page
 	yEnd: number
 	active?: boolean // brighter highlight
+}
+
+// Map a coarse page zone to a vertical band (percentage from top).
+const ZONE_BAND: Record<FieldZone, { yStart: number; yEnd: number }> = {
+	top: { yStart: 2, yEnd: 20 },
+	"upper-centre": { yStart: 20, yEnd: 40 },
+	centre: { yStart: 40, yEnd: 60 },
+	"lower-centre": { yStart: 60, yEnd: 80 },
+	bottom: { yStart: 80, yEnd: 98 },
+}
+
+export function locationsToHighlights(
+	locations: FieldLocation[],
+): SourceViewerHighlight[] {
+	return locations.map((l) => ({
+		page: l.page,
+		...ZONE_BAND[l.zone],
+		active: true,
+	}))
 }
 
 export function SourceViewer({

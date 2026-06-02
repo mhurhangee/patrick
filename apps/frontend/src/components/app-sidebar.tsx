@@ -104,6 +104,7 @@ export function AppSidebar({
 	projects,
 	projectsLoading,
 	currentProjectId,
+	analysedFilenames,
 	onOpen,
 	onClose,
 	onRefreshSources,
@@ -126,6 +127,7 @@ export function AppSidebar({
 	projects: ApiProject[]
 	projectsLoading: boolean
 	currentProjectId: string
+	analysedFilenames: Set<string>
 	onOpen: (id: string) => void
 	onClose: (id: string) => void
 	onRefreshSources: () => void
@@ -239,6 +241,13 @@ export function AppSidebar({
 											<span className="capitalize min-w-0 flex-1 truncate">
 												{asset.title}
 											</span>
+											{kind === "source" &&
+												!analysedFilenames.has(asset.filename) && (
+													<span
+														title="Not analysed — run ExtractPat"
+														className="size-1.5 shrink-0 rounded-full bg-amber-500/70"
+													/>
+												)}
 										</SidebarMenuSubButton>
 									</SidebarMenuSubItem>
 								)

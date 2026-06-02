@@ -1,9 +1,14 @@
-import type { ApiAsset } from "@patrickos/shared"
+import type { ApiAsset, FieldLocation } from "@patrickos/shared"
 import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
 import type { Value } from "platejs"
-import { Fragment, useEffect, useRef } from "react"
+import { Fragment, useEffect, useRef, useState } from "react"
+import { AnalysisPanel } from "@/components/analysis-panel"
 import { PlateEditor } from "@/components/editor/plate-editor"
-import { SourceViewer } from "@/components/source-viewer"
+import {
+	locationsToHighlights,
+	SourceViewer,
+	type SourceViewerHighlight,
+} from "@/components/source-viewer"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
@@ -86,17 +91,106 @@ function ArtifactEditor({
 	)
 }
 
+function SubTab({
+	active,
+	onClick,
+	children,
+}: {
+	active: boolean
+	onClick: () => void
+	children: React.ReactNode
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={cn(
+				"rounded px-2.5 py-1 text-xs transition-colors",
+				active
+					? "bg-accent font-medium text-accent-foreground"
+					: "text-muted-foreground hover:text-foreground",
+			)}
+		>
+			{children}
+		</button>
+	)
+}
+
+function SourcePane({
+	asset,
+	provider,
+	apiKey,
+	model,
+}: {
+	asset: ApiAsset
+	provider: string
+	apiKey: string
+	model: string
+}) {
+	const [tab, setTab] = useState<"document" | "analysis">("document")
+	const [jumpToPage, setJumpToPage] = useState<number | undefined>()
+	const [highlights, setHighlights] = useState<SourceViewerHighlight[]>([])
+
+	function locate(locations: FieldLocation[]) {
+		setHighlights(locationsToHighlights(locations))
+		setJumpToPage(locations[0]?.page)
+		setTab("document")
+	}
+
+	return (
+		<div className="flex h-full flex-col overflow-hidden">
+			<div className="flex shrink-0 items-center gap-1 border-b px-2 py-1">
+				<SubTab active={tab === "document"} onClick={() => setTab("document")}>
+					Document
+				</SubTab>
+				<SubTab active={tab === "analysis"} onClick={() => setTab("analysis")}>
+					Analysis
+				</SubTab>
+			</div>
+			<div className="flex-1 overflow-hidden">
+				{/* Both panes stay mounted so PDF state and unsaved edits survive tab switches */}
+				<div className={cn("h-full", tab !== "document" && "hidden")}>
+					<SourceViewer
+						src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
+						jumpToPage={jumpToPage}
+						highlights={highlights}
+					/>
+				</div>
+				<div className={cn("h-full", tab !== "analysis" && "hidden")}>
+					<AnalysisPanel
+						asset={asset}
+						provider={provider}
+						apiKey={apiKey}
+						model={model}
+						onLocate={locate}
+					/>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 function AssetPane({
 	asset,
 	onAssetUpdate,
+	provider,
+	apiKey,
+	model,
 }: {
 	asset: ApiAsset
 	onAssetUpdate: (updated: ApiAsset) => void
+	provider: string
+	apiKey: string
+	model: string
 }) {
 	if (asset.kind === "source") {
 		return (
-			<SourceViewer
-				src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
+			<SourcePane
+				key={asset.id}
+				asset={asset}
+				provider={provider}
+				apiKey={apiKey}
+				model={model}
 			/>
 		)
 	}
@@ -121,6 +215,9 @@ export function AssetViewer({
 	onChatToggle,
 	onAssetUpdate,
 	chatCollapsed,
+	provider,
+	apiKey,
+	model,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -132,6 +229,9 @@ export function AssetViewer({
 	onChatToggle: () => void
 	onAssetUpdate: (updated: ApiAsset) => void
 	chatCollapsed: boolean
+	provider: string
+	apiKey: string
+	model: string
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -226,6 +326,9 @@ export function AssetViewer({
 									key={asset.id}
 									asset={asset}
 									onAssetUpdate={onAssetUpdate}
+									provider={provider}
+									apiKey={apiKey}
+									model={model}
 								/>
 							</ResizablePanel>
 						</Fragment>
@@ -238,6 +341,9 @@ export function AssetViewer({
 							key={activeAsset.id}
 							asset={activeAsset}
 							onAssetUpdate={onAssetUpdate}
+							provider={provider}
+							apiKey={apiKey}
+							model={model}
 						/>
 					)}
 				</div>
