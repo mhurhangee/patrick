@@ -411,13 +411,13 @@ function ChatPane({
 
 	// Scroll latest user message to top on new send — not on initial history load.
 	// useLayoutEffect fires before paint so there's no flash of the old position.
-	const prevLatestExchangeIdRef = useRef<string | undefined>(undefined)
+	// Seed from the last loaded exchange so history doesn't scroll/snapshot on
+	// mount — but a fresh chat starts undefined, so its first sent message does.
+	const prevLatestExchangeIdRef = useRef<string | undefined>(
+		initialMessages.filter((m) => m.role === "user").at(-1)?.id,
+	)
 	useLayoutEffect(() => {
 		if (!latestExchangeId) return
-		if (prevLatestExchangeIdRef.current === undefined) {
-			prevLatestExchangeIdRef.current = latestExchangeId
-			return
-		}
 		if (prevLatestExchangeIdRef.current === latestExchangeId) return
 		prevLatestExchangeIdRef.current = latestExchangeId
 		lastUserMsgRef.current?.scrollIntoView({
@@ -476,10 +476,9 @@ function ChatPane({
 		if (alreadyInHistory) return
 		sentInitial.current = true
 		sendStartTimeRef.current = Date.now()
-		pendingContextRef.current = openAssets.map((a) => ({
-			id: a.id,
-			title: a.title,
-		}))
+		pendingContextRef.current = openAssets
+			.filter((a) => !doNotRead.has(a.id))
+			.map((a) => ({ id: a.id, title: a.title }))
 		sendMessage({ text: initialMessage })
 		onMessageSent()
 	}, [initialMessage])
@@ -500,10 +499,9 @@ function ChatPane({
 		const trimmed = input.trim()
 		if (!trimmed || isStreaming) return
 		sendStartTimeRef.current = Date.now()
-		pendingContextRef.current = openAssets.map((a) => ({
-			id: a.id,
-			title: a.title,
-		}))
+		pendingContextRef.current = openAssets
+			.filter((a) => !doNotRead.has(a.id))
+			.map((a) => ({ id: a.id, title: a.title }))
 		sendMessage({ text: trimmed })
 		setInput("")
 		onMessageSent()
