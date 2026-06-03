@@ -37,9 +37,17 @@ export function ContextRing({
 	const color =
 		pct >= 90
 			? "text-red-500"
-			: pct >= 70
+			: pct >= 75
 				? "text-amber-500"
-				: "text-muted-foreground"
+				: pct >= 50
+					? "text-yellow-500"
+					: "text-muted-foreground"
+	const warning =
+		pct >= 90
+			? "Context is nearly full — start a new chat to keep responses reliable."
+			: pct >= 75
+				? "Context is getting large — a new chat keeps things sharp."
+				: null
 
 	return (
 		<Popover>
@@ -97,6 +105,16 @@ export function ContextRing({
 						<span className="text-muted-foreground">Cost per turn (input)</span>
 						<span>~{formatUsd(inputCostPerTurn)}</span>
 					</div>
+				)}
+				{warning && (
+					<p
+						className={cn(
+							"mt-2 font-medium",
+							pct >= 90 ? "text-red-500" : "text-amber-500",
+						)}
+					>
+						{warning}
+					</p>
 				)}
 				<p className="mt-2 text-xxs text-muted-foreground">
 					Open documents are re-sent every turn — close one to free space.

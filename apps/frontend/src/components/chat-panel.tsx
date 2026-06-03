@@ -1,5 +1,9 @@
 import { useChat } from "@ai-sdk/react"
-import type { ApiAsset, ApiChat } from "@patrickos/shared"
+import {
+	type ApiAsset,
+	type ApiChat,
+	CONTEXT_OVERFLOW_MARKER,
+} from "@patrickos/shared"
 import {
 	DefaultChatTransport,
 	getToolName,
@@ -31,6 +35,7 @@ import { contextWindowFor, MODELS_BY_ID } from "@/lib/ai-models"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { AssistantParts, type ToolContext } from "./chat-message-parts"
+import { ChatOverflowNotice } from "./chat-overflow-notice"
 import { ContextRing } from "./context-ring"
 import {
 	ExchangePanel,
@@ -246,6 +251,7 @@ function ChatPane({
 	detailedModel,
 	onTitleUpdate,
 	onMessageSent,
+	onNewChat,
 }: {
 	chatId: string
 	openAssets: ApiAsset[]
@@ -262,6 +268,7 @@ function ChatPane({
 	detailedModel: string
 	onTitleUpdate: (title: string) => void
 	onMessageSent: () => void
+	onNewChat: () => void
 }) {
 	const openAssetIdsRef = useRef<string[]>([])
 	// Exclude "do not read" sources from what AgentPat receives as context.
@@ -292,25 +299,27 @@ function ChatPane({
 		Record<string, Array<{ id: string; title: string }>>
 	>({})
 
-	const { messages, sendMessage, status, stop, addToolOutput } = useChat({
-		transport: new DefaultChatTransport({
-			api: `${BASE_URL}/chats/${chatId}/messages`,
-			body: { taskPath: taskId, provider, apiKey, detailedModel },
-			prepareSendMessagesRequest: ({ body, messages: uiMessages, id }) => ({
-				body: {
-					...body,
-					id,
-					messages: uiMessages,
-					openFilePaths: openAssetIdsRef.current,
-					excludedPaths: excludedPathsRef.current,
-				},
+	const { messages, sendMessage, status, stop, addToolOutput, error } = useChat(
+		{
+			transport: new DefaultChatTransport({
+				api: `${BASE_URL}/chats/${chatId}/messages`,
+				body: { taskPath: taskId, provider, apiKey, detailedModel },
+				prepareSendMessagesRequest: ({ body, messages: uiMessages, id }) => ({
+					body: {
+						...body,
+						id,
+						messages: uiMessages,
+						openFilePaths: openAssetIdsRef.current,
+						excludedPaths: excludedPathsRef.current,
+					},
+				}),
 			}),
-		}),
-		messages: initialMessages,
-		// After the user answers a client-side tool (e.g. analyseSource), resubmit
-		// so the agent continues with the tool result.
-		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-	})
+			messages: initialMessages,
+			// After the user answers a client-side tool (e.g. analyseSource), resubmit
+			// so the agent continues with the tool result.
+			sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+		},
+	)
 
 	const toolCtx: ToolContext = {
 		provider,
@@ -324,6 +333,9 @@ function ChatPane({
 	}
 
 	const isStreaming = status === "streaming" || status === "submitted"
+	const showOverflowNotice = Boolean(
+		error?.message.includes(CONTEXT_OVERFLOW_MARKER),
+	)
 
 	// Focus textarea on mount for new (empty) chats
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
@@ -678,6 +690,13 @@ function ChatPane({
 					})
 				)}
 			</div>
+			{showOverflowNotice ? (
+				<ChatOverflowNotice onNewChat={onNewChat} />
+			) : error ? (
+				<p className="mx-3 mb-3 text-xs text-muted-foreground">
+					Something went wrong generating a response — please try again.
+				</p>
+			) : null}
 			<ChatInputBar
 				openAssets={openAssets}
 				onRemoveAsset={onRemoveAsset}
@@ -716,6 +735,7 @@ function ChatPaneLoader({
 	detailedModel: string
 	onTitleUpdate: (title: string) => void
 	onMessageSent: () => void
+	onNewChat: () => void
 }) {
 	const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(
 		null,
@@ -895,6 +915,7 @@ export function ChatPanel({
 					detailedModel={detailedModel}
 					onTitleUpdate={(title) => onChatTitleUpdate(activeChat.id, title)}
 					onMessageSent={() => onMessageSent(activeChat.id)}
+					onNewChat={onNewChat}
 				/>
 			)}
 		</div>

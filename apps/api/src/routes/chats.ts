@@ -1,6 +1,11 @@
 import { readdir, readFile, stat } from "node:fs/promises"
 import { extname, join } from "node:path"
-import type { Chat, ChatIndexEntry, ChatMessage } from "@patrickos/shared"
+import {
+	type Chat,
+	type ChatIndexEntry,
+	type ChatMessage,
+	CONTEXT_OVERFLOW_MARKER,
+} from "@patrickos/shared"
 import type { ModelMessage } from "ai"
 import { createAgentUIStreamResponse, ToolLoopAgent, tool } from "ai"
 import { Hono } from "hono"
@@ -20,6 +25,14 @@ import {
 	createModel,
 	reasoningOptions,
 } from "../lib/patent-prompt"
+
+// Does a provider error look like a context-window overflow? Each vendor phrases
+// it differently, so match the common shapes (and fall back to generic otherwise).
+function isContextOverflow(message: string): boolean {
+	return /context (length|window)|maximum context|too many tokens|prompt is too long|input (is )?too large|exceeds?.{0,30}(context|token|maximum)|reduce the length/i.test(
+		message,
+	)
+}
 
 // No execute — loop stops when called; data lives in part.input on the client.
 const generateMetadata = tool({
@@ -333,6 +346,13 @@ chatsRouter.post("/:id/messages", async (c) => {
 		agent,
 		uiMessages: cleanedMessages,
 		sendReasoning: true,
+		// Map a context-window overflow to a sentinel the client recognises; the
+		// default would mask it as a generic "an error occurred".
+		onError: (error) => {
+			const msg = error instanceof Error ? error.message : String(error)
+			if (isContextOverflow(msg)) return CONTEXT_OVERFLOW_MARKER
+			return "An error occurred while generating the response."
+		},
 		generateMessageId: () => crypto.randomUUID(),
 		messageMetadata: ({ part }) => {
 			if (part.type === "finish" && "totalUsage" in part) {

@@ -4,6 +4,11 @@
 
 import type { TaskType } from "./task-config"
 
+// Sentinel the chat route streams (via onError) when a turn exceeds the model's
+// context window, so the client can show the "start a new chat" recovery UI
+// instead of a generic error. Providers phrase the underlying error differently.
+export const CONTEXT_OVERFLOW_MARKER = "context-window-exceeded"
+
 // ─── Settings (settings.yaml) ────────────────────────────────────────────────
 
 export type AiProvider = "anthropic" | "openai" | "google" | "gateway"
