@@ -31,40 +31,18 @@ function formatTokens(n: number): string {
 	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 }
 
-// Shown during streaming — holds the space so the user message stays at top
-export function StreamingSpacer({
-	minHeight,
-	label = "Thinking…",
-}: {
-	minHeight: number
-	label?: string
-}) {
-	return (
-		<div style={{ minHeight }} className="flex items-start px-5 pt-5">
-			<span className="animate-pulse text-xs text-muted-foreground/40">
-				{label}
-			</span>
-		</div>
-	)
-}
-
-// Shown after streaming ends — same minHeight so there's no layout shift on swap.
+// Per-exchange audit summary, shown after the response completes.
 export function ExchangePanel({
 	data,
 	isExpanded,
-	minHeight,
 	onToggle,
 }: {
 	data: ExchangePanelData
 	isExpanded: boolean
-	minHeight: number
 	onToggle: () => void
 }) {
 	return (
-		<div
-			className="flex flex-col pb-8"
-			style={isExpanded ? { minHeight } : undefined}
-		>
+		<div className="flex flex-col pb-8">
 			{/* Toggle bar */}
 			<div className="flex w-full items-center justify-between px-3 py-2">
 				<div className="flex items-center gap-1">

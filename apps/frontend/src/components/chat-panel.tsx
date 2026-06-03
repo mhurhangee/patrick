@@ -11,9 +11,8 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai"
-import { ArrowUp, Loader2, Plus, Square, X } from "lucide-react"
+import { ArrowUp, ChevronDown, Loader2, Plus, Square, X } from "lucide-react"
 import {
-	Fragment,
 	type RefObject,
 	useEffect,
 	useLayoutEffect,
@@ -38,11 +37,7 @@ import { cn } from "@/lib/utils"
 import { AssistantParts, type ToolContext } from "./chat-message-parts"
 import { ChatOverflowNotice } from "./chat-overflow-notice"
 import { ContextRing } from "./context-ring"
-import {
-	ExchangePanel,
-	type ExchangePanelData,
-	StreamingSpacer,
-} from "./exchange-panel"
+import { ExchangePanel, type ExchangePanelData } from "./exchange-panel"
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -288,6 +283,7 @@ function ChatPane({
 	const lastUserMsgRef = useRef<HTMLDivElement>(null)
 	const textareaRef = useRef<HTMLTextAreaElement>(null)
 	const [containerHeight, setContainerHeight] = useState(400)
+	const [atBottom, setAtBottom] = useState(true)
 	const [input, setInput] = useState("")
 	const sentInitial = useRef(false)
 	// closedIds: latest panels the user has manually collapsed
@@ -435,6 +431,13 @@ function ChatPane({
 		}))
 	}, [latestExchangeId])
 
+	// Re-check scroll position as content streams in, so the scroll-to-bottom
+	// button appears when a response grows below the fold (not just on scroll).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: handleScroll reads refs; recheck when messages change
+	useEffect(() => {
+		handleScroll()
+	}, [messages])
+
 	// Capture TTFT on first streaming chunk, duration when done
 	const prevStatusRef = useRef(status)
 	useEffect(() => {
@@ -480,6 +483,18 @@ function ChatPane({
 		sendMessage({ text: initialMessage })
 		onMessageSent()
 	}, [initialMessage])
+
+	function handleScroll() {
+		const el = scrollContainerRef.current
+		if (!el) return
+		setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 80)
+	}
+
+	function scrollToBottom() {
+		const el = scrollContainerRef.current
+		if (!el) return
+		el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+	}
 
 	function send() {
 		const trimmed = input.trim()
@@ -594,72 +609,98 @@ function ChatPane({
 	}
 
 	return (
-		<div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-			<div
-				ref={scrollContainerRef}
-				className="min-h-0 flex-1 overflow-y-auto p-3"
-			>
-				{exchanges.length === 0 ? (
-					<p className="py-12 text-center text-sm text-muted-foreground">
-						No messages yet. Start the conversation below.
-					</p>
-				) : (
-					exchanges.map((exchange) => {
-						const isLatest = exchange.id === latestExchangeId
-						const showSpacer = isLatest && isStreaming
-						// Extract as local const so TypeScript narrows correctly in callbacks
-						const assistantMsg = exchange.assistantMsg
+		<div className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
+			<div className="relative min-h-0 flex-1">
+				<div
+					ref={scrollContainerRef}
+					onScroll={handleScroll}
+					className="h-full overflow-y-auto p-3"
+				>
+					{exchanges.length === 0 ? (
+						<p className="py-12 text-center text-sm text-muted-foreground">
+							No messages yet. Start the conversation below.
+						</p>
+					) : (
+						exchanges.map((exchange) => {
+							const isLatest = exchange.id === latestExchangeId
+							const streaming = isLatest && isStreaming
+							// Extract as local const so TypeScript narrows correctly in callbacks
+							const assistantMsg = exchange.assistantMsg
+							// Pre-first-token: nothing from the assistant yet.
+							const assistantEmpty =
+								!assistantMsg || assistantMsg.parts.length === 0
 
-						return (
-							<Fragment key={exchange.id}>
-								{/* User message */}
+							return (
+								// The latest exchange gets a one-viewport min-height so its user
+								// message can scroll to the top — without a trailing spacer you
+								// could scroll past into blank space.
 								<div
-									ref={isLatest ? lastUserMsgRef : null}
-									className="flex justify-end px-3 pt-3"
+									key={exchange.id}
+									style={
+										isLatest ? { minHeight: containerHeight - 24 } : undefined
+									}
 								>
-									<div className="prose prose-sm tracking-tight max-w-[88%] px-3 py-2 pb-6 text-sm font-medium text-foreground dark:prose-invert [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_ul]:my-1.5">
-										{exchange.userMsg.parts.map((part, i) => {
-											if (part.type !== "text") return null
-											return (
-												// biome-ignore lint/suspicious/noArrayIndexKey: parts are stable ordered array
-												<Streamdown key={i}>{part.text}</Streamdown>
-											)
-										})}
-									</div>
-								</div>
-
-								{/* Assistant message */}
-								{assistantMsg !== null && (
-									<div className="flex justify-start px-3 pt-3 pb-2">
-										<div className="prose prose-sm tracking-tight leading-normalS max-w-[88%] dark:prose-invert [&_h1]:text-[17px] [&_h1]:font-bold [&_h1]:mb-1.5 [&_h1]:mt-4 [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:mb-1 [&_h2]:mt-3 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:mb-0.5 [&_h3]:mt-2 [&_hr]:my-3 [&_hr]:border-border/40 [&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:my-0.5">
-											<AssistantParts
-												parts={assistantMsg.parts}
-												isStreaming={isStreaming}
-												isLatest={isLatest}
-												ctx={toolCtx}
-											/>
+									{/* User message */}
+									<div
+										ref={isLatest ? lastUserMsgRef : null}
+										className="flex justify-end px-3 pt-3"
+									>
+										<div className="prose prose-sm tracking-tight max-w-[88%] px-3 py-2 pb-6 text-sm font-medium text-foreground dark:prose-invert [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_ul]:my-1.5">
+											{exchange.userMsg.parts.map((part, i) => {
+												if (part.type !== "text") return null
+												return (
+													// biome-ignore lint/suspicious/noArrayIndexKey: parts are stable ordered array
+													<Streamdown key={i}>{part.text}</Streamdown>
+												)
+											})}
 										</div>
 									</div>
-								)}
 
-								{/* StreamingSpacer during streaming, ExchangePanel after.
-								    Both use minHeight=containerHeight — no layout shift on swap. */}
-								{showSpacer ? (
-									<StreamingSpacer
-										minHeight={containerHeight}
-										label="Thinking…"
-									/>
-								) : (
-									<ExchangePanel
-										data={getPanelData(exchange)}
-										isExpanded={isPanelExpanded(exchange.id)}
-										minHeight={containerHeight}
-										onToggle={() => togglePanel(exchange.id)}
-									/>
-								)}
-							</Fragment>
-						)
-					})
+									{/* Assistant message */}
+									{assistantMsg !== null && (
+										<div className="flex justify-start px-3 pt-3 pb-2">
+											<div className="prose prose-sm tracking-tight leading-normalS max-w-[88%] dark:prose-invert [&_h1]:text-[17px] [&_h1]:font-bold [&_h1]:mb-1.5 [&_h1]:mt-4 [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:mb-1 [&_h2]:mt-3 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:mb-0.5 [&_h3]:mt-2 [&_hr]:my-3 [&_hr]:border-border/40 [&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:my-0.5">
+												<AssistantParts
+													parts={assistantMsg.parts}
+													isStreaming={isStreaming}
+													isLatest={isLatest}
+													ctx={toolCtx}
+												/>
+											</div>
+										</div>
+									)}
+
+									{/* Pre-first-token indicator — gone once any content streams in. */}
+									{streaming && assistantEmpty && (
+										<div className="px-5 pt-2">
+											<span className="animate-pulse text-xs text-muted-foreground/40">
+												Thinking…
+											</span>
+										</div>
+									)}
+
+									{/* Audit summary — only once the response is complete. */}
+									{assistantMsg !== null && !streaming && (
+										<ExchangePanel
+											data={getPanelData(exchange)}
+											isExpanded={isPanelExpanded(exchange.id)}
+											onToggle={() => togglePanel(exchange.id)}
+										/>
+									)}
+								</div>
+							)
+						})
+					)}
+				</div>
+				{!atBottom && (
+					<button
+						type="button"
+						onClick={scrollToBottom}
+						aria-label="Scroll to bottom"
+						className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border bg-background p-1.5 text-muted-foreground shadow-md transition-colors hover:text-foreground"
+					>
+						<ChevronDown size={16} />
+					</button>
 				)}
 			</div>
 			{showOverflowNotice ? (
