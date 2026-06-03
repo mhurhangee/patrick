@@ -21,6 +21,7 @@ import {
 	useRef,
 	useState,
 } from "react"
+import { Streamdown } from "streamdown"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
@@ -252,6 +253,7 @@ function ChatPane({
 	onTitleUpdate,
 	onMessageSent,
 	onNewChat,
+	onNewChatWithSummary,
 }: {
 	chatId: string
 	openAssets: ApiAsset[]
@@ -269,6 +271,7 @@ function ChatPane({
 	onTitleUpdate: (title: string) => void
 	onMessageSent: () => void
 	onNewChat: () => void
+	onNewChatWithSummary: (summary: string) => void
 }) {
 	const openAssetIdsRef = useRef<string[]>([])
 	// Exclude "do not read" sources from what AgentPat receives as context.
@@ -336,6 +339,27 @@ function ChatPane({
 	const showOverflowNotice = Boolean(
 		error?.message.includes(CONTEXT_OVERFLOW_MARKER),
 	)
+	const [summarising, setSummarising] = useState(false)
+	// Summarise this (overflowed) chat, then open a fresh one primed with it.
+	// If even the summary request overflows, fall back to a blank new chat.
+	async function startSummaryChat() {
+		setSummarising(true)
+		try {
+			const { summary } = await api.chats.summarize(
+				chatId,
+				taskId,
+				provider,
+				apiKey,
+				detailedModel,
+			)
+			if (summary.trim()) onNewChatWithSummary(summary)
+			else onNewChat()
+		} catch {
+			onNewChat()
+		} finally {
+			setSummarising(false)
+		}
+	}
 
 	// Focus textarea on mount for new (empty) chats
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
@@ -635,12 +659,12 @@ function ChatPane({
 									ref={isLatest ? lastUserMsgRef : null}
 									className="flex justify-end px-3 pt-3"
 								>
-									<div className="max-w-[88%] font-medium  px-3 py-2 pb-6 text-sm text-foreground">
+									<div className="prose prose-sm tracking-tight max-w-[88%] px-3 py-2 pb-6 text-sm font-medium text-foreground dark:prose-invert [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_ul]:my-1.5">
 										{exchange.userMsg.parts.map((part, i) => {
 											if (part.type !== "text") return null
 											return (
 												// biome-ignore lint/suspicious/noArrayIndexKey: parts are stable ordered array
-												<span key={i}>{part.text}</span>
+												<Streamdown key={i}>{part.text}</Streamdown>
 											)
 										})}
 									</div>
@@ -691,7 +715,11 @@ function ChatPane({
 				)}
 			</div>
 			{showOverflowNotice ? (
-				<ChatOverflowNotice onNewChat={onNewChat} />
+				<ChatOverflowNotice
+					onNewChat={onNewChat}
+					onSummarise={startSummaryChat}
+					summarising={summarising}
+				/>
 			) : error ? (
 				<p className="mx-3 mb-3 text-xs text-muted-foreground">
 					Something went wrong generating a response — please try again.
@@ -736,6 +764,7 @@ function ChatPaneLoader({
 	onTitleUpdate: (title: string) => void
 	onMessageSent: () => void
 	onNewChat: () => void
+	onNewChatWithSummary: (summary: string) => void
 }) {
 	const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(
 		null,
@@ -785,6 +814,7 @@ export function ChatPanel({
 	apiKey,
 	detailedModel,
 	onNewChat,
+	onNewChatWithSummary,
 	onCloseChat,
 	onSetActiveChat,
 	onSendInAgentPat,
@@ -807,6 +837,7 @@ export function ChatPanel({
 	apiKey: string
 	detailedModel: string
 	onNewChat: () => void
+	onNewChatWithSummary: (summary: string) => void
 	onCloseChat: (id: string) => void
 	onSetActiveChat: (id: string) => void
 	onSendInAgentPat: (message: string) => void
@@ -916,6 +947,7 @@ export function ChatPanel({
 					onTitleUpdate={(title) => onChatTitleUpdate(activeChat.id, title)}
 					onMessageSent={() => onMessageSent(activeChat.id)}
 					onNewChat={onNewChat}
+					onNewChatWithSummary={onNewChatWithSummary}
 				/>
 			)}
 		</div>

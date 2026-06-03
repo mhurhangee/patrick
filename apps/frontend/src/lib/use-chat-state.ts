@@ -85,6 +85,32 @@ export function useChatState(currentTaskId: string) {
 		})
 	}
 
+	// Start a fresh chat primed with a summary of a previous (overflowed) one.
+	// The summary is seeded as the opening message so the new chat carries the
+	// gist forward without the old chat's full token weight.
+	function newChatWithSummary(summary: string) {
+		if (!currentTaskId) return
+		const framed = `I'm continuing from an earlier conversation that hit the model's context limit. Below is an auto-generated summary of it (some detail may be lost). Just briefly acknowledge you have the context — do not run any tools or take any actions this turn; wait for my next instruction.\n\n${summary}`
+		const id = crypto.randomUUID()
+		const now = new Date().toISOString()
+		setChats((prev) => [
+			{
+				id,
+				taskPath: currentTaskId,
+				title: "Continued chat",
+				createdAt: now,
+				updatedAt: now,
+				lastMessagePreview: "",
+				messageCount: 0,
+			} as ApiChat,
+			...prev,
+		])
+		openChat(id)
+		api.chats.create(currentTaskId, "Continued chat", id).then(() => {
+			setPendingMessages((prev) => ({ ...prev, [id]: framed }))
+		})
+	}
+
 	return {
 		chats,
 		openChatIds,
@@ -97,6 +123,7 @@ export function useChatState(currentTaskId: string) {
 		deleteChat,
 		updateChat,
 		sendInAgentPat,
+		newChatWithSummary,
 		incrementMessageCount,
 	}
 }

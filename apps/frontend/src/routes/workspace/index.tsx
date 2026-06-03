@@ -234,6 +234,7 @@ function WorkspaceContent({
 								apiKey={ai.apiKey}
 								detailedModel={ai.detailedModel}
 								onNewChat={chat.newChat}
+								onNewChatWithSummary={chat.newChatWithSummary}
 								onCloseChat={chat.closeChat}
 								onSetActiveChat={chat.setActiveChatId}
 								onSendInAgentPat={chat.sendInAgentPat}

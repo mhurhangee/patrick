@@ -7,7 +7,12 @@ import {
 	CONTEXT_OVERFLOW_MARKER,
 } from "@patrickos/shared"
 import type { ModelMessage } from "ai"
-import { createAgentUIStreamResponse, ToolLoopAgent, tool } from "ai"
+import {
+	createAgentUIStreamResponse,
+	generateText,
+	ToolLoopAgent,
+	tool,
+} from "ai"
 import { Hono } from "hono"
 import { z } from "zod"
 import { fetchPatent } from "../lib/epo-ops"
@@ -152,6 +157,67 @@ chatsRouter.get("/:id/messages", async (c) => {
 	const chat = await readChat(taskPath, chatId)
 	if (!chat) return c.json({ error: "Not found" }, 404)
 	return c.json(chat.messages)
+})
+
+// Summarise a chat so it can prime a fresh one after a context overflow. Drops
+// documents and raw tool dumps (the bulk) and summarises the conversation text
+// only, so the summary request fits even though the live chat overflowed.
+chatsRouter.post("/:id/summarize", async (c) => {
+	const chatId = c.req.param("id")
+	const { taskPath, provider, apiKey, model } = await c.req.json<{
+		taskPath: string
+		provider: string
+		apiKey: string
+		model: string
+	}>()
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+
+	const chat = await readChat(taskPath, chatId)
+	if (!chat) return c.json({ error: "Not found" }, 404)
+
+	const transcript = chat.messages
+		.map((m) => {
+			const text = (m.parts as Array<{ type: string; text?: string }>)
+				.filter((p) => p.type === "text" && typeof p.text === "string")
+				.map((p) => p.text)
+				.join("\n")
+			return text.trim()
+				? `${m.role === "user" ? "Attorney" : "AgentPat"}: ${text}`
+				: null
+		})
+		.filter(Boolean)
+		.join("\n\n")
+
+	if (!transcript.trim()) return c.json({ summary: "" })
+
+	const settings = await readSettings()
+	const resolvedProvider = provider || settings.ai.provider
+	const keyField = `${resolvedProvider}Key` as
+		| "anthropicKey"
+		| "openaiKey"
+		| "googleKey"
+		| "gatewayKey"
+	const resolvedKey = apiKey || settings.ai[keyField] || ""
+	const resolvedModel = model || settings.ai.model
+	const llm = createModel(resolvedProvider, resolvedKey, resolvedModel)
+
+	try {
+		const { text } = await generateText({
+			model: llm,
+			...reasoningOptions(resolvedProvider, resolvedModel, "off", false),
+			system:
+				"You summarise a patent-prosecution conversation so work can continue in a fresh chat. Capture the key facts, decisions, claim language, prior-art references, and open questions. Preserve specifics (claim terms, numbers, citations). Be concise; do not invent anything not stated in the conversation.",
+			prompt: `Summarise this conversation so it can prime a new chat:\n\n${transcript}`,
+		})
+		return c.json({ summary: text })
+	} catch (err) {
+		// Even without docs the history can exceed the window — let the client
+		// fall back to a blank new chat.
+		return c.json(
+			{ error: err instanceof Error ? err.message : String(err) },
+			500,
+		)
+	}
 })
 
 chatsRouter.post("/:id/messages", async (c) => {

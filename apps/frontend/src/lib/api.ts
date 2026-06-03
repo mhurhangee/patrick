@@ -236,5 +236,16 @@ export const api = {
 			request<ApiChatMessage[]>(
 				`/chats/${chatId}/messages?taskPath=${encodeURIComponent(taskPath)}`,
 			),
+		summarize: (
+			chatId: string,
+			taskPath: string,
+			provider: string,
+			apiKey: string,
+			model: string,
+		) =>
+			request<{ summary: string }>(
+				`/chats/${chatId}/summarize`,
+				json({ taskPath, provider, apiKey, model }, { method: "POST" }),
+			),
 	},
 }
