@@ -236,6 +236,7 @@ function WorkspaceContent({
 								detailedModel={ai.detailedModel}
 								onNewChat={chat.newChat}
 								onNewChatWithSummary={chat.newChatWithSummary}
+								onForkChat={chat.forkChat}
 								onCloseChat={chat.closeChat}
 								onSetActiveChat={chat.setActiveChatId}
 								onSendInAgentPat={chat.sendInAgentPat}

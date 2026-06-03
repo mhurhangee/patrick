@@ -1,12 +1,19 @@
 import {
-	BadgeCheck,
+	Check,
 	ChevronDown,
 	ChevronUp,
 	Copy,
 	GitFork,
+	Pencil,
 	RotateCcw,
 } from "lucide-react"
+import { type ReactNode, useState } from "react"
 import { Button } from "@/components/ui/button"
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export type ExchangePanelData = {
 	model: string
@@ -31,58 +38,104 @@ function formatTokens(n: number): string {
 	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 }
 
+// Icon button with a tooltip — the per-exchange actions.
+function Action({
+	label,
+	onClick,
+	className,
+	children,
+}: {
+	label: string
+	onClick: () => void
+	className?: string
+	children: ReactNode
+}) {
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					onClick={onClick}
+					className={className}
+				>
+					{children}
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>{label}</TooltipContent>
+		</Tooltip>
+	)
+}
+
 // Per-exchange audit summary, shown after the response completes.
 export function ExchangePanel({
 	data,
 	isExpanded,
 	onToggle,
+	onCopy,
+	onFork,
+	onEdit,
+	onRetry,
 }: {
 	data: ExchangePanelData
 	isExpanded: boolean
 	onToggle: () => void
+	onCopy: () => void
+	onFork: () => void
+	// Edit (redo) and Retry only apply to the latest exchange.
+	onEdit?: () => void
+	onRetry?: () => void
 }) {
+	const [copied, setCopied] = useState(false)
+	const actionClass = "text-muted-foreground/40 hover:text-muted-foreground"
+
+	function handleCopy() {
+		onCopy()
+		setCopied(true)
+		setTimeout(() => setCopied(false), 2000)
+	}
+
 	return (
 		<div className="flex flex-col pb-8">
 			{/* Toggle bar */}
 			<div className="flex w-full items-center justify-between px-3 py-2">
 				<div className="flex items-center gap-1">
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						className="text-muted-foreground/40 hover:text-muted-foreground"
+					<Action
+						label={copied ? "Copied" : "Copy response"}
+						onClick={handleCopy}
+						className={actionClass}
 					>
-						<Copy size={13} />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						className="text-muted-foreground/40 hover:text-muted-foreground"
-					>
-						<RotateCcw size={13} />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						className="text-muted-foreground/40 hover:text-muted-foreground"
+						{copied ? <Check size={13} /> : <Copy size={13} />}
+					</Action>
+					{onEdit && (
+						<Action
+							label="Edit & resend"
+							onClick={onEdit}
+							className={actionClass}
+						>
+							<Pencil size={13} />
+						</Action>
+					)}
+					{onRetry && (
+						<Action label="Retry" onClick={onRetry} className={actionClass}>
+							<RotateCcw size={13} />
+						</Action>
+					)}
+					<Action
+						label="Fork to a new chat"
+						onClick={onFork}
+						className={actionClass}
 					>
 						<GitFork size={13} />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						className="text-muted-foreground/40 hover:text-muted-foreground"
-					>
-						<BadgeCheck size={13} />
-					</Button>
+					</Action>
 				</div>
-				<Button
-					variant="ghost"
-					size="icon-xs"
+				<Action
+					label={isExpanded ? "Hide details" : "Show details"}
 					onClick={onToggle}
 					className="text-muted-foreground/30 hover:text-muted-foreground"
 				>
 					{isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-				</Button>
+				</Action>
 			</div>
 
 			{isExpanded && (

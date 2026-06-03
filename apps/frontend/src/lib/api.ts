@@ -247,5 +247,10 @@ export const api = {
 				`/chats/${chatId}/summarize`,
 				json({ taskPath, provider, apiKey, model }, { method: "POST" }),
 			),
+		fork: (chatId: string, taskPath: string, uptoMessageId: string) =>
+			request<ApiChat>(
+				`/chats/${chatId}/fork`,
+				json({ taskPath, uptoMessageId }, { method: "POST" }),
+			),
 	},
 }

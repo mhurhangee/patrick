@@ -103,7 +103,7 @@ function ChatInputBar({
 					}}
 					disabled={disabled}
 					placeholder=""
-					className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+					className="min-h-[64px] resize-none rounded-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0 disabled:bg-transparent disabled:opacity-100 dark:bg-transparent dark:disabled:bg-transparent"
 				/>
 
 				<div className="flex justify-between px-3 pb-2">
@@ -252,6 +252,7 @@ function ChatPane({
 	onMessageSent,
 	onNewChat,
 	onNewChatWithSummary,
+	onForkChat,
 }: {
 	chatId: string
 	openAssets: ApiAsset[]
@@ -269,6 +270,7 @@ function ChatPane({
 	onMessageSent: () => void
 	onNewChat: () => void
 	onNewChatWithSummary: (summary: string) => void
+	onForkChat: (sourceChatId: string, uptoMessageId: string) => void
 }) {
 	const openAssetIdsRef = useRef<string[]>([])
 	// Exclude "do not read" sources from what AgentPat receives as context.
@@ -300,27 +302,34 @@ function ChatPane({
 		Record<string, Array<{ id: string; title: string }>>
 	>({})
 
-	const { messages, sendMessage, status, stop, addToolOutput, error } = useChat(
-		{
-			transport: new DefaultChatTransport({
-				api: `${BASE_URL}/chats/${chatId}/messages`,
-				body: { taskPath: taskId, provider, apiKey, detailedModel },
-				prepareSendMessagesRequest: ({ body, messages: uiMessages, id }) => ({
-					body: {
-						...body,
-						id,
-						messages: uiMessages,
-						openFilePaths: openAssetIdsRef.current,
-						excludedPaths: excludedPathsRef.current,
-					},
-				}),
+	const {
+		messages,
+		sendMessage,
+		status,
+		stop,
+		addToolOutput,
+		error,
+		regenerate,
+		setMessages,
+	} = useChat({
+		transport: new DefaultChatTransport({
+			api: `${BASE_URL}/chats/${chatId}/messages`,
+			body: { taskPath: taskId, provider, apiKey, detailedModel },
+			prepareSendMessagesRequest: ({ body, messages: uiMessages, id }) => ({
+				body: {
+					...body,
+					id,
+					messages: uiMessages,
+					openFilePaths: openAssetIdsRef.current,
+					excludedPaths: excludedPathsRef.current,
+				},
 			}),
-			messages: initialMessages,
-			// After the user answers a client-side tool (e.g. analyseSource), resubmit
-			// so the agent continues with the tool result.
-			sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-		},
-	)
+		}),
+		messages: initialMessages,
+		// After the user answers a client-side tool (e.g. analyseSource), resubmit
+		// so the agent continues with the tool result.
+		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+	})
 
 	const toolCtx: ToolContext = {
 		provider,
@@ -359,10 +368,10 @@ function ChatPane({
 		}
 	}
 
-	// Focus textarea on mount for new (empty) chats
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
+	// Focus the input on mount so a freshly opened chat (incl. a fork) is ready
+	// to type in.
 	useEffect(() => {
-		if (initialMessages.length === 0) textareaRef.current?.focus()
+		textareaRef.current?.focus()
 	}, [])
 
 	// Measure scroll container once + whenever it resizes (user drags panel)
@@ -487,6 +496,26 @@ function ChatPane({
 		const el = scrollContainerRef.current
 		if (!el) return
 		setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 80)
+	}
+
+	const textOf = (msg: UIMessage | null) =>
+		(msg?.parts ?? [])
+			.filter((p) => p.type === "text")
+			.map((p) => (p as { text: string }).text)
+			.join("\n")
+
+	function copyResponse(exchange: Exchange) {
+		const text = textOf(exchange.assistantMsg)
+		if (text) navigator.clipboard.writeText(text)
+	}
+
+	// Edit = redo: drop this exchange (and anything after) and put the prompt
+	// back in the input to tweak and resend. Fork preserves the original branch.
+	function editExchange(exchange: Exchange) {
+		const idx = messages.findIndex((m) => m.id === exchange.userMsg.id)
+		if (idx !== -1) setMessages(messages.slice(0, idx))
+		setInput(textOf(exchange.userMsg))
+		textareaRef.current?.focus()
 	}
 
 	function scrollToBottom() {
@@ -683,6 +712,17 @@ function ChatPane({
 											data={getPanelData(exchange)}
 											isExpanded={isPanelExpanded(exchange.id)}
 											onToggle={() => togglePanel(exchange.id)}
+											onCopy={() => copyResponse(exchange)}
+											onFork={() =>
+												onForkChat(
+													chatId,
+													assistantMsg.id ?? exchange.userMsg.id,
+												)
+											}
+											onEdit={
+												isLatest ? () => editExchange(exchange) : undefined
+											}
+											onRetry={isLatest ? () => regenerate() : undefined}
 										/>
 									)}
 								</div>
@@ -751,6 +791,7 @@ function ChatPaneLoader({
 	onMessageSent: () => void
 	onNewChat: () => void
 	onNewChatWithSummary: (summary: string) => void
+	onForkChat: (sourceChatId: string, uptoMessageId: string) => void
 }) {
 	const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(
 		null,
@@ -802,6 +843,7 @@ export function ChatPanel({
 	detailedModel,
 	onNewChat,
 	onNewChatWithSummary,
+	onForkChat,
 	onCloseChat,
 	onSetActiveChat,
 	onSendInAgentPat,
@@ -825,6 +867,7 @@ export function ChatPanel({
 	detailedModel: string
 	onNewChat: () => void
 	onNewChatWithSummary: (summary: string) => void
+	onForkChat: (sourceChatId: string, uptoMessageId: string) => void
 	onCloseChat: (id: string) => void
 	onSetActiveChat: (id: string) => void
 	onSendInAgentPat: (message: string) => void
@@ -934,6 +977,7 @@ export function ChatPanel({
 					onMessageSent={() => onMessageSent(activeChat.id)}
 					onNewChat={onNewChat}
 					onNewChatWithSummary={onNewChatWithSummary}
+					onForkChat={onForkChat}
 				/>
 			)}
 		</div>

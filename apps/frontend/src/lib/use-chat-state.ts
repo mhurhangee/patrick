@@ -115,12 +115,25 @@ export function useChatState(currentTaskId: string) {
 		})
 	}
 
+	// Fork a chat into a new one with its messages up to a point, then open it.
+	async function forkChat(sourceChatId: string, uptoMessageId: string) {
+		if (!currentTaskId) return
+		const chat = await api.chats.fork(
+			sourceChatId,
+			currentTaskId,
+			uptoMessageId,
+		)
+		setChats((prev) => [chat, ...prev])
+		openChat(chat.id)
+	}
+
 	return {
 		chats,
 		openChatIds,
 		activeChatId,
 		pendingMessages,
 		composerFocusNonce,
+		forkChat,
 		setActiveChatId,
 		openChat,
 		closeChat,

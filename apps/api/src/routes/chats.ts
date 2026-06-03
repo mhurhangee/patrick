@@ -32,6 +32,16 @@ import {
 	reasoningOptions,
 } from "../lib/patent-prompt"
 
+// Chat title from the first user message's text (sliced), used for fork.
+function titleFromMessages(messages: ChatMessage[]): string {
+	const firstUser = messages.find((m) => m.role === "user")
+	const text = (
+		firstUser?.parts as Array<{ type: string; text?: string }> | undefined
+	)?.find((p) => p.type === "text" && typeof p.text === "string")?.text
+	if (!text) return "Forked chat"
+	return text.length > 50 ? `${text.slice(0, 50)}…` : text
+}
+
 // Does a provider error look like a context-window overflow? Each vendor phrases
 // it differently, so match the common shapes (and fall back to generic otherwise).
 function isContextOverflow(message: string): boolean {
@@ -198,6 +208,44 @@ chatsRouter.post("/:id/summarize", async (c) => {
 			500,
 		)
 	}
+})
+
+// Fork a chat into a new one containing its messages up to (and including) a
+// given message id — a branch point. The original is untouched.
+chatsRouter.post("/:id/fork", async (c) => {
+	const chatId = c.req.param("id")
+	const { taskPath, uptoMessageId } = await c.req.json<{
+		taskPath: string
+		uptoMessageId: string
+	}>()
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+
+	const chat = await readChat(taskPath, chatId)
+	if (!chat) return c.json({ error: "Not found" }, 404)
+
+	const cut = chat.messages.findIndex((m) => m.id === uptoMessageId)
+	const messages = cut === -1 ? chat.messages : chat.messages.slice(0, cut + 1)
+
+	const newId = crypto.randomUUID()
+	const now = new Date().toISOString()
+	const title = titleFromMessages(messages)
+	await writeChat(taskPath, {
+		id: newId,
+		title,
+		createdAt: now,
+		updatedAt: now,
+		messages,
+	})
+	const index = await readChatIndex(taskPath)
+	const entry: ChatIndexEntry = {
+		id: newId,
+		title,
+		createdAt: now,
+		updatedAt: now,
+		lastMessagePreview: "",
+	}
+	await writeChatIndex(taskPath, [...index, entry])
+	return c.json(entry, 201)
 })
 
 chatsRouter.post("/:id/messages", async (c) => {
