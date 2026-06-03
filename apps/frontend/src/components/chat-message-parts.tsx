@@ -5,18 +5,7 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai"
-import {
-	AlertCircle,
-	Brain,
-	Check,
-	ChevronRight,
-	FileText,
-	FolderTree,
-	Globe,
-	Loader2,
-	type LucideIcon,
-	Wrench,
-} from "lucide-react"
+import { ChevronRight, Loader2 } from "lucide-react"
 import { type FC, type ReactNode, useState } from "react"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
@@ -57,19 +46,20 @@ const TOOL_COMPONENTS: Record<
 // pretty-printed JSON so nothing is ever hidden from the user.
 
 type ToolPresenter = {
-	icon: LucideIcon
+	// Verb shown while the tool is running, e.g. "Searching…"
+	runningLabel?: string
 	// biome-ignore lint/suspicious/noExplicitAny: tool input/output shapes vary per tool
 	summary?: (input: any, output: any) => string | null
 }
 
 const PRESENTERS: Record<string, ToolPresenter> = {
 	listDirectory: {
-		icon: FolderTree,
+		runningLabel: "Searching…",
 		summary: (_input, output) =>
 			Array.isArray(output) ? `${output.length} items` : null,
 	},
 	readFile: {
-		icon: FileText,
+		runningLabel: "Reading…",
 		summary: (input, output) => {
 			if (output?.note) return "PDF (open in editor for context)"
 			if (typeof output?.content === "string")
@@ -78,7 +68,7 @@ const PRESENTERS: Record<string, ToolPresenter> = {
 		},
 	},
 	fetchPatent: {
-		icon: Globe,
+		runningLabel: "Fetching…",
 		summary: (input, output) =>
 			output?.title ?? input?.publicationNumber ?? null,
 	},
@@ -87,49 +77,6 @@ const PRESENTERS: Record<string, ToolPresenter> = {
 function humanize(name: string): string {
 	const spaced = name.replace(/([A-Z])/g, " $1").trim()
 	return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase()
-}
-
-// ─── Shared collapsible ─────────────────────────────────────────────────────────
-
-function Collapsible({
-	icon: Icon,
-	title,
-	summary,
-	status,
-	defaultOpen = false,
-	children,
-}: {
-	icon: LucideIcon
-	title: string
-	summary?: string | null
-	status?: ReactNode
-	defaultOpen?: boolean
-	children: ReactNode
-}) {
-	const [open, setOpen] = useState(defaultOpen)
-	return (
-		<div className="not-prose my-2 rounded-md border bg-muted/30 text-xs">
-			<button
-				type="button"
-				onClick={() => setOpen((o) => !o)}
-				className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left"
-			>
-				<ChevronRight
-					className={cn(
-						"size-3 shrink-0 text-muted-foreground/60 transition-transform",
-						open && "rotate-90",
-					)}
-				/>
-				<Icon className="size-3 shrink-0 text-muted-foreground" />
-				<span className="font-medium text-foreground">{title}</span>
-				{summary && (
-					<span className="truncate text-muted-foreground">· {summary}</span>
-				)}
-				{status && <span className="ml-auto shrink-0">{status}</span>}
-			</button>
-			{open && <div className="border-t px-2.5 py-2">{children}</div>}
-		</div>
-	)
 }
 
 function JsonView({ value }: { value: unknown }) {
@@ -143,68 +90,135 @@ function JsonView({ value }: { value: unknown }) {
 	)
 }
 
-// ─── Tool part ──────────────────────────────────────────────────────────────────
+// ─── Reasoning trail ────────────────────────────────────────────────────────────
+// Non-direct work (reasoning + tool calls) shown as a vertical trail of steps:
+// a connecting line on the left, muted text, each step collapsible (default shut),
+// no border/background. The agent's actual answer (text) renders outside this.
 
-function ToolPart({
-	part,
-	name,
-	ctx,
-}: {
-	part: ToolUIPart | DynamicToolUIPart
-	name: string
-	ctx: ToolContext
-}) {
-	const Custom = TOOL_COMPONENTS[name]
-	if (Custom) return <Custom part={part} ctx={ctx} />
-
-	const presenter = PRESENTERS[name]
-	const Icon = presenter?.icon ?? Wrench
-	const running =
-		part.state === "input-streaming" || part.state === "input-available"
-	const error = part.state === "output-error"
-	const summary =
-		part.state === "output-available" && presenter?.summary
-			? presenter.summary(part.input, part.output)
-			: running
-				? "running…"
-				: null
-
-	const status = running ? (
-		<Loader2 className="size-3 animate-spin text-muted-foreground" />
-	) : error ? (
-		<AlertCircle className="size-3 text-destructive" />
-	) : (
-		<Check className="size-3 text-green-600" />
-	)
-
+function ToolDetail({ part }: { part: ToolUIPart | DynamicToolUIPart }) {
 	return (
-		<Collapsible
-			icon={Icon}
-			title={humanize(name)}
-			summary={summary}
-			status={status}
-		>
-			<div className="space-y-2">
-				{part.input != null && (
-					<div>
-						<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
-							Input
-						</p>
-						<JsonView value={part.input} />
-					</div>
+		<div className="space-y-2">
+			{part.input != null && (
+				<div>
+					<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
+						Input
+					</p>
+					<JsonView value={part.input} />
+				</div>
+			)}
+			{part.state === "output-error" ? (
+				<p className="text-destructive">{part.errorText}</p>
+			) : part.output != null ? (
+				<div>
+					<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
+						Result
+					</p>
+					<JsonView value={part.output} />
+				</div>
+			) : null}
+		</div>
+	)
+}
+
+type TrailStepData = {
+	key: string
+	label: string
+	status: "running" | "error" | "complete"
+	statusLabel?: string | null
+	detail?: ReactNode
+}
+
+function TrailStep({ step }: { step: TrailStepData }) {
+	const [open, setOpen] = useState(false)
+	const hasDetail = step.detail != null
+	return (
+		<div>
+			<button
+				type="button"
+				disabled={!hasDetail}
+				onClick={() => setOpen((o) => !o)}
+				className={cn(
+					"flex items-center gap-1.5 py-0.5 text-left text-xs",
+					step.status === "error"
+						? "text-destructive"
+						: "text-muted-foreground",
+					hasDetail && "cursor-pointer hover:text-foreground",
 				)}
-				{error ? (
-					<p className="text-destructive">{part.errorText}</p>
-				) : part.output != null ? (
-					<div>
-						<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
-							Result
-						</p>
-						<JsonView value={part.output} />
-					</div>
-				) : null}
+			>
+				<span>{step.label}</span>
+				{step.statusLabel && (
+					<span className="truncate text-muted-foreground/50">
+						{step.statusLabel}
+					</span>
+				)}
+				{step.status === "running" && (
+					<Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground/60" />
+				)}
+				{hasDetail && (
+					<ChevronRight
+						className={cn(
+							"size-3 shrink-0 text-muted-foreground/40 transition-transform",
+							open && "rotate-90",
+						)}
+					/>
+				)}
+			</button>
+			{open && hasDetail && (
+				<div className="mb-1 mt-1 text-xs text-muted-foreground/80">
+					{step.detail}
+				</div>
+			)}
+		</div>
+	)
+}
+
+// A run of non-direct steps, collapsed into one line by default. The header
+// shows live progress while running (current action + spinner) and a quiet
+// summary when done; expanding reveals the steps grouped by a left rail (each
+// still expandable for its own detail).
+function ReasoningTrail({ steps }: { steps: TrailStepData[] }) {
+	const [open, setOpen] = useState(false)
+	// A single step needs no outer group — render it directly.
+	if (steps.length === 1) {
+		return (
+			<div className="not-prose my-2">
+				<TrailStep step={steps[0]} />
 			</div>
-		</Collapsible>
+		)
+	}
+	const running = steps.find((s) => s.status === "running")
+	const summary = `${steps.length} steps`
+	return (
+		<div className="not-prose my-2">
+			<button
+				type="button"
+				onClick={() => setOpen((o) => !o)}
+				className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+			>
+				<span>{running ? running.label : summary}</span>
+				{running?.statusLabel && (
+					<span className="truncate text-muted-foreground/50">
+						{running.statusLabel}
+					</span>
+				)}
+				{running && (
+					<Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground/60" />
+				)}
+				<ChevronRight
+					className={cn(
+						"size-3 shrink-0 text-muted-foreground/40 transition-transform",
+						open && "rotate-90",
+					)}
+				/>
+			</button>
+			{open && (
+				<div className="mt-1 ml-1 border-l border-border pl-3">
+					{steps.map((step) => (
+						<TrailStep key={step.key} step={step} />
+					))}
+				</div>
+			)}
+		</div>
 	)
 }
 
@@ -221,65 +235,90 @@ export function AssistantParts({
 	isLatest: boolean
 	ctx: ToolContext
 }) {
-	return (
-		<>
-			{parts.map((part, i) => {
-				if (part.type === "text") {
-					const isLastPart = i === parts.length - 1
-					return (
-						<Streamdown
-							// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
-							key={i}
-							isAnimating={isStreaming && isLatest && isLastPart}
-						>
-							{part.text}
-						</Streamdown>
-					)
-				}
+	const blocks: ReactNode[] = []
+	let trail: TrailStepData[] = []
 
-				if (part.type === "reasoning") {
-					if (!part.text) return null
-					return (
-						<Collapsible
-							// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
-							key={i}
-							icon={Brain}
-							title="Reasoning"
-						>
-							<p className="whitespace-pre-wrap text-muted-foreground/80">
-								{part.text}
-							</p>
-						</Collapsible>
-					)
-				}
+	const flushTrail = () => {
+		if (trail.length) {
+			blocks.push(
+				<ReasoningTrail key={`trail-${blocks.length}`} steps={trail} />,
+			)
+			trail = []
+		}
+	}
 
-				if (part.type === "dynamic-tool") {
-					return (
-						<ToolPart
-							// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
-							key={i}
-							part={part}
-							name={part.toolName}
-							ctx={ctx}
-						/>
-					)
-				}
+	const pushToolStep = (
+		part: ToolUIPart | DynamicToolUIPart,
+		name: string,
+		i: number,
+	) => {
+		const Custom = TOOL_COMPONENTS[name]
+		if (Custom) {
+			// Interactive tools (e.g. analyseSource confirmation) must stay visible.
+			flushTrail()
+			blocks.push(<Custom key={i} part={part} ctx={ctx} />)
+			return
+		}
+		const presenter = PRESENTERS[name]
+		const running =
+			part.state === "input-streaming" || part.state === "input-available"
+		const error = part.state === "output-error"
+		const summary =
+			part.state === "output-available" && presenter?.summary
+				? presenter.summary(part.input, part.output)
+				: null
+		trail.push({
+			key: `t-${i}`,
+			label: humanize(name),
+			status: error ? "error" : running ? "running" : "complete",
+			statusLabel: running ? (presenter?.runningLabel ?? "Running…") : summary,
+			detail: <ToolDetail part={part} />,
+		})
+	}
 
-				if (isToolUIPart(part)) {
-					const name = getToolName(part)
-					return (
-						<ToolPart
-							// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
-							key={i}
-							part={part}
-							name={name}
-							ctx={ctx}
-						/>
-					)
-				}
+	parts.forEach((part, i) => {
+		if (part.type === "text") {
+			flushTrail()
+			const isLastPart = i === parts.length - 1
+			blocks.push(
+				<Streamdown
+					// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
+					key={i}
+					isAnimating={isStreaming && isLatest && isLastPart}
+				>
+					{part.text}
+				</Streamdown>,
+			)
+			return
+		}
 
-				return null
-			})}
-		</>
-	)
+		if (part.type === "reasoning") {
+			if (!part.text) return
+			const isLastPart = i === parts.length - 1
+			trail.push({
+				key: `r-${i}`,
+				label: "Thinking",
+				status: isStreaming && isLatest && isLastPart ? "running" : "complete",
+				detail: (
+					<p className="whitespace-pre-wrap text-muted-foreground/80">
+						{part.text}
+					</p>
+				),
+			})
+			return
+		}
+
+		if (part.type === "dynamic-tool") {
+			pushToolStep(part, part.toolName, i)
+			return
+		}
+
+		if (isToolUIPart(part)) {
+			pushToolStep(part, getToolName(part), i)
+		}
+	})
+
+	flushTrail()
+
+	return <>{blocks}</>
 }
