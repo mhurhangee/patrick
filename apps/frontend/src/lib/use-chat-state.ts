@@ -9,6 +9,8 @@ export function useChatState(currentTaskId: string) {
 	const [pendingMessages, setPendingMessages] = useState<
 		Record<string, string>
 	>({})
+	// Bumped whenever a new chat is requested, to refocus the composer.
+	const [composerFocusNonce, setComposerFocusNonce] = useState(0)
 
 	useEffect(() => {
 		setChats([])
@@ -34,11 +36,13 @@ export function useChatState(currentTaskId: string) {
 		})
 	}
 
-	async function newChat() {
-		if (!currentTaskId) return
-		const chat = await api.chats.create(currentTaskId, "New Chat")
-		setChats((prev) => [chat, ...prev])
-		openChat(chat.id)
+	// Focus the empty AgentPat composer rather than creating a chat up front —
+	// the chat is persisted (and titled from the first message) only on send,
+	// so unsent "New Chat" entries no longer pollute the sidebar. The nonce
+	// bumps every call so the composer refocuses even when already showing.
+	function newChat() {
+		setActiveChatId("agentpat")
+		setComposerFocusNonce((n) => n + 1)
 	}
 
 	async function deleteChat(id: string) {
@@ -116,6 +120,7 @@ export function useChatState(currentTaskId: string) {
 		openChatIds,
 		activeChatId,
 		pendingMessages,
+		composerFocusNonce,
 		setActiveChatId,
 		openChat,
 		closeChat,

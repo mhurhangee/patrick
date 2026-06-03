@@ -123,10 +123,6 @@ function excludedContext(excluded: string[] | undefined) {
 	return `# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose analysing them, and do NOT rely on them in your response:\n${list}`
 }
 
-function metadataInstruction() {
-	return "\n\nAfter providing your complete response, you MUST call generateMetadata exactly once as your final action. Provide exactly 3 short follow-up suggestions (under 8 words each), a concise chat title, and a one-sentence summary of your last response."
-}
-
 async function buildFileParts(openFilePaths: string[]): Promise<FilePart[]> {
 	const parts: FilePart[] = []
 	for (const filePath of openFilePaths) {
@@ -168,7 +164,6 @@ export async function buildAgentPatPrompt(
 		openFilesContext(openFilePaths),
 		analysisContext(analysedSources),
 		excludedContext(excludedFiles),
-		metadataInstruction(),
 	])
 
 	const fileParts = await buildFileParts(openFilePaths)

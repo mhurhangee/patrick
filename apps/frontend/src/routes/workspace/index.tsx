@@ -229,6 +229,7 @@ function WorkspaceContent({
 								activeChatId={chat.activeChatId}
 								openAssets={asset.openAssets}
 								pendingMessages={chat.pendingMessages}
+								composerFocusNonce={chat.composerFocusNonce}
 								taskId={task.currentTaskId}
 								provider={ai.provider}
 								apiKey={ai.apiKey}
@@ -249,7 +250,6 @@ function WorkspaceContent({
 								}}
 								onAnalysed={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}
-								onChatTitleUpdate={chat.updateChat}
 								onMessageSent={chat.incrementMessageCount}
 							/>
 						</ResizablePanel>

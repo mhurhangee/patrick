@@ -159,6 +159,13 @@ export async function writeChat(taskPath: string, chat: Chat): Promise<void> {
 	await writeJson(chatFilePath(taskPath, chat.id), chat)
 }
 
+export async function deleteChat(
+	taskPath: string,
+	chatId: string,
+): Promise<void> {
+	await rm(chatFilePath(taskPath, chatId), { force: true })
+}
+
 // ─── Analysis (ExtractPat results) ─────────────────────────────────────────────
 
 function analysisFilePath(taskPath: string, sourceFilename: string) {

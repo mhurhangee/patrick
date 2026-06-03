@@ -46,12 +46,6 @@ import {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const FALLBACK_SUGGESTIONS = [
-	"Draft §103 response",
-	"Amend claims",
-	"Search prior art",
-]
-
 function getModelPricing(_provider: string, modelId: string) {
 	// IDs are unique across providers (vendor-prefixed), so a flat lookup works.
 	return MODELS_BY_ID[modelId]?.pricingPerM ?? null
@@ -189,14 +183,23 @@ function AgentPatPane({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
+	focusNonce,
 }: {
 	onSend: (message: string) => void
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
+	focusNonce: number
 }) {
 	const [input, setInput] = useState("")
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+	// Focus the composer on mount and whenever "New chat" is pressed again
+	// (the nonce changes even when the composer is already showing).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce is an intentional re-trigger
+	useEffect(() => {
+		textareaRef.current?.focus()
+	}, [focusNonce])
 
 	function send() {
 		const trimmed = input.trim()
@@ -223,6 +226,7 @@ function AgentPatPane({
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
+				textareaRef={textareaRef}
 			/>
 		</div>
 	)
@@ -250,7 +254,6 @@ function ChatPane({
 	provider,
 	apiKey,
 	detailedModel,
-	onTitleUpdate,
 	onMessageSent,
 	onNewChat,
 	onNewChatWithSummary,
@@ -268,7 +271,6 @@ function ChatPane({
 	provider: string
 	apiKey: string
 	detailedModel: string
-	onTitleUpdate: (title: string) => void
 	onMessageSent: () => void
 	onNewChat: () => void
 	onNewChatWithSummary: (summary: string) => void
@@ -455,27 +457,6 @@ function ChatPane({
 		prevStatusRef.current = status
 	}, [status, latestExchangeId])
 
-	// Update chat title from the latest resolved generateMetadata tool call
-	const appliedTitleRef = useRef<string | null>(null)
-	useEffect(() => {
-		for (let i = messages.length - 1; i >= 0; i--) {
-			const msg = messages[i]
-			if (msg.role !== "assistant") continue
-			const metaPart = msg.parts.find(
-				(p) => p.type === "tool-generateMetadata",
-			) as { state: string; input?: { chatTitle?: string } } | undefined
-			const title =
-				metaPart?.state === "input-available"
-					? metaPart.input?.chatTitle
-					: undefined
-			if (title && title !== appliedTitleRef.current) {
-				appliedTitleRef.current = title
-				onTitleUpdate(title)
-			}
-			break
-		}
-	}, [messages, onTitleUpdate])
-
 	// biome-ignore lint/correctness/useExhaustiveDependencies: sendMessage is stable, sentInitial/pendingContextRef are refs
 	useEffect(() => {
 		if (!initialMessage || sentInitial.current) return
@@ -588,35 +569,15 @@ function ChatPane({
 					(outputTokens / 1_000_000) * pricing.output
 				: null
 
-		// Extract user-facing tool names; hide internal generateMetadata tool
 		const tools: string[] = []
 		if (exchange.assistantMsg) {
 			for (const part of exchange.assistantMsg.parts) {
 				if (isToolUIPart(part)) {
 					const name = getToolName(part)
-					if (name !== "generateMetadata" && !tools.includes(name)) {
-						tools.push(name)
-					}
+					if (!tools.includes(name)) tools.push(name)
 				}
 			}
 		}
-
-		// Extract model-generated metadata from the generateMetadata tool part
-		type MetadataInput = {
-			suggestions: string[]
-			chatTitle: string
-			lastMessageSummary: string
-		}
-		const metaPart = exchange.assistantMsg?.parts.find(
-			(p) => p.type === "tool-generateMetadata",
-		) as { state: string; input?: MetadataInput } | undefined
-		const metaInput =
-			metaPart?.state === "input-available" ? metaPart.input : undefined
-
-		// If assistant message exists but no metadata yet, fall back to hardcoded suggestions
-		const suggestions = exchange.assistantMsg
-			? (metaInput?.suggestions ?? FALLBACK_SUGGESTIONS)
-			: null
 
 		return {
 			model: detailedModel,
@@ -629,9 +590,6 @@ function ChatPane({
 			context: exchangeContextSnapshots[exchange.id] ?? [],
 			tools,
 			sources: [],
-			suggestions,
-			chatTitle: metaInput?.chatTitle ?? null,
-			lastMessageSummary: metaInput?.lastMessageSummary ?? null,
 		}
 	}
 
@@ -689,13 +647,7 @@ function ChatPane({
 								{showSpacer ? (
 									<StreamingSpacer
 										minHeight={containerHeight}
-										label={
-											assistantMsg?.parts.some(
-												(p) => p.type === "tool-generateMetadata",
-											)
-												? "Finishing up…"
-												: "Thinking…"
-										}
+										label="Thinking…"
 									/>
 								) : (
 									<ExchangePanel
@@ -703,10 +655,6 @@ function ChatPane({
 										isExpanded={isPanelExpanded(exchange.id)}
 										minHeight={containerHeight}
 										onToggle={() => togglePanel(exchange.id)}
-										onSuggestion={(text) => {
-											setInput(text)
-											textareaRef.current?.focus()
-										}}
 									/>
 								)}
 							</Fragment>
@@ -761,7 +709,6 @@ function ChatPaneLoader({
 	provider: string
 	apiKey: string
 	detailedModel: string
-	onTitleUpdate: (title: string) => void
 	onMessageSent: () => void
 	onNewChat: () => void
 	onNewChatWithSummary: (summary: string) => void
@@ -809,6 +756,7 @@ export function ChatPanel({
 	activeChatId,
 	openAssets,
 	pendingMessages,
+	composerFocusNonce,
 	taskId,
 	provider,
 	apiKey,
@@ -824,7 +772,6 @@ export function ChatPanel({
 	onOpenSource,
 	onAnalysed,
 	onOpenSettings,
-	onChatTitleUpdate,
 	onMessageSent,
 }: {
 	chats: ApiChat[]
@@ -832,6 +779,7 @@ export function ChatPanel({
 	activeChatId: string
 	openAssets: ApiAsset[]
 	pendingMessages: Record<string, string>
+	composerFocusNonce: number
 	taskId: string
 	provider: string
 	apiKey: string
@@ -847,7 +795,6 @@ export function ChatPanel({
 	onOpenSource: (filename: string) => void
 	onAnalysed: () => void
 	onOpenSettings: () => void
-	onChatTitleUpdate: (chatId: string, title: string) => void
 	onMessageSent: (chatId: string) => void
 }) {
 	const { connectedToAI } = useAI()
@@ -928,6 +875,7 @@ export function ChatPanel({
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
+					focusNonce={composerFocusNonce}
 				/>
 			) : (
 				<ChatPaneLoader
@@ -944,7 +892,6 @@ export function ChatPanel({
 					provider={provider}
 					apiKey={apiKey}
 					detailedModel={detailedModel}
-					onTitleUpdate={(title) => onChatTitleUpdate(activeChat.id, title)}
 					onMessageSent={() => onMessageSent(activeChat.id)}
 					onNewChat={onNewChat}
 					onNewChatWithSummary={onNewChatWithSummary}

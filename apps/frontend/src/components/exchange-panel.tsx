@@ -19,9 +19,6 @@ export type ExchangePanelData = {
 	context: Array<{ id: string; title: string }>
 	tools: string[]
 	sources: string[]
-	suggestions: string[] | null
-	chatTitle: string | null
-	lastMessageSummary: string | null
 }
 
 function formatCost(usd: number): string {
@@ -57,13 +54,11 @@ export function ExchangePanel({
 	isExpanded,
 	minHeight,
 	onToggle,
-	onSuggestion,
 }: {
 	data: ExchangePanelData
 	isExpanded: boolean
 	minHeight: number
 	onToggle: () => void
-	onSuggestion: (text: string) => void
 }) {
 	return (
 		<div
@@ -212,45 +207,7 @@ export function ExchangePanel({
 								<p className="text-muted-foreground/60">No assets</p>
 							)}
 						</div>
-
-						{/* Row 5: Chat title (full width, only when model generated it) */}
-						{data.chatTitle && (
-							<div className="col-span-2">
-								<p className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
-									Chat title
-								</p>
-								<p className="text-muted-foreground/60">{data.chatTitle}</p>
-							</div>
-						)}
-
-						{/* Row 6: Response summary (full width) */}
-						{data.lastMessageSummary && (
-							<div className="col-span-2">
-								<p className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
-									Summary
-								</p>
-								<p className="text-muted-foreground/60">
-									{data.lastMessageSummary}
-								</p>
-							</div>
-						)}
 					</div>
-
-					{/* Suggestions */}
-					{data.suggestions && (
-						<div className="flex flex-wrap gap-2">
-							{data.suggestions.map((s) => (
-								<Button
-									key={s}
-									variant="secondary"
-									size="chip"
-									onClick={() => onSuggestion(s)}
-								>
-									{s}
-								</Button>
-							))}
-						</div>
-					)}
 				</div>
 			)}
 		</div>

@@ -17,6 +17,7 @@ import { Hono } from "hono"
 import { z } from "zod"
 import { fetchPatent } from "../lib/epo-ops"
 import {
+	deleteChat,
 	listAnalysis,
 	readChat,
 	readChatIndex,
@@ -38,28 +39,6 @@ function isContextOverflow(message: string): boolean {
 		message,
 	)
 }
-
-// No execute — loop stops when called; data lives in part.input on the client.
-const generateMetadata = tool({
-	description:
-		"Generate metadata after your response. Call this ONCE as your final action.",
-	inputSchema: z.object({
-		suggestions: z
-			.array(z.string())
-			.length(3)
-			.describe(
-				"Three short follow-up actions or questions (under 8 words each)",
-			),
-		chatTitle: z
-			.string()
-			.max(60)
-			.describe("A concise title for this chat based on the conversation"),
-		lastMessageSummary: z
-			.string()
-			.max(150)
-			.describe("A one-sentence summary of your last response"),
-	}),
-})
 
 // No execute — a client-side confirmation tool. The loop stops, the call is
 // forwarded to the client which runs ExtractPat and feeds the result back.
@@ -145,6 +124,7 @@ chatsRouter.delete("/:id", async (c) => {
 		taskPath,
 		index.filter((e) => e.id !== chatId),
 	)
+	await deleteChat(taskPath, chatId)
 	return c.json({ ok: true })
 })
 
@@ -243,15 +223,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const excludedSet = new Set(excludedPaths ?? [])
 
 	const settings = await readSettings()
-
-	// Strip generateMetadata tool parts from history — internal scaffolding,
-	// adds noise on subsequent turns.
-	const cleanedMessages = messages.map((m) => ({
-		...m,
-		parts: (m.parts as Array<{ type: string }>).filter(
-			(p) => p.type !== "tool-generateMetadata",
-		),
-	}))
 
 	const tasks = await readTasks()
 	const taskType = tasks.find((p) => p.path === taskPath)?.taskType
@@ -362,7 +333,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 	})
 
 	const tools = {
-		generateMetadata,
 		analyseSource,
 		...fsTools,
 		...(epoAuth.epoOpsKey && epoAuth.epoOpsSecret
@@ -410,7 +380,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 
 	return createAgentUIStreamResponse({
 		agent,
-		uiMessages: cleanedMessages,
+		uiMessages: messages,
 		sendReasoning: true,
 		// Map a context-window overflow to a sentinel the client recognises; the
 		// default would mask it as a generic "an error occurred".
@@ -438,7 +408,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 			// it includes client-added tool outputs (e.g. analyseSource confirmation)
 			// that the server never re-emits. We rebuild from it, preserving original
 			// timestamps, then upsert the freshly generated assistant message by id.
-			// (Use the un-stripped `messages` so generateMetadata parts survive reload.)
 			const existingById = new Map(chat.messages.map((m) => [m.id, m]))
 			const toMsg = (m: {
 				id: string

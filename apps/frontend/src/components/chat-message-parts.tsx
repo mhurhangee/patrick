@@ -267,8 +267,6 @@ export function AssistantParts({
 
 				if (isToolUIPart(part)) {
 					const name = getToolName(part)
-					// generateMetadata is internal UI scaffolding (consumed by ExchangePanel)
-					if (name === "generateMetadata") return null
 					return (
 						<ToolPart
 							// biome-ignore lint/suspicious/noArrayIndexKey: parts are a stable ordered array
