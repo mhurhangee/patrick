@@ -1,5 +1,18 @@
 export type Provider = "gateway" | "anthropic" | "openai" | "google"
 
+// The vendor actually serving a model (gateway routes to one of these).
+export type Vendor = "anthropic" | "openai" | "google"
+
+// Input tokens a single PDF page costs, per vendor — PDF→token conversion happens
+// in each vendor's ingestion pipeline (text + a rendered page image), identical
+// across that vendor's models and stable over time. Measured via
+// apps/api/scripts/measure-pdf-tokens.ts; re-run only if a vendor is added.
+export const PDF_TOKENS_PER_PAGE: Record<Vendor, number> = {
+	anthropic: 1562,
+	openai: 944,
+	google: 520,
+}
+
 // Rough capability/cost tier. Order in each list is always fast → balanced → expert.
 type ModelTier = "fast" | "balanced" | "expert"
 

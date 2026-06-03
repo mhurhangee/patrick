@@ -252,8 +252,9 @@ export function reasoningOptions(
 	const reason = showThinking && effort !== "off"
 
 	if (vendor === "openai") {
+		// "none" disables reasoning (the fast-model path); "minimal" is rejected.
 		const openai: Record<string, Json> = {
-			reasoningEffort: effort === "off" ? "minimal" : effort,
+			reasoningEffort: effort === "off" ? "none" : effort,
 		}
 		if (reason) openai.reasoningSummary = "auto"
 		return { providerOptions: { openai } }
@@ -267,12 +268,18 @@ export function reasoningOptions(
 		return { providerOptions: { google: { thinkingConfig } } }
 	}
 
-	// anthropic: current models (Opus 4.7+) use adaptive thinking + `effort`
-	// (output_config.effort). The legacy thinking:{type:"enabled",budgetTokens}
-	// is rejected by these models. Adaptive's `display` controls visibility.
-	const anthropic: Record<string, Json> = {
-		effort: effort === "off" ? "low" : effort,
+	// anthropic: `effort` (output_config.effort) is a frontier-model knob — the
+	// fast model (Haiku) rejects it ("Extra inputs are not permitted"). So "off"
+	// sends nothing (reasoning disabled). Otherwise send effort + adaptive thinking
+	// together (Opus 4.7+ require this pairing; the legacy budgetTokens form is
+	// rejected). `display` controls visibility, not whether it thinks.
+	const anthropic: Record<string, Json> = {}
+	if (effort !== "off") {
+		anthropic.effort = effort
+		anthropic.thinking = {
+			type: "adaptive",
+			display: reason ? "summarized" : "omitted",
+		}
 	}
-	if (reason) anthropic.thinking = { type: "adaptive", display: "summarized" }
 	return { providerOptions: { anthropic } }
 }

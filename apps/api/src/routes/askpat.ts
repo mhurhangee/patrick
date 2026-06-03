@@ -69,7 +69,8 @@ askpatRouter.post("/command", async (c) => {
 	const system = await buildAskPatPrompt({ settings, assetType })
 
 	const model = createModel(provider, apiKey, modelId)
-	const { providerOptions } = reasoningOptions(provider, modelId, "low", false)
+	// AskPat runs on the fast model — reasoning off (Haiku rejects effort anyway).
+	const { providerOptions } = reasoningOptions(provider, modelId, "off", false)
 	const prompt = buildUserPrompt(
 		toolName,
 		instruction,
