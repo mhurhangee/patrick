@@ -6,9 +6,15 @@ import { ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
+import { useAI } from "@/lib/ai-context"
+import { estimatePdfTokens } from "@/lib/ai-models"
 import { cn } from "@/lib/utils"
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
+
+function formatTokens(n: number): string {
+	return n >= 1000 ? `${(n / 1000).toFixed(n >= 100_000 ? 0 : 1)}k` : `${n}`
+}
 
 export type SourceViewerHighlight = {
 	page: number
@@ -52,6 +58,7 @@ export function SourceViewer({
 	excludedFromAgent?: boolean
 	onToggleExclude?: () => void
 }) {
+	const { detailedModel } = useAI()
 	const [numPages, setNumPages] = useState(0)
 	const [pageNumber, setPageNumber] = useState(1)
 	const [scalePercent, setScalePercent] = useState(100)
@@ -101,7 +108,7 @@ export function SourceViewer({
 	const pageHighlights = highlights.filter((h) => h.page === pageNumber)
 
 	return (
-		<div className="relative flex h-full flex-col overflow-hidden">
+		<div className="@container relative flex h-full flex-col overflow-hidden">
 			<div ref={containerRef} className="flex-1 overflow-auto">
 				<Document
 					file={src}
@@ -155,7 +162,7 @@ export function SourceViewer({
 				>
 					<ChevronLeft size={14} />
 				</Button>
-				<span className="tabular-nums text-xs text-muted-foreground">
+				<span className="whitespace-nowrap tabular-nums text-xs text-muted-foreground">
 					{numPages > 0 ? `${pageNumber} / ${numPages}` : "–"}
 				</span>
 				<Button
@@ -166,6 +173,17 @@ export function SourceViewer({
 				>
 					<ChevronRight size={14} />
 				</Button>
+				{numPages > 0 && (
+					<div className="hidden items-center @md:flex">
+						<div className="mx-1 h-4 w-px bg-border" />
+						<span
+							className="tabular-nums text-xs text-muted-foreground"
+							title={`Estimated AI context cost: ${numPages} page${numPages === 1 ? "" : "s"} × ~${formatTokens(estimatePdfTokens(1, detailedModel))}/page for the current model. Each open document is re-sent every turn.`}
+						>
+							~{formatTokens(estimatePdfTokens(numPages, detailedModel))} tok
+						</span>
+					</div>
+				)}
 				<div className="mx-1 h-4 w-px bg-border" />
 				<span className="w-8 text-right tabular-nums text-xs text-muted-foreground">
 					{scalePercent}%

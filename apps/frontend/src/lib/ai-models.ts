@@ -1,18 +1,5 @@
 export type Provider = "gateway" | "anthropic" | "openai" | "google"
 
-// The vendor actually serving a model (gateway routes to one of these).
-export type Vendor = "anthropic" | "openai" | "google"
-
-// Input tokens a single PDF page costs, per vendor — PDF→token conversion happens
-// in each vendor's ingestion pipeline (text + a rendered page image), identical
-// across that vendor's models and stable over time. Measured via
-// apps/api/scripts/measure-pdf-tokens.ts; re-run only if a vendor is added.
-export const PDF_TOKENS_PER_PAGE: Record<Vendor, number> = {
-	anthropic: 1562,
-	openai: 944,
-	google: 520,
-}
-
 // Rough capability/cost tier. Order in each list is always fast → balanced → expert.
 type ModelTier = "fast" | "balanced" | "expert"
 
@@ -115,6 +102,35 @@ const GATEWAY_MODELS: CuratedModel[] = [
 export const MODELS_BY_ID: Record<string, CuratedModel> = Object.fromEntries(
 	GATEWAY_MODELS.map((m) => [m.id, m]),
 )
+
+// Context window (input-token capacity) for a model id; 200k is a safe floor.
+export function contextWindowFor(modelId: string): number {
+	return MODELS_BY_ID[modelId]?.contextWindow ?? 200_000
+}
+
+// The vendor serving a model (gateway routes to one of these). Anthropic default.
+type Vendor = "anthropic" | "openai" | "google"
+
+// Input tokens a single PDF page costs, per vendor — the vendor's ingestion
+// pipeline (extracted text + a rendered page image), ~constant across that
+// vendor's models and stable. Measured via apps/api/scripts/measure-pdf-tokens.ts.
+const PDF_TOKENS_PER_PAGE: Record<Vendor, number> = {
+	anthropic: 1562,
+	openai: 944,
+	google: 520,
+}
+
+function vendorForModel(modelId: string): Vendor {
+	const v = modelId.split("/")[0]
+	return v === "openai" || v === "google" ? v : "anthropic"
+}
+
+// Rough input-token cost of sending an N-page PDF to the given model. Page count
+// is exact (from the viewer), so this per-doc estimate is reliable — unlike a
+// whole-context estimate, which can't see the server-built system prompt + tools.
+export function estimatePdfTokens(pages: number, modelId: string): number {
+	return pages * PDF_TOKENS_PER_PAGE[vendorForModel(modelId)]
+}
 
 const byTier = (models: CuratedModel[], tier: ModelTier) =>
 	models.find((m) => m.tier === tier) ?? models[0]

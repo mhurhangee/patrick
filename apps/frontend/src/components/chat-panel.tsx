@@ -27,10 +27,11 @@ import {
 } from "@/components/ui/empty"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import { MODELS_BY_ID } from "@/lib/ai-models"
+import { contextWindowFor, MODELS_BY_ID } from "@/lib/ai-models"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { AssistantParts, type ToolContext } from "./chat-message-parts"
+import { ContextRing } from "./context-ring"
 import {
 	ExchangePanel,
 	type ExchangePanelData,
@@ -64,6 +65,8 @@ function ChatInputBar({
 	isStreaming,
 	onStop,
 	textareaRef,
+	modelId,
+	lastInputTokens,
 }: {
 	openAssets: ApiAsset[]
 	onRemoveAsset: (id: string) => void
@@ -76,9 +79,20 @@ function ChatInputBar({
 	isStreaming?: boolean
 	onStop?: () => void
 	textareaRef?: RefObject<HTMLTextAreaElement | null>
+	modelId?: string
+	lastInputTokens?: number | null
 }) {
 	// Only show docs actually sent to the AI — excluded ("do not read") are hidden.
 	const visible = openAssets.filter((a) => !doNotRead?.has(a.id))
+
+	// Context-usage ring: the actual input tokens the model reported last turn.
+	// Hidden until the first turn (no measurement to show yet).
+	const showRing = modelId != null && lastInputTokens != null
+	const inputPrice = modelId ? MODELS_BY_ID[modelId]?.pricingPerM?.input : null
+	const inputCostPerTurn =
+		inputPrice != null && lastInputTokens != null
+			? (lastInputTokens / 1_000_000) * inputPrice
+			: null
 	return (
 		<div className="shrink-0 space-y-2 pb-3 px-3 pt-0">
 			<div className="rounded-lg border bg-transparent focus-within:ring-1 focus-within:ring-ring">
@@ -127,25 +141,34 @@ function ChatInputBar({
 							))}
 						</div>
 					)}
-					{isStreaming ? (
-						<Button
-							size="icon"
-							variant="secondary"
-							onClick={onStop}
-							aria-label="Stop generating"
-						>
-							<Square />
-						</Button>
-					) : (
-						<Button
-							size="icon"
-							onClick={onSend}
-							disabled={disabled || !input.trim()}
-							aria-label="Send message"
-						>
-							<ArrowUp />
-						</Button>
-					)}
+					<div className="flex items-center gap-2">
+						{showRing && modelId ? (
+							<ContextRing
+								used={lastInputTokens ?? 0}
+								window={contextWindowFor(modelId)}
+								inputCostPerTurn={inputCostPerTurn}
+							/>
+						) : null}
+						{isStreaming ? (
+							<Button
+								size="icon"
+								variant="secondary"
+								onClick={onStop}
+								aria-label="Stop generating"
+							>
+								<Square />
+							</Button>
+						) : (
+							<Button
+								size="icon"
+								onClick={onSend}
+								disabled={disabled || !input.trim()}
+								aria-label="Send message"
+							>
+								<ArrowUp />
+							</Button>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -482,6 +505,21 @@ function ChatPane({
 		}
 	}
 
+	// Context ring: the provider's actual input-token count from the most recent
+	// assistant turn (what the model ingested — docs, history, system, tools).
+	const lastInputTokens = useMemo(() => {
+		let last: number | null = null
+		for (const m of messages) {
+			const meta = m.metadata as
+				| { usage?: { inputTokens?: number } }
+				| undefined
+			if (m.role === "assistant" && meta?.usage?.inputTokens != null) {
+				last = meta.usage.inputTokens
+			}
+		}
+		return last
+	}, [messages])
+
 	// Total conversation tokens + cost across all completed exchanges
 	const conversationStats = useMemo(() => {
 		let totalIn = 0
@@ -652,6 +690,8 @@ function ChatPane({
 				isStreaming={isStreaming}
 				onStop={stop}
 				textareaRef={textareaRef}
+				modelId={detailedModel}
+				lastInputTokens={lastInputTokens}
 			/>
 		</div>
 	)
