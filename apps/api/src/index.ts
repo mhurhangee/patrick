@@ -10,6 +10,7 @@ import { extractpatRouter } from "./routes/extractpat"
 import { filesRouter } from "./routes/files"
 import { flagsRouter } from "./routes/flags"
 import { notesRouter } from "./routes/notes"
+import { promptRouter } from "./routes/prompt"
 import { settingsRouter } from "./routes/settings"
 import { tasksRouter } from "./routes/tasks"
 
@@ -29,6 +30,7 @@ app.route("/artifacts", artifactsRouter)
 app.route("/ai", aiRouter)
 app.route("/ai/editor", editorAiRouter)
 app.route("/ai/extractpat", extractpatRouter)
+app.route("/prompt", promptRouter)
 app.route("/settings", settingsRouter)
 
 export default {

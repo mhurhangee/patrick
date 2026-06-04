@@ -1,4 +1,4 @@
-import type { AiEffort } from "@patrickos/shared"
+import type { AiEffort, SurfaceId } from "@patrickos/shared"
 import {
 	DEFAULT_PROMPT_CONTEXT,
 	DEFAULT_TEMPLATE_AGENTPAT,
@@ -8,6 +8,7 @@ import {
 } from "@patrickos/shared"
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
+import { PromptEditor } from "@/components/prompt-editor"
 import { useTheme } from "@/components/theme-provider"
 import {
 	AlertDialog,
@@ -201,10 +202,13 @@ export function SettingsPanel({
 	open,
 	onClose,
 	onSwitchProfile,
+	taskPath,
 }: {
 	open: boolean
 	onClose: () => void
 	onSwitchProfile: () => void
+	/** Active task path — used for live prompt-preview values. */
+	taskPath?: string
 }) {
 	const ai = useAI()
 	const { theme, setTheme } = useTheme()
@@ -562,6 +566,8 @@ export function SettingsPanel({
 							savedValue={savedAgentPat}
 							onChange={setAgentPatInstructions}
 							onSave={saveAgentPat}
+							surface="agentpat"
+							taskPath={taskPath}
 							showAlert
 						/>
 					)}
@@ -574,6 +580,8 @@ export function SettingsPanel({
 							savedValue={savedDraftPat}
 							onChange={setDraftPatInstructions}
 							onSave={saveDraftPat}
+							surface="draftpat"
+							taskPath={taskPath}
 							showAlert
 						/>
 					)}
@@ -586,6 +594,8 @@ export function SettingsPanel({
 							savedValue={savedNotePat}
 							onChange={setNotePatInstructions}
 							onSave={saveNotePat}
+							surface="notepat"
+							taskPath={taskPath}
 							showAlert
 						/>
 					)}
@@ -598,6 +608,8 @@ export function SettingsPanel({
 							savedValue={savedExtractPat}
 							onChange={setExtractPatInstructions}
 							onSave={saveExtractPat}
+							surface="extractpat"
+							taskPath={taskPath}
 							showAlert
 						/>
 					)}
@@ -1034,6 +1046,8 @@ function PromptSection({
 	onChange,
 	onSave,
 	showAlert = false,
+	surface,
+	taskPath,
 }: {
 	title: string
 	description: string
@@ -1043,6 +1057,9 @@ function PromptSection({
 	onChange: (v: string) => void
 	onSave: () => Promise<void>
 	showAlert?: boolean
+	/** When set, edit as a full <TOKEN> template (PromptEditor); else plain text. */
+	surface?: SurfaceId
+	taskPath?: string
 }) {
 	const [alertOpen, setAlertOpen] = useState(false)
 	const { status, wrap } = useSaveButton()
@@ -1076,12 +1093,21 @@ function PromptSection({
 					</>
 				}
 			>
-				<Textarea
-					value={displayValue}
-					onChange={(e) => onChange(e.target.value)}
-					placeholder="Enter custom instructions…"
-					className="min-h-[320px] font-mono text-xs"
-				/>
+				{surface ? (
+					<PromptEditor
+						surface={surface}
+						value={displayValue}
+						onChange={onChange}
+						taskPath={taskPath}
+					/>
+				) : (
+					<Textarea
+						value={displayValue}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder="Enter custom instructions…"
+						className="min-h-[320px] font-mono text-xs"
+					/>
+				)}
 			</SectionLayout>
 
 			{showAlert && (

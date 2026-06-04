@@ -6,6 +6,7 @@ import type {
 	ExtractionSummary,
 	Flags,
 	Settings,
+	SurfaceId,
 	TaskType,
 } from "@patrickos/shared"
 
@@ -56,6 +57,23 @@ export const api = {
 		get: () => request<Settings>("/settings"),
 		update: (patch: DeepPartial<Settings>) =>
 			request<Settings>("/settings", json(patch, { method: "PUT" })),
+	},
+	prompt: {
+		// Live-preview render for the prompt editor.
+		render: (input: {
+			surface: SurfaceId
+			template: string
+			taskPath?: string
+			openFilePaths?: string[]
+			excludedFiles?: string[]
+			assetType?: string
+			currentSourceName?: string
+		}) =>
+			request<{
+				system: string
+				perToken: Record<string, string>
+				warnings: string[]
+			}>("/prompt/render", json(input, { method: "POST" })),
 	},
 	extractpat: {
 		// assetType: a specific source type id, or "auto" to classify first

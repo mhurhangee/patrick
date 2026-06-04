@@ -289,6 +289,7 @@ function WorkspaceContent({
 				open={settingsOpen}
 				onClose={() => setSettingsOpen(false)}
 				onSwitchProfile={onSwitchProfile}
+				taskPath={task.currentTaskId || undefined}
 			/>
 			<TutorialOverlay
 				open={tutorialOpen}
