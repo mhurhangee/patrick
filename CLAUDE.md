@@ -110,7 +110,21 @@ Inline AI inside the Plate editors — both **artifacts** and (now) **notes**. W
 - `POST /ai/askpat/copilot` — ghost text autocomplete
 - Key files: `apps/api/src/routes/askpat.ts`, `apps/frontend/src/components/editor/`
 
-**Planned (next branch):** rename AskPat → **DraftPat** (artifacts) and split out **NotePat** (notes) as separate, separately-tunable prompt surfaces — part of the prompt-template / context engine (see the `prompt-templates-plan` memory). Notes AI today shares the AskPat prompt+route and sees only the note's own text; it becomes source/derivation-aware (NotePat) in that branch.
+**Being built (branch `feat/prompt-context-engine`):** rename AskPat → **DraftPat** (artifacts) and split out **NotePat** (notes) as separate, separately-tunable prompt surfaces — part of the prompt/context engine below. Notes AI today shares the AskPat prompt+route and sees only the note's own text; it becomes source/derivation-aware (NotePat) in that branch.
+
+## Prompt / context engine
+
+**The current feature.** Replaces the hardcoded `build*Prompt` functions in `apps/api/src/lib/patent-prompt.ts` (identity/task/openFiles/… emitted in code + tiny editable Do/Don't slots) with **fully-exposed templates + a placeholder/context-provider engine**. The value prop: steering any AI surface = editing its template (no code), and the attorney can read/approve the *entire* prompt — accountability + transparency, the thing no cloud competitor offers.
+
+- **Source of truth:** each surface's template is a **markdown-with-`<TOKEN>` string** stored in `settings.yaml` — inspectable, diffable, readable without the app. (Today's defaults are already markdown.)
+- **Engine = a token catalog + resolvers.** Token → provider. `render(template, ctx)` scans for `<TOKEN>`, replaces context tokens with resolved text, replaces tool tokens with their usage blurb **and wires that tool**, leaves unknown tokens verbatim + warns. Returns `{ system, tools, warnings }` — so *which `<TOOLNAME>` appears in the template IS the agent's toolset* (push content via `<EXTRACTEDDATA>` vs pull via `<READFILE>`). PDFs stay out-of-band as `fileParts` (system messages can't hold file parts).
+- **Package split:** token **catalog metadata** (name, kind, description, schema-as-data, surface-availability, example, wrapper) → `packages/shared`. **Resolvers** (`resolve(ctx)`, tool `build(ctx)` — touch fs / run tools) → `apps/api/src/lib/prompt`. Frontend chips + validation read the shared catalog; the API renders with the resolvers.
+- **No human-facing strings inside resolvers** — every description / tool blurb / wrapper phrase ("The user has written the following notes on {filename}:\n\n{content}") lives as **data on the catalog entry**; resolvers just fill it. This makes per-token editing additive later (`settings.promptOverrides[token]` merged over the catalog at load) — designed-in now, UI deferred.
+- **Surfaces (each = one template):** **AgentPat** (tools + broad source scope), **DraftPat** (artifacts, no tools), **NotePat** (notes, `<CURRENTSOURCE>` scope, no tools), **ExtractPat** (structured — template carries warnings + `<LOCATIONINSTRUCTION>`). Copilot folds under its editor (DraftPat-copilot / NotePat-copilot); its system string moves server-side into the engine (today it's hardcoded client-side in `editor/plugins/copilot-kit.tsx`).
+- **Source-scope tokens:** `<OPENSOURCES>` (all open tabs), `<FOCUSEDSOURCES>` (active tab / both split panes), `<CURRENTSOURCE>` (NotePat's one source). Content tokens (`<NOTES>`, `<EXTRACTEDDATA>`, `<SOURCETEXT>`…) resolve against the active scope.
+- **Editor UI = a lean Plate `PromptEditorKit`** (reuses the `plugins`-prop pattern from `NotesEditorKit`): tokens are **smart inline chips** (mention-style void nodes, kind-coloured) — collapsed shows the token; expanded inspects description + schema + a **live preview** of what it resolves to for the current task (`/prompt/render` endpoint). Two tabs over the same string: **Raw = editor** (markdown-with-chips, canonical, what's stored), **Formatted = live read-only preview** (rendered markdown + chips). Raw editable / Formatted read-only avoids lossy markdown↔rich round-trips; making Formatted editable later is additive. Insert tokens via `@`/slash, filtered by surface. Validation warns (never blocks).
+
+See the `prompt-templates-plan` memory for the full decision log.
 
 ## Shared types
 
