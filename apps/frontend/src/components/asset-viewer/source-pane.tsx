@@ -64,9 +64,12 @@ export function SourcePane({
 		extraction.run()
 	}
 
-	// Which derivation views exist for this source (presence = the segment shows).
+	// Which derivation views are shown for this source. A derivation segment
+	// appears once its record exists or is running — and also when it's the active
+	// view, so deep-links (kebab "Extract data", chat Review) land on its empty
+	// state with Derive ▾ available rather than silently falling back to Source.
 	const derivationExists: Record<DerivationId, boolean> = {
-		extraction: extracted || extraction.isExtracting,
+		extraction: extracted || extraction.isExtracting || view === "extraction",
 	}
 	const options: ViewOption[] = [
 		{ id: "source", label: "Source" },

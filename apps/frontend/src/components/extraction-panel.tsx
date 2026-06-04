@@ -286,8 +286,8 @@ export function ExtractionBody({
 					<Clover size={24} className="text-muted-foreground/30" />
 					<p className="text-sm text-muted-foreground">No extraction yet</p>
 					<p className="max-w-xs text-xs text-muted-foreground/70">
-						Pick a document type, or leave it on Auto-detect and run ExtractPat
-						to classify and pull structured data from this source.
+						Use <span className="font-medium">Derive ▾</span> above to classify
+						and pull structured data from this source.
 					</p>
 				</div>
 			) : (
