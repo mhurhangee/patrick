@@ -165,8 +165,6 @@ export const api = {
 	},
 	// Per-source notes — Plate JSON in notes/{filename}.json.
 	notes: {
-		list: (taskPath: string) =>
-			request<string[]>(`/notes?taskPath=${encodeURIComponent(taskPath)}`),
 		get: (taskPath: string, filename: string) =>
 			request<{ content: string } | null>(
 				`/notes/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,

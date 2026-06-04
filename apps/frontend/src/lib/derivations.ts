@@ -17,5 +17,5 @@ export type DerivationDef = {
 }
 
 export const DERIVATIONS: DerivationDef[] = [
-	{ id: "extraction", label: "Extracted Data", deriveLabel: "Extract data" },
+	{ id: "extraction", label: "Ex. Data", deriveLabel: "Extract data" },
 ]

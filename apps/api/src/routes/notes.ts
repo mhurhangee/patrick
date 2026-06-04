@@ -1,16 +1,9 @@
 import { Hono } from "hono"
-import { deleteNote, listNotes, readNote, writeNote } from "../lib/fs"
+import { deleteNote, readNote, writeNote } from "../lib/fs"
 
 // Per-source human-authored notes — Plate JSON saved as notes/{filename}.json.
 // Not a derivation (no AI pass); reuses the Plate editor + debounced save.
 export const notesRouter = new Hono()
-
-// GET /notes?taskPath=...  → source filenames that have a note (drives the dot)
-notesRouter.get("/", async (c) => {
-	const taskPath = c.req.query("taskPath")
-	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
-	return c.json(await listNotes(taskPath))
-})
 
 // GET /notes/file?taskPath=...&filename=...  → { content } | null
 notesRouter.get("/file", async (c) => {

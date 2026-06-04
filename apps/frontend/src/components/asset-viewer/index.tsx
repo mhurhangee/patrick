@@ -26,8 +26,6 @@ export function AssetViewer({
 	tabView,
 	onSetAssetView,
 	extractedFilenames,
-	notedFilenames,
-	onNoted,
 	onTabClick,
 	onTabClose,
 	onOpen,
@@ -50,8 +48,6 @@ export function AssetViewer({
 	tabView: Record<string, string>
 	onSetAssetView: (id: string, view: string) => void
 	extractedFilenames: Set<string>
-	notedFilenames: Set<string>
-	onNoted: (filename: string) => void
 	onTabClick: (id: string) => void
 	onTabClose: (id: string) => void
 	onOpen: (id: string, view?: string) => void
@@ -101,8 +97,6 @@ export function AssetViewer({
 		tabView,
 		onSetAssetView,
 		extractedFilenames,
-		notedFilenames,
-		onNoted,
 		onAssetUpdate,
 		provider,
 		apiKey,

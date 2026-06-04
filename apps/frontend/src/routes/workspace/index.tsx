@@ -198,8 +198,6 @@ function WorkspaceContent({
 								tabView={asset.tabView}
 								onSetAssetView={asset.setAssetView}
 								extractedFilenames={asset.extractedFilenames}
-								notedFilenames={asset.notedFilenames}
-								onNoted={asset.markNoted}
 								onTabClick={asset.selectTab}
 								onTabClose={asset.closeTab}
 								onOpen={asset.openAsset}

@@ -15,8 +15,6 @@ export function SourcePane({
 	view,
 	onSetView,
 	extracted,
-	noted,
-	onNoted,
 	locate,
 	onLocate,
 	onLocatePrev,
@@ -34,8 +32,6 @@ export function SourcePane({
 	view: string
 	onSetView: (v: string) => void
 	extracted: boolean
-	noted: boolean
-	onNoted: (filename: string) => void
 	locate: LocateState | null
 	onLocate: (sourcePath: string, locations: FieldLocation[]) => void
 	onLocatePrev: () => void
@@ -73,7 +69,7 @@ export function SourcePane({
 	}
 	const options: ViewOption[] = [
 		{ id: "source", label: "Source" },
-		{ id: "notes", label: "Notes", dot: noted ? "filled" : "hollow" },
+		{ id: "notes", label: "Notes" },
 		...DERIVATIONS.filter((d) => derivationExists[d.id]).map((d) => ({
 			id: d.id,
 			label: d.label,
@@ -94,9 +90,7 @@ export function SourcePane({
 					/>
 				)
 			case "notes":
-				return (
-					<NotesView asset={asset} onSaved={() => onNoted(asset.filename)} />
-				)
+				return <NotesView asset={asset} />
 			default:
 				return (
 					<SourceView

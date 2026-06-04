@@ -4,15 +4,8 @@ import { useEffect, useState } from "react"
 import { PlateDocEditor } from "@/components/plate-doc-editor"
 import { api } from "@/lib/api"
 
-// Per-source notes — an always-available Plate scratchpad. The file is written on
-// first save; `onSaved` flips the Notes dot from hollow to filled.
-export function NotesView({
-	asset,
-	onSaved,
-}: {
-	asset: ApiAsset
-	onSaved: () => void
-}) {
+// Per-source notes — an always-available Plate scratchpad, written on first save.
+export function NotesView({ asset }: { asset: ApiAsset }) {
 	const [loading, setLoading] = useState(true)
 	const [initialValue, setInitialValue] = useState<Value | undefined>()
 
@@ -38,7 +31,6 @@ export function NotesView({
 	function handleSave(value: Value) {
 		api.notes
 			.save(asset.taskId, asset.filename, JSON.stringify(value))
-			.then(() => onSaved())
 			.catch(() => {})
 	}
 

@@ -1,4 +1,4 @@
-import { ChevronDown, Loader2, Sparkles } from "lucide-react"
+import { ChevronDown, Loader2 } from "lucide-react"
 import { useState } from "react"
 import type { Extraction } from "@/components/extraction-panel"
 import { Button } from "@/components/ui/button"
@@ -120,11 +120,7 @@ export function DeriveMenu({
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button variant="default" size="sm">
-					{isExtracting ? (
-						<Loader2 size={12} className="animate-spin" />
-					) : (
-						<Sparkles size={12} />
-					)}
+					{isExtracting ? <Loader2 size={12} className="animate-spin" /> : null}
 					{isExtracting ? "Extracting…" : "Derive"}
 					<ChevronDown size={12} className="opacity-70" />
 				</Button>

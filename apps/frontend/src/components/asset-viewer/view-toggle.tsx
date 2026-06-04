@@ -1,11 +1,9 @@
 import { cn } from "@/lib/utils"
 
-// One segment in the source-tab view toggle. `dot` is an optional status marker
-// (used by Notes: filled = a note exists, hollow = empty).
+// One segment in the source-tab view toggle.
 export type ViewOption = {
 	id: string
 	label: string
-	dot?: "filled" | "hollow"
 }
 
 // Segmented control over a source's views: Source | Notes | <derivations that exist>.
@@ -34,16 +32,6 @@ export function ViewToggle({
 								: "text-muted-foreground hover:text-foreground",
 						)}
 					>
-						{opt.dot && (
-							<span
-								className={cn(
-									"size-1.5 rounded-full",
-									opt.dot === "filled"
-										? "bg-muted-foreground"
-										: "border border-muted-foreground/50",
-								)}
-							/>
-						)}
 						{opt.label}
 					</button>
 				)

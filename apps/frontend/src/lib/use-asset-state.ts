@@ -47,8 +47,6 @@ export function useAssetState(currentTaskId: string) {
 	const [extractedFilenames, setExtractedFilenames] = useState<Set<string>>(
 		new Set(),
 	)
-	// Sources that have a note — drives the Notes view's dot.
-	const [notedFilenames, setNotedFilenames] = useState<Set<string>>(new Set())
 	// Sources the user has flagged "do not read" — excluded from AgentPat context.
 	const [doNotRead, setDoNotRead] = useState<Set<string>>(new Set())
 	// Sources the user has starred ("key documents").
@@ -58,7 +56,6 @@ export function useAssetState(currentTaskId: string) {
 		if (!currentTaskId) {
 			setAssets([])
 			setExtractedFilenames(new Set())
-			setNotedFilenames(new Set())
 			setDoNotRead(new Set())
 			setStarred(new Set())
 			return
@@ -86,9 +83,6 @@ export function useAssetState(currentTaskId: string) {
 			.then((summaries) =>
 				setExtractedFilenames(new Set(summaries.map((s) => s.filename))),
 			)
-		api.notes
-			.list(currentTaskId)
-			.then((filenames) => setNotedFilenames(new Set(filenames)))
 	}, [currentTaskId])
 
 	useEffect(() => {
@@ -216,13 +210,6 @@ export function useAssetState(currentTaskId: string) {
 		persistFlags(doNotRead, next)
 	}
 
-	// A source's note now exists (first save) — flip its dot without a full refresh.
-	function markNoted(filename: string) {
-		setNotedFilenames((prev) =>
-			prev.has(filename) ? prev : new Set(prev).add(filename),
-		)
-	}
-
 	// Open documents for chat context/chips.
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -236,11 +223,9 @@ export function useAssetState(currentTaskId: string) {
 		tabView,
 		openAssets,
 		extractedFilenames,
-		notedFilenames,
 		doNotRead,
 		starred,
 		refresh,
-		markNoted,
 		openAsset,
 		setAssetView,
 		selectTab,

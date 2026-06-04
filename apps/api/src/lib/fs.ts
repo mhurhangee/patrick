@@ -272,18 +272,6 @@ export async function deleteNote(
 	await rm(noteFilePath(taskPath, sourceFilename), { force: true })
 }
 
-// Source filenames that have a note — drives the Notes segment's dot.
-export async function listNotes(taskPath: string): Promise<string[]> {
-	try {
-		const entries = await readdir(notesDir(taskPath), { withFileTypes: true })
-		return entries
-			.filter((e) => e.isFile() && e.name.endsWith(".json"))
-			.map((e) => basename(e.name, ".json"))
-	} catch {
-		return []
-	}
-}
-
 // ─── Flags (meta/flags.json — excluded + starred, filename-keyed) ────────────
 
 export async function readFlags(taskPath: string): Promise<Flags> {

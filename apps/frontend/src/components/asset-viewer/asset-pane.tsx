@@ -49,8 +49,6 @@ export function AssetPane({
 	tabView,
 	onSetAssetView,
 	extractedFilenames,
-	notedFilenames,
-	onNoted,
 	onAssetUpdate,
 	provider,
 	apiKey,
@@ -69,8 +67,6 @@ export function AssetPane({
 	tabView: Record<string, string>
 	onSetAssetView: (id: string, view: string) => void
 	extractedFilenames: Set<string>
-	notedFilenames: Set<string>
-	onNoted: (filename: string) => void
 	onAssetUpdate: (updated: ApiAsset) => void
 	provider: string
 	apiKey: string
@@ -93,8 +89,6 @@ export function AssetPane({
 				view={tabView[asset.id] ?? "source"}
 				onSetView={(v) => onSetAssetView(asset.id, v)}
 				extracted={extractedFilenames.has(asset.filename)}
-				noted={notedFilenames.has(asset.filename)}
-				onNoted={onNoted}
 				locate={locate}
 				onLocate={onLocate}
 				onLocatePrev={onLocatePrev}
