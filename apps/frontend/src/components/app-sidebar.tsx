@@ -161,27 +161,27 @@ export function AppSidebar({
 		items: ApiAsset[]
 		action: SectionAction
 	}[] = [
-		{
-			kind: "source",
-			label: "Sources",
-			items: sorted.filter((a) => a.kind === "source"),
-			action: {
-				icon: <RefreshCw className="size-4" />,
-				label: "Refresh sources",
-				onClick: onRefreshSources,
+			{
+				kind: "source",
+				label: "Sources",
+				items: sorted.filter((a) => a.kind === "source"),
+				action: {
+					icon: <RefreshCw className="size-4" />,
+					label: "Refresh sources",
+					onClick: onRefreshSources,
+				},
 			},
-		},
-		{
-			kind: "artifact",
-			label: "Artifacts",
-			items: sorted.filter((a) => a.kind === "artifact"),
-			action: {
-				icon: <Plus className="size-4" />,
-				label: "New artifact",
-				onClick: onCreateArtifact,
+			{
+				kind: "artifact",
+				label: "Artifacts",
+				items: sorted.filter((a) => a.kind === "artifact"),
+				action: {
+					icon: <Plus className="size-4" />,
+					label: "New artifact",
+					onClick: onCreateArtifact,
+				},
 			},
-		},
-	]
+		]
 	const sortedChats = [...chats].sort(
 		(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 	)
@@ -191,7 +191,7 @@ export function AppSidebar({
 	const currentTask = tasks.find((p) => p.path === currentTaskId)
 
 	return (
-		<Sidebar variant="inset">
+		<Sidebar>
 			<SidebarHeader className="gap-0 px-3 py-2">
 				<div className="flex items-center py-2">
 					<Link to="/" className="flex items-center">

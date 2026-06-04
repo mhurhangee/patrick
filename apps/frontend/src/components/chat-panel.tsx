@@ -370,6 +370,7 @@ function ChatPane({
 
 	// Focus the input on mount so a freshly opened chat (incl. a fork) is ready
 	// to type in.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		textareaRef.current?.focus()
 	}, [])
@@ -593,7 +594,7 @@ function ChatPane({
 		const pricing = getModelPricing(provider, detailedModel)
 		const totalCost = pricing
 			? (totalIn / 1_000_000) * pricing.input +
-				(totalOut / 1_000_000) * pricing.output
+			(totalOut / 1_000_000) * pricing.output
 			: null
 		return { totalCost }
 	}, [exchanges, provider, detailedModel])
@@ -608,7 +609,7 @@ function ChatPane({
 		const costUsd =
 			pricing != null && inputTokens != null && outputTokens != null
 				? (inputTokens / 1_000_000) * pricing.input +
-					(outputTokens / 1_000_000) * pricing.output
+				(outputTokens / 1_000_000) * pricing.output
 				: null
 
 		const tools: string[] = []
@@ -672,7 +673,7 @@ function ChatPane({
 										ref={isLatest ? lastUserMsgRef : null}
 										className="flex justify-end px-3 pt-3"
 									>
-										<div className="prose prose-sm tracking-tight max-w-[88%] px-3 py-2 pb-6 text-sm font-medium text-foreground dark:prose-invert [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_ul]:my-1.5">
+										<div className="prose prose-sm tracking-tight max-w-[88%] px-3 pb-6 text-sm font-medium text-foreground dark:prose-invert [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_ul]:my-1.5">
 											{exchange.userMsg.parts.map((part, i) => {
 												if (part.type !== "text") return null
 												return (
@@ -888,19 +889,18 @@ export function ChatPanel({
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
 			{/* Tab bar */}
-			<div className="relative flex h-8 shrink-0 items-end gap-0.5 bg-muted px-1">
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
+			<div className="relative flex h-7 shrink-0 items-end bg-muted  px-1">
 
 				{/* Open chat tabs — AgentPat first so all tabs share the same flex context */}
-				<div className="tab-scroll flex flex-1 items-end h-6 gap-0.5 overflow-x-auto">
+				<div className="tab-scroll flex flex-1 items-end h-6 overflow-x-auto">
 					{openChats.map((chat) => (
 						<div
 							key={chat.id}
 							className={cn(
-								"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-3 pr-1 text-xs transition-colors cursor-default rounded-t-sm",
+								"group/tab relative flex shrink-0 items-center self-stretch pl-3 pr-1 text-xs transition-colors cursor-default",
 								activeChatId === chat.id
 									? "border-t-2 border-primary shadow-sm bg-background text-foreground"
-									: "border-t-2 border-primary/30 shadow-sm text-muted-foreground hover:text-foreground",
+									: "border-t-2 border-primary/30 bg-muted shadow-sm text-muted-foreground hover:text-foreground",
 							)}
 						>
 							<button

@@ -295,9 +295,9 @@ export function AssetViewer({
 		setLocate((l) =>
 			l
 				? {
-						...l,
-						index: (l.index - 1 + l.locations.length) % l.locations.length,
-					}
+					...l,
+					index: (l.index - 1 + l.locations.length) % l.locations.length,
+				}
 				: l,
 		)
 	}
@@ -325,13 +325,12 @@ export function AssetViewer({
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			<div className="relative flex h-8 shrink-0 items-end bg-muted">
+			<div className="relative flex h-7 shrink-0 items-end bg-muted">
 				{/* border line — tabs with z-10 render on top of it */}
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 bg-border" />
 				<div className="relative z-10 flex shrink-0 items-center self-stretch px-2">
 					<SidebarTrigger className="h-6 w-6" />
 				</div>
-				<div className="tab-scroll flex flex-1 items-end gap-1 overflow-x-auto px-1">
+				<div className="tab-scroll flex flex-1 h-6 items-end overflow-x-auto px-1">
 					{openAssets.map((asset) => {
 						const tabExcluded = doNotRead.has(
 							asset.kind === "analysis" ? asset.path : asset.id,
@@ -341,20 +340,20 @@ export function AssetViewer({
 							<div
 								key={asset.id}
 								className={cn(
-									"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-2 pr-1 text-xs transition-colors cursor-default rounded-t-sm shadow-sm",
+									"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-2 pr-1 text-xs transition-colors cursor-default",
 									tabActive
 										? cn(
-												"bg-background text-foreground",
-												tabExcluded
-													? "border-t-2 border-muted-foreground/40"
-													: "border-t-2 border-primary",
-											)
+											"bg-background text-foreground text-xxs",
+											tabExcluded
+												? "border-t-2 border-muted-foreground/40"
+												: "border-t-2 border-primary",
+										)
 										: cn(
-												"text-muted-foreground hover:text-foreground",
-												tabExcluded
-													? "border-t-2 border-muted-foreground/25"
-													: "border-t-2 border-primary/30",
-											),
+											"text-muted-foreground hover:text-foreground text-xxs",
+											tabExcluded
+												? "border-t-2 border-muted-foreground/25"
+												: "border-t-2 border-primary/30",
+										),
 								)}
 							>
 								{asset.kind === "analysis" && (
