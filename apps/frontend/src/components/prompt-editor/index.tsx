@@ -76,7 +76,7 @@ export function PromptEditor({
 				)}
 			</div>
 
-			<div className="h-[380px] overflow-auto rounded-md border bg-background">
+			<div className="h-[560px] overflow-auto rounded-md border bg-background">
 				{tab === "raw" ? (
 					<RawEditor
 						value={value}

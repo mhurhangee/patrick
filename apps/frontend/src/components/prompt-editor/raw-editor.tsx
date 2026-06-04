@@ -8,7 +8,6 @@ import {
 	Decoration,
 	type DecorationSet,
 	EditorView,
-	hoverTooltip,
 	WidgetType,
 } from "@codemirror/view"
 import {
@@ -33,24 +32,52 @@ const dataField = StateField.define<PreviewData>({
 	},
 })
 
-// Inline expanded-preview widget — shows a token's resolved value right after it,
-// faded, like opening `<TASK>…</TASK>`.
+// Inline expansion shown when a token is clicked open — a small card with the
+// token's description and its live-resolved preview (distinct formatting), then a
+// closing `</TOKEN>`. Replaces the hover tooltip: click to see everything.
 class PreviewWidget extends WidgetType {
 	name: string
+	description: string
 	value: string
-	constructor(name: string, value: string) {
+	constructor(name: string, description: string, value: string) {
 		super()
 		this.name = name
+		this.description = description
 		this.value = value
 	}
 	eq(o: PreviewWidget) {
-		return o.name === this.name && o.value === this.value
+		return (
+			o.name === this.name &&
+			o.description === this.description &&
+			o.value === this.value
+		)
 	}
 	toDOM() {
-		const el = document.createElement("span")
-		el.className = "cm-token-preview"
-		el.textContent = this.value
-		return el
+		const card = document.createElement("span")
+		card.className = "cm-token-card"
+
+		const desc = document.createElement("span")
+		desc.className = "cm-tp-desc"
+		desc.textContent = this.description
+		card.appendChild(desc)
+
+		if (this.value.trim()) {
+			const val = document.createElement("span")
+			val.className = "cm-tp-value"
+			val.textContent = this.value
+			card.appendChild(val)
+		} else {
+			const empty = document.createElement("span")
+			empty.className = "cm-tp-empty"
+			empty.textContent = "Nothing to preview in the current context."
+			card.appendChild(empty)
+		}
+
+		const close = document.createElement("span")
+		close.className = "cm-tp-close"
+		close.textContent = `</${this.name}>`
+		card.appendChild(close)
+		return card
 	}
 }
 
@@ -75,12 +102,20 @@ function buildDeco(docText: string, data: PreviewData): DecorationSet {
 				attributes: { "data-token": name },
 			}),
 		)
-		const val = data.perToken[name]
-		if (open && val?.trim())
+		// When open, always show the card (description is always useful — it makes
+		// the "nothing to preview" case clear too).
+		if (open && known)
 			builder.add(
 				end,
 				end,
-				Decoration.widget({ widget: new PreviewWidget(name, val), side: 1 }),
+				Decoration.widget({
+					widget: new PreviewWidget(
+						name,
+						CATALOG[name].description,
+						data.perToken[name] ?? "",
+					),
+					side: 1,
+				}),
 			)
 		m = re.exec(docText)
 	}
@@ -97,37 +132,8 @@ const decoField = StateField.define<DecorationSet>({
 	provide: (f) => EditorView.decorations.from(f),
 })
 
-// Hover a token → its description (the "mouseover explanation").
-const tokenHover = hoverTooltip((view, pos) => {
-	const text = view.state.doc.toString()
-	const re = new RegExp(TOKEN_RE.source, "g")
-	let m: RegExpExecArray | null = re.exec(text)
-	while (m !== null) {
-		const start = m.index
-		const end = start + m[0].length
-		if (pos >= start && pos <= end) {
-			const name = m[1]
-			if (!isTokenId(name)) return null
-			const meta = CATALOG[name]
-			return {
-				pos: start,
-				end,
-				above: true,
-				create: () => {
-					const dom = document.createElement("div")
-					dom.className = "cm-token-tooltip"
-					dom.textContent = `${name} — ${meta.description} (click to expand/collapse)`
-					return { dom }
-				},
-			}
-		}
-		m = re.exec(text)
-	}
-	return null
-})
-
 // Inherit the container's colours (so it follows light/dark) + style pills,
-// inline previews, tooltips, and the @ menu.
+// the inline expansion card, and the @ menu.
 const editorTheme = EditorView.theme({
 	"&": { backgroundColor: "transparent", color: "inherit", fontSize: "12px" },
 	"&.cm-focused": { outline: "none" },
@@ -168,14 +174,35 @@ const editorTheme = EditorView.theme({
 	".cm-token-open": {
 		outline: "1px solid color-mix(in srgb, currentColor 25%, transparent)",
 	},
-	".cm-token-preview": {
+	// Inline expansion card — rows stack (block); card sits under the token.
+	".cm-token-card": {
 		display: "inline-block",
 		verticalAlign: "top",
+		width: "calc(100% - 1.5em)",
+		margin: "2px 0 6px 1.5em",
+		padding: "6px 8px",
+		borderRadius: "4px",
+		borderLeft: "2px solid color-mix(in srgb, currentColor 25%, transparent)",
+		backgroundColor: "color-mix(in srgb, currentColor 5%, transparent)",
+	},
+	".cm-tp-desc": {
+		display: "block",
+		fontStyle: "italic",
+		opacity: "0.7",
+		marginBottom: "4px",
+	},
+	".cm-tp-value": {
+		display: "block",
 		whiteSpace: "pre-wrap",
-		margin: "1px 0 1px 6px",
-		padding: "1px 6px",
-		borderLeft: "2px solid color-mix(in srgb, currentColor 30%, transparent)",
-		opacity: "0.65",
+		fontFamily: "var(--font-mono, ui-monospace, monospace)",
+		opacity: "0.85",
+	},
+	".cm-tp-empty": { display: "block", fontStyle: "italic", opacity: "0.55" },
+	".cm-tp-close": {
+		display: "block",
+		marginTop: "4px",
+		fontFamily: "var(--font-mono, ui-monospace, monospace)",
+		opacity: "0.4",
 		fontSize: "11px",
 	},
 	".cm-tooltip": {
@@ -183,11 +210,6 @@ const editorTheme = EditorView.theme({
 		color: "var(--popover-foreground, inherit)",
 		border: "1px solid var(--border, #ccc)",
 		borderRadius: "6px",
-	},
-	".cm-token-tooltip": {
-		padding: "4px 8px",
-		maxWidth: "320px",
-		fontSize: "11px",
 	},
 })
 
@@ -245,7 +267,6 @@ export function RawEditor({
 			dataField,
 			decoField,
 			editorTheme,
-			tokenHover,
 			autocompletion({ override: [tokenSource(surface)] }),
 			EditorView.domEventHandlers({
 				mousedown(e) {
@@ -268,13 +289,14 @@ export function RawEditor({
 			onChange={onChange}
 			extensions={extensions}
 			theme="none"
+			height="100%"
 			basicSetup={{
 				lineNumbers: true,
 				foldGutter: false,
 				highlightActiveLine: false,
 				highlightActiveLineGutter: false,
 			}}
-			className="h-full overflow-auto text-xs"
+			className="h-full text-xs"
 		/>
 	)
 }
