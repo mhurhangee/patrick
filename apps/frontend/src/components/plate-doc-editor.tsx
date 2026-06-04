@@ -1,5 +1,5 @@
 import type { Value } from "platejs"
-import { useEffect, useRef } from "react"
+import { type ComponentProps, useEffect, useRef } from "react"
 import { PlateEditor } from "@/components/editor/plate-editor"
 
 // A Plate editor wired for debounced auto-save with an unmount flush. The actual
@@ -9,12 +9,15 @@ export function PlateDocEditor({
 	initialValue,
 	onSave,
 	askpatAssetType,
+	plugins,
 	debounceMs = 500,
 }: {
 	initialValue?: Value
 	onSave: (value: Value) => void
 	/** Tells the AskPat inline AI what kind of document is open. */
 	askpatAssetType?: string
+	/** Plugin set passed to the editor (defaults to the full kit). */
+	plugins?: ComponentProps<typeof PlateEditor>["plugins"]
 	debounceMs?: number
 }) {
 	const saveTimer = useRef<ReturnType<typeof setTimeout>>(null)
@@ -51,7 +54,11 @@ export function PlateDocEditor({
 
 	return (
 		<div className="h-full overflow-hidden">
-			<PlateEditor initialValue={initialValue} onChange={handleChange} />
+			<PlateEditor
+				initialValue={initialValue}
+				onChange={handleChange}
+				plugins={plugins}
+			/>
 		</div>
 	)
 }

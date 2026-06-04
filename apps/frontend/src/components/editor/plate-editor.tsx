@@ -11,12 +11,15 @@ const EMPTY_VALUE: Value = [{ type: "p", children: [{ text: "" }] }]
 export function PlateEditor({
 	initialValue,
 	onChange,
+	plugins = EditorKit,
 }: {
 	initialValue?: Value
 	onChange?: (value: Value) => void
+	// Plugin set — defaults to the full artifact kit; Notes pass a leaner one.
+	plugins?: (typeof EditorKit)[number][]
 }) {
 	const editor = usePlateEditor({
-		plugins: EditorKit,
+		plugins,
 		value: initialValue ?? EMPTY_VALUE,
 	})
 

@@ -1,6 +1,7 @@
 import type { ApiAsset } from "@patrickos/shared"
 import type { Value } from "platejs"
 import { useEffect, useState } from "react"
+import { NotesEditorKit } from "@/components/editor/plugins/notes-editor-kit"
 import { PlateDocEditor } from "@/components/plate-doc-editor"
 import { api } from "@/lib/api"
 
@@ -44,6 +45,7 @@ export function NotesView({ asset }: { asset: ApiAsset }) {
 			initialValue={initialValue}
 			onSave={handleSave}
 			askpatAssetType="note"
+			plugins={NotesEditorKit}
 		/>
 	)
 }
