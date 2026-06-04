@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises"
 import { basename, dirname } from "node:path"
 import {
-	type AnalysisRecord,
 	ASSET_CONFIGS,
 	allowedAssetTypesFor,
+	type ExtractionRecord,
 	extractLocationMap,
 	isExtractable,
 	mergeExtracted,
@@ -12,7 +12,7 @@ import { generateText, Output, streamText } from "ai"
 import { Hono } from "hono"
 import { stream } from "hono/streaming"
 import { z } from "zod"
-import { readSettings, readTasks, writeAnalysis } from "../lib/fs"
+import { readSettings, readTasks, writeExtraction } from "../lib/fs"
 import {
 	buildExtractPatPrompt,
 	createModel,
@@ -142,7 +142,7 @@ extractpatRouter.post("/extract", async (c) => {
 		return c.json(
 			{
 				error:
-					"Couldn't match this document to a supported type (currently US Office Actions and EP Examination Reports). Pick a type manually if you know it, or leave it un-analysed for now.",
+					"Couldn't match this document to a supported type (currently US Office Actions and EP Examination Reports). Pick a type manually if you know it, or leave it un-extracted for now.",
 			},
 			422,
 		)
@@ -172,7 +172,7 @@ extractpatRouter.post("/extract", async (c) => {
 	})
 
 	const now = new Date().toISOString()
-	const record: AnalysisRecord = {
+	const record: ExtractionRecord = {
 		filename: basename(filePath),
 		assetType: resolvedType,
 		details: mergeExtracted(resolvedType, extracted),
@@ -180,15 +180,15 @@ extractpatRouter.post("/extract", async (c) => {
 		extractedAt: now,
 		updatedAt: now,
 	}
-	await writeAnalysis(dirname(filePath), record)
+	await writeExtraction(dirname(filePath), record)
 
 	return c.json(record)
 })
 
-// Streaming variant for the Analysis tab — emits NDJSON lines:
+// Streaming variant for the extraction view — emits NDJSON lines:
 //   {type:"meta", assetType}      once the type is resolved (so the UI can show skeletons)
 //   {type:"partial", object}      repeatedly as fields stream in
-//   {type:"done", record}         the final persisted AnalysisRecord
+//   {type:"done", record}         the final persisted ExtractionRecord
 //   {type:"error", message}       if extraction fails mid-stream
 extractpatRouter.post("/extract/stream", async (c) => {
 	const {
@@ -245,7 +245,7 @@ extractpatRouter.post("/extract/stream", async (c) => {
 		return c.json(
 			{
 				error:
-					"Couldn't match this document to a supported type (currently US Office Actions and EP Examination Reports). Pick a type manually if you know it, or leave it un-analysed for now.",
+					"Couldn't match this document to a supported type (currently US Office Actions and EP Examination Reports). Pick a type manually if you know it, or leave it un-extracted for now.",
 			},
 			422,
 		)
@@ -293,7 +293,7 @@ extractpatRouter.post("/extract/stream", async (c) => {
 		}
 
 		const now = new Date().toISOString()
-		const record: AnalysisRecord = {
+		const record: ExtractionRecord = {
 			filename: basename(filePath),
 			assetType: resolvedType,
 			details: mergeExtracted(resolvedType, last),
@@ -301,7 +301,7 @@ extractpatRouter.post("/extract/stream", async (c) => {
 			extractedAt: now,
 			updatedAt: now,
 		}
-		await writeAnalysis(dirname(filePath), record)
+		await writeExtraction(dirname(filePath), record)
 		await s.writeln(JSON.stringify({ type: "done", record }))
 	})
 })

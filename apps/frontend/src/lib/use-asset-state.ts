@@ -2,10 +2,8 @@ import type { ApiAsset } from "@patrickos/shared"
 import { useCallback, useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
-// A source's Analysis opens as its own tab; this is its synthetic asset id.
-export function analysisIdFor(sourceId: string) {
-	return `${sourceId}::analysis`
-}
+// A source tab shows either its document (PDF) or its ExtractPat extraction.
+export type AssetView = "source" | "extraction"
 
 function fileToAsset(
 	file: {
@@ -43,7 +41,9 @@ export function useAssetState(currentTaskId: string) {
 	const [openTabIds, setOpenTabIds] = useState<string[]>([])
 	const [activeTab, setActiveTab] = useState("")
 	const [splitView, setSplitView] = useState(false)
-	const [analysedFilenames, setAnalysedFilenames] = useState<Set<string>>(
+	// Per-source-tab toggle: document (PDF) vs ExtractPat extraction. Default "source".
+	const [tabView, setTabView] = useState<Record<string, AssetView>>({})
+	const [extractedFilenames, setExtractedFilenames] = useState<Set<string>>(
 		new Set(),
 	)
 	// Sources the user has flagged "do not read" — excluded from AgentPat context.
@@ -52,7 +52,7 @@ export function useAssetState(currentTaskId: string) {
 	const refresh = useCallback(() => {
 		if (!currentTaskId) {
 			setAssets([])
-			setAnalysedFilenames(new Set())
+			setExtractedFilenames(new Set())
 			setDoNotRead(new Set())
 			return
 		}
@@ -63,18 +63,10 @@ export function useAssetState(currentTaskId: string) {
 			const artifactAssets = artifacts.map((f) =>
 				fileToAsset(f, "artifact", currentTaskId),
 			)
-			// One synthetic "analysis" asset per source — opens as its own tab.
-			const analysisAssets = sourceAssets.map(
-				(s): ApiAsset => ({
-					...s,
-					id: analysisIdFor(s.id),
-					kind: "analysis",
-				}),
-			)
-			setAssets([...sourceAssets, ...analysisAssets, ...artifactAssets])
+			setAssets([...sourceAssets, ...artifactAssets])
 			// Restore persisted "do not read" exclusions (stored by filename).
 			const excludedFilenames = new Set(
-				await api.analysis.getExcluded(currentTaskId),
+				await api.extractions.getExcluded(currentTaskId),
 			)
 			setDoNotRead(
 				new Set(
@@ -84,10 +76,10 @@ export function useAssetState(currentTaskId: string) {
 				),
 			)
 		})
-		api.analysis
+		api.extractions
 			.list(currentTaskId)
 			.then((summaries) =>
-				setAnalysedFilenames(new Set(summaries.map((s) => s.filename))),
+				setExtractedFilenames(new Set(summaries.map((s) => s.filename))),
 			)
 	}, [currentTaskId])
 
@@ -97,9 +89,21 @@ export function useAssetState(currentTaskId: string) {
 		refresh()
 	}, [refresh])
 
-	function openAsset(id: string) {
+	function openAsset(id: string, view?: AssetView) {
 		setOpenTabIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
 		setActiveTab(id)
+		// Set the requested view; otherwise default a first-time open to "source".
+		setTabView((prev) =>
+			view
+				? { ...prev, [id]: view }
+				: prev[id]
+					? prev
+					: { ...prev, [id]: "source" },
+		)
+	}
+
+	function setAssetView(id: string, view: AssetView) {
+		setTabView((prev) => ({ ...prev, [id]: view }))
 	}
 
 	function selectTab(id: string) {
@@ -148,26 +152,26 @@ export function useAssetState(currentTaskId: string) {
 		const filenames = [...next]
 			.map((x) => assets.find((a) => a.id === x)?.filename)
 			.filter((f): f is string => !!f)
-		api.analysis.setExcluded(currentTaskId, filenames).catch(() => {})
+		api.extractions.setExcluded(currentTaskId, filenames).catch(() => {})
 	}
 
-	// Open documents for chat context/chips — real docs only, not analysis tabs.
-	const openAssets = (
-		openTabIds
-			.map((id) => assets.find((a) => a.id === id))
-			.filter(Boolean) as ApiAsset[]
-	).filter((a) => a.kind !== "analysis")
+	// Open documents for chat context/chips.
+	const openAssets = openTabIds
+		.map((id) => assets.find((a) => a.id === id))
+		.filter(Boolean) as ApiAsset[]
 
 	return {
 		assets,
 		openTabIds,
 		activeTab,
 		splitView,
+		tabView,
 		openAssets,
-		analysedFilenames,
+		extractedFilenames,
 		doNotRead,
 		refresh,
 		openAsset,
+		setAssetView,
 		selectTab,
 		toggleSplitView,
 		closeTab,

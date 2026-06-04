@@ -8,11 +8,11 @@ import {
 } from "node:fs/promises"
 import { basename, dirname, join } from "node:path"
 import {
-	type AnalysisRecord,
-	type AnalysisSummary,
 	type Chat,
 	type ChatIndexEntry,
 	DEFAULT_SETTINGS,
+	type ExtractionRecord,
+	type ExtractionSummary,
 	type Settings,
 	type TaskEntry,
 } from "@patrickos/shared"
@@ -51,8 +51,8 @@ export function artifactsDir(taskPath: string) {
 	return join(taskPath, "artifacts")
 }
 
-function analysisDir(taskPath: string) {
-	return join(taskPath, "analysis")
+function extractionsDir(taskPath: string) {
+	return join(taskPath, "extractions")
 }
 
 // ─── YAML ────────────────────────────────────────────────────────────────────
@@ -166,40 +166,40 @@ export async function deleteChat(
 	await rm(chatFilePath(taskPath, chatId), { force: true })
 }
 
-// ─── Analysis (ExtractPat results) ─────────────────────────────────────────────
+// ─── Extractions (ExtractPat results) ─────────────────────────────────────────────
 
-function analysisFilePath(taskPath: string, sourceFilename: string) {
-	return join(analysisDir(taskPath), `${sourceFilename}.json`)
+function extractionFilePath(taskPath: string, sourceFilename: string) {
+	return join(extractionsDir(taskPath), `${sourceFilename}.json`)
 }
 
-export async function readAnalysis(
+export async function readExtraction(
 	taskPath: string,
 	sourceFilename: string,
-): Promise<AnalysisRecord | null> {
-	return readJson<AnalysisRecord | null>(
-		analysisFilePath(taskPath, sourceFilename),
+): Promise<ExtractionRecord | null> {
+	return readJson<ExtractionRecord | null>(
+		extractionFilePath(taskPath, sourceFilename),
 		null,
 	)
 }
 
-export async function writeAnalysis(
+export async function writeExtraction(
 	taskPath: string,
-	record: AnalysisRecord,
+	record: ExtractionRecord,
 ): Promise<void> {
-	await writeJson(analysisFilePath(taskPath, record.filename), record)
+	await writeJson(extractionFilePath(taskPath, record.filename), record)
 }
 
-export async function deleteAnalysis(
+export async function deleteExtraction(
 	taskPath: string,
 	sourceFilename: string,
 ): Promise<void> {
-	await rm(analysisFilePath(taskPath, sourceFilename), { force: true })
+	await rm(extractionFilePath(taskPath, sourceFilename), { force: true })
 }
 
 // Sources the attorney has flagged "do not read" — by filename, so it travels
-// with the folder. Stored in analysis/_excluded.json.
+// with the folder. Stored in extractions/_excluded.json.
 function excludedPath(taskPath: string) {
-	return join(analysisDir(taskPath), "_excluded.json")
+	return join(extractionsDir(taskPath), "_excluded.json")
 }
 
 export async function readExcluded(taskPath: string): Promise<string[]> {
@@ -213,19 +213,19 @@ export async function writeExcluded(
 	await writeJson(excludedPath(taskPath), filenames)
 }
 
-export async function listAnalysis(
+export async function listExtractions(
 	taskPath: string,
-): Promise<AnalysisSummary[]> {
+): Promise<ExtractionSummary[]> {
 	try {
-		const entries = await readdir(analysisDir(taskPath), {
+		const entries = await readdir(extractionsDir(taskPath), {
 			withFileTypes: true,
 		})
-		const summaries: AnalysisSummary[] = []
+		const summaries: ExtractionSummary[] = []
 		for (const entry of entries) {
 			if (!entry.isFile() || !entry.name.endsWith(".json")) continue
 			if (entry.name.startsWith("_")) continue // reserved (e.g. _excluded.json)
-			const record = await readJson<AnalysisRecord | null>(
-				join(analysisDir(taskPath), entry.name),
+			const record = await readJson<ExtractionRecord | null>(
+				join(extractionsDir(taskPath), entry.name),
 				null,
 			)
 			if (!record) continue
@@ -245,6 +245,6 @@ export async function ensureTaskDirs(taskPath: string): Promise<void> {
 	await Promise.all([
 		mkdir(artifactsDir(taskPath), { recursive: true }),
 		mkdir(chatsDir(taskPath), { recursive: true }),
-		mkdir(analysisDir(taskPath), { recursive: true }),
+		mkdir(extractionsDir(taskPath), { recursive: true }),
 	])
 }

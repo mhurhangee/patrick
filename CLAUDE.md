@@ -26,6 +26,10 @@ Every competitor is cloud SaaS — your documents on their servers. PatrickOS is
 
 **Tauri first.** PWA (File System Access API) is a natural future path — same file formats, no install required, works on iPad.
 
+## Project status — nothing is sacred
+
+Pre-release, **dev/test only**. There is no live data and no users. **Do not worry about backwards compatibility, data migrations, or preserving existing on-disk files/formats.** When renaming or restructuring (folders, file formats, types, routes, tool names), just make the change clean — old test folders can be regenerated or deleted. Don't add migration shims or compatibility fallbacks "to be safe"; prefer the simpler end state.
+
 ## Storage model — files all the way down
 
 No database in local mode. Everything is inspectable, portable, and deletable.
@@ -42,8 +46,8 @@ task-folder/            ← user selects this, already exists on their machine
 ├── chats/              ← conversation history
 │   ├── index.json      ← [{ id, title, date, lastMessagePreview }]
 │   └── chat-{id}.json  ← full AI SDK message history
-└── analysis/           ← ExtractPat results, per-source metadata
-    ├── {filename}.json ← AnalysisRecord { assetType, details, locations, … }
+└── extractions/        ← ExtractPat results, per-source metadata
+    ├── {filename}.json ← ExtractionRecord { assetType, details, locations, … }
     └── _excluded.json  ← filenames flagged "do not read" (excluded from AgentPat)
 ```
 
@@ -62,10 +66,10 @@ task-folder/            ← user selects this, already exists on their machine
 **Task = a folder on disk.** No upload, no import. Point at a folder you already have. A *task* is one discrete unit of work (e.g. responding to a specific Office Action) — **not** a generic "project" and **not** a "matter" (the whole case file). "Matter" is reserved for a possible future grouping layer (matter → tasks). Code: `TaskEntry`/`TaskType`/`TASK_CONFIGS`/`taskType`; never reintroduce `project*`.
 
 - **Task type** — `TASK_CONFIGS` (US Non-Final/Final OA Response, EP Art 94(3) Response). Chosen at folder-pick, editable later in the task manager, stored in `tasks.yaml`. Primes the AgentPat system prompt **and** narrows which source types ExtractPat offers/classifies (`allowedAssetTypes` → `allowedAssetTypesFor()`).
-- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Each opens as its own **Document** tab; its **Analysis** is a separate tab (synthetic `kind:"analysis"` asset). Sidebar shows a microscope icon per source (amber = un-analysed, green = analysed) that opens the Analysis tab.
+- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Each opens as one tab with a **Source ⇄ Extracted Data** segmented toggle (the document/PDF view vs the ExtractPat form); the toggle's Extracted-Data half carries a status dot (amber = not yet extracted, green = extracted). The extraction is a view within the source's tab, not a separate asset/tab.
 - **Artifacts** — documents drafted in Plate, saved to `artifacts/` as `.json` (+ `.docx`). Attorney edits in Word if they want. (Creation works; AgentPat write tools still rudimentary — WIP.)
-- **Analysis** — ExtractPat results per source in `analysis/{filename}.json` (`AnalysisRecord`). Run from the Analysis tab (type dropdown defaults Auto-detect, **streams** field-by-field) or proposed by AgentPat's `analyseSource`. Per-field "locate" highlights the value in the Document tab.
-- **Source exclusion ("do not read")** — per-source flag toggled from the sidebar (eye) or PDF toolbar; persisted in `analysis/_excluded.json`. Excluded sources are dropped from AgentPat context, blocked from the `readFile` tool, named in the prompt as off-limits, and can't be analysed.
+- **Extraction** — ExtractPat results per source in `extractions/{filename}.json` (`ExtractionRecord`). Run from the source tab's control row — an "ExtractPat" popover (next to the Source ⇄ Extracted Data toggle) holds the type picker (defaults Auto-detect), Extract/Re-extract, and Clear; running auto-flips to the Extracted Data view and **streams** field-by-field. The stream persists server-side on completion; manual field edits **auto-save** (debounced, no Save button). Also proposable by AgentPat's `extractSource`. Per-field "locate" flips to the document view and highlights the value. ("Analysis" is reserved for future AgentPat/chat commentary — this feature is *extraction*.)
+- **Source exclusion ("do not read")** — per-source flag toggled from the sidebar (eye) or PDF toolbar; persisted in `extractions/_excluded.json`. Excluded sources are dropped from AgentPat context, blocked from the `readFile` tool, named in the prompt as off-limits, and can't be extracted.
 - **Chats** — full AI SDK message history as JSON. The chat UI renders every part — text, reasoning, and tool call/result — as inspectable collapsibles (transparency by default), with a per-tool presenter registry for generative UI.
 
 ## AgentPat
@@ -74,7 +78,7 @@ Main agent. `ToolLoopAgent` via AI SDK, streamed through Hono.
 
 **Tools (implemented):**
 - `listDirectory`, `readFile` (text files; PDFs come in as file parts, not via readFile)
-- `analyseSource(filename, assetType?)` — human-in-the-loop: agent proposes, user confirms in a generative card, client runs ExtractPat and feeds the result back (no server `execute`)
+- `extractSource(filename, assetType?)` — human-in-the-loop: agent proposes, user confirms in a generative card, client runs ExtractPat and feeds the result back (no server `execute`)
 - `fetchPatent(publicationNumber)` → EPO OPS (only when EPO OPS keys are set)
 - `generateMetadata` — internal (suggestions/title/summary), hidden from the inline transcript
 
@@ -94,7 +98,7 @@ Inline AI inside the Plate artifact editor. Working end-to-end.
 
 ## Shared types
 
-File format types (chat JSON shape, `AnalysisRecord`, settings YAML shape, `TASK_CONFIGS`/`ASSET_CONFIGS`) live in `packages/shared` and are imported by both frontend and API. No database in local mode — `packages/db`/Drizzle have been removed; do not add DB dependencies or schema.
+File format types (chat JSON shape, `ExtractionRecord`, settings YAML shape, `TASK_CONFIGS`/`ASSET_CONFIGS`) live in `packages/shared` and are imported by both frontend and API. No database in local mode — `packages/db`/Drizzle have been removed; do not add DB dependencies or schema.
 
 ## Conventions
 

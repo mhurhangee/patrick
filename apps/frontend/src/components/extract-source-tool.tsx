@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import type { ToolContext } from "./chat-message-parts"
 
-// Generative UI for the analyseSource tool — a human-in-the-loop confirm card.
-// The agent proposes analysing a source; the user confirms; the client runs
+// Generative UI for the extractSource tool — a human-in-the-loop confirm card.
+// The agent proposes extracting from a source; the user confirms; the client runs
 // ExtractPat and feeds the result back so the agent can continue.
 
 function Card({ children }: { children: React.ReactNode }) {
@@ -17,7 +17,7 @@ function Card({ children }: { children: React.ReactNode }) {
 	)
 }
 
-export function AnalyseSourceTool({
+export function ExtractSourceTool({
 	part,
 	ctx,
 }: {
@@ -49,18 +49,18 @@ export function AnalyseSourceTool({
 				ctx.model,
 			)
 			ctx.addToolOutput({
-				tool: "analyseSource",
+				tool: "extractSource",
 				toolCallId: part.toolCallId,
 				output: {
-					analysed: true,
+					extracted: true,
 					filename,
 					assetType: rec.assetType,
 					fields: Object.keys(rec.details).length,
 				},
 			})
-			ctx.onAnalysed()
+			ctx.onExtracted()
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Analysis failed."
+			const msg = err instanceof Error ? err.message : "Extraction failed."
 			setError(msg)
 			setBusy(false)
 		}
@@ -68,7 +68,7 @@ export function AnalyseSourceTool({
 
 	function skip() {
 		ctx.addToolOutput({
-			tool: "analyseSource",
+			tool: "extractSource",
 			toolCallId: part.toolCallId,
 			output: { declined: true, filename },
 		})
@@ -77,13 +77,14 @@ export function AnalyseSourceTool({
 	// Result state — the user already answered.
 	if (part.state === "output-available") {
 		const output = part.output as
-			| { declined?: boolean; analysed?: boolean; assetType?: string }
+			| { declined?: boolean; extracted?: boolean; assetType?: string }
 			| undefined
 		if (output?.declined) {
 			return (
 				<Card>
 					<span className="text-muted-foreground">
-						Skipped analysis of <span className="font-medium">{filename}</span>.
+						Skipped extraction of{" "}
+						<span className="font-medium">{filename}</span>.
 					</span>
 				</Card>
 			)
@@ -92,7 +93,7 @@ export function AnalyseSourceTool({
 			<Card>
 				<div className="flex items-center justify-between gap-2">
 					<span className="text-foreground">
-						Analysed <span className="font-medium">{filename}</span>
+						Extracted <span className="font-medium">{filename}</span>
 						{output?.assetType ? (
 							<span className="text-muted-foreground">
 								{" "}
@@ -116,7 +117,7 @@ export function AnalyseSourceTool({
 		return (
 			<Card>
 				<span className="text-destructive">
-					{part.errorText ?? "Analysis failed."}
+					{part.errorText ?? "Extraction failed."}
 				</span>
 			</Card>
 		)
@@ -125,7 +126,7 @@ export function AnalyseSourceTool({
 	if (part.state === "input-streaming") {
 		return (
 			<Card>
-				<span className="text-muted-foreground">Preparing analysis…</span>
+				<span className="text-muted-foreground">Preparing extraction…</span>
 			</Card>
 		)
 	}
@@ -147,7 +148,7 @@ export function AnalyseSourceTool({
 			{error && <p className="mt-1 pl-5 text-destructive">{error}</p>}
 			<div className="mt-2 flex gap-2 pl-5">
 				<Button size="xs" onClick={confirm} disabled={busy}>
-					{busy ? <Loader2 size={12} className="animate-spin" /> : "Analyse"}
+					{busy ? <Loader2 size={12} className="animate-spin" /> : "Extract"}
 				</Button>
 				<Button size="xs" variant="ghost" onClick={skip} disabled={busy}>
 					Skip

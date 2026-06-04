@@ -28,7 +28,7 @@ export const SLIDES: Slide[] = [
 			"Sidebar showing a task selected with the file tree visible — sources (PDFs, Word docs) listed under the task name",
 		bullets: [
 			"Sources are existing files — PDFs, Word documents, anything in your folder",
-			"PatrickOS creates chats/, artifacts/, and analysis/ subfolders for its own output",
+			"PatrickOS creates chats/, artifacts/, and extractions/ subfolders for its own output",
 			"Switch between tasks from the sidebar — each is a separate folder",
 		],
 	},
@@ -65,12 +65,12 @@ export const SLIDES: Slide[] = [
 		navLabel: "ExtractPat",
 		title: "Extract structured data from sources",
 		description:
-			"ExtractPat reads a source and pulls out structured metadata — office action dates, claim numbers, cited references, response deadlines. Results are saved to analysis/ as JSON.",
+			"ExtractPat reads a source and pulls out structured metadata — office action dates, claim numbers, cited references, response deadlines. Results are saved to extractions/ as JSON.",
 		screenshotHint:
 			"The extract action on a source file, followed by the structured result showing fields like office action date, claims, and cited references",
 		bullets: [
 			"Click the extract button on any source to run ExtractPat",
-			"Results are saved to analysis/{filename}.json in your task folder",
+			"Results are saved to extractions/{filename}.json in your task folder",
 			"AgentPat can reference extracted metadata in conversations",
 		],
 	},

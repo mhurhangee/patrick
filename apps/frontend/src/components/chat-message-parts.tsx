@@ -10,7 +10,7 @@ import { type FC, type ReactNode, useState } from "react"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
 import { cn } from "@/lib/utils"
-import { AnalyseSourceTool } from "./analyse-source-tool"
+import { ExtractSourceTool } from "./extract-source-tool"
 
 type Part = UIMessage["parts"][number]
 
@@ -25,10 +25,10 @@ export type ToolContext = {
 		toolCallId: string
 		output: unknown
 	}) => void
-	/** Open a source by filename so the user can review its analysis. */
+	/** Open a source by filename so the user can review its extraction. */
 	onReview: (filename: string) => void
-	/** Notify the workspace that analysis changed (refresh badges). */
-	onAnalysed: () => void
+	/** Notify the workspace that an extraction changed (refresh badges). */
+	onExtracted: () => void
 }
 
 // Tools with bespoke, interactive UI — these render their own card (not the
@@ -37,7 +37,7 @@ const TOOL_COMPONENTS: Record<
 	string,
 	FC<{ part: ToolUIPart | DynamicToolUIPart; ctx: ToolContext }>
 > = {
-	analyseSource: AnalyseSourceTool,
+	extractSource: ExtractSourceTool,
 }
 
 // ─── Tool presenters (generative UI) ───────────────────────────────────────────
@@ -254,7 +254,7 @@ export function AssistantParts({
 	) => {
 		const Custom = TOOL_COMPONENTS[name]
 		if (Custom) {
-			// Interactive tools (e.g. analyseSource confirmation) must stay visible.
+			// Interactive tools (e.g. extractSource confirmation) must stay visible.
 			flushTrail()
 			blocks.push(<Custom key={i} part={part} ctx={ctx} />)
 			return

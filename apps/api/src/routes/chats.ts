@@ -18,7 +18,7 @@ import { z } from "zod"
 import { fetchPatent } from "../lib/epo-ops"
 import {
 	deleteChat,
-	listAnalysis,
+	listExtractions,
 	readChat,
 	readChatIndex,
 	readSettings,
@@ -52,13 +52,15 @@ function isContextOverflow(message: string): boolean {
 
 // No execute — a client-side confirmation tool. The loop stops, the call is
 // forwarded to the client which runs ExtractPat and feeds the result back.
-const analyseSource = tool({
+const extractSource = tool({
 	description:
-		"Propose running ExtractPat on a source document to extract structured data (e.g. office action dates, claims, cited references). Use when a source has not been analysed yet and structured data would help answer the user. The user must confirm before it runs. Only US Office Actions and EP Examination Reports can currently be extracted.",
+		"Propose running ExtractPat on a source document to extract structured data (e.g. office action dates, claims, cited references). Use when a source has not been extracted yet and structured data would help answer the user. The user must confirm before it runs. Only US Office Actions and EP Examination Reports can currently be extracted.",
 	inputSchema: z.object({
 		filename: z
 			.string()
-			.describe("The source filename to analyse, e.g. 'office-action.pdf'"),
+			.describe(
+				"The source filename to extract from, e.g. 'office-action.pdf'",
+			),
 		assetType: z
 			.string()
 			.optional()
@@ -274,14 +276,14 @@ chatsRouter.post("/:id/messages", async (c) => {
 
 	const tasks = await readTasks()
 	const taskType = tasks.find((p) => p.path === taskPath)?.taskType
-	const analysedSources = await listAnalysis(taskPath)
+	const extractedSources = await listExtractions(taskPath)
 
 	const { system, fileParts } = await buildAgentPatPrompt({
 		settings,
 		taskPath,
 		openFilePaths: openFilePaths ?? [],
 		taskType,
-		analysedSources,
+		extractedSources,
 		excludedFiles: [...excludedSet].map((p) => p.split("/").at(-1) ?? p),
 	})
 
@@ -381,7 +383,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 	})
 
 	const tools = {
-		analyseSource,
+		extractSource,
 		...fsTools,
 		...(epoAuth.epoOpsKey && epoAuth.epoOpsSecret
 			? { fetchPatent: fetchPatentTool }
@@ -453,7 +455,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 			}
 
 			// The client's message list is authoritative for the conversation so far —
-			// it includes client-added tool outputs (e.g. analyseSource confirmation)
+			// it includes client-added tool outputs (e.g. extractSource confirmation)
 			// that the server never re-emits. We rebuild from it, preserving original
 			// timestamps, then upsert the freshly generated assistant message by id.
 			const existingById = new Map(chat.messages.map((m) => [m.id, m]))

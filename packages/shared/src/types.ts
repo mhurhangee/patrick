@@ -1,6 +1,6 @@
 // File format types — shapes of everything written to disk.
 // No database, no ORM. These are the canonical types for settings.yaml,
-// tasks.yaml, chats/chat-{id}.json, and analysis/{filename}.json.
+// tasks.yaml, chats/chat-{id}.json, and extractions/{filename}.json.
 
 import type { TaskType } from "./task-config"
 
@@ -102,16 +102,6 @@ export type Chat = {
 	messages: ChatMessage[]
 }
 
-// ─── Analysis (analysis/{filename}.json) ─────────────────────────────────────
-
-export type FileAnalysis = {
-	filename: string
-	tags: string[]
-	extractedAt: string
-	assetType?: string
-	details: Record<string, unknown>
-}
-
 // ─── Frontend API types ───────────────────────────────────────────────────────
 // Bridge types used by frontend components during the file system migration.
 // These will be replaced as components are rewritten.
@@ -124,12 +114,13 @@ export type ApiChat = ChatIndexEntry & {
 }
 export type ApiChatMessage = ChatMessage
 
-// Represents a file in the task folder — either a source (PDF/docx) or artifact
-// (Plate draft). "analysis" is a synthetic tab tied to a source (id = `${path}::analysis`).
+// Represents a file in the task folder — either a source (PDF/docx) or an
+// artifact (Plate draft). A source's extraction is a view within its tab, not a
+// separate asset.
 export type ApiAsset = {
 	id: string // relative path used as stable ID
 	taskId: string // task folder path
-	kind: "source" | "artifact" | "analysis"
+	kind: "source" | "artifact"
 	title: string
 	filename: string
 	path: string

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/resizable"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AIProvider, useAI } from "@/lib/ai-context"
-import { analysisIdFor, useAssetState } from "@/lib/use-asset-state"
+import { useAssetState } from "@/lib/use-asset-state"
 import { useChatState } from "@/lib/use-chat-state"
 import { useTaskState } from "@/lib/use-task-state"
 
@@ -103,9 +103,9 @@ function WorkspaceContent({
 	const [settingsOpen, setSettingsOpen] = useState(false)
 	const [tutorialOpen, setTutorialOpen] = useState(false)
 
-	// Open a source's Analysis tab (used by the sidebar icon and the Review button)
-	function openAnalysis(sourceId: string) {
-		asset.openAsset(analysisIdFor(sourceId))
+	// Open a source tab in its extraction view (used by the chat Review button)
+	function openExtraction(sourceId: string) {
+		asset.openAsset(sourceId, "extraction")
 	}
 
 	function openTasks(panel: "empty" | "new" = "empty") {
@@ -140,11 +140,9 @@ function WorkspaceContent({
 				tasks={task.tasks}
 				tasksLoading={task.tasksLoading}
 				currentTaskId={task.currentTaskId}
-				analysedFilenames={asset.analysedFilenames}
 				excludedIds={asset.doNotRead}
 				onToggleDoNotRead={asset.toggleDoNotRead}
 				onOpen={asset.openAsset}
-				onOpenAnalysis={openAnalysis}
 				onClose={asset.closeTab}
 				onRefreshSources={asset.refresh}
 				onCreateArtifact={asset.createArtifact}
@@ -192,6 +190,9 @@ function WorkspaceContent({
 								openTabIds={asset.openTabIds}
 								activeTab={asset.activeTab}
 								splitView={asset.splitView}
+								tabView={asset.tabView}
+								onSetAssetView={asset.setAssetView}
+								extractedFilenames={asset.extractedFilenames}
 								onTabClick={asset.selectTab}
 								onTabClose={asset.closeTab}
 								onOpen={asset.openAsset}
@@ -202,7 +203,7 @@ function WorkspaceContent({
 								provider={ai.provider}
 								apiKey={ai.apiKey}
 								model={ai.detailedModel}
-								onAnalysed={asset.refresh}
+								onExtracted={asset.refresh}
 								doNotRead={asset.doNotRead}
 								onToggleDoNotRead={asset.toggleDoNotRead}
 								taskType={
@@ -247,9 +248,9 @@ function WorkspaceContent({
 									const src = asset.assets.find(
 										(a) => a.kind === "source" && a.filename === filename,
 									)
-									if (src) openAnalysis(src.id)
+									if (src) openExtraction(src.id)
 								}}
-								onAnalysed={asset.refresh}
+								onExtracted={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}
 								onMessageSent={chat.incrementMessageCount}
 							/>

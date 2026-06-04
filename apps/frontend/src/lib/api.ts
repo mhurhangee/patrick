@@ -1,9 +1,9 @@
 import type {
-	AnalysisRecord,
-	AnalysisSummary,
 	ApiChat,
 	ApiChatMessage,
 	ApiTask,
+	ExtractionRecord,
+	ExtractionSummary,
 	Settings,
 	TaskType,
 } from "@patrickos/shared"
@@ -65,7 +65,7 @@ export const api = {
 			apiKey: string,
 			model: string,
 		) =>
-			request<AnalysisRecord>(
+			request<ExtractionRecord>(
 				"/ai/extractpat/extract",
 				json(
 					{ filePath, assetType, provider, apiKey, model },
@@ -84,7 +84,7 @@ export const api = {
 			handlers: {
 				onMeta?: (assetType: string) => void
 				onPartial?: (object: Record<string, unknown>) => void
-				onDone?: (record: AnalysisRecord) => void
+				onDone?: (record: ExtractionRecord) => void
 			},
 		) => {
 			const res = await fetch(`${BASE_URL}/ai/extractpat/extract/stream`, {
@@ -117,7 +117,7 @@ export const api = {
 						type: string
 						assetType?: string
 						object?: Record<string, unknown>
-						record?: AnalysisRecord
+						record?: ExtractionRecord
 						message?: string
 					}
 					if (msg.type === "meta" && msg.assetType)
@@ -132,32 +132,32 @@ export const api = {
 			}
 		},
 	},
-	analysis: {
+	extractions: {
 		list: (taskPath: string) =>
-			request<AnalysisSummary[]>(
-				`/analysis?taskPath=${encodeURIComponent(taskPath)}`,
+			request<ExtractionSummary[]>(
+				`/extractions?taskPath=${encodeURIComponent(taskPath)}`,
 			),
 		get: (taskPath: string, filename: string) =>
-			request<AnalysisRecord | null>(
-				`/analysis/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
+			request<ExtractionRecord | null>(
+				`/extractions/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
 			),
-		save: (taskPath: string, record: AnalysisRecord) =>
-			request<AnalysisRecord>(
-				"/analysis/file",
+		save: (taskPath: string, record: ExtractionRecord) =>
+			request<ExtractionRecord>(
+				"/extractions/file",
 				json({ taskPath, record }, { method: "PUT" }),
 			),
 		delete: (taskPath: string, filename: string) =>
 			request<{ ok: boolean }>(
-				`/analysis/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
+				`/extractions/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
 				{ method: "DELETE" },
 			),
 		getExcluded: (taskPath: string) =>
 			request<string[]>(
-				`/analysis/excluded?taskPath=${encodeURIComponent(taskPath)}`,
+				`/extractions/excluded?taskPath=${encodeURIComponent(taskPath)}`,
 			),
 		setExcluded: (taskPath: string, filenames: string[]) =>
 			request<{ ok: boolean }>(
-				"/analysis/excluded",
+				"/extractions/excluded",
 				json({ taskPath, filenames }, { method: "PUT" }),
 			),
 	},

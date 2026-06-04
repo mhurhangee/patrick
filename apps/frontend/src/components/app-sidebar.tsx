@@ -6,7 +6,6 @@ import {
 	CircleHelp,
 	Eye,
 	EyeOff,
-	Microscope,
 	Plus,
 	RefreshCw,
 	Settings2,
@@ -107,11 +106,9 @@ export function AppSidebar({
 	tasks,
 	tasksLoading,
 	currentTaskId,
-	analysedFilenames,
 	excludedIds,
 	onToggleDoNotRead,
 	onOpen,
-	onOpenAnalysis,
 	onClose,
 	onRefreshSources,
 	onCreateArtifact,
@@ -133,11 +130,9 @@ export function AppSidebar({
 	tasks: ApiTask[]
 	tasksLoading: boolean
 	currentTaskId: string
-	analysedFilenames: Set<string>
 	excludedIds: Set<string>
 	onToggleDoNotRead: (id: string) => void
 	onOpen: (id: string) => void
-	onOpenAnalysis: (sourceId: string) => void
 	onClose: (id: string) => void
 	onRefreshSources: () => void
 	onCreateArtifact: () => void
@@ -161,27 +156,27 @@ export function AppSidebar({
 		items: ApiAsset[]
 		action: SectionAction
 	}[] = [
-			{
-				kind: "source",
-				label: "Sources",
-				items: sorted.filter((a) => a.kind === "source"),
-				action: {
-					icon: <RefreshCw className="size-4" />,
-					label: "Refresh sources",
-					onClick: onRefreshSources,
-				},
+		{
+			kind: "source",
+			label: "Sources",
+			items: sorted.filter((a) => a.kind === "source"),
+			action: {
+				icon: <RefreshCw className="size-4" />,
+				label: "Refresh sources",
+				onClick: onRefreshSources,
 			},
-			{
-				kind: "artifact",
-				label: "Artifacts",
-				items: sorted.filter((a) => a.kind === "artifact"),
-				action: {
-					icon: <Plus className="size-4" />,
-					label: "New artifact",
-					onClick: onCreateArtifact,
-				},
+		},
+		{
+			kind: "artifact",
+			label: "Artifacts",
+			items: sorted.filter((a) => a.kind === "artifact"),
+			action: {
+				icon: <Plus className="size-4" />,
+				label: "New artifact",
+				onClick: onCreateArtifact,
 			},
-		]
+		},
+	]
 	const sortedChats = [...chats].sort(
 		(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 	)
@@ -262,45 +257,23 @@ export function AppSidebar({
 											</span>
 										</SidebarMenuSubButton>
 										{kind === "source" && (
-											<>
-												<button
-													type="button"
-													title={
-														excluded
-															? "Excluded from AgentPat — click to include"
-															: "Read by AgentPat — click to exclude"
-													}
-													onClick={() => onToggleDoNotRead(asset.id)}
-													className={cn(
-														"shrink-0 rounded p-0.5 transition-colors hover:bg-accent",
-														excluded
-															? "text-amber-600"
-															: "text-muted-foreground/50 hover:text-foreground",
-													)}
-												>
-													{excluded ? <EyeOff size={12} /> : <Eye size={12} />}
-												</button>
-												<button
-													type="button"
-													disabled={excluded}
-													title={
-														excluded
-															? "Excluded — include it to analyse"
-															: analysedFilenames.has(asset.filename)
-																? "View analysis"
-																: "Not analysed — open to run ExtractPat"
-													}
-													onClick={() => onOpenAnalysis(asset.id)}
-													className={cn(
-														"shrink-0 rounded p-0.5 transition-colors hover:bg-accent disabled:opacity-30 disabled:hover:bg-transparent",
-														analysedFilenames.has(asset.filename)
-															? "text-primary"
-															: "text-amber-500 hover:text-amber-600",
-													)}
-												>
-													<Microscope size={12} />
-												</button>
-											</>
+											<button
+												type="button"
+												title={
+													excluded
+														? "Excluded from AgentPat — click to include"
+														: "Read by AgentPat — click to exclude"
+												}
+												onClick={() => onToggleDoNotRead(asset.id)}
+												className={cn(
+													"shrink-0 rounded p-0.5 transition-colors hover:bg-accent",
+													excluded
+														? "text-amber-600"
+														: "text-muted-foreground/50 hover:text-foreground",
+												)}
+											>
+												{excluded ? <EyeOff size={12} /> : <Eye size={12} />}
+											</button>
 										)}
 									</SidebarMenuSubItem>
 								)

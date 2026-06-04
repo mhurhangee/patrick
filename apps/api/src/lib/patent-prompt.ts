@@ -4,8 +4,8 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import {
 	type AiEffort,
-	type AnalysisSummary,
 	ASSET_CONFIGS,
+	type ExtractionSummary,
 	type Settings,
 	TASK_CONFIGS,
 	type TaskType,
@@ -24,7 +24,7 @@ export type AgentPatContext = {
 	taskPath: string
 	openFilePaths: string[]
 	taskType?: TaskType
-	analysedSources?: AnalysisSummary[]
+	extractedSources?: ExtractionSummary[]
 	excludedFiles?: string[]
 }
 
@@ -107,20 +107,18 @@ function openFilesContext(openFilePaths: string[]) {
 	return `# Open Documents\n\nThe following files are currently in context:\n${list}`
 }
 
-function analysisContext(analysed: AnalysisSummary[] | undefined) {
-	if (!analysed?.length) return null
-	const list = analysed
-		.map(
-			(a) => `- ${a.filename} (${a.assetType}) → analysis/${a.filename}.json`,
-		)
+function extractionContext(extracted: ExtractionSummary[] | undefined) {
+	if (!extracted?.length) return null
+	const list = extracted
+		.map((a) => `- ${a.filename} (${a.assetType}) → extractions/.json`)
 		.join("\n")
-	return `# Existing Analysis\nThese sources have already been analysed by ExtractPat. The structured result is saved as JSON — read it with the readFile tool (it is far cheaper than re-reading the PDF). Do NOT propose analyseSource for a source listed here; only offer it for sources that are NOT yet analysed.\n${list}`
+	return `# Existing Extractions\nThese sources have already been extracted by ExtractPat. The structured result is saved as JSON — read it with the readFile tool (it is far cheaper than re-reading the PDF). Do NOT propose extractSource for a source listed here; only offer it for sources that are NOT yet extracted.\n${list}`
 }
 
 function excludedContext(excluded: string[] | undefined) {
 	if (!excluded?.length) return null
 	const list = excluded.map((f) => `- ${f}`).join("\n")
-	return `# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose analysing them, and do NOT rely on them in your response:\n${list}`
+	return `# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose extracting from them, and do NOT rely on them in your response:\n${list}`
 }
 
 async function buildFileParts(openFilePaths: string[]): Promise<FilePart[]> {
@@ -151,7 +149,7 @@ export async function buildAgentPatPrompt(
 		taskPath,
 		openFilePaths,
 		taskType,
-		analysedSources,
+		extractedSources,
 		excludedFiles,
 	} = ctx
 
@@ -162,7 +160,7 @@ export async function buildAgentPatPrompt(
 		sharedContext(settings),
 		taskContext(taskPath, taskType),
 		openFilesContext(openFilePaths),
-		analysisContext(analysedSources),
+		extractionContext(extractedSources),
 		excludedContext(excludedFiles),
 	])
 

@@ -1,15 +1,13 @@
 import type { ApiAsset, FieldLocation, TaskType } from "@patrickos/shared"
-import {
-	ChevronLeft,
-	ChevronRight,
-	Columns3,
-	Microscope,
-	X,
-} from "lucide-react"
+import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
 import type { Value } from "platejs"
 import { Fragment, useEffect, useRef, useState } from "react"
-import { AnalysisPanel } from "@/components/analysis-panel"
 import { PlateEditor } from "@/components/editor/plate-editor"
+import {
+	ExtractionBody,
+	ExtractionMenu,
+	useExtraction,
+} from "@/components/extraction-panel"
 import { locationsToHighlights, SourceViewer } from "@/components/source-viewer"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,9 +23,10 @@ import {
 } from "@/components/ui/resizable"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BASE_URL } from "@/lib/api"
+import type { AssetView } from "@/lib/use-asset-state"
 import { cn } from "@/lib/utils"
 
-// A field's locations being shown in the Document tab — drives highlights + page jump.
+// A field's locations being shown in the document view — drives highlights + page jump.
 type LocateState = {
 	sourcePath: string
 	locations: FieldLocation[]
@@ -100,25 +99,107 @@ function ArtifactEditor({
 	)
 }
 
-// The Document tab — a PDF/source viewer, plus a transient locate bar when a
-// field's location is being shown.
-function DocumentPane({
+// Segmented toggle between a source's document (PDF) and its ExtractPat extraction.
+// The dot on the Extracted-Data half mirrors the old sidebar microscope: green =
+// extracted, amber = not yet.
+function SourceExtractionToggle({
+	view,
+	onChange,
+	extracted,
+}: {
+	view: AssetView
+	onChange: (v: AssetView) => void
+	extracted: boolean
+}) {
+	return (
+		<div className="inline-flex items-center gap-0.5 rounded-md bg-muted p-0.5 text-xs">
+			<button
+				type="button"
+				onClick={() => onChange("source")}
+				className={cn(
+					"rounded-sm px-2 py-1 transition-colors",
+					view === "source"
+						? "bg-background font-medium text-foreground shadow-sm"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+			>
+				Source
+			</button>
+			<button
+				type="button"
+				onClick={() => onChange("extraction")}
+				className={cn(
+					"flex items-center gap-1.5 rounded-sm px-2 py-1 transition-colors",
+					view === "extraction"
+						? "bg-background font-medium text-foreground shadow-sm"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+			>
+				<span
+					className={cn(
+						"size-1.5 rounded-full",
+						extracted ? "bg-green-500" : "bg-amber-500",
+					)}
+					title={extracted ? "Extracted" : "Not extracted"}
+				/>
+				Extracted Data
+			</button>
+		</div>
+	)
+}
+
+// A source tab: one control row (Source ⇄ Extracted-Data toggle + ExtractPat controls),
+// then either the PDF viewer or the extraction form below it.
+function SourcePane({
 	asset,
+	view,
+	onSetView,
+	extracted,
 	locate,
+	onLocate,
 	onLocatePrev,
 	onLocateNext,
 	onLocateClear,
 	excludedFromAgent,
 	onToggleExclude,
+	provider,
+	apiKey,
+	model,
+	onExtracted,
+	taskType,
 }: {
 	asset: ApiAsset
+	view: AssetView
+	onSetView: (v: AssetView) => void
+	extracted: boolean
 	locate: LocateState | null
+	onLocate: (sourcePath: string, locations: FieldLocation[]) => void
 	onLocatePrev: () => void
 	onLocateNext: () => void
 	onLocateClear: () => void
 	excludedFromAgent: boolean
 	onToggleExclude: () => void
+	provider: string
+	apiKey: string
+	model: string
+	onExtracted: () => void
+	taskType?: TaskType
 }) {
+	const extraction = useExtraction({
+		asset,
+		provider,
+		apiKey,
+		model,
+		onExtracted,
+		taskType,
+	})
+
+	// Running ExtractPat flips to the Extracted-Data view so the stream is visible.
+	function handleRun() {
+		onSetView("extraction")
+		extraction.run()
+	}
+
 	const mine = locate && locate.sourcePath === asset.path ? locate : null
 	const highlights = mine
 		? locationsToHighlights(mine.locations, mine.index)
@@ -127,53 +208,83 @@ function DocumentPane({
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			{mine && (
-				<div className="flex shrink-0 items-center gap-1.5 border-b bg-amber-100/40 px-3 py-1 text-xs dark:bg-amber-500/10">
-					<span className="text-muted-foreground">Located</span>
-					{mine.locations.length > 1 && (
-						<div className="flex items-center gap-1">
-							<Button variant="ghost" size="icon-xs" onClick={onLocatePrev}>
-								<ChevronLeft size={12} />
-							</Button>
-							<span className="tabular-nums text-muted-foreground">
-								{mine.index + 1} / {mine.locations.length}
-							</span>
-							<Button variant="ghost" size="icon-xs" onClick={onLocateNext}>
-								<ChevronRight size={12} />
+			<div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+				<SourceExtractionToggle
+					view={view}
+					onChange={onSetView}
+					extracted={extracted}
+				/>
+				<div className="ml-auto flex items-center gap-2">
+					<ExtractionMenu
+						extraction={extraction}
+						apiKey={apiKey}
+						excludedFromAgent={excludedFromAgent}
+						onRun={handleRun}
+					/>
+				</div>
+			</div>
+
+			{view === "extraction" ? (
+				<ExtractionBody
+					asset={asset}
+					extraction={extraction}
+					excludedFromAgent={excludedFromAgent}
+					onLocate={(locs) => onLocate(asset.path, locs)}
+				/>
+			) : (
+				<>
+					{mine && (
+						<div className="flex shrink-0 items-center gap-1.5 border-b bg-amber-100/40 px-3 py-1 text-xs dark:bg-amber-500/10">
+							<span className="text-muted-foreground">Located</span>
+							{mine.locations.length > 1 && (
+								<div className="flex items-center gap-1">
+									<Button variant="ghost" size="icon-xs" onClick={onLocatePrev}>
+										<ChevronLeft size={12} />
+									</Button>
+									<span className="tabular-nums text-muted-foreground">
+										{mine.index + 1} / {mine.locations.length}
+									</span>
+									<Button variant="ghost" size="icon-xs" onClick={onLocateNext}>
+										<ChevronRight size={12} />
+									</Button>
+								</div>
+							)}
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								className="ml-auto"
+								onClick={onLocateClear}
+								title="Clear highlight"
+							>
+								<X size={12} />
 							</Button>
 						</div>
 					)}
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						className="ml-auto"
-						onClick={onLocateClear}
-						title="Clear highlight"
-					>
-						<X size={12} />
-					</Button>
-				</div>
+					<div className="flex-1 overflow-hidden">
+						<SourceViewer
+							src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
+							jumpToPage={jumpToPage}
+							highlights={highlights}
+							excludedFromAgent={excludedFromAgent}
+							onToggleExclude={onToggleExclude}
+						/>
+					</div>
+				</>
 			)}
-			<div className="flex-1 overflow-hidden">
-				<SourceViewer
-					src={`${BASE_URL}/files/stream?path=${encodeURIComponent(asset.path)}`}
-					jumpToPage={jumpToPage}
-					highlights={highlights}
-					excludedFromAgent={excludedFromAgent}
-					onToggleExclude={onToggleExclude}
-				/>
-			</div>
 		</div>
 	)
 }
 
 function AssetPane({
 	asset,
+	tabView,
+	onSetAssetView,
+	extractedFilenames,
 	onAssetUpdate,
 	provider,
 	apiKey,
 	model,
-	onAnalysed,
+	onExtracted,
 	locate,
 	onLocate,
 	onLocatePrev,
@@ -184,11 +295,14 @@ function AssetPane({
 	taskType,
 }: {
 	asset: ApiAsset
+	tabView: Record<string, AssetView>
+	onSetAssetView: (id: string, view: AssetView) => void
+	extractedFilenames: Set<string>
 	onAssetUpdate: (updated: ApiAsset) => void
 	provider: string
 	apiKey: string
 	model: string
-	onAnalysed: () => void
+	onExtracted: () => void
 	locate: LocateState | null
 	onLocate: (sourcePath: string, locations: FieldLocation[]) => void
 	onLocatePrev: () => void
@@ -198,33 +312,26 @@ function AssetPane({
 	onToggleDoNotRead: (id: string) => void
 	taskType?: TaskType
 }) {
-	if (asset.kind === "analysis") {
-		return (
-			<AnalysisPanel
-				key={asset.id}
-				asset={asset}
-				provider={provider}
-				apiKey={apiKey}
-				model={model}
-				onAnalysed={onAnalysed}
-				onLocate={(locs) => onLocate(asset.path, locs)}
-				excludedFromAgent={doNotRead.has(asset.path)}
-				taskType={taskType}
-			/>
-		)
-	}
-
 	if (asset.kind === "source") {
 		return (
-			<DocumentPane
+			<SourcePane
 				key={asset.id}
 				asset={asset}
+				view={tabView[asset.id] ?? "source"}
+				onSetView={(v) => onSetAssetView(asset.id, v)}
+				extracted={extractedFilenames.has(asset.filename)}
 				locate={locate}
+				onLocate={onLocate}
 				onLocatePrev={onLocatePrev}
 				onLocateNext={onLocateNext}
 				onLocateClear={onLocateClear}
 				excludedFromAgent={doNotRead.has(asset.id)}
 				onToggleExclude={() => onToggleDoNotRead(asset.id)}
+				provider={provider}
+				apiKey={apiKey}
+				model={model}
+				onExtracted={onExtracted}
+				taskType={taskType}
 			/>
 		)
 	}
@@ -243,6 +350,9 @@ export function AssetViewer({
 	openTabIds,
 	activeTab,
 	splitView,
+	tabView,
+	onSetAssetView,
+	extractedFilenames,
 	onTabClick,
 	onTabClose,
 	onOpen,
@@ -253,7 +363,7 @@ export function AssetViewer({
 	provider,
 	apiKey,
 	model,
-	onAnalysed,
+	onExtracted,
 	doNotRead,
 	onToggleDoNotRead,
 	taskType,
@@ -262,9 +372,12 @@ export function AssetViewer({
 	openTabIds: string[]
 	activeTab: string
 	splitView: boolean
+	tabView: Record<string, AssetView>
+	onSetAssetView: (id: string, view: AssetView) => void
+	extractedFilenames: Set<string>
 	onTabClick: (id: string) => void
 	onTabClose: (id: string) => void
-	onOpen: (id: string) => void
+	onOpen: (id: string, view?: AssetView) => void
 	onSplitToggle: () => void
 	onChatToggle: () => void
 	onAssetUpdate: (updated: ApiAsset) => void
@@ -272,7 +385,7 @@ export function AssetViewer({
 	provider: string
 	apiKey: string
 	model: string
-	onAnalysed: () => void
+	onExtracted: () => void
 	doNotRead: Set<string>
 	onToggleDoNotRead: (id: string) => void
 	taskType?: TaskType
@@ -287,17 +400,17 @@ export function AssetViewer({
 
 	function handleLocate(sourcePath: string, locations: FieldLocation[]) {
 		if (!locations.length) return
-		// Make sure the document tab is open + focused so the highlight is visible.
-		onOpen(sourcePath)
+		// Open + focus the source in its document view so the highlight is visible.
+		onOpen(sourcePath, "source")
 		setLocate({ sourcePath, locations, index: 0 })
 	}
 	function locatePrev() {
 		setLocate((l) =>
 			l
 				? {
-					...l,
-					index: (l.index - 1 + l.locations.length) % l.locations.length,
-				}
+						...l,
+						index: (l.index - 1 + l.locations.length) % l.locations.length,
+					}
 				: l,
 		)
 	}
@@ -308,11 +421,14 @@ export function AssetViewer({
 	}
 
 	const paneProps = {
+		tabView,
+		onSetAssetView,
+		extractedFilenames,
 		onAssetUpdate,
 		provider,
 		apiKey,
 		model,
-		onAnalysed,
+		onExtracted,
 		locate,
 		onLocate: handleLocate,
 		onLocatePrev: locatePrev,
@@ -332,9 +448,7 @@ export function AssetViewer({
 				</div>
 				<div className="tab-scroll flex flex-1 h-6 items-end overflow-x-auto px-1">
 					{openAssets.map((asset) => {
-						const tabExcluded = doNotRead.has(
-							asset.kind === "analysis" ? asset.path : asset.id,
-						)
+						const tabExcluded = doNotRead.has(asset.id)
 						const tabActive = !splitView && activeTab === asset.id
 						return (
 							<div
@@ -343,22 +457,19 @@ export function AssetViewer({
 									"group/tab relative flex shrink-0 items-center gap-1 self-stretch pl-2 pr-1 text-xs transition-colors cursor-default",
 									tabActive
 										? cn(
-											"bg-background text-foreground text-xxs",
-											tabExcluded
-												? "border-t-2 border-muted-foreground/40"
-												: "border-t-2 border-primary",
-										)
+												"bg-background text-foreground text-xxs",
+												tabExcluded
+													? "border-t-2 border-muted-foreground/40"
+													: "border-t-2 border-primary",
+											)
 										: cn(
-											"text-muted-foreground hover:text-foreground text-xxs",
-											tabExcluded
-												? "border-t-2 border-muted-foreground/25"
-												: "border-t-2 border-primary/30",
-										),
+												"text-muted-foreground hover:text-foreground text-xxs",
+												tabExcluded
+													? "border-t-2 border-muted-foreground/25"
+													: "border-t-2 border-primary/30",
+											),
 								)}
 							>
-								{asset.kind === "analysis" && (
-									<Microscope size={11} className="shrink-0 text-primary" />
-								)}
 								<button
 									type="button"
 									onClick={() => onTabClick(asset.id)}

@@ -891,7 +891,7 @@ function ByokSection({
 						<Label>AgentPat reasoning</Label>
 						<p className="text-xs text-muted-foreground">
 							How hard AgentPat thinks before answering. Higher is more thorough
-							but slower and pricier. (Quick model and analysis always run at
+							but slower and pricier. (Quick model and extraction always run at
 							low effort.)
 						</p>
 						<Select

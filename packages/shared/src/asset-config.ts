@@ -373,9 +373,9 @@ export function mergeExtracted(
 	return { ...emptyDetails(assetType), ...clean }
 }
 
-// Persisted ExtractPat result for one source file → analysis/{filename}.json
-export type AnalysisRecord = {
-	/** Source filename this analysis belongs to (e.g. "office-action.pdf"). */
+// Persisted ExtractPat result for one source file → extractions/{filename}.json
+export type ExtractionRecord = {
+	/** Source filename this extraction belongs to (e.g. "office-action.pdf"). */
 	filename: string
 	/** Resolved source asset type (chosen by the user or by auto-classification). */
 	assetType: string
@@ -389,8 +389,8 @@ export type AnalysisRecord = {
 	updatedAt: string
 }
 
-// Summary entry for listing which sources have been analysed.
-export type AnalysisSummary = {
+// Summary entry for listing which sources have an extraction.
+export type ExtractionSummary = {
 	filename: string
 	assetType: string
 	updatedAt: string

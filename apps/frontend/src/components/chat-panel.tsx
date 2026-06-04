@@ -242,7 +242,7 @@ function ChatPane({
 	onOpenAsset,
 	doNotRead,
 	onOpenSource,
-	onAnalysed,
+	onExtracted,
 	initialMessages,
 	initialMessage,
 	taskId,
@@ -260,7 +260,7 @@ function ChatPane({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenSource: (filename: string) => void
-	onAnalysed: () => void
+	onExtracted: () => void
 	initialMessages: UIMessage[]
 	initialMessage?: string | null
 	taskId: string
@@ -326,7 +326,7 @@ function ChatPane({
 			}),
 		}),
 		messages: initialMessages,
-		// After the user answers a client-side tool (e.g. analyseSource), resubmit
+		// After the user answers a client-side tool (e.g. extractSource), resubmit
 		// so the agent continues with the tool result.
 		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 	})
@@ -339,7 +339,7 @@ function ChatPane({
 		addToolOutput: (args) =>
 			addToolOutput(args as Parameters<typeof addToolOutput>[0]),
 		onReview: onOpenSource,
-		onAnalysed,
+		onExtracted,
 	}
 
 	const isStreaming = status === "streaming" || status === "submitted"
@@ -594,7 +594,7 @@ function ChatPane({
 		const pricing = getModelPricing(provider, detailedModel)
 		const totalCost = pricing
 			? (totalIn / 1_000_000) * pricing.input +
-			(totalOut / 1_000_000) * pricing.output
+				(totalOut / 1_000_000) * pricing.output
 			: null
 		return { totalCost }
 	}, [exchanges, provider, detailedModel])
@@ -609,7 +609,7 @@ function ChatPane({
 		const costUsd =
 			pricing != null && inputTokens != null && outputTokens != null
 				? (inputTokens / 1_000_000) * pricing.input +
-				(outputTokens / 1_000_000) * pricing.output
+					(outputTokens / 1_000_000) * pricing.output
 				: null
 
 		const tools: string[] = []
@@ -783,7 +783,7 @@ function ChatPaneLoader({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenSource: (filename: string) => void
-	onAnalysed: () => void
+	onExtracted: () => void
 	initialMessage?: string | null
 	taskId: string
 	provider: string
@@ -852,7 +852,7 @@ export function ChatPanel({
 	onOpenAsset,
 	doNotRead,
 	onOpenSource,
-	onAnalysed,
+	onExtracted,
 	onOpenSettings,
 	onMessageSent,
 }: {
@@ -876,7 +876,7 @@ export function ChatPanel({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenSource: (filename: string) => void
-	onAnalysed: () => void
+	onExtracted: () => void
 	onOpenSettings: () => void
 	onMessageSent: (chatId: string) => void
 }) {
@@ -890,7 +890,6 @@ export function ChatPanel({
 		<div className="flex h-full flex-col overflow-hidden">
 			{/* Tab bar */}
 			<div className="relative flex h-7 shrink-0 items-end bg-muted  px-1">
-
 				{/* Open chat tabs — AgentPat first so all tabs share the same flex context */}
 				<div className="tab-scroll flex flex-1 items-end h-6 overflow-x-auto">
 					{openChats.map((chat) => (
@@ -968,7 +967,7 @@ export function ChatPanel({
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
 					onOpenSource={onOpenSource}
-					onAnalysed={onAnalysed}
+					onExtracted={onExtracted}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
 					taskId={taskId}
 					provider={provider}

@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-// Salvaged from the old edit-source-dialog — reused by the Analysis tab.
+// Salvaged from the old edit-source-dialog — reused by the extraction view.
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 

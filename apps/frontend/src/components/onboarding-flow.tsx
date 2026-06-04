@@ -182,12 +182,12 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 		"It shapes how AskPat drafts, strengthens, and reformats document sections.",
 	],
 	extractpat: [
-		"ExtractPat reads PDFs and extracts structured metadata into analysis/ in your task folder.",
+		"ExtractPat reads PDFs and extracts structured metadata into extractions/ in your task folder.",
 		"The default prompt targets common patent prosecution fields — office action dates, claim numbers, cited references.",
 	],
 	task: [
 		"PatrickOS never modifies your existing files — PDFs and Word docs are read-only sources.",
-		"It creates three subfolders: chats/ (conversation history), artifacts/ (AI-drafted documents), analysis/ (extracted metadata).",
+		"It creates three subfolders: chats/ (conversation history), artifacts/ (AI-drafted documents), extractions/ (extracted metadata).",
 		"You can add more tasks any time from the sidebar.",
 	],
 }
@@ -822,8 +822,8 @@ export function OnboardingFlow({
 											documents (Plate JSON + .docx)
 										</p>
 										<p>
-											<code className="font-mono">analysis/</code> — extracted
-											metadata per source file
+											<code className="font-mono">extractions/</code> —
+											extracted metadata per source file
 										</p>
 									</div>
 								</div>

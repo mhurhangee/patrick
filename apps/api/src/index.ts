@@ -1,11 +1,11 @@
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { aiRouter } from "./routes/ai"
-import { analysisRouter } from "./routes/analysis"
 import { artifactsRouter } from "./routes/artifacts"
 import { askpatRouter } from "./routes/askpat"
 import { chatsRouter } from "./routes/chats"
 import { configRouter } from "./routes/config"
+import { extractionsRouter } from "./routes/extractions"
 import { extractpatRouter } from "./routes/extractpat"
 import { filesRouter } from "./routes/files"
 import { settingsRouter } from "./routes/settings"
@@ -18,7 +18,7 @@ app.use("*", cors())
 app.get("/health", (c) => c.json({ ok: true }))
 app.route("/config", configRouter)
 app.route("/tasks", tasksRouter)
-app.route("/analysis", analysisRouter)
+app.route("/extractions", extractionsRouter)
 app.route("/chats", chatsRouter)
 app.route("/files", filesRouter)
 app.route("/artifacts", artifactsRouter)

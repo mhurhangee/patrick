@@ -66,7 +66,7 @@ tasksRouter.delete("/", async (c) => {
 // ─── Folder file listing ──────────────────────────────────────────────────────
 
 const SOURCE_EXTS = new Set([".pdf", ".docx", ".doc"])
-const SKIP_DIRS = new Set(["artifacts", "chats", "analysis"])
+const SKIP_DIRS = new Set(["artifacts", "chats", "extractions"])
 
 tasksRouter.get("/files", async (c) => {
 	const path = c.req.query("path")
