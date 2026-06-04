@@ -53,15 +53,19 @@ export function useChatState(currentTaskId: string) {
 
 	function updateChat(id: string, title: string) {
 		setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)))
-		api.chats.update(id, currentTaskId, title).catch(() => {})
+		api.chats.update(id, currentTaskId, { title }).catch(() => {})
 	}
 
-	function incrementMessageCount(chatId: string) {
+	function toggleChatStar(id: string) {
+		let next = false
 		setChats((prev) =>
-			prev.map((c) =>
-				c.id === chatId ? { ...c, messageCount: (c.messageCount ?? 0) + 1 } : c,
-			),
+			prev.map((c) => {
+				if (c.id !== id) return c
+				next = !c.starred
+				return { ...c, starred: next }
+			}),
 		)
+		api.chats.update(id, currentTaskId, { starred: next }).catch(() => {})
 	}
 
 	function sendInAgentPat(message: string) {
@@ -78,7 +82,6 @@ export function useChatState(currentTaskId: string) {
 				createdAt: now,
 				updatedAt: now,
 				lastMessagePreview: "",
-				messageCount: 0,
 			} as ApiChat,
 			...prev,
 		])
@@ -105,7 +108,6 @@ export function useChatState(currentTaskId: string) {
 				createdAt: now,
 				updatedAt: now,
 				lastMessagePreview: "",
-				messageCount: 0,
 			} as ApiChat,
 			...prev,
 		])
@@ -140,8 +142,8 @@ export function useChatState(currentTaskId: string) {
 		newChat,
 		deleteChat,
 		updateChat,
+		toggleChatStar,
 		sendInAgentPat,
 		newChatWithSummary,
-		incrementMessageCount,
 	}
 }

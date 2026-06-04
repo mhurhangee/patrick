@@ -213,6 +213,23 @@ export async function writeExcluded(
 	await writeJson(excludedPath(taskPath), filenames)
 }
 
+// Sources the attorney has starred ("key documents") — by filename, so it
+// travels with the folder. Stored in extractions/_starred.json.
+function starredPath(taskPath: string) {
+	return join(extractionsDir(taskPath), "_starred.json")
+}
+
+export async function readStarred(taskPath: string): Promise<string[]> {
+	return readJson<string[]>(starredPath(taskPath), [])
+}
+
+export async function writeStarred(
+	taskPath: string,
+	filenames: string[],
+): Promise<void> {
+	await writeJson(starredPath(taskPath), filenames)
+}
+
 export async function listExtractions(
 	taskPath: string,
 ): Promise<ExtractionSummary[]> {

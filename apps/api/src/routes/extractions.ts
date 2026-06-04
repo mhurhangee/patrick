@@ -5,8 +5,10 @@ import {
 	listExtractions,
 	readExcluded,
 	readExtraction,
+	readStarred,
 	writeExcluded,
 	writeExtraction,
+	writeStarred,
 } from "../lib/fs"
 
 export const extractionsRouter = new Hono()
@@ -58,6 +60,24 @@ extractionsRouter.put("/excluded", async (c) => {
 	}>()
 	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
 	await writeExcluded(taskPath, filenames ?? [])
+	return c.json({ ok: true })
+})
+
+// GET /extractions/starred?taskPath=...  → filenames flagged "key document"
+extractionsRouter.get("/starred", async (c) => {
+	const taskPath = c.req.query("taskPath")
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+	return c.json(await readStarred(taskPath))
+})
+
+// PUT /extractions/starred  → replace the starred list
+extractionsRouter.put("/starred", async (c) => {
+	const { taskPath, filenames } = await c.req.json<{
+		taskPath: string
+		filenames: string[]
+	}>()
+	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
+	await writeStarred(taskPath, filenames ?? [])
 	return c.json({ ok: true })
 })
 

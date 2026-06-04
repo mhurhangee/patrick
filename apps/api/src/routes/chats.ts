@@ -111,20 +111,31 @@ chatsRouter.post("/", async (c) => {
 
 chatsRouter.patch("/:id", async (c) => {
 	const chatId = c.req.param("id")
-	const { taskPath, title } = await c.req.json<{
+	const { taskPath, title, starred } = await c.req.json<{
 		taskPath: string
-		title: string
+		title?: string
+		starred?: boolean
 	}>()
 	const chat = await readChat(taskPath, chatId)
 	if (!chat) return c.json({ error: "Not found" }, 404)
 	const now = new Date().toISOString()
-	await writeChat(taskPath, { ...chat, title, updatedAt: now })
+	const nextTitle = title ?? chat.title
+	// title lives in the chat file; starred is index-only metadata.
+	if (title !== undefined)
+		await writeChat(taskPath, { ...chat, title: nextTitle, updatedAt: now })
 	const index = await readChatIndex(taskPath)
 	const updated = index.map((e) =>
-		e.id === chatId ? { ...e, title, updatedAt: now } : e,
+		e.id === chatId
+			? {
+					...e,
+					...(title !== undefined ? { title: nextTitle } : {}),
+					...(starred !== undefined ? { starred } : {}),
+					updatedAt: now,
+				}
+			: e,
 	)
 	await writeChatIndex(taskPath, updated)
-	return c.json({ ...chat, title, updatedAt: now })
+	return c.json({ ...chat, title: nextTitle, updatedAt: now })
 })
 
 chatsRouter.delete("/:id", async (c) => {

@@ -249,7 +249,6 @@ function ChatPane({
 	provider,
 	apiKey,
 	detailedModel,
-	onMessageSent,
 	onNewChat,
 	onNewChatWithSummary,
 	onForkChat,
@@ -267,7 +266,6 @@ function ChatPane({
 	provider: string
 	apiKey: string
 	detailedModel: string
-	onMessageSent: () => void
 	onNewChat: () => void
 	onNewChatWithSummary: (summary: string) => void
 	onForkChat: (sourceChatId: string, uptoMessageId: string) => void
@@ -370,7 +368,6 @@ function ChatPane({
 
 	// Focus the input on mount so a freshly opened chat (incl. a fork) is ready
 	// to type in.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		textareaRef.current?.focus()
 	}, [])
@@ -490,7 +487,6 @@ function ChatPane({
 			.filter((a) => !doNotRead.has(a.id))
 			.map((a) => ({ id: a.id, title: a.title }))
 		sendMessage({ text: initialMessage })
-		onMessageSent()
 	}, [initialMessage])
 
 	function handleScroll() {
@@ -534,7 +530,6 @@ function ChatPane({
 			.map((a) => ({ id: a.id, title: a.title }))
 		sendMessage({ text: trimmed })
 		setInput("")
-		onMessageSent()
 	}
 
 	// isPanelExpanded is pure derived state — no useEffect, no async races.
@@ -789,7 +784,6 @@ function ChatPaneLoader({
 	provider: string
 	apiKey: string
 	detailedModel: string
-	onMessageSent: () => void
 	onNewChat: () => void
 	onNewChatWithSummary: (summary: string) => void
 	onForkChat: (sourceChatId: string, uptoMessageId: string) => void
@@ -854,7 +848,6 @@ export function ChatPanel({
 	onOpenSource,
 	onExtracted,
 	onOpenSettings,
-	onMessageSent,
 }: {
 	chats: ApiChat[]
 	openChatIds: string[]
@@ -878,7 +871,6 @@ export function ChatPanel({
 	onOpenSource: (filename: string) => void
 	onExtracted: () => void
 	onOpenSettings: () => void
-	onMessageSent: (chatId: string) => void
 }) {
 	const { connectedToAI } = useAI()
 	const openChats = openChatIds
@@ -973,7 +965,6 @@ export function ChatPanel({
 					provider={provider}
 					apiKey={apiKey}
 					detailedModel={detailedModel}
-					onMessageSent={() => onMessageSent(activeChat.id)}
 					onNewChat={onNewChat}
 					onNewChatWithSummary={onNewChatWithSummary}
 					onForkChat={onForkChat}

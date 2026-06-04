@@ -48,12 +48,15 @@ export function useAssetState(currentTaskId: string) {
 	)
 	// Sources the user has flagged "do not read" — excluded from AgentPat context.
 	const [doNotRead, setDoNotRead] = useState<Set<string>>(new Set())
+	// Sources the user has starred ("key documents").
+	const [starred, setStarred] = useState<Set<string>>(new Set())
 
 	const refresh = useCallback(() => {
 		if (!currentTaskId) {
 			setAssets([])
 			setExtractedFilenames(new Set())
 			setDoNotRead(new Set())
+			setStarred(new Set())
 			return
 		}
 		api.tasks.listFiles(currentTaskId).then(async ({ sources, artifacts }) => {
@@ -64,17 +67,18 @@ export function useAssetState(currentTaskId: string) {
 				fileToAsset(f, "artifact", currentTaskId),
 			)
 			setAssets([...sourceAssets, ...artifactAssets])
-			// Restore persisted "do not read" exclusions (stored by filename).
-			const excludedFilenames = new Set(
-				await api.extractions.getExcluded(currentTaskId),
-			)
-			setDoNotRead(
+			// Restore persisted per-file flags (stored by filename; cover sources + artifacts).
+			const flaggable = [...sourceAssets, ...artifactAssets]
+			const idsForFilenames = (filenames: Set<string>) =>
 				new Set(
-					sourceAssets
-						.filter((s) => excludedFilenames.has(s.filename))
-						.map((s) => s.id),
-				),
-			)
+					flaggable.filter((s) => filenames.has(s.filename)).map((s) => s.id),
+				)
+			const [excludedFilenames, starredFilenames] = await Promise.all([
+				api.extractions.getExcluded(currentTaskId),
+				api.extractions.getStarred(currentTaskId),
+			])
+			setDoNotRead(idsForFilenames(new Set(excludedFilenames)))
+			setStarred(idsForFilenames(new Set(starredFilenames)))
 		})
 		api.extractions
 			.list(currentTaskId)
@@ -143,16 +147,62 @@ export function useAssetState(currentTaskId: string) {
 		openAsset(created.path)
 	}
 
+	async function renameArtifact(id: string, newTitle: string) {
+		const asset = assets.find((a) => a.id === id)
+		if (!asset || asset.kind !== "artifact") return
+		const updated = await api.artifacts.rename(
+			currentTaskId,
+			asset.filename,
+			newTitle,
+		)
+		// Artifact identity is its path — migrate any open-tab/view state to the new id.
+		const newId = updated.path
+		if (newId !== id) {
+			setOpenTabIds((prev) => prev.map((t) => (t === id ? newId : t)))
+			setActiveTab((a) => (a === id ? newId : a))
+			setTabView((prev) => {
+				if (!(id in prev)) return prev
+				const { [id]: view, ...rest } = prev
+				return { ...rest, [newId]: view }
+			})
+		}
+		refresh()
+	}
+
+	async function deleteArtifact(id: string) {
+		const asset = assets.find((a) => a.id === id)
+		if (!asset || asset.kind !== "artifact") return
+		await api.artifacts.delete(currentTaskId, asset.filename)
+		closeTab(id)
+		refresh()
+	}
+
+	// Filenames for a set of asset ids — flags persist by filename so they travel
+	// with the task folder.
+	function filenamesFor(ids: Set<string>) {
+		return [...ids]
+			.map((x) => assets.find((a) => a.id === x)?.filename)
+			.filter((f): f is string => !!f)
+	}
+
 	function toggleDoNotRead(id: string) {
 		const next = new Set(doNotRead)
 		if (next.has(id)) next.delete(id)
 		else next.add(id)
 		setDoNotRead(next)
-		// Persist by filename so it travels with the task folder.
-		const filenames = [...next]
-			.map((x) => assets.find((a) => a.id === x)?.filename)
-			.filter((f): f is string => !!f)
-		api.extractions.setExcluded(currentTaskId, filenames).catch(() => {})
+		api.extractions
+			.setExcluded(currentTaskId, filenamesFor(next))
+			.catch(() => {})
+	}
+
+	function toggleStar(id: string) {
+		const next = new Set(starred)
+		if (next.has(id)) next.delete(id)
+		else next.add(id)
+		setStarred(next)
+		api.extractions
+			.setStarred(currentTaskId, filenamesFor(next))
+			.catch(() => {})
 	}
 
 	// Open documents for chat context/chips.
@@ -169,6 +219,7 @@ export function useAssetState(currentTaskId: string) {
 		openAssets,
 		extractedFilenames,
 		doNotRead,
+		starred,
 		refresh,
 		openAsset,
 		setAssetView,
@@ -177,6 +228,9 @@ export function useAssetState(currentTaskId: string) {
 		closeTab,
 		updateAsset,
 		createArtifact,
+		renameArtifact,
+		deleteArtifact,
 		toggleDoNotRead,
+		toggleStar,
 	}
 }

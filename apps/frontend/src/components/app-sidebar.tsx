@@ -4,21 +4,40 @@ import {
 	ChevronRight,
 	ChevronsUpDown,
 	CircleHelp,
-	Eye,
-	EyeOff,
+	MoreHorizontal,
 	Plus,
 	RefreshCw,
 	Settings2,
+	Star,
 } from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { Logo } from "@/components/logo"
-import { Badge } from "@/components/ui/badge"
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
 	Sidebar,
 	SidebarContent,
@@ -34,6 +53,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 // ─── Collapsible section ──────────────────────────────────────────────────────
 
@@ -95,6 +115,269 @@ function CollapsibleSection({
 	)
 }
 
+// Per-source kebab — star, AgentPat exclusion, derivations (extract today), and
+// file ops. Delete/Rename are deliberately disabled: the app never mutates the
+// attorney's original files — that's the OS's job (see CLAUDE.md).
+function SourceActionsMenu({
+	starred,
+	excluded,
+	onToggleStar,
+	onToggleDoNotRead,
+	onOpenExtraction,
+}: {
+	starred: boolean
+	excluded: boolean
+	onToggleStar: () => void
+	onToggleDoNotRead: () => void
+	onOpenExtraction: () => void
+}) {
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<button
+					type="button"
+					title="Source actions"
+					className="shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-opacity hover:text-foreground group-hover/src:opacity-100 data-[state=open]:opacity-100"
+				>
+					<MoreHorizontal size={14} />
+				</button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-48">
+				<DropdownMenuItem onClick={onToggleStar}>
+					{starred ? "Unstar" : "Star"}
+				</DropdownMenuItem>
+				<DropdownMenuItem onClick={onToggleDoNotRead}>
+					{excluded ? "Include in AgentPat" : "Exclude from AgentPat"}
+				</DropdownMenuItem>
+
+				<DropdownMenuSeparator />
+				<DropdownMenuSub>
+					<DropdownMenuSubTrigger>Derive</DropdownMenuSubTrigger>
+					<DropdownMenuSubContent>
+						<DropdownMenuItem onClick={onOpenExtraction}>
+							Extract data
+						</DropdownMenuItem>
+					</DropdownMenuSubContent>
+				</DropdownMenuSub>
+
+				<DropdownMenuSeparator />
+				{/* Disabled on purpose — manage originals via the file system. */}
+				<div>
+					<Tooltip>
+						<TooltipTrigger>
+							<DropdownMenuItem
+								onSelect={(e) => e.preventDefault()}
+								className="text-muted-foreground/50 focus:bg-transparent focus:text-muted-foreground/50 cursor-not-allowed"
+							>
+								Rename
+							</DropdownMenuItem>
+						</TooltipTrigger>
+						<TooltipContent side="right">
+							Rename in your file system
+						</TooltipContent>
+					</Tooltip>
+				</div>
+				<div>
+					<Tooltip>
+						<TooltipTrigger>
+							<DropdownMenuItem
+								title="Delete this file in your file system"
+								onSelect={(e) => e.preventDefault()}
+								className="text-muted-foreground/50 focus:bg-transparent focus:text-muted-foreground/50 cursor-not-allowed"
+							>
+								Delete
+							</DropdownMenuItem>
+						</TooltipTrigger>
+						<TooltipContent side="right">
+							Delete in your file system
+						</TooltipContent>
+					</Tooltip>
+				</div>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	)
+}
+
+// Shared kebab trigger — hidden until row hover (group/src), shown while open.
+const kebabTriggerClass =
+	"shrink-0 rounded p-0.5 text-muted-foreground/50 opacity-0 transition-opacity hover:text-foreground group-hover/src:opacity-100 data-[state=open]:opacity-100"
+
+// Inline rename — the row's label becomes an editable field in place.
+function RowRenameInput({
+	initial,
+	onSave,
+	onCancel,
+}: {
+	initial: string
+	onSave: (value: string) => void
+	onCancel: () => void
+}) {
+	const [value, setValue] = useState(initial)
+	function commit() {
+		const v = value.trim()
+		if (v && v !== initial) onSave(v)
+		else onCancel()
+	}
+	return (
+		<input
+			// biome-ignore lint/a11y/noAutofocus: rename field should grab focus immediately
+			autoFocus
+			value={value}
+			onChange={(e) => setValue(e.target.value)}
+			onFocus={(e) => e.target.select()}
+			onBlur={commit}
+			onKeyDown={(e) => {
+				if (e.key === "Enter") {
+					e.preventDefault()
+					commit()
+				} else if (e.key === "Escape") {
+					e.preventDefault()
+					onCancel()
+				}
+			}}
+			className="h-5 min-w-0 flex-1 rounded-sm border bg-background px-1 text-xs capitalize outline-none focus:ring-1 focus:ring-ring"
+		/>
+	)
+}
+
+function DeleteConfirm({
+	open,
+	onOpenChange,
+	name,
+	onConfirm,
+}: {
+	open: boolean
+	onOpenChange: (open: boolean) => void
+	name: string
+	onConfirm: () => void
+}) {
+	return (
+		<AlertDialog open={open} onOpenChange={onOpenChange}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>Delete this {name}?</AlertDialogTitle>
+					<AlertDialogDescription>
+						This permanently deletes the file from your task folder and can't be
+						undone.
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel>Cancel</AlertDialogCancel>
+					<AlertDialogAction onClick={onConfirm} variant="destructive">
+						Delete
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	)
+}
+
+// Per-artifact kebab — star, AgentPat exclusion, and (enabled) rename/delete,
+// since artifacts are app-created outputs the app may mutate.
+function ArtifactActionsMenu({
+	starred,
+	excluded,
+	onToggleStar,
+	onToggleDoNotRead,
+	onStartRename,
+	onDelete,
+}: {
+	starred: boolean
+	excluded: boolean
+	onToggleStar: () => void
+	onToggleDoNotRead: () => void
+	onStartRename: () => void
+	onDelete: () => void
+}) {
+	const [confirmOpen, setConfirmOpen] = useState(false)
+	return (
+		<>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button
+						type="button"
+						title="Artifact actions"
+						className={kebabTriggerClass}
+					>
+						<MoreHorizontal size={14} />
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="start" className="w-48">
+					<DropdownMenuItem onClick={onToggleStar}>
+						{starred ? "Unstar" : "Star"}
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={onToggleDoNotRead}>
+						{excluded ? "Include in AgentPat" : "Exclude from AgentPat"}
+					</DropdownMenuItem>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem onSelect={onStartRename}>Rename</DropdownMenuItem>
+					<DropdownMenuItem
+						onSelect={() => setConfirmOpen(true)}
+						className="text-destructive focus:text-destructive"
+					>
+						Delete
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<DeleteConfirm
+				open={confirmOpen}
+				onOpenChange={setConfirmOpen}
+				name="artifact"
+				onConfirm={onDelete}
+			/>
+		</>
+	)
+}
+
+// Per-chat kebab — star, rename, delete.
+function ChatActionsMenu({
+	starred,
+	onToggleStar,
+	onStartRename,
+	onDelete,
+}: {
+	starred: boolean
+	onToggleStar: () => void
+	onStartRename: () => void
+	onDelete: () => void
+}) {
+	const [confirmOpen, setConfirmOpen] = useState(false)
+	return (
+		<>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button
+						type="button"
+						title="Chat actions"
+						className={kebabTriggerClass}
+					>
+						<MoreHorizontal size={14} />
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="start" className="w-48">
+					<DropdownMenuItem onClick={onToggleStar}>
+						{starred ? "Unstar" : "Star"}
+					</DropdownMenuItem>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem onSelect={onStartRename}>Rename</DropdownMenuItem>
+					<DropdownMenuItem
+						onSelect={() => setConfirmOpen(true)}
+						className="text-destructive focus:text-destructive"
+					>
+						Delete
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<DeleteConfirm
+				open={confirmOpen}
+				onOpenChange={setConfirmOpen}
+				name="chat"
+				onConfirm={onDelete}
+			/>
+		</>
+	)
+}
+
 export function AppSidebar({
 	assets,
 	openTabIds,
@@ -107,14 +390,21 @@ export function AppSidebar({
 	tasksLoading,
 	currentTaskId,
 	excludedIds,
+	starredIds,
 	onToggleDoNotRead,
+	onToggleStar,
+	onOpenExtraction,
+	onRenameArtifact,
+	onDeleteArtifact,
 	onOpen,
 	onClose,
 	onRefreshSources,
 	onCreateArtifact,
 	onOpenChat,
 	onNewChat,
-	onEditChat,
+	onRenameChat,
+	onDeleteChat,
+	onToggleChatStar,
 	onManageTasks,
 	onSettingsOpen,
 	onTutorialOpen,
@@ -131,14 +421,21 @@ export function AppSidebar({
 	tasksLoading: boolean
 	currentTaskId: string
 	excludedIds: Set<string>
+	starredIds: Set<string>
 	onToggleDoNotRead: (id: string) => void
+	onToggleStar: (id: string) => void
+	onOpenExtraction: (id: string) => void
+	onRenameArtifact: (id: string, newTitle: string) => void
+	onDeleteArtifact: (id: string) => void
 	onOpen: (id: string) => void
 	onClose: (id: string) => void
 	onRefreshSources: () => void
 	onCreateArtifact: () => void
 	onOpenChat: (id: string) => void
 	onNewChat: () => void
-	onEditChat: (id: string) => void
+	onRenameChat: (id: string, newTitle: string) => void
+	onDeleteChat: (id: string) => void
+	onToggleChatStar: (id: string) => void
 	onManageTasks: () => void
 	onSettingsOpen: () => void
 	onTutorialOpen: () => void
@@ -146,6 +443,8 @@ export function AppSidebar({
 }) {
 	const CHAT_LIMIT = 5
 	const [showAllChats, setShowAllChats] = useState(false)
+	// id of the row currently being renamed inline (artifact path or chat id).
+	const [editingId, setEditingId] = useState<string | null>(null)
 
 	const openSet = new Set(openTabIds)
 	const openChatSet = new Set(openChatIds)
@@ -224,56 +523,77 @@ export function AppSidebar({
 								const isInView = splitView
 									? openSet.has(asset.id)
 									: asset.id === activeTabId
-								const excluded = kind === "source" && excludedIds.has(asset.id)
-								// Open/active border goes grey for excluded sources.
+								const excluded = excludedIds.has(asset.id)
+								const starred = starredIds.has(asset.id)
+								// Open/active border goes grey for excluded files.
 								const borderColor = excluded ? "border-muted-foreground/40" : ""
 								return (
 									<SidebarMenuSubItem
 										key={asset.id}
-										className="flex items-center mr-2"
+										className="group/src flex items-center mr-2"
 									>
-										<SidebarMenuSubButton
-											onClick={() => {
-												if (isInView) onClose(asset.id)
-												else onOpen(asset.id)
-											}}
-											className={cn(
-												"flex min-w-0 flex-1 items-center h-5 rounded-none",
-												isInView
-													? `border-l-2 ${borderColor || "border-primary"} pl-2 font-medium`
-													: openSet.has(asset.id)
-														? `border-l-2 ${borderColor || "border-primary/30"} pl-2`
-														: "",
-											)}
-										>
-											<span
-												className={cn(
-													"capitalize min-w-0 flex-1 truncate",
-													excluded && "text-muted-foreground/40 line-through",
+										{editingId === asset.id ? (
+											<RowRenameInput
+												initial={asset.title}
+												onSave={(v) => {
+													setEditingId(null)
+													onRenameArtifact(asset.id, v)
+												}}
+												onCancel={() => setEditingId(null)}
+											/>
+										) : (
+											<>
+												<SidebarMenuSubButton
+													onClick={() => {
+														if (isInView) onClose(asset.id)
+														else onOpen(asset.id)
+													}}
+													className={cn(
+														"flex min-w-0 flex-1 items-center gap-1.5 h-5 rounded-none",
+														isInView
+															? `border-l-2 ${borderColor || "border-primary"} pl-2 font-medium`
+															: openSet.has(asset.id)
+																? `border-l-2 ${borderColor || "border-primary/30"} pl-2`
+																: "",
+													)}
+												>
+													{starred && <Star className="shrink-0 p-[2px]" />}
+													<span
+														className={cn(
+															"capitalize min-w-0 flex-1 truncate",
+															excluded &&
+																"text-muted-foreground/40 line-through",
+														)}
+														title={
+															excluded ? "Excluded from AgentPat" : undefined
+														}
+													>
+														{asset.title}
+													</span>
+												</SidebarMenuSubButton>
+												{kind === "source" ? (
+													<SourceActionsMenu
+														starred={starred}
+														excluded={excluded}
+														onToggleStar={() => onToggleStar(asset.id)}
+														onToggleDoNotRead={() =>
+															onToggleDoNotRead(asset.id)
+														}
+														onOpenExtraction={() => onOpenExtraction(asset.id)}
+													/>
+												) : (
+													<ArtifactActionsMenu
+														starred={starred}
+														excluded={excluded}
+														onToggleStar={() => onToggleStar(asset.id)}
+														onToggleDoNotRead={() =>
+															onToggleDoNotRead(asset.id)
+														}
+														onStartRename={() => setEditingId(asset.id)}
+														onDelete={() => onDeleteArtifact(asset.id)}
+													/>
 												)}
-												title={excluded ? "Excluded from AgentPat" : undefined}
-											>
-												{asset.title}
-											</span>
-										</SidebarMenuSubButton>
-										{kind === "source" && (
-											<button
-												type="button"
-												title={
-													excluded
-														? "Excluded from AgentPat — click to include"
-														: "Read by AgentPat — click to exclude"
-												}
-												onClick={() => onToggleDoNotRead(asset.id)}
-												className={cn(
-													"shrink-0 rounded p-0.5 transition-colors hover:bg-accent",
-													excluded
-														? "text-amber-600"
-														: "text-muted-foreground/50 hover:text-foreground",
-												)}
-											>
-												{excluded ? <EyeOff size={12} /> : <Eye size={12} />}
-											</button>
+											</>
 										)}
 									</SidebarMenuSubItem>
 								)
@@ -300,30 +620,45 @@ export function AppSidebar({
 							</div>
 						) : null}
 						{visibleChats.map((chat) => (
-							<SidebarMenuSubItem key={chat.id}>
-								<SidebarMenuSubButton
-									onClick={() => onOpenChat(chat.id)}
-									className={cn(
-										"flex items-center justify-between h-6 gap-1.5 rounded-none",
-										chat.id === activeChatId
-											? "border-l-2 border-primary pl-2 font-medium"
-											: openChatSet.has(chat.id)
-												? "border-l-2 border-primary/30 pl-2"
-												: "",
-									)}
-								>
-									<span className="truncate">{chat.title}</span>
-									<Badge
-										variant="secondary"
-										className="shrink-0 text-xxs font-normal cursor-pointer hover:bg-secondary/80"
-										onClick={(e) => {
-											e.stopPropagation()
-											onEditChat(chat.id)
+							<SidebarMenuSubItem
+								key={chat.id}
+								className="group/src flex items-center mr-2"
+							>
+								{editingId === chat.id ? (
+									<RowRenameInput
+										initial={chat.title}
+										onSave={(v) => {
+											setEditingId(null)
+											onRenameChat(chat.id, v)
 										}}
-									>
-										{chat.messageCount ?? 0}
-									</Badge>
-								</SidebarMenuSubButton>
+										onCancel={() => setEditingId(null)}
+									/>
+								) : (
+									<>
+										<SidebarMenuSubButton
+											onClick={() => onOpenChat(chat.id)}
+											className={cn(
+												"flex min-w-0 flex-1 items-center h-6 gap-1.5 rounded-none",
+												chat.id === activeChatId
+													? "border-l-2 border-primary pl-2 font-medium"
+													: openChatSet.has(chat.id)
+														? "border-l-2 border-primary/30 pl-2"
+														: "",
+											)}
+										>
+											{chat.starred && <Star className="shrink-0 p-[2px]" />}
+											<span className="min-w-0 flex-1 truncate">
+												{chat.title}
+											</span>
+										</SidebarMenuSubButton>
+										<ChatActionsMenu
+											starred={!!chat.starred}
+											onToggleStar={() => onToggleChatStar(chat.id)}
+											onStartRename={() => setEditingId(chat.id)}
+											onDelete={() => onDeleteChat(chat.id)}
+										/>
+									</>
+								)}
 							</SidebarMenuSubItem>
 						))}
 						{sortedChats.length > CHAT_LIMIT && (

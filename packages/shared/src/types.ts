@@ -84,6 +84,7 @@ export type ChatIndexEntry = {
 	createdAt: string
 	updatedAt: string
 	lastMessagePreview: string
+	starred?: boolean
 }
 
 export type ChatMessage = {
@@ -110,7 +111,6 @@ export type ApiSettings = Settings
 export type ApiTask = TaskEntry
 export type ApiChat = ChatIndexEntry & {
 	taskPath: string
-	messageCount?: number
 }
 export type ApiChatMessage = ChatMessage
 

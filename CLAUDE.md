@@ -48,7 +48,8 @@ task-folder/            ← user selects this, already exists on their machine
 │   └── chat-{id}.json  ← full AI SDK message history
 └── extractions/        ← ExtractPat results, per-source metadata
     ├── {filename}.json ← ExtractionRecord { assetType, details, locations, … }
-    └── _excluded.json  ← filenames flagged "do not read" (excluded from AgentPat)
+    ├── _excluded.json  ← filenames flagged "do not read" (sources + artifacts, excluded from AgentPat)
+    └── _starred.json   ← filenames flagged "key document" / star (sources + artifacts)
 ```
 
 **Why files:**
@@ -69,8 +70,13 @@ task-folder/            ← user selects this, already exists on their machine
 - **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Each opens as one tab with a **Source ⇄ Extracted Data** segmented toggle (the document/PDF view vs the ExtractPat form); the toggle's Extracted-Data half carries a status dot (amber = not yet extracted, green = extracted). The extraction is a view within the source's tab, not a separate asset/tab.
 - **Artifacts** — documents drafted in Plate, saved to `artifacts/` as `.json` (+ `.docx`). Attorney edits in Word if they want. (Creation works; AgentPat write tools still rudimentary — WIP.)
 - **Extraction** — ExtractPat results per source in `extractions/{filename}.json` (`ExtractionRecord`). Run from the source tab's control row — an "ExtractPat" popover (next to the Source ⇄ Extracted Data toggle) holds the type picker (defaults Auto-detect), Extract/Re-extract, and Clear; running auto-flips to the Extracted Data view and **streams** field-by-field. The stream persists server-side on completion; manual field edits **auto-save** (debounced, no Save button). Also proposable by AgentPat's `extractSource`. Per-field "locate" flips to the document view and highlights the value. ("Analysis" is reserved for future AgentPat/chat commentary — this feature is *extraction*.)
-- **Source exclusion ("do not read")** — per-source flag toggled from the sidebar (eye) or PDF toolbar; persisted in `extractions/_excluded.json`. Excluded sources are dropped from AgentPat context, blocked from the `readFile` tool, named in the prompt as off-limits, and can't be extracted.
-- **Chats** — full AI SDK message history as JSON. The chat UI renders every part — text, reasoning, and tool call/result — as inspectable collapsibles (transparency by default), with a per-tool presenter registry for generative UI.
+- **Sidebar row actions (kebab)** — every row has a hover ⋯ menu (text-only items; icons reserved for buttons). **Sources:** Star, Exclude/Include from AgentPat, **Derive ▸** (today just "Extract data" → opens the Extracted Data view; future derivations land here), and **disabled** Rename/Delete (the app never mutates the attorney's originals — that's the OS's job; only app-created outputs are deletable, e.g. an extraction's Clear). **Artifacts:** Star, Exclude/Include, and **enabled** Rename/Delete (app-created, so the app may mutate them). **Chats:** Star, Rename, Delete. Rename is **inline** (the row label becomes an input — Enter/blur saves, Esc cancels); Delete prompts an `AlertDialog` confirm. A small uncoloured star shows on starred rows.
+- **Source exclusion ("do not read")** — per-file flag (sources + artifacts) toggled from the sidebar kebab or PDF toolbar; persisted in `extractions/_excluded.json`. Excluded files are dropped from AgentPat context, blocked from the `readFile` tool, named in the prompt as off-limits, and can't be extracted.
+- **Chats** — full AI SDK message history as JSON; index entries carry a `starred?` flag. The chat UI renders every part — text, reasoning, and tool call/result — as inspectable collapsibles (transparency by default), with a per-tool presenter registry for generative UI.
+
+## Derivations (planned — own branch, out of scope for now)
+
+ExtractPat is the first of a family of **derivations**: take a source, run an AI pass, save the result as a file beside it, show it as a *view in the source's tab*, and expose it as an *AgentPat tool* (human-in-the-loop, like `extractSource`). One concept, three faces (artifact + view + tool). Planned siblings: **Summarise** (`summaries/`, Summary view, `summariseSource`), **Analyse** (`analyses/`, Analysis view, `analyseSource` — the freed name; substantive §102/§103/§112 take, response angles), **Translate** (foreign prior art → English). Generated on demand via the sidebar's **Derive ▸** submenu so tabs only exist for derivations that exist. Per-source derivations are source-tab views; cross-source synthesis (overall strategy) stays in AgentPat chat / artifacts.
 
 ## AgentPat
 

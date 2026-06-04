@@ -3,7 +3,6 @@ import { useState } from "react"
 import { usePanelRef } from "react-resizable-panels"
 import { AppSidebar } from "@/components/app-sidebar"
 import { AssetViewer } from "@/components/asset-viewer"
-import { ChatMetaDialog } from "@/components/chat-meta-dialog"
 import { ChatPanel } from "@/components/chat-panel"
 import { OnboardingFlow } from "@/components/onboarding-flow"
 import { ProfilePicker } from "@/components/profile-picker"
@@ -94,7 +93,6 @@ function WorkspaceContent({
 	const asset = useAssetState(task.currentTaskId)
 	const chat = useChatState(task.currentTaskId)
 
-	const [chatEditId, setChatEditId] = useState<string | null>(null)
 	const [chatCollapsed, setChatCollapsed] = useState(false)
 	const [tasksOpen, setTasksOpen] = useState(false)
 	const [tasksDefaultPanel, setTasksDefaultPanel] = useState<"empty" | "new">(
@@ -141,14 +139,21 @@ function WorkspaceContent({
 				tasksLoading={task.tasksLoading}
 				currentTaskId={task.currentTaskId}
 				excludedIds={asset.doNotRead}
+				starredIds={asset.starred}
 				onToggleDoNotRead={asset.toggleDoNotRead}
+				onToggleStar={asset.toggleStar}
+				onOpenExtraction={openExtraction}
+				onRenameArtifact={asset.renameArtifact}
+				onDeleteArtifact={asset.deleteArtifact}
 				onOpen={asset.openAsset}
 				onClose={asset.closeTab}
 				onRefreshSources={asset.refresh}
 				onCreateArtifact={asset.createArtifact}
 				onOpenChat={chat.openChat}
 				onNewChat={chat.newChat}
-				onEditChat={setChatEditId}
+				onRenameChat={chat.updateChat}
+				onDeleteChat={chat.deleteChat}
+				onToggleChatStar={chat.toggleChatStar}
 				onManageTasks={() => openTasks()}
 				onSettingsOpen={() => setSettingsOpen(true)}
 				onTutorialOpen={() => setTutorialOpen(true)}
@@ -252,7 +257,6 @@ function WorkspaceContent({
 								}}
 								onExtracted={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}
-								onMessageSent={chat.incrementMessageCount}
 							/>
 						</ResizablePanel>
 					</ResizablePanelGroup>
@@ -270,18 +274,6 @@ function WorkspaceContent({
 				onRename={task.renameTask}
 				onSetTaskType={task.setTaskType}
 				onDelete={task.deleteTask}
-			/>
-
-			<ChatMetaDialog
-				open={chatEditId !== null}
-				chat={
-					chatEditId !== null
-						? chat.chats.find((c) => c.id === chatEditId)
-						: undefined
-				}
-				onClose={() => setChatEditId(null)}
-				onUpdated={chat.updateChat}
-				onDeleted={chat.deleteChat}
 			/>
 
 			{/* Full-screen overlays — rendered last so they sit on top */}

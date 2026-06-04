@@ -160,6 +160,15 @@ export const api = {
 				"/extractions/excluded",
 				json({ taskPath, filenames }, { method: "PUT" }),
 			),
+		getStarred: (taskPath: string) =>
+			request<string[]>(
+				`/extractions/starred?taskPath=${encodeURIComponent(taskPath)}`,
+			),
+		setStarred: (taskPath: string, filenames: string[]) =>
+			request<{ ok: boolean }>(
+				"/extractions/starred",
+				json({ taskPath, filenames }, { method: "PUT" }),
+			),
 	},
 	ai: {
 		verifyKey: (provider: string, apiKey: string) =>
@@ -213,6 +222,21 @@ export const api = {
 				taskPath: string
 				title: string
 			}>("/artifacts", json({ taskPath, title }, { method: "POST" })),
+		rename: (taskPath: string, filename: string, newTitle: string) =>
+			request<{
+				filename: string
+				path: string
+				taskPath: string
+				title: string
+			}>(
+				"/artifacts/rename",
+				json({ taskPath, filename, newTitle }, { method: "PUT" }),
+			),
+		delete: (taskPath: string, filename: string) =>
+			request<{ ok: boolean }>(
+				`/artifacts?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
+				{ method: "DELETE" },
+			),
 	},
 	chats: {
 		list: (taskPath: string) =>
@@ -222,10 +246,14 @@ export const api = {
 				"/chats",
 				json({ taskPath, title, ...(id ? { id } : {}) }, { method: "POST" }),
 			),
-		update: (id: string, taskPath: string, title: string) =>
+		update: (
+			id: string,
+			taskPath: string,
+			patch: { title?: string; starred?: boolean },
+		) =>
 			request<ApiChat>(
 				`/chats/${id}`,
-				json({ taskPath, title }, { method: "PATCH" }),
+				json({ taskPath, ...patch }, { method: "PATCH" }),
 			),
 		delete: (id: string, taskPath: string) =>
 			request<{ ok: boolean }>(
