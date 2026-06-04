@@ -25,6 +25,7 @@ function Chip({
 			<PopoverTrigger asChild>
 				<button
 					type="button"
+					data-token={name}
 					className={cn(
 						"rounded px-1 font-medium font-mono text-[11px] transition-colors",
 						KIND_CHIP[kind],

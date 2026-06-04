@@ -120,11 +120,15 @@ function SectionLayout({
 	description,
 	children,
 	footer,
+	fill = false,
 }: {
 	title: string
 	description: string
 	children: ReactNode
 	footer?: ReactNode
+	/** Make the body fill the available height (no outer scroll) — for the
+	 *  full-height prompt editor. */
+	fill?: boolean
 }) {
 	return (
 		<>
@@ -134,7 +138,14 @@ function SectionLayout({
 				</h2>
 				<p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
 			</div>
-			<div className="flex-1 overflow-y-auto px-8 py-6">{children}</div>
+			<div
+				className={cn(
+					"flex-1 px-8 py-6",
+					fill ? "flex min-h-0 flex-col overflow-hidden" : "overflow-y-auto",
+				)}
+			>
+				{children}
+			</div>
 			{footer && (
 				<div className="flex shrink-0 items-center justify-between border-t px-8 py-3">
 					{footer}
@@ -1073,6 +1084,7 @@ function PromptSection({
 			<SectionLayout
 				title={title}
 				description={description}
+				fill={!!surface}
 				footer={
 					<>
 						{defaultPrompt ? (
