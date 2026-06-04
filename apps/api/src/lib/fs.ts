@@ -11,8 +11,10 @@ import {
 	type Chat,
 	type ChatIndexEntry,
 	DEFAULT_SETTINGS,
+	EMPTY_FLAGS,
 	type ExtractionRecord,
 	type ExtractionSummary,
+	type Flags,
 	type Settings,
 	type TaskEntry,
 } from "@patrickos/shared"
@@ -51,8 +53,19 @@ export function artifactsDir(taskPath: string) {
 	return join(taskPath, "artifacts")
 }
 
+// Derivations live under derivations/<kind>/ — ExtractPat is derivation #1.
 function extractionsDir(taskPath: string) {
-	return join(taskPath, "extractions")
+	return join(taskPath, "derivations", "extractions")
+}
+
+// Per-source human-authored notes (Plate JSON) — top-level, not a derivation.
+function notesDir(taskPath: string) {
+	return join(taskPath, "notes")
+}
+
+// Filename-keyed flags (excluded/starred) — one file under meta/.
+function flagsPath(taskPath: string) {
+	return join(taskPath, "meta", "flags.json")
 }
 
 // ─── YAML ────────────────────────────────────────────────────────────────────
@@ -196,40 +209,6 @@ export async function deleteExtraction(
 	await rm(extractionFilePath(taskPath, sourceFilename), { force: true })
 }
 
-// Sources the attorney has flagged "do not read" — by filename, so it travels
-// with the folder. Stored in extractions/_excluded.json.
-function excludedPath(taskPath: string) {
-	return join(extractionsDir(taskPath), "_excluded.json")
-}
-
-export async function readExcluded(taskPath: string): Promise<string[]> {
-	return readJson<string[]>(excludedPath(taskPath), [])
-}
-
-export async function writeExcluded(
-	taskPath: string,
-	filenames: string[],
-): Promise<void> {
-	await writeJson(excludedPath(taskPath), filenames)
-}
-
-// Sources the attorney has starred ("key documents") — by filename, so it
-// travels with the folder. Stored in extractions/_starred.json.
-function starredPath(taskPath: string) {
-	return join(extractionsDir(taskPath), "_starred.json")
-}
-
-export async function readStarred(taskPath: string): Promise<string[]> {
-	return readJson<string[]>(starredPath(taskPath), [])
-}
-
-export async function writeStarred(
-	taskPath: string,
-	filenames: string[],
-): Promise<void> {
-	await writeJson(starredPath(taskPath), filenames)
-}
-
 export async function listExtractions(
 	taskPath: string,
 ): Promise<ExtractionSummary[]> {
@@ -240,7 +219,6 @@ export async function listExtractions(
 		const summaries: ExtractionSummary[] = []
 		for (const entry of entries) {
 			if (!entry.isFile() || !entry.name.endsWith(".json")) continue
-			if (entry.name.startsWith("_")) continue // reserved (e.g. _excluded.json)
 			const record = await readJson<ExtractionRecord | null>(
 				join(extractionsDir(taskPath), entry.name),
 				null,
@@ -258,10 +236,60 @@ export async function listExtractions(
 	}
 }
 
+// ─── Notes (notes/{filename}.json — per-source Plate JSON) ───────────────────
+
+function noteFilePath(taskPath: string, sourceFilename: string) {
+	return join(notesDir(taskPath), `${sourceFilename}.json`)
+}
+
+export async function readNote(
+	taskPath: string,
+	sourceFilename: string,
+): Promise<string | null> {
+	try {
+		return await readFile(noteFilePath(taskPath, sourceFilename), "utf8")
+	} catch {
+		return null
+	}
+}
+
+export async function writeNote(
+	taskPath: string,
+	sourceFilename: string,
+	content: string,
+): Promise<void> {
+	const path = noteFilePath(taskPath, sourceFilename)
+	await mkdir(dirname(path), { recursive: true })
+	const tmp = `${path}.tmp`
+	await writeFile(tmp, content, "utf8")
+	await rename(tmp, path)
+}
+
+export async function deleteNote(
+	taskPath: string,
+	sourceFilename: string,
+): Promise<void> {
+	await rm(noteFilePath(taskPath, sourceFilename), { force: true })
+}
+
+// ─── Flags (meta/flags.json — excluded + starred, filename-keyed) ────────────
+
+export async function readFlags(taskPath: string): Promise<Flags> {
+	return readJson<Flags>(flagsPath(taskPath), EMPTY_FLAGS)
+}
+
+export async function writeFlags(
+	taskPath: string,
+	flags: Flags,
+): Promise<void> {
+	await writeJson(flagsPath(taskPath), flags)
+}
+
 export async function ensureTaskDirs(taskPath: string): Promise<void> {
 	await Promise.all([
 		mkdir(artifactsDir(taskPath), { recursive: true }),
 		mkdir(chatsDir(taskPath), { recursive: true }),
 		mkdir(extractionsDir(taskPath), { recursive: true }),
+		mkdir(notesDir(taskPath), { recursive: true }),
 	])
 }

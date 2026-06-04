@@ -8,6 +8,8 @@ import { configRouter } from "./routes/config"
 import { extractionsRouter } from "./routes/extractions"
 import { extractpatRouter } from "./routes/extractpat"
 import { filesRouter } from "./routes/files"
+import { flagsRouter } from "./routes/flags"
+import { notesRouter } from "./routes/notes"
 import { settingsRouter } from "./routes/settings"
 import { tasksRouter } from "./routes/tasks"
 
@@ -19,6 +21,8 @@ app.get("/health", (c) => c.json({ ok: true }))
 app.route("/config", configRouter)
 app.route("/tasks", tasksRouter)
 app.route("/extractions", extractionsRouter)
+app.route("/flags", flagsRouter)
+app.route("/notes", notesRouter)
 app.route("/chats", chatsRouter)
 app.route("/files", filesRouter)
 app.route("/artifacts", artifactsRouter)

@@ -2,8 +2,9 @@ import type { ApiAsset } from "@patrickos/shared"
 import { useCallback, useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
-// A source tab shows either its document (PDF) or its ExtractPat extraction.
-export type AssetView = "source" | "extraction"
+// Which view of a source tab is active. "source" + "notes" are always available;
+// derivation views (e.g. "extraction") appear once a record exists.
+export type AssetView = string
 
 function fileToAsset(
 	file: {
@@ -73,12 +74,9 @@ export function useAssetState(currentTaskId: string) {
 				new Set(
 					flaggable.filter((s) => filenames.has(s.filename)).map((s) => s.id),
 				)
-			const [excludedFilenames, starredFilenames] = await Promise.all([
-				api.extractions.getExcluded(currentTaskId),
-				api.extractions.getStarred(currentTaskId),
-			])
-			setDoNotRead(idsForFilenames(new Set(excludedFilenames)))
-			setStarred(idsForFilenames(new Set(starredFilenames)))
+			const flags = await api.flags.get(currentTaskId)
+			setDoNotRead(idsForFilenames(new Set(flags.excluded)))
+			setStarred(idsForFilenames(new Set(flags.starred)))
 		})
 		api.extractions
 			.list(currentTaskId)
@@ -185,14 +183,23 @@ export function useAssetState(currentTaskId: string) {
 			.filter((f): f is string => !!f)
 	}
 
+	// Flags share one file — always write both lists so a toggle of one preserves
+	// the other.
+	function persistFlags(excludedIds: Set<string>, starredIds: Set<string>) {
+		api.flags
+			.set(currentTaskId, {
+				excluded: filenamesFor(excludedIds),
+				starred: filenamesFor(starredIds),
+			})
+			.catch(() => {})
+	}
+
 	function toggleDoNotRead(id: string) {
 		const next = new Set(doNotRead)
 		if (next.has(id)) next.delete(id)
 		else next.add(id)
 		setDoNotRead(next)
-		api.extractions
-			.setExcluded(currentTaskId, filenamesFor(next))
-			.catch(() => {})
+		persistFlags(next, starred)
 	}
 
 	function toggleStar(id: string) {
@@ -200,9 +207,7 @@ export function useAssetState(currentTaskId: string) {
 		if (next.has(id)) next.delete(id)
 		else next.add(id)
 		setStarred(next)
-		api.extractions
-			.setStarred(currentTaskId, filenamesFor(next))
-			.catch(() => {})
+		persistFlags(doNotRead, next)
 	}
 
 	// Open documents for chat context/chips.

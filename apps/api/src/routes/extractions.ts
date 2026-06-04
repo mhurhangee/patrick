@@ -3,12 +3,8 @@ import { Hono } from "hono"
 import {
 	deleteExtraction,
 	listExtractions,
-	readExcluded,
 	readExtraction,
-	readStarred,
-	writeExcluded,
 	writeExtraction,
-	writeStarred,
 } from "../lib/fs"
 
 export const extractionsRouter = new Hono()
@@ -43,42 +39,6 @@ extractionsRouter.put("/file", async (c) => {
 	}
 	await writeExtraction(taskPath, saved)
 	return c.json(saved)
-})
-
-// GET /extractions/excluded?taskPath=...  → filenames flagged do-not-read
-extractionsRouter.get("/excluded", async (c) => {
-	const taskPath = c.req.query("taskPath")
-	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
-	return c.json(await readExcluded(taskPath))
-})
-
-// PUT /extractions/excluded  → replace the do-not-read list
-extractionsRouter.put("/excluded", async (c) => {
-	const { taskPath, filenames } = await c.req.json<{
-		taskPath: string
-		filenames: string[]
-	}>()
-	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
-	await writeExcluded(taskPath, filenames ?? [])
-	return c.json({ ok: true })
-})
-
-// GET /extractions/starred?taskPath=...  → filenames flagged "key document"
-extractionsRouter.get("/starred", async (c) => {
-	const taskPath = c.req.query("taskPath")
-	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
-	return c.json(await readStarred(taskPath))
-})
-
-// PUT /extractions/starred  → replace the starred list
-extractionsRouter.put("/starred", async (c) => {
-	const { taskPath, filenames } = await c.req.json<{
-		taskPath: string
-		filenames: string[]
-	}>()
-	if (!taskPath) return c.json({ error: "taskPath required" }, 400)
-	await writeStarred(taskPath, filenames ?? [])
-	return c.json({ ok: true })
 })
 
 // DELETE /extractions/file?taskPath=...&filename=...  → remove a source's extraction

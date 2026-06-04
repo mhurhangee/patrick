@@ -110,7 +110,10 @@ function openFilesContext(openFilePaths: string[]) {
 function extractionContext(extracted: ExtractionSummary[] | undefined) {
 	if (!extracted?.length) return null
 	const list = extracted
-		.map((a) => `- ${a.filename} (${a.assetType}) → extractions/.json`)
+		.map(
+			(a) =>
+				`- ${a.filename} (${a.assetType}) → derivations/extractions/${a.filename}.json`,
+		)
 		.join("\n")
 	return `# Existing Extractions\nThese sources have already been extracted by ExtractPat. The structured result is saved as JSON — read it with the readFile tool (it is far cheaper than re-reading the PDF). Do NOT propose extractSource for a source listed here; only offer it for sources that are NOT yet extracted.\n${list}`
 }

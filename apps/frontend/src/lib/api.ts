@@ -4,6 +4,7 @@ import type {
 	ApiTask,
 	ExtractionRecord,
 	ExtractionSummary,
+	Flags,
 	Settings,
 	TaskType,
 } from "@patrickos/shared"
@@ -151,23 +152,32 @@ export const api = {
 				`/extractions/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
 				{ method: "DELETE" },
 			),
-		getExcluded: (taskPath: string) =>
-			request<string[]>(
-				`/extractions/excluded?taskPath=${encodeURIComponent(taskPath)}`,
-			),
-		setExcluded: (taskPath: string, filenames: string[]) =>
+	},
+	// Per-file flags (excluded + starred) — one file, meta/flags.json.
+	flags: {
+		get: (taskPath: string) =>
+			request<Flags>(`/flags?taskPath=${encodeURIComponent(taskPath)}`),
+		set: (taskPath: string, flags: Flags) =>
 			request<{ ok: boolean }>(
-				"/extractions/excluded",
-				json({ taskPath, filenames }, { method: "PUT" }),
+				"/flags",
+				json({ taskPath, flags }, { method: "PUT" }),
 			),
-		getStarred: (taskPath: string) =>
-			request<string[]>(
-				`/extractions/starred?taskPath=${encodeURIComponent(taskPath)}`,
+	},
+	// Per-source notes — Plate JSON in notes/{filename}.json.
+	notes: {
+		get: (taskPath: string, filename: string) =>
+			request<{ content: string } | null>(
+				`/notes/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
 			),
-		setStarred: (taskPath: string, filenames: string[]) =>
+		save: (taskPath: string, filename: string, content: string) =>
 			request<{ ok: boolean }>(
-				"/extractions/starred",
-				json({ taskPath, filenames }, { method: "PUT" }),
+				"/notes/file",
+				json({ taskPath, filename, content }, { method: "PUT" }),
+			),
+		delete: (taskPath: string, filename: string) =>
+			request<{ ok: boolean }>(
+				`/notes/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
+				{ method: "DELETE" },
 			),
 	},
 	ai: {

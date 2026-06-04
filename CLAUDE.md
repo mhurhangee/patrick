@@ -46,10 +46,13 @@ task-folder/            ← user selects this, already exists on their machine
 ├── chats/              ← conversation history
 │   ├── index.json      ← [{ id, title, date, lastMessagePreview }]
 │   └── chat-{id}.json  ← full AI SDK message history
-└── extractions/        ← ExtractPat results, per-source metadata
-    ├── {filename}.json ← ExtractionRecord { assetType, details, locations, … }
-    ├── _excluded.json  ← filenames flagged "do not read" (sources + artifacts, excluded from AgentPat)
-    └── _starred.json   ← filenames flagged "key document" / star (sources + artifacts)
+├── derivations/        ← AI passes over a source (one subfolder per derivation kind)
+│   └── extractions/    ← ExtractPat results, per-source metadata
+│       └── {filename}.json ← ExtractionRecord { assetType, details, locations, … }
+├── notes/              ← per-source human-authored Plate notes (NOT a derivation)
+│   └── {filename}.json
+└── meta/
+    └── flags.json      ← { excluded: [], starred: [] } — filenames flagged "do not read" / "key document" (sources + artifacts)
 ```
 
 **Why files:**
@@ -67,16 +70,21 @@ task-folder/            ← user selects this, already exists on their machine
 **Task = a folder on disk.** No upload, no import. Point at a folder you already have. A *task* is one discrete unit of work (e.g. responding to a specific Office Action) — **not** a generic "project" and **not** a "matter" (the whole case file). "Matter" is reserved for a possible future grouping layer (matter → tasks). Code: `TaskEntry`/`TaskType`/`TASK_CONFIGS`/`taskType`; never reintroduce `project*`.
 
 - **Task type** — `TASK_CONFIGS` (US Non-Final/Final OA Response, EP Art 94(3) Response). Chosen at folder-pick, editable later in the task manager, stored in `tasks.yaml`. Primes the AgentPat system prompt **and** narrows which source types ExtractPat offers/classifies (`allowedAssetTypes` → `allowedAssetTypesFor()`).
-- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Each opens as one tab with a **Source ⇄ Extracted Data** segmented toggle (the document/PDF view vs the ExtractPat form); the toggle's Extracted-Data half carries a status dot (amber = not yet extracted, green = extracted). The extraction is a view within the source's tab, not a separate asset/tab.
+- **Sources** — existing files in the folder (PDFs, Word docs). Read for context, never modified. Each opens as one tab with a segmented **view toggle**: `Source | Notes | <derivations that exist>`. **Source** (the document/PDF) and **Notes** are always present; derivation segments (e.g. **Extracted Data**) appear once a record exists or while one is running. Views are within the source's tab, not separate assets/tabs. The view-layer lives in `components/asset-viewer/` (split into `index` tab-strip, `source-pane`, `view-toggle`, `derive-menu`, `views/*`); derivations are registered in `lib/derivations.ts` (the extension point).
+- **Notes** — per-source, **human-authored** Plate scratchpad in `notes/{filename}.json`. NOT a derivation (no AI pass) — always available via its toggle segment, opens straight into the editor, written on first keystroke (debounced auto-save via the shared `PlateDocEditor`). Uses a leaner editor (`NotesEditorKit`: no fixed toolbar / docx / TOC / drag-handle chrome; keeps inline AI + slash + a selection-only floating toolbar) so it feels like a scratchpad, not an artifact. `PlateEditor`/`PlateDocEditor` take a `plugins` prop; artifacts keep the full `EditorKit`. No sidebar entry; the kebab's Derive ▸ stays derivations-only.
 - **Artifacts** — documents drafted in Plate, saved to `artifacts/` as `.json` (+ `.docx`). Attorney edits in Word if they want. (Creation works; AgentPat write tools still rudimentary — WIP.)
-- **Extraction** — ExtractPat results per source in `extractions/{filename}.json` (`ExtractionRecord`). Run from the source tab's control row — an "ExtractPat" popover (next to the Source ⇄ Extracted Data toggle) holds the type picker (defaults Auto-detect), Extract/Re-extract, and Clear; running auto-flips to the Extracted Data view and **streams** field-by-field. The stream persists server-side on completion; manual field edits **auto-save** (debounced, no Save button). Also proposable by AgentPat's `extractSource`. Per-field "locate" flips to the document view and highlights the value. ("Analysis" is reserved for future AgentPat/chat commentary — this feature is *extraction*.)
-- **Sidebar row actions (kebab)** — every row has a hover ⋯ menu (text-only items; icons reserved for buttons). **Sources:** Star, Exclude/Include from AgentPat, **Derive ▸** (today just "Extract data" → opens the Extracted Data view; future derivations land here), and **disabled** Rename/Delete (the app never mutates the attorney's originals — that's the OS's job; only app-created outputs are deletable, e.g. an extraction's Clear). **Artifacts:** Star, Exclude/Include, and **enabled** Rename/Delete (app-created, so the app may mutate them). **Chats:** Star, Rename, Delete. Rename is **inline** (the row label becomes an input — Enter/blur saves, Esc cancels); Delete prompts an `AlertDialog` confirm. A small uncoloured star shows on starred rows.
-- **Source exclusion ("do not read")** — per-file flag (sources + artifacts) toggled from the sidebar kebab or PDF toolbar; persisted in `extractions/_excluded.json`. Excluded files are dropped from AgentPat context, blocked from the `readFile` tool, named in the prompt as off-limits, and can't be extracted.
+- **Extraction** — ExtractPat results per source in `derivations/extractions/{filename}.json` (`ExtractionRecord`). Run from the source tab's control row — the **Derive ▾** popover (RHS, where the old ExtractPat button sat) holds the type picker (defaults Auto-detect), Extract/Re-extract, and Clear; running auto-flips to the Extracted Data view and **streams** field-by-field. The stream persists server-side on completion; manual field edits **auto-save** (debounced, no Save button). Also proposable by AgentPat's `extractSource`. Per-field "locate" flips to the document view and highlights the value. ("Analysis" is reserved for future AgentPat/chat commentary — this feature is *extraction*.)
+- **Sidebar row actions (kebab)** — every row has a hover ⋯ menu (text-only items; icons reserved for buttons). **Sources:** Star, Exclude/Include from AgentPat, **Derive ▸** (today just "Extract data" → opens the Extracted Data view; future derivations land here — Notes is deliberately *not* here), and **disabled** Rename/Delete (the app never mutates the attorney's originals — that's the OS's job; only app-created outputs are deletable, e.g. an extraction's Clear). **Artifacts:** Star, Exclude/Include, and **enabled** Rename/Delete (app-created, so the app may mutate them). **Chats:** Star, Rename, Delete. Rename is **inline** (the row label becomes an input — Enter/blur saves, Esc cancels); Delete prompts an `AlertDialog` confirm. A small uncoloured star shows on starred rows.
+- **Source exclusion ("do not read")** — per-file flag (sources + artifacts) toggled from the sidebar kebab or PDF toolbar; persisted in `meta/flags.json` (one file, `excluded` + `starred` lists, via the `/flags` route). Excluded files are dropped from AgentPat context, blocked from the `readFile` tool, named in the prompt as off-limits, and can't be extracted.
 - **Chats** — full AI SDK message history as JSON; index entries carry a `starred?` flag. The chat UI renders every part — text, reasoning, and tool call/result — as inspectable collapsibles (transparency by default), with a per-tool presenter registry for generative UI.
 
-## Derivations (planned — own branch, out of scope for now)
+## Derivations
 
-ExtractPat is the first of a family of **derivations**: take a source, run an AI pass, save the result as a file beside it, show it as a *view in the source's tab*, and expose it as an *AgentPat tool* (human-in-the-loop, like `extractSource`). One concept, three faces (artifact + view + tool). Planned siblings: **Summarise** (`summaries/`, Summary view, `summariseSource`), **Analyse** (`analyses/`, Analysis view, `analyseSource` — the freed name; substantive §102/§103/§112 take, response angles), **Translate** (foreign prior art → English). Generated on demand via the sidebar's **Derive ▸** submenu so tabs only exist for derivations that exist. Per-source derivations are source-tab views; cross-source synthesis (overall strategy) stays in AgentPat chat / artifacts.
+A **derivation** takes a source, runs an AI pass, saves the result as a file beside it (under `derivations/<kind>/`), shows it as a *view in the source's tab*, and exposes it as an *AgentPat tool* (human-in-the-loop, like `extractSource`). One concept, three faces (artifact + view + tool). ExtractPat is derivation #1 and the only one built. The scaffolding is in place: registry in `lib/derivations.ts`, generalised view toggle + `Derive ▾` menu in `components/asset-viewer/`.
+
+**Adding a derivation** (the registry comment lists this too): 1) add an entry to `DERIVATIONS` in `lib/derivations.ts`; 2) add its folder + router in `apps/api` (mirror `derivations/extractions/` + the extractions router); 3) in `source-pane.tsx` call its hook, add a body case, and add its `Derive ▾` controls.
+
+Planned siblings: **Summarise** (`derivations/summaries/`, Summary view, `summariseSource`), **Analyse** (`derivations/analyses/`, Analysis view, `analyseSource` — the freed name; substantive §102/§103/§112 take, response angles), **Translate** (foreign prior art → English). Per-source derivations are source-tab views; cross-source synthesis (overall strategy) stays in AgentPat chat / artifacts. **Notes is not a derivation** (human-authored, no AI) — see the domain model.
 
 ## AgentPat
 
@@ -96,11 +104,13 @@ No web search. EPO OPS gives structured patent data; that's better than unstruct
 
 ## AskPat (Plate editor AI)
 
-Inline AI inside the Plate artifact editor. Working end-to-end.
+Inline AI inside the Plate editors — both **artifacts** and (now) **notes**. Working end-to-end.
 
 - `POST /ai/askpat/command` — menu-driven commands (strengthen argument, formal USPTO language, etc.)
 - `POST /ai/askpat/copilot` — ghost text autocomplete
 - Key files: `apps/api/src/routes/askpat.ts`, `apps/frontend/src/components/editor/`
+
+**Planned (next branch):** rename AskPat → **DraftPat** (artifacts) and split out **NotePat** (notes) as separate, separately-tunable prompt surfaces — part of the prompt-template / context engine (see the `prompt-templates-plan` memory). Notes AI today shares the AskPat prompt+route and sees only the note's own text; it becomes source/derivation-aware (NotePat) in that branch.
 
 ## Shared types
 
