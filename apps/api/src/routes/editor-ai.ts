@@ -1,4 +1,9 @@
 import {
+	DEFAULT_COPILOT_SYSTEM,
+	DEFAULT_TEMPLATE_DRAFTPAT,
+	DEFAULT_TEMPLATE_NOTEPAT,
+} from "@patrickos/shared"
+import {
 	createUIMessageStream,
 	createUIMessageStreamResponse,
 	generateText,
@@ -6,13 +11,12 @@ import {
 } from "ai"
 import { Hono } from "hono"
 import { readSettings } from "../lib/fs"
-import {
-	buildAskPatPrompt,
-	createModel,
-	reasoningOptions,
-} from "../lib/patent-prompt"
+import { createModel, reasoningOptions } from "../lib/patent-prompt"
+import { render } from "../lib/prompt"
 
-export const askpatRouter = new Hono()
+// The inline editor AI. One route, two prompt surfaces: NotePat (the per-source
+// Notes editor) and DraftPat (artifact/document editor), chosen by assetType.
+export const editorAiRouter = new Hono()
 
 type ToolName = "edit" | "generate"
 
@@ -34,7 +38,7 @@ function buildUserPrompt(
 	return `${docContext}Task: ${instruction}. Continue seamlessly from where the document ends. Write in the same formal patent correspondence style. One to three sentences unless instructed otherwise.`
 }
 
-askpatRouter.post("/command", async (c) => {
+editorAiRouter.post("/command", async (c) => {
 	const body = await c.req.json<{
 		toolName: "edit" | "generate" | null
 		instruction: string
@@ -42,6 +46,7 @@ askpatRouter.post("/command", async (c) => {
 		selectedMarkdown: string | null
 		documentMarkdown: string | null
 		assetType?: string
+		sourceName?: string
 		provider: string
 		apiKey: string
 		model: string
@@ -54,6 +59,7 @@ askpatRouter.post("/command", async (c) => {
 		selectedMarkdown,
 		documentMarkdown,
 		assetType,
+		sourceName,
 		provider,
 		apiKey,
 		model: modelId,
@@ -66,10 +72,19 @@ askpatRouter.post("/command", async (c) => {
 			: "generate"
 
 	const settings = await readSettings()
-	const system = await buildAskPatPrompt({ settings, assetType })
+	const surface = assetType === "note" ? "notepat" : "draftpat"
+	const template =
+		surface === "notepat"
+			? settings.prompts.notepat || DEFAULT_TEMPLATE_NOTEPAT
+			: settings.prompts.draftpat || DEFAULT_TEMPLATE_DRAFTPAT
+	const { system } = render(
+		template,
+		{ settings, assetType, currentSourceName: sourceName },
+		surface,
+	)
 
 	const model = createModel(provider, apiKey, modelId)
-	// AskPat runs on the fast model — reasoning off (Haiku rejects effort anyway).
+	// Editor AI runs on the fast model — reasoning off (Haiku rejects effort anyway).
 	const { providerOptions } = reasoningOptions(provider, modelId, "off", false)
 	const prompt = buildUserPrompt(
 		toolName,
@@ -90,16 +105,14 @@ askpatRouter.post("/command", async (c) => {
 	return createUIMessageStreamResponse({ stream })
 })
 
-askpatRouter.post("/copilot", async (c) => {
+editorAiRouter.post("/copilot", async (c) => {
 	const {
 		prompt,
-		system,
 		provider,
 		apiKey,
 		model: modelId,
 	} = await c.req.json<{
 		prompt: string
-		system?: string
 		provider: string
 		apiKey: string
 		model: string
@@ -107,10 +120,10 @@ askpatRouter.post("/copilot", async (c) => {
 
 	const model = createModel(provider, apiKey, modelId)
 
-	// Plate's callCompletionApi expects `res.json()` with a `text` field
+	// System lives server-side (no longer hardcoded in the editor plugin).
 	const result = await generateText({
 		model,
-		system,
+		system: DEFAULT_COPILOT_SYSTEM,
 		prompt,
 		maxOutputTokens: 50,
 		temperature: 0.7,

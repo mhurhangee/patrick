@@ -1,94 +1,11 @@
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
-import { type AiEffort, ASSET_CONFIGS, type Settings } from "@patrickos/shared"
+import type { AiEffort } from "@patrickos/shared"
 import { createGateway } from "ai"
 
-// NOTE: AgentPat now renders through the template engine (lib/prompt). AskPat
-// and ExtractPat below are the last hardcoded builders — ported next.
-
-// ─── Private utilities ────────────────────────────────────────────────────────
-
-function assemble(parts: (string | null | undefined)[]): string {
-	return parts.filter(Boolean).join("\n\n")
-}
-
-// ─── Parts ────────────────────────────────────────────────────────────────────
-
-function identityAskPat() {
-	return "# Identity\nYou are AskPat, an AI writing assistant embedded in a patent document editor. Help edit and generate precise, formal patent text. Do not add unsupported factual claims. When editing claims, preserve structure unless explicitly instructed otherwise."
-}
-
-function identityExtractPat() {
-	return "# Identity\nYou are an expert patent document analyst. Extract structured data accurately and only from what is explicitly stated in the document. Do not infer or add information not present in the text."
-}
-
-function locationInstruction() {
-	return `# Field Locations
-Every field in the schema is an object { content, locations }. Populate:
-- content: the extracted value (string, date, or array as required)
-- locations: an array of { page, zone } indicating where in the document the value was found
-  - page: 1-based page number
-  - zone: "top" | "upper-centre" | "centre" | "lower-centre" | "bottom"
-  - Return multiple entries if the content spans non-adjacent locations
-  - Return an empty array if no content was found`
-}
-
-function userContext(s: Settings) {
-	const { name, firm, role, jurisdiction } = s.profile
-	if (!name && !firm) return null
-	const rolePart = role ? ` (${role})` : ""
-	const firmPart = firm ? ` at ${firm}` : ""
-	const jurisdictionPart = jurisdiction
-		? `, practising before ${jurisdiction}`
-		: ""
-	return `# Attorney\nYou are assisting ${name}${rolePart}${firmPart}${jurisdictionPart}.`
-}
-
-function askPatInstructions(s: Settings) {
-	return s.prompts.askpat ? `# Instructions\n${s.prompts.askpat}` : null
-}
-
-function extractPatInstructions(s: Settings) {
-	return s.prompts.extractpat ? `# Instructions\n${s.prompts.extractpat}` : null
-}
-
-function sharedContext(s: Settings) {
-	return s.prompts.context
-		? `# Practice Preferences\n${s.prompts.context}`
-		: null
-}
-
-// ─── Feature builders ─────────────────────────────────────────────────────────
-
-export async function buildAskPatPrompt(ctx: {
-	settings: Settings
-	assetType?: string
-}): Promise<string> {
-	const { settings, assetType } = ctx
-	const docTypeCtx = assetType
-		? ASSET_CONFIGS.find((c) => c.id === assetType)?.aiContext
-		: undefined
-
-	return assemble([
-		identityAskPat(),
-		userContext(settings),
-		askPatInstructions(settings),
-		sharedContext(settings),
-		docTypeCtx ? `# Document\n${docTypeCtx}` : null,
-	])
-}
-
-export async function buildExtractPatPrompt(
-	settings: Settings,
-): Promise<string> {
-	return assemble([
-		identityExtractPat(),
-		locationInstruction(),
-		extractPatInstructions(settings),
-		sharedContext(settings),
-	])
-}
+// System-prompt assembly now lives in the template engine (lib/prompt). What
+// remains here is the model factory + reasoning-option mapping.
 
 // ─── Model factory ────────────────────────────────────────────────────────────
 

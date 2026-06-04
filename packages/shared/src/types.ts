@@ -37,10 +37,14 @@ export type Settings = {
 		googleKey: string
 		gatewayKey: string
 	}
+	// Full, fully-exposed system-prompt templates per surface (markdown with
+	// <TOKEN> markers). Empty = use the shipped DEFAULT_TEMPLATE_*. `context` is
+	// the shared practice-preferences text, injected via <PRACTICECONTEXT>.
 	prompts: {
 		context: string
 		agentpat: string
-		askpat: string
+		draftpat: string
+		notepat: string
 		extractpat: string
 	}
 	integrations: {
@@ -62,7 +66,13 @@ export const DEFAULT_SETTINGS: Settings = {
 		googleKey: "",
 		gatewayKey: "",
 	},
-	prompts: { context: "", agentpat: "", askpat: "", extractpat: "" },
+	prompts: {
+		context: "",
+		agentpat: "",
+		draftpat: "",
+		notepat: "",
+		extractpat: "",
+	},
 	integrations: { epoOpsKey: "", epoOpsSecret: "" },
 }
 

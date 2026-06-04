@@ -1,9 +1,10 @@
 import type { AiEffort } from "@patrickos/shared"
 import {
-	DEFAULT_PROMPT_AGENTPAT,
-	DEFAULT_PROMPT_ASKPAT,
 	DEFAULT_PROMPT_CONTEXT,
-	DEFAULT_PROMPT_EXTRACTPAT,
+	DEFAULT_TEMPLATE_AGENTPAT,
+	DEFAULT_TEMPLATE_DRAFTPAT,
+	DEFAULT_TEMPLATE_EXTRACTPAT,
+	DEFAULT_TEMPLATE_NOTEPAT,
 } from "@patrickos/shared"
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
@@ -49,7 +50,8 @@ type Tab =
 	| "ai-epo"
 	| "prompts-context"
 	| "prompts-agent"
-	| "prompts-ask"
+	| "prompts-draft"
+	| "prompts-note"
 	| "prompts-extract"
 	| "appearance"
 
@@ -185,7 +187,8 @@ const NAV_GROUPS: NavGroup[] = [
 		items: [
 			{ id: "prompts-context", label: "Practice Context", indent: true },
 			{ id: "prompts-agent", label: "AgentPat", indent: true },
-			{ id: "prompts-ask", label: "AskPat", indent: true },
+			{ id: "prompts-draft", label: "DraftPat", indent: true },
+			{ id: "prompts-note", label: "NotePat", indent: true },
 			{ id: "prompts-extract", label: "ExtractPat", indent: true },
 		],
 	},
@@ -244,11 +247,13 @@ export function SettingsPanel({
 	// Prompts
 	const [practiceContext, setPracticeContext] = useState("")
 	const [agentPatInstructions, setAgentPatInstructions] = useState("")
-	const [askPatInstructions, setAskPatInstructions] = useState("")
+	const [draftPatInstructions, setDraftPatInstructions] = useState("")
+	const [notePatInstructions, setNotePatInstructions] = useState("")
 	const [extractPatInstructions, setExtractPatInstructions] = useState("")
 	const [savedPracticeContext, setSavedPracticeContext] = useState("")
 	const [savedAgentPat, setSavedAgentPat] = useState("")
-	const [savedAskPat, setSavedAskPat] = useState("")
+	const [savedDraftPat, setSavedDraftPat] = useState("")
+	const [savedNotePat, setSavedNotePat] = useState("")
 	const [savedExtractPat, setSavedExtractPat] = useState("")
 
 	// EPO
@@ -303,8 +308,10 @@ export function SettingsPanel({
 			setSavedPracticeContext(s.prompts.context)
 			setAgentPatInstructions(s.prompts.agentpat)
 			setSavedAgentPat(s.prompts.agentpat)
-			setAskPatInstructions(s.prompts.askpat)
-			setSavedAskPat(s.prompts.askpat)
+			setDraftPatInstructions(s.prompts.draftpat)
+			setSavedDraftPat(s.prompts.draftpat)
+			setNotePatInstructions(s.prompts.notepat)
+			setSavedNotePat(s.prompts.notepat)
 			setExtractPatInstructions(s.prompts.extractpat)
 			setSavedExtractPat(s.prompts.extractpat)
 			setEpoKey(s.integrations?.epoOpsKey ?? "")
@@ -391,9 +398,13 @@ export function SettingsPanel({
 		await api.settings.update({ prompts: { agentpat: agentPatInstructions } })
 		setSavedAgentPat(agentPatInstructions)
 	}
-	async function saveAskPat() {
-		await api.settings.update({ prompts: { askpat: askPatInstructions } })
-		setSavedAskPat(askPatInstructions)
+	async function saveDraftPat() {
+		await api.settings.update({ prompts: { draftpat: draftPatInstructions } })
+		setSavedDraftPat(draftPatInstructions)
+	}
+	async function saveNotePat() {
+		await api.settings.update({ prompts: { notepat: notePatInstructions } })
+		setSavedNotePat(notePatInstructions)
 	}
 	async function saveExtractPat() {
 		await api.settings.update({
@@ -545,8 +556,8 @@ export function SettingsPanel({
 					{activeTab === "prompts-agent" && (
 						<PromptSection
 							title="AgentPat"
-							description="Task-aware research assistant. Controls how it reasons across your task."
-							defaultPrompt={DEFAULT_PROMPT_AGENTPAT}
+							description="Task-aware research assistant. The full system-prompt template — edit any part; <TOKENS> inject live context and wire tools."
+							defaultPrompt={DEFAULT_TEMPLATE_AGENTPAT}
 							value={agentPatInstructions}
 							savedValue={savedAgentPat}
 							onChange={setAgentPatInstructions}
@@ -554,23 +565,35 @@ export function SettingsPanel({
 							showAlert
 						/>
 					)}
-					{activeTab === "prompts-ask" && (
+					{activeTab === "prompts-draft" && (
 						<PromptSection
-							title="AskPat"
-							description="In-editor writing assistant. Controls how it drafts and refines document content."
-							defaultPrompt={DEFAULT_PROMPT_ASKPAT}
-							value={askPatInstructions}
-							savedValue={savedAskPat}
-							onChange={setAskPatInstructions}
-							onSave={saveAskPat}
+							title="DraftPat"
+							description="In-editor writing assistant for artifacts. The full template controlling how it drafts and refines document content."
+							defaultPrompt={DEFAULT_TEMPLATE_DRAFTPAT}
+							value={draftPatInstructions}
+							savedValue={savedDraftPat}
+							onChange={setDraftPatInstructions}
+							onSave={saveDraftPat}
+							showAlert
+						/>
+					)}
+					{activeTab === "prompts-note" && (
+						<PromptSection
+							title="NotePat"
+							description="In-editor assistant for per-source Notes. The full template; <CURRENTSOURCE> makes it aware of the document the note belongs to."
+							defaultPrompt={DEFAULT_TEMPLATE_NOTEPAT}
+							value={notePatInstructions}
+							savedValue={savedNotePat}
+							onChange={setNotePatInstructions}
+							onSave={saveNotePat}
 							showAlert
 						/>
 					)}
 					{activeTab === "prompts-extract" && (
 						<PromptSection
 							title="ExtractPat"
-							description="PDF metadata extraction. Controls what fields are pulled from uploaded sources."
-							defaultPrompt={DEFAULT_PROMPT_EXTRACTPAT}
+							description="Structured PDF extraction. The full template — keep <LOCATIONINSTRUCTION> and the field guidance, or extraction may break."
+							defaultPrompt={DEFAULT_TEMPLATE_EXTRACTPAT}
 							value={extractPatInstructions}
 							savedValue={savedExtractPat}
 							onChange={setExtractPatInstructions}
@@ -870,7 +893,7 @@ function ByokSection({
 				<div className="grid grid-cols-2 gap-4">
 					<ModelSelect
 						label="Quick model"
-						description="AskPat and ExtractPat — fast and cheap."
+						description="DraftPat, NotePat and ExtractPat — fast and cheap."
 						value={tempQuickModel}
 						options={quickModelOptions}
 						onChange={onQuickModelChange}

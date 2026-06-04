@@ -1,7 +1,7 @@
 import {
-	DEFAULT_PROMPT_AGENTPAT,
-	DEFAULT_PROMPT_ASKPAT,
-	DEFAULT_PROMPT_EXTRACTPAT,
+	DEFAULT_TEMPLATE_AGENTPAT,
+	DEFAULT_TEMPLATE_DRAFTPAT,
+	DEFAULT_TEMPLATE_EXTRACTPAT,
 	TASK_CONFIGS,
 	type TaskType,
 } from "@patrickos/shared"
@@ -55,7 +55,7 @@ type StepId =
 	| "you"
 	| "ai"
 	| "agentpat"
-	| "askpat"
+	| "draftpat"
 	| "extractpat"
 	| "tutorial"
 	| "task"
@@ -63,7 +63,7 @@ const STEPS: StepId[] = [
 	"you",
 	"ai",
 	"agentpat",
-	"askpat",
+	"draftpat",
 	"extractpat",
 	"tutorial",
 	"task",
@@ -85,10 +85,10 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 		description:
 			"AgentPat is your task-aware research assistant. This prompt shapes how it reasons across your task — prosecution style, claim strategy, response tone. The built-in default works well; customize it to your practice.",
 	},
-	askpat: {
-		title: "AskPat system prompt",
+	draftpat: {
+		title: "DraftPat system prompt",
 		description:
-			"AskPat lives inside the document editor — it drafts, refines, and rewrites sections on demand. Leave blank to use the built-in default.",
+			"DraftPat lives inside the document editor — it drafts, refines, and rewrites sections on demand. Leave blank to use the built-in default.",
 	},
 	extractpat: {
 		title: "ExtractPat system prompt",
@@ -177,9 +177,9 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 		"The default prompt instructs AgentPat on patent prosecution conventions and response format.",
 		"You can edit it here or reset to the default any time in Settings.",
 	],
-	askpat: [
-		"This prompt is used by the in-editor AI assistant (AskPat).",
-		"It shapes how AskPat drafts, strengthens, and reformats document sections.",
+	draftpat: [
+		"This prompt is used by the in-editor AI assistant (DraftPat).",
+		"It shapes how DraftPat drafts, strengthens, and reformats document sections.",
 	],
 	extractpat: [
 		"ExtractPat reads PDFs and extracts structured metadata into extractions/ in your task folder.",
@@ -263,7 +263,7 @@ export function OnboardingFlow({
 
 	// Prompts
 	const [agentPatPrompt, setAgentPatPrompt] = useState("")
-	const [askPatPrompt, setAskPatPrompt] = useState("")
+	const [draftPatPrompt, setDraftPatPrompt] = useState("")
 	const [extractPatPrompt, setExtractPatPrompt] = useState("")
 
 	// Load existing settings once on mount
@@ -283,9 +283,9 @@ export function OnboardingFlow({
 			})
 			setQuickModel(s.ai.quickModel || DEFAULT_QUICK_MODEL[p])
 			setDetailedModel(s.ai.model || DEFAULT_DETAILED_MODEL[p])
-			setAgentPatPrompt(s.prompts.agentpat || DEFAULT_PROMPT_AGENTPAT)
-			setAskPatPrompt(s.prompts.askpat || DEFAULT_PROMPT_ASKPAT)
-			setExtractPatPrompt(s.prompts.extractpat || DEFAULT_PROMPT_EXTRACTPAT)
+			setAgentPatPrompt(s.prompts.agentpat || DEFAULT_TEMPLATE_AGENTPAT)
+			setDraftPatPrompt(s.prompts.draftpat || DEFAULT_TEMPLATE_DRAFTPAT)
+			setExtractPatPrompt(s.prompts.extractpat || DEFAULT_TEMPLATE_EXTRACTPAT)
 		})
 	}, [])
 
@@ -341,8 +341,8 @@ export function OnboardingFlow({
 			)
 		} else if (step === "agentpat") {
 			await api.settings.update({ prompts: { agentpat: agentPatPrompt } })
-		} else if (step === "askpat") {
-			await api.settings.update({ prompts: { askpat: askPatPrompt } })
+		} else if (step === "draftpat") {
+			await api.settings.update({ prompts: { draftpat: draftPatPrompt } })
 		} else if (step === "extractpat") {
 			await api.settings.update({ prompts: { extractpat: extractPatPrompt } })
 		}
@@ -653,7 +653,7 @@ export function OnboardingFlow({
 										<div className="flex flex-col gap-1.5">
 											<Label>Quick model</Label>
 											<p className="text-xs text-muted-foreground">
-												AskPat, ExtractPat — fast
+												DraftPat, NotePat, ExtractPat — fast
 											</p>
 											<Select value={quickModel} onValueChange={setQuickModel}>
 												<SelectTrigger>
@@ -723,10 +723,10 @@ export function OnboardingFlow({
 								/>
 							)}
 
-							{stepId === "askpat" && (
+							{stepId === "draftpat" && (
 								<Textarea
-									value={askPatPrompt}
-									onChange={(e) => setAskPatPrompt(e.target.value)}
+									value={draftPatPrompt}
+									onChange={(e) => setDraftPatPrompt(e.target.value)}
 									className="min-h-[280px] font-mono text-xs"
 								/>
 							)}

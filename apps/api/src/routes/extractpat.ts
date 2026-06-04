@@ -3,6 +3,7 @@ import { basename, dirname } from "node:path"
 import {
 	ASSET_CONFIGS,
 	allowedAssetTypesFor,
+	DEFAULT_TEMPLATE_EXTRACTPAT,
 	type ExtractionRecord,
 	extractLocationMap,
 	isExtractable,
@@ -14,11 +15,11 @@ import { stream } from "hono/streaming"
 import { z } from "zod"
 import { readSettings, readTasks, writeExtraction } from "../lib/fs"
 import {
-	buildExtractPatPrompt,
 	createModel,
 	type ReasoningProviderOptions,
 	reasoningOptions,
 } from "../lib/patent-prompt"
+import { render } from "../lib/prompt"
 
 export const extractpatRouter = new Hono()
 
@@ -154,7 +155,11 @@ extractpatRouter.post("/extract", async (c) => {
 			400,
 		)
 
-	const systemStr = await buildExtractPatPrompt(settings)
+	const { system: systemStr } = render(
+		settings.prompts.extractpat || DEFAULT_TEMPLATE_EXTRACTPAT,
+		{ settings },
+		"extractpat",
+	)
 	const { output: extracted } = await generateText({
 		model,
 		providerOptions,
@@ -257,7 +262,11 @@ extractpatRouter.post("/extract/stream", async (c) => {
 			400,
 		)
 
-	const systemStr = await buildExtractPatPrompt(settings)
+	const { system: systemStr } = render(
+		settings.prompts.extractpat || DEFAULT_TEMPLATE_EXTRACTPAT,
+		{ settings },
+		"extractpat",
+	)
 	const result = streamText({
 		model,
 		providerOptions,

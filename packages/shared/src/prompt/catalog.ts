@@ -70,6 +70,30 @@ export const CATALOG = {
 			"# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose extracting from them, and do NOT rely on them in your response:\n{list}",
 	},
 
+	DOCTYPE: {
+		kind: "context",
+		label: "Document type",
+		description:
+			"Guidance for the kind of document open in the editor (claims, response…).",
+		surfaces: ["draftpat"],
+		wrapper: "# Document\n{aiContext}",
+	},
+	LOCATIONINSTRUCTION: {
+		kind: "context",
+		label: "Field locations",
+		description:
+			"How ExtractPat should record where on the page each field was found. Required for the locate feature.",
+		surfaces: ["extractpat"],
+		wrapper: `# Field Locations
+Every field in the schema is an object { content, locations }. Populate:
+- content: the extracted value (string, date, or array as required)
+- locations: an array of { page, zone } indicating where in the document the value was found
+  - page: 1-based page number
+  - zone: "top" | "upper-centre" | "centre" | "lower-centre" | "bottom"
+  - Return multiple entries if the content spans non-adjacent locations
+  - Return an empty array if no content was found`,
+	},
+
 	// ─── Source scope ─────────────────────────────────────────────────────────────
 	OPENSOURCES: {
 		kind: "scope",
@@ -78,6 +102,13 @@ export const CATALOG = {
 		surfaces: ["agentpat"],
 		wrapper:
 			"# Open Documents\n\nThe following files are currently in context:\n{list}",
+	},
+	CURRENTSOURCE: {
+		kind: "scope",
+		label: "Current source",
+		description: "The single source this note is attached to.",
+		surfaces: ["notepat"],
+		wrapper: "# Source\nThis note is attached to {filename}.",
 	},
 
 	// ─── Tools (presence wires the tool + emits its blurb) ────────────────────────

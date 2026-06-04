@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises"
 import { extname, join } from "node:path"
 import {
+	ASSET_CONFIGS,
 	CATALOG,
 	type ExtractionSummary,
 	fill,
@@ -13,17 +14,26 @@ import { type Tool, tool } from "ai"
 import { z } from "zod"
 import { fetchPatent } from "../epo-ops"
 
-// Everything a resolver / tool-builder might need, assembled per request.
+// Everything a resolver / tool-builder might need, assembled per request. Fields
+// are per-surface — a resolver returns null (or a tool builder returns null)
+// when the context it needs is absent, so the same ctx shape serves every
+// surface. `settings` is the only constant.
 export type ResolveCtx = {
 	settings: Settings
-	taskPath: string
+	// AgentPat
+	taskPath?: string
 	taskType?: TaskType
-	openFilePaths: string[]
-	extractedSources: ExtractionSummary[]
+	openFilePaths?: string[]
+	extractedSources?: ExtractionSummary[]
 	/** Basenames of excluded files — for the prompt text. */
-	excludedFiles: string[]
+	excludedFiles?: string[]
 	/** Full paths of excluded files — for gating the readFile tool. */
-	excludedPaths: Set<string>
+	excludedPaths?: Set<string>
+	// Editor surfaces (DraftPat / NotePat)
+	/** Document/asset type id open in the editor (DraftPat), or "note". */
+	assetType?: string
+	/** Filename of the source a note is attached to (NotePat). */
+	currentSourceName?: string
 }
 
 type ContextResolver = {
@@ -73,6 +83,7 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	TASK: {
 		kind: "context",
 		resolve: ({ taskPath, taskType }) => {
+			if (!taskPath) return null
 			const config = taskType
 				? TASK_CONFIGS.find((p) => p.id === taskType)
 				: undefined
@@ -90,7 +101,7 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	OPENSOURCES: {
 		kind: "scope",
 		resolve: ({ openFilePaths }) => {
-			if (!openFilePaths.length) return null
+			if (!openFilePaths?.length) return null
 			const list = openFilePaths.map((p) => `- ${basename(p)}`).join("\n")
 			return fill(w("OPENSOURCES"), { list })
 		},
@@ -99,7 +110,7 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	EXISTINGEXTRACTIONS: {
 		kind: "context",
 		resolve: ({ extractedSources }) => {
-			if (!extractedSources.length) return null
+			if (!extractedSources?.length) return null
 			const list = extractedSources
 				.map(
 					(a) =>
@@ -113,10 +124,34 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	EXCLUDED: {
 		kind: "context",
 		resolve: ({ excludedFiles }) => {
-			if (!excludedFiles.length) return null
+			if (!excludedFiles?.length) return null
 			const list = excludedFiles.map((f) => `- ${f}`).join("\n")
 			return fill(w("EXCLUDED"), { list })
 		},
+	},
+
+	DOCTYPE: {
+		kind: "context",
+		resolve: ({ assetType }) => {
+			const aiContext = assetType
+				? ASSET_CONFIGS.find((c) => c.id === assetType)?.aiContext
+				: undefined
+			return aiContext ? fill(w("DOCTYPE"), { aiContext }) : null
+		},
+	},
+
+	LOCATIONINSTRUCTION: {
+		kind: "context",
+		// Pure boilerplate — the whole block lives in the catalog wrapper.
+		resolve: () => w("LOCATIONINSTRUCTION"),
+	},
+
+	CURRENTSOURCE: {
+		kind: "scope",
+		resolve: ({ currentSourceName }) =>
+			currentSourceName
+				? fill(w("CURRENTSOURCE"), { filename: currentSourceName })
+				: null,
 	},
 
 	// ─── Tools ──────────────────────────────────────────────────────────────────
@@ -146,65 +181,69 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	LISTDIRECTORY: {
 		kind: "tool",
 		build: ({ taskPath }) =>
-			tool({
-				description: CATALOG.LISTDIRECTORY.description,
-				inputSchema: z.object({
-					path: z
-						.string()
-						.describe(
-							"Absolute path to list. Use the task path to list the root.",
-						),
-				}),
-				execute: async ({ path: dirPath }) => {
-					const target = dirPath || taskPath
-					if (!target.startsWith(taskPath))
-						return { error: "Path outside task folder" }
-					try {
-						const entries = await readdir(target, { withFileTypes: true })
-						return entries.map((e) => ({
-							name: e.name,
-							type: e.isDirectory() ? "directory" : "file",
-							path: join(target, e.name),
-						}))
-					} catch {
-						return { error: `Could not list: ${target}` }
-					}
-				},
-			}),
+			taskPath == null
+				? null
+				: tool({
+						description: CATALOG.LISTDIRECTORY.description,
+						inputSchema: z.object({
+							path: z
+								.string()
+								.describe(
+									"Absolute path to list. Use the task path to list the root.",
+								),
+						}),
+						execute: async ({ path: dirPath }) => {
+							const target = dirPath || taskPath
+							if (!target.startsWith(taskPath))
+								return { error: "Path outside task folder" }
+							try {
+								const entries = await readdir(target, { withFileTypes: true })
+								return entries.map((e) => ({
+									name: e.name,
+									type: e.isDirectory() ? "directory" : "file",
+									path: join(target, e.name),
+								}))
+							} catch {
+								return { error: `Could not list: ${target}` }
+							}
+						},
+					}),
 	},
 
 	READFILE: {
 		kind: "tool",
 		build: ({ taskPath, excludedPaths }) =>
-			tool({
-				description: CATALOG.READFILE.description,
-				inputSchema: z.object({
-					path: z.string().describe("Absolute path to the file"),
-				}),
-				execute: async ({ path: filePath }) => {
-					if (!filePath.startsWith(taskPath))
-						return { error: "Path outside task folder" }
-					if (excludedPaths.has(filePath))
-						return {
-							error:
-								"This document is excluded from AgentPat by the attorney. Do not read or use it.",
-						}
-					const ext = extname(filePath).toLowerCase()
-					try {
-						if (ext === ".pdf") {
-							const s = await stat(filePath)
-							return {
-								note: "PDF file — open it in the editor to include it in AI context",
-								size: s.size,
+			taskPath == null
+				? null
+				: tool({
+						description: CATALOG.READFILE.description,
+						inputSchema: z.object({
+							path: z.string().describe("Absolute path to the file"),
+						}),
+						execute: async ({ path: filePath }) => {
+							if (!filePath.startsWith(taskPath))
+								return { error: "Path outside task folder" }
+							if (excludedPaths?.has(filePath))
+								return {
+									error:
+										"This document is excluded from AgentPat by the attorney. Do not read or use it.",
+								}
+							const ext = extname(filePath).toLowerCase()
+							try {
+								if (ext === ".pdf") {
+									const s = await stat(filePath)
+									return {
+										note: "PDF file — open it in the editor to include it in AI context",
+										size: s.size,
+									}
+								}
+								const content = await readFile(filePath, "utf8")
+								return { content: content.slice(0, 20000) } // cap at 20k chars
+							} catch {
+								return { error: `Could not read: ${filePath}` }
 							}
-						}
-						const content = await readFile(filePath, "utf8")
-						return { content: content.slice(0, 20000) } // cap at 20k chars
-					} catch {
-						return { error: `Could not read: ${filePath}` }
-					}
-				},
-			}),
+						},
+					}),
 	},
 
 	FETCHPATENT: {
