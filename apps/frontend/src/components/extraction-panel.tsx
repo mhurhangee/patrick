@@ -13,21 +13,8 @@ import {
 	isExtractable,
 	mergeExtracted,
 } from "@patrickos/shared"
-import { ChevronDown, Clover, Loader2 } from "lucide-react"
+import { Clover, Loader2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select"
 import { api } from "@/lib/api"
 import { DetailsField } from "./details-field"
 
@@ -241,102 +228,6 @@ export function useExtraction({
 }
 
 export type Extraction = ReturnType<typeof useExtraction>
-
-// ExtractPat menu — a single "ExtractPat" button whose popover holds the type
-// picker, Run / Re-run, and Clear. Lives on the shared control row next to the
-// Source ⇄ Extraction toggle. `onRun` lets the SourcePane flip to the Extraction
-// view when extraction starts.
-export function ExtractionMenu({
-	extraction,
-	apiKey,
-	excludedFromAgent,
-	onRun,
-}: {
-	extraction: Extraction
-	apiKey: string
-	excludedFromAgent: boolean
-	onRun: () => void
-}) {
-	const {
-		selectedType,
-		changeType,
-		typeOptions,
-		isExtracting,
-		extractedAt,
-		clearExtraction,
-	} = extraction
-	const [open, setOpen] = useState(false)
-
-	const runBlocked = isExtracting || !apiKey || excludedFromAgent
-	const runTitle = excludedFromAgent
-		? "This source is excluded from AgentPat — include it to extract"
-		: !apiKey
-			? "Connect an AI provider in settings"
-			: undefined
-
-	return (
-		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<Button variant="default" size="sm">
-					{isExtracting ? <Loader2 size={12} className="animate-spin" /> : null}
-					{isExtracting ? "Extracting…" : "ExtractPat"}
-					<ChevronDown size={12} className="opacity-70" />
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent align="end" className="flex w-64 flex-col gap-3">
-				<div className="flex flex-col gap-1.5">
-					<span className="text-xs font-medium text-muted-foreground">
-						Document type
-					</span>
-					<Select value={selectedType} onValueChange={changeType}>
-						<SelectTrigger className="h-8 text-xs w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="auto">Auto-detect</SelectItem>
-							{typeOptions.map((t) => (
-								<SelectItem key={t.id} value={t.id}>
-									{t.typeLabel}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="flex justify-between">
-					{extractedAt && (
-						<Button
-							variant="destructive"
-							size="sm"
-							onClick={() => {
-								setOpen(false)
-								clearExtraction()
-							}}
-							disabled={isExtracting}
-						>
-							Clear
-						</Button>
-					)}
-					<Button
-						variant="default"
-						size="sm"
-						className="ml-auto"
-						onClick={() => {
-							setOpen(false)
-							onRun()
-						}}
-						disabled={runBlocked}
-						title={runTitle}
-					>
-						{isExtracting ? (
-							<Loader2 size={12} className="animate-spin" />
-						) : null}
-						{extractedAt ? "Reextract" : "Extract data"}
-					</Button>
-				</div>
-			</PopoverContent>
-		</Popover>
-	)
-}
 
 // The extracted-data form — the body shown when the Extraction view is active.
 export function ExtractionBody({
