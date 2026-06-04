@@ -103,6 +103,19 @@ export type Chat = {
 	messages: ChatMessage[]
 }
 
+// ─── Per-file flags (meta/flags.json) ────────────────────────────────────────
+// Filename-keyed flags that travel with the task folder. One file, both lists,
+// covering sources + artifacts. (Previously extractions/_excluded + _starred.)
+
+export type Flags = {
+	/** Filenames flagged "do not read" — dropped from AgentPat context. */
+	excluded: string[]
+	/** Filenames flagged "key document" (star). */
+	starred: string[]
+}
+
+export const EMPTY_FLAGS: Flags = { excluded: [], starred: [] }
+
 // ─── Frontend API types ───────────────────────────────────────────────────────
 // Bridge types used by frontend components during the file system migration.
 // These will be replaced as components are rewritten.
