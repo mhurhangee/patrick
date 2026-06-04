@@ -1,10 +1,8 @@
-import { isTokenId, type SurfaceId } from "@patrickos/shared"
+import type { SurfaceId } from "@patrickos/shared"
 import { useEffect, useState } from "react"
-import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { FormattedView } from "./formatted-view"
-import { TokenInspector } from "./inspector"
 import { RawEditor } from "./raw-editor"
 
 type Preview = {
@@ -13,11 +11,10 @@ type Preview = {
 	warnings: string[]
 }
 
-type Inspect = { name: string; rect: DOMRect }
-
-// The prompt template editor: a CodeMirror "Raw" source view (with smart token
-// pills) and a read-only "Formatted" preview, sharing one <TOKEN> string. Live
-// preview values come from /prompt/render against the active task.
+// The prompt template editor: a CodeMirror "Raw" source view (token pills you
+// click to expand inline, hover for the explanation) and a read-only
+// "Formatted" preview, sharing one <TOKEN> string. Live values come from
+// /prompt/render against the active task.
 export function PromptEditor({
 	surface,
 	value,
@@ -31,7 +28,6 @@ export function PromptEditor({
 }) {
 	const [tab, setTab] = useState<"raw" | "formatted">("raw")
 	const [preview, setPreview] = useState<Preview | null>(null)
-	const [inspect, setInspect] = useState<Inspect | null>(null)
 
 	// Debounced live render — same engine the AI uses, so the preview can't drift.
 	useEffect(() => {
@@ -86,7 +82,7 @@ export function PromptEditor({
 						value={value}
 						onChange={onChange}
 						surface={surface}
-						onInspect={(name, rect) => setInspect({ name, rect })}
+						perToken={perToken}
 					/>
 				) : (
 					<FormattedView
@@ -104,40 +100,6 @@ export function PromptEditor({
 					))}
 				</ul>
 			)}
-
-			{/* Inspector popover for tokens clicked in the Raw editor. */}
-			<Popover
-				open={!!inspect}
-				onOpenChange={(o) => {
-					if (!o) setInspect(null)
-				}}
-			>
-				<PopoverAnchor asChild>
-					<div
-						style={{
-							position: "fixed",
-							left: inspect?.rect.left ?? 0,
-							top: inspect?.rect.bottom ?? 0,
-							width: 0,
-							height: 0,
-						}}
-					/>
-				</PopoverAnchor>
-				<PopoverContent align="start" className="w-80">
-					{inspect && isTokenId(inspect.name) ? (
-						<TokenInspector
-							tokenId={inspect.name}
-							surface={surface}
-							value={perToken[inspect.name]}
-						/>
-					) : (
-						<p className="text-muted-foreground text-xs">
-							Unknown token <code>&lt;{inspect?.name}&gt;</code> — left in the
-							prompt as-is.
-						</p>
-					)}
-				</PopoverContent>
-			</Popover>
 		</div>
 	)
 }
