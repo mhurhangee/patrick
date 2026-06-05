@@ -52,13 +52,16 @@ import { cn } from "@/lib/utils"
 import { useAI } from "@/lib/ai-context"
 import { AIChatEditor } from "./ai-chat-editor"
 
-// Which inline assistant is active, from the open document's type (set on mount
-// via the askpat-asset-type key). Notes → NotePat, everything else → DraftPat.
-function assistantName(): string {
+// Which inline-editor surface is active, from the open document's type (set on
+// mount via the editor-asset-type key). Drives both the label and the command set.
+function currentSurface(): "notepat" | "draftpat" {
 	return typeof window !== "undefined" &&
-		localStorage.getItem("askpat-asset-type") === "note"
-		? "NotePat"
-		: "DraftPat"
+		localStorage.getItem("editor-asset-type") === "note"
+		? "notepat"
+		: "draftpat"
+}
+function assistantName(): string {
+	return currentSurface() === "notepat" ? "NotePat" : "DraftPat"
 }
 
 export function AIMenu() {
@@ -386,6 +389,17 @@ const aiChatItems = {
 			})
 		},
 	},
+	summarise: {
+		icon: <ListMinus />,
+		label: "Summarise",
+		value: "summarise",
+		onSelect: ({ editor }) => {
+			void editor.getApi(AIChatPlugin).aiChat.submit("", {
+				prompt: "Summarise this concisely as a few bullet points",
+				toolName: "edit",
+			})
+		},
+	},
 } satisfies Record<
 	string,
 	{
@@ -405,40 +419,53 @@ const aiChatItems = {
 	}
 >
 
-const menuStateItems: Record<
-	EditorChatState,
-	{
-		items: (typeof aiChatItems)[keyof typeof aiChatItems][]
-		heading?: string
-	}[]
-> = {
-	cursorCommand: [
-		{
-			items: [aiChatItems.continueWriting, aiChatItems.draftArgument],
-		},
-	],
-	cursorSuggestion: [
-		{
-			items: [aiChatItems.accept, aiChatItems.discard, aiChatItems.tryAgain],
-		},
-	],
-	selectionCommand: [
-		{
-			heading: "Edit",
-			items: [
-				aiChatItems.strengthenArgument,
-				aiChatItems.makeConcise,
-				aiChatItems.formalLanguage,
-				aiChatItems.fixGrammar,
-				aiChatItems.amendClaim,
-			],
-		},
-	],
-	selectionSuggestion: [
-		{
-			items: [aiChatItems.accept, aiChatItems.discard, aiChatItems.tryAgain],
-		},
-	],
+type MenuGroup = {
+	items: (typeof aiChatItems)[keyof typeof aiChatItems][]
+	heading?: string
+}
+
+const suggestionItems = [
+	aiChatItems.accept,
+	aiChatItems.discard,
+	aiChatItems.tryAgain,
+]
+
+// Command sets differ by surface: DraftPat (artifacts) gets prosecution drafting
+// actions; NotePat (scratch notes) gets lighter writing/cleanup ones — the
+// claim/argument/USPTO actions don't belong in notes.
+function menuStateItemsFor(
+	surface: "notepat" | "draftpat",
+): Record<EditorChatState, MenuGroup[]> {
+	const isNote = surface === "notepat"
+	return {
+		cursorCommand: [
+			{
+				items: isNote
+					? [aiChatItems.continueWriting]
+					: [aiChatItems.continueWriting, aiChatItems.draftArgument],
+			},
+		],
+		cursorSuggestion: [{ items: suggestionItems }],
+		selectionCommand: [
+			{
+				heading: "Edit",
+				items: isNote
+					? [
+							aiChatItems.summarise,
+							aiChatItems.makeConcise,
+							aiChatItems.fixGrammar,
+						]
+					: [
+							aiChatItems.strengthenArgument,
+							aiChatItems.makeConcise,
+							aiChatItems.formalLanguage,
+							aiChatItems.fixGrammar,
+							aiChatItems.amendClaim,
+						],
+			},
+		],
+		selectionSuggestion: [{ items: suggestionItems }],
+	}
 }
 
 export const AIMenuItems = ({
@@ -464,11 +491,12 @@ export const AIMenuItems = ({
 		return isSelecting ? "selectionCommand" : "cursorCommand"
 	}, [isSelecting, messages])
 
-	const menuGroups = useMemo(() => {
-		const items = menuStateItems[menuState]
-
-		return items
-	}, [menuState])
+	// Surface read once on mount (the menu remounts each time it opens).
+	const stateItems = useMemo(() => menuStateItemsFor(currentSurface()), [])
+	const menuGroups = useMemo(
+		() => stateItems[menuState],
+		[stateItems, menuState],
+	)
 
 	useEffect(() => {
 		if (menuGroups.length > 0 && menuGroups[0].items.length > 0) {

@@ -4,6 +4,7 @@ import {
 	type SurfaceId,
 	TOKEN_RE,
 	type TokenId,
+	type TokenKind,
 } from "@patrickos/shared"
 import type { Tool } from "ai"
 import { RESOLVERS, type ResolveCtx } from "./registry"
@@ -12,6 +13,9 @@ export type RenderResult = {
 	system: string
 	tools: Record<string, Tool>
 	warnings: string[]
+	// Per known token in the template: did it actually contribute content? For
+	// tools, filled = wired. Lets callers log what context a turn really got.
+	report: { id: TokenId; kind: TokenKind; filled: boolean }[]
 }
 
 // Render a template string against a context. The set of tool tokens present in
@@ -28,6 +32,7 @@ export async function render(
 ): Promise<RenderResult> {
 	const tools: Record<string, Tool> = {}
 	const warnings: string[] = []
+	const report: RenderResult["report"] = []
 	const replacements = new Map<string, string>()
 	const counts = new Map<string, number>()
 
@@ -55,8 +60,11 @@ export async function render(
 				tools[meta.label] = built
 				replacements.set(id, meta.wrapper ?? "")
 			}
+			report.push({ id, kind: meta.kind, filled: !!built })
 		} else {
-			replacements.set(id, (await resolver.resolve(ctx)) ?? "")
+			const out = (await resolver.resolve(ctx)) ?? ""
+			replacements.set(id, out)
+			report.push({ id, kind: meta.kind, filled: out.trim() !== "" })
 		}
 	}
 
@@ -70,5 +78,5 @@ export async function render(
 	// Optional blocks resolve to "" — collapse the blank lines they leave behind
 	// so output stays clean (mirrors the old assemble() filter-then-join).
 	const cleaned = system.replace(/\n{3,}/g, "\n\n").trim()
-	return { system: cleaned, tools, warnings }
+	return { system: cleaned, tools, warnings, report }
 }

@@ -259,7 +259,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const extractedSources = await listExtractions(taskPath)
 
 	const template = settings.prompts.agentpat || DEFAULT_TEMPLATE_AGENTPAT
-	const { system, tools } = await render(
+	const { system, tools, warnings, report } = await render(
 		template,
 		{
 			settings,
@@ -273,6 +273,19 @@ chatsRouter.post("/:id/messages", async (c) => {
 		"agentpat",
 	)
 	const fileParts = await buildFileParts(openFilePaths ?? [])
+
+	// What context did this turn actually get? (Empty tokens flagged — e.g.
+	// <EXTRACTEDDATA> present but unfilled means the agent will lean on readFile.)
+	const ctxTokens = report
+		.filter((t) => t.kind !== "tool")
+		.map((t) => (t.filled ? t.id : `${t.id}(empty)`))
+	console.log(
+		`[AgentPat] context: ${ctxTokens.join(", ") || "none"} | tools: ${
+			Object.keys(tools).join(", ") || "none"
+		} | pdfs: ${fileParts.length}${
+			warnings.length ? ` | warnings: ${warnings.length}` : ""
+		}`,
+	)
 
 	const resolvedProvider = provider || settings.ai.provider
 	const keyField = `${resolvedProvider}Key` as

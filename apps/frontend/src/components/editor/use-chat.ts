@@ -81,12 +81,12 @@ function createChatTransport({ api }: { api: string }) {
 					value: tempEditor.children as TElement[],
 				})
 
-				const provider = localStorage.getItem("askpat-provider") || "anthropic"
-				const model = localStorage.getItem("askpat-quick-model") || ""
+				const provider = localStorage.getItem("editor-provider") || "anthropic"
+				const model = localStorage.getItem("editor-quick-model") || ""
 				const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
-				const assetType = localStorage.getItem("askpat-asset-type") || undefined
+				const assetType = localStorage.getItem("editor-asset-type") || undefined
 				const sourceName =
-					localStorage.getItem("askpat-source-name") || undefined
+					localStorage.getItem("editor-source-name") || undefined
 
 				return fetch(input, {
 					...init,

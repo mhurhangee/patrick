@@ -18,9 +18,9 @@ export const CopilotKit = [
 				fetch: (async (input, init) => {
 					// Inject AI settings (BYOK — keys never stored server-side)
 					const initBody = JSON.parse((init?.body as string) ?? "{}")
-					const provider = localStorage.getItem("askpat-provider") || "anthropic"
+					const provider = localStorage.getItem("editor-provider") || "anthropic"
 					const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
-					const model = localStorage.getItem("askpat-quick-model") || ""
+					const model = localStorage.getItem("editor-quick-model") || ""
 					return fetch(input, {
 						...init,
 						body: JSON.stringify({ ...initBody, provider, apiKey, model }),
@@ -39,7 +39,7 @@ export const CopilotKit = [
 			// autoTriggerQuery only ADDS triggers (when last char is space) but never
 			// cancels them when the user keeps typing.
 			autoTriggerQuery: ({ editor }) => {
-				const _provider = localStorage.getItem("askpat-provider") || "anthropic"
+				const _provider = localStorage.getItem("editor-provider") || "anthropic"
 				if (!localStorage.getItem(`ai-${_provider}-key`)) return false
 				if (editor.getOptions(CopilotPlugin).suggestionText) return false
 				if (editor.api.isEmpty(editor.selection, { block: true })) return false
