@@ -95,11 +95,7 @@ function SaveButton({
 	onClick: () => void
 }) {
 	return (
-		<Button
-			onClick={onClick}
-			disabled={!isDirty || status === "saving"}
-			variant="outline"
-		>
+		<Button onClick={onClick} disabled={!isDirty || status === "saving"}>
 			{status === "saving" ? (
 				<Loader2 size={12} className="animate-spin" />
 			) : status === "saved" ? (
@@ -132,11 +128,10 @@ function SectionLayout({
 }) {
 	return (
 		<>
-			<div className="shrink-0 border-b px-8 py-5">
-				<h2 className="text-lg font-semibold font-heading tracking-tight">
+			<div className="flex h-14 shrink-0 items-center border-b px-8">
+				<h2 className="font-heading font-semibold text-base tracking-tight">
 					{title}
 				</h2>
-				<p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
 			</div>
 			<div
 				className={cn(
@@ -144,10 +139,15 @@ function SectionLayout({
 					fill ? "flex min-h-0 flex-col overflow-hidden" : "overflow-y-auto",
 				)}
 			>
+				{description && (
+					<p className="mb-4 max-w-2xl shrink-0 text-muted-foreground text-xs">
+						{description}
+					</p>
+				)}
 				{children}
 			</div>
 			{footer && (
-				<div className="flex shrink-0 items-center justify-between border-t px-8 py-3">
+				<div className="flex h-14 shrink-0 items-center justify-between border-t px-8">
 					{footer}
 				</div>
 			)}
@@ -186,7 +186,12 @@ type NavGroup = {
 }
 
 const NAV_GROUPS: NavGroup[] = [
-	{ items: [{ id: "you", label: "You" }] },
+	{
+		items: [
+			{ id: "you", label: "You" },
+			{ id: "prompts-context", label: "Practice Context", indent: true },
+		],
+	},
 	{
 		label: "AI",
 		items: [
@@ -197,7 +202,6 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Prompts",
 		items: [
-			{ id: "prompts-context", label: "Practice Context", indent: true },
 			{ id: "prompts-agent", label: "AgentPat", indent: true },
 			{ id: "prompts-draft", label: "DraftPat", indent: true },
 			{ id: "prompts-note", label: "NotePat", indent: true },
@@ -449,7 +453,7 @@ export function SettingsPanel({
 		>
 			{/* Sidebar */}
 			<div className="w-52 border-r flex flex-col shrink-0">
-				<div className="px-5 py-4 border-b">
+				<div className="flex h-14 items-center border-b px-5">
 					<p className="text-sm font-semibold font-heading">Settings</p>
 				</div>
 				<nav className="flex-1 overflow-y-auto p-2">
@@ -480,7 +484,7 @@ export function SettingsPanel({
 						</div>
 					))}
 				</nav>
-				<div className="p-3 border-t">
+				<div className="flex h-14 items-center border-t px-3">
 					<button
 						type="button"
 						onClick={handleSwitchProfile}
@@ -492,13 +496,17 @@ export function SettingsPanel({
 			</div>
 
 			{/* Content */}
-			<div className="flex-1 flex flex-col overflow-hidden">
-				{/* Top bar */}
-				<div className="flex items-center justify-end border-b px-4 py-2 shrink-0">
-					<Button type="button" variant="ghost" size="icon" onClick={onClose}>
-						<X size={16} />
-					</Button>
-				</div>
+			<div className="relative flex-1 flex flex-col overflow-hidden">
+				{/* Close — floats in the section header band */}
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					onClick={onClose}
+					className="absolute right-3 top-2 z-10"
+				>
+					<X size={16} />
+				</Button>
 
 				{/* Active section */}
 				<div className="flex flex-col flex-1 overflow-hidden">
@@ -560,12 +568,15 @@ export function SettingsPanel({
 					{activeTab === "prompts-context" && (
 						<PromptSection
 							title="Practice Context"
-							description="Freeform context included in every AI call — prosecution style, specialisations, formatting preferences."
+							description="Freeform notes about how you practise, injected into every AI surface via the <PRACTICECONTEXT> token. Prosecution style, specialisations, house formatting — whatever you'd tell a new associate."
 							defaultPrompt={DEFAULT_PROMPT_CONTEXT}
 							value={practiceContext}
 							savedValue={savedPracticeContext}
 							onChange={setPracticeContext}
 							onSave={saveContext}
+							placeholder={
+								"e.g.\n- Prefer the narrowest amendment that overcomes the rejection.\n- Always cite MPEP sections for US matters.\n- House style: British English, formal tone, no contractions."
+							}
 						/>
 					)}
 					{activeTab === "prompts-agent" && (
@@ -663,7 +674,7 @@ function YouSection({
 	return (
 		<SectionLayout
 			title="You"
-			description="Your name and firm appear in AI-drafted documents."
+			description="Identifies this profile (name + firm label it) and is given to every AI surface via the <ATTORNEY> token. For freeform practice preferences, use Practice Context."
 			footer={
 				<>
 					<div />
@@ -837,8 +848,8 @@ function ByokSection({
 				</>
 			}
 		>
-			<div className="flex flex-col gap-6 max-w-md">
-				<div className="grid grid-cols-4 gap-3">
+			<div className="flex flex-col gap-6 max-w-2xl">
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 					{PROVIDER_OPTIONS.map((p) => (
 						<button
 							key={p.id}
@@ -1059,6 +1070,7 @@ function PromptSection({
 	showAlert = false,
 	surface,
 	taskPath,
+	placeholder,
 }: {
 	title: string
 	description: string
@@ -1071,6 +1083,8 @@ function PromptSection({
 	/** When set, edit as a full <TOKEN> template (PromptEditor); else plain text. */
 	surface?: SurfaceId
 	taskPath?: string
+	/** Placeholder for the plain-text (non-surface) variant. */
+	placeholder?: string
 }) {
 	const [alertOpen, setAlertOpen] = useState(false)
 	const { status, wrap } = useSaveButton()
@@ -1116,7 +1130,7 @@ function PromptSection({
 					<Textarea
 						value={displayValue}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder="Enter custom instructions…"
+						placeholder={placeholder ?? "Enter custom instructions…"}
 						className="min-h-[320px] font-mono text-xs"
 					/>
 				)}
