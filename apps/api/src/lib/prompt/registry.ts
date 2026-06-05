@@ -3,6 +3,7 @@ import { extname, join } from "node:path"
 import {
 	ASSET_CONFIGS,
 	CATALOG,
+	type ExtractionRecord,
 	type ExtractionSummary,
 	fill,
 	type Settings,
@@ -13,6 +14,7 @@ import {
 import { type Tool, tool } from "ai"
 import { z } from "zod"
 import { fetchPatent } from "../epo-ops"
+import { readExtraction, readNote } from "../fs"
 
 // Everything a resolver / tool-builder might need, assembled per request. Fields
 // are per-surface — a resolver returns null (or a tool builder returns null)
@@ -38,7 +40,8 @@ export type ResolveCtx = {
 
 type ContextResolver = {
 	kind: "context" | "scope"
-	resolve: (ctx: ResolveCtx) => string | null
+	// May be async — some resolvers read files (notes, extractions).
+	resolve: (ctx: ResolveCtx) => string | null | Promise<string | null>
 }
 type ToolResolver = {
 	kind: "tool"
@@ -50,6 +53,35 @@ export type Resolver = ContextResolver | ToolResolver
 
 const w = (id: TokenId) => CATALOG[id].wrapper ?? ""
 const basename = (p: string) => p.split("/").at(-1) ?? p
+
+// Render an extraction record's flat fields as readable bullet lines.
+function formatExtraction(rec: ExtractionRecord): string {
+	const lines = Object.entries(rec.details)
+		.filter(
+			([, v]) => v != null && v !== "" && !(Array.isArray(v) && v.length === 0),
+		)
+		.map(([k, v]) => `- ${k}: ${Array.isArray(v) ? v.join("; ") : String(v)}`)
+	return `## ${rec.filename} (${rec.assetType})\n${lines.join("\n")}`
+}
+
+// Pull plain text out of a stored Plate note (JSON value) — no Plate on the
+// server, so walk the node tree and collect text, one top-level block per line.
+function plateToText(raw: string): string {
+	let value: unknown
+	try {
+		value = JSON.parse(raw)
+	} catch {
+		return ""
+	}
+	if (!Array.isArray(value)) return ""
+	const blockText = (node: unknown): string => {
+		const n = node as { text?: string; children?: unknown[] }
+		if (typeof n.text === "string") return n.text
+		if (Array.isArray(n.children)) return n.children.map(blockText).join("")
+		return ""
+	}
+	return (value as unknown[]).map(blockText).join("\n").trim()
+}
 
 // ─── Resolvers ──────────────────────────────────────────────────────────────
 // One per catalog token. Context resolvers return text or null (null = omit the
@@ -120,6 +152,37 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			if (!excludedFiles?.length) return null
 			const list = excludedFiles.map((f) => `- ${f}`).join("\n")
 			return fill(w("EXCLUDED"), { list })
+		},
+	},
+
+	EXTRACTEDDATA: {
+		kind: "context",
+		resolve: async ({ taskPath, openFilePaths }) => {
+			if (!taskPath || !openFilePaths?.length) return null
+			const blocks: string[] = []
+			for (const p of openFilePaths) {
+				const rec = await readExtraction(taskPath, basename(p))
+				if (rec) blocks.push(formatExtraction(rec))
+			}
+			return blocks.length
+				? fill(w("EXTRACTEDDATA"), { list: blocks.join("\n\n") })
+				: null
+		},
+	},
+
+	NOTES: {
+		kind: "context",
+		resolve: async ({ taskPath, openFilePaths }) => {
+			if (!taskPath || !openFilePaths?.length) return null
+			const blocks: string[] = []
+			for (const p of openFilePaths) {
+				const raw = await readNote(taskPath, basename(p))
+				const text = raw ? plateToText(raw) : ""
+				if (text) blocks.push(`## ${basename(p)}\n${text}`)
+			}
+			return blocks.length
+				? fill(w("NOTES"), { list: blocks.join("\n\n") })
+				: null
 		},
 	},
 

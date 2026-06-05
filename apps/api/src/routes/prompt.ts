@@ -43,7 +43,7 @@ promptRouter.post("/render", async (c) => {
 		currentSourceName: body.currentSourceName,
 	}
 
-	const { system, warnings } = render(template, ctx, surface)
+	const { system, warnings } = await render(template, ctx, surface)
 
 	// Resolve each token in isolation for the inspector / inline chip values.
 	const perToken: Record<string, string> = {}
@@ -52,7 +52,7 @@ promptRouter.post("/render", async (c) => {
 		const name = m[1]
 		if (!isTokenId(name) || seen.has(name)) continue
 		seen.add(name)
-		perToken[name] = render(`<${name}>`, ctx, surface).system
+		perToken[name] = (await render(`<${name}>`, ctx, surface)).system
 	}
 
 	return c.json({ system, perToken, warnings })

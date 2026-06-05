@@ -259,7 +259,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const extractedSources = await listExtractions(taskPath)
 
 	const template = settings.prompts.agentpat || DEFAULT_TEMPLATE_AGENTPAT
-	const { system, tools } = render(
+	const { system, tools } = await render(
 		template,
 		{
 			settings,

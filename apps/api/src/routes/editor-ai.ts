@@ -77,7 +77,7 @@ editorAiRouter.post("/command", async (c) => {
 		surface === "notepat"
 			? settings.prompts.notepat || DEFAULT_TEMPLATE_NOTEPAT
 			: settings.prompts.draftpat || DEFAULT_TEMPLATE_DRAFTPAT
-	const { system } = render(
+	const { system } = await render(
 		template,
 		{ settings, assetType, currentSourceName: sourceName },
 		surface,

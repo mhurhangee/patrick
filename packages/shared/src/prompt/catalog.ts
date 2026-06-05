@@ -80,6 +80,22 @@ export const CATALOG = {
 			"# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose extracting from them, and do NOT rely on them in your response:\n{list}",
 	},
 
+	EXTRACTEDDATA: {
+		kind: "context",
+		label: "Extracted data",
+		description:
+			"The structured ExtractPat data for your open sources, inline (vs. the agent reading the JSON itself).",
+		surfaces: ["agentpat"],
+		wrapper:
+			"# Extracted Data\nStructured data already extracted from the open sources:\n{list}",
+	},
+	NOTES: {
+		kind: "context",
+		label: "Notes",
+		description: "Your written notes on the open sources, inline.",
+		surfaces: ["agentpat"],
+		wrapper: "# Notes\nThe attorney's notes on the open sources:\n{list}",
+	},
 	DOCTYPE: {
 		kind: "context",
 		label: "Document type",

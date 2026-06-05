@@ -18,38 +18,55 @@ export type RenderResult = {
 // the template IS the agent's toolset — that's the push/pull lever (include
 // <EXTRACTEDDATA> to push content, or omit it and keep <READFILE> to pull).
 // Unknown / out-of-surface / duplicate tokens warn but never block.
-export function render(
+//
+// Async because some context resolvers read files (notes, extractions) — and
+// each token is resolved once, only if it appears, so that I/O is lazy.
+export async function render(
 	template: string,
 	ctx: ResolveCtx,
 	surface: SurfaceId,
-): RenderResult {
+): Promise<RenderResult> {
 	const tools: Record<string, Tool> = {}
 	const warnings: string[] = []
-	const seen = new Set<TokenId>()
+	const replacements = new Map<string, string>()
+	const counts = new Map<string, number>()
 
-	const system = template.replace(TOKEN_RE, (match, name: string) => {
+	for (const m of template.matchAll(TOKEN_RE)) {
+		const name = m[1]
+		counts.set(name, (counts.get(name) ?? 0) + 1)
+		if (replacements.has(name)) continue // resolve each token once
+
 		if (!isTokenId(name)) {
 			warnings.push(`Unknown token <${name}> — left as-is.`)
-			return match
+			replacements.set(name, m[0])
+			continue
 		}
 		const id = name as TokenId
 		const meta = CATALOG[id]
-
 		if (!(meta.surfaces as readonly SurfaceId[]).includes(surface))
 			warnings.push(`<${id}> isn't available on ${surface}; it still resolved.`)
-		if (seen.has(id)) warnings.push(`<${id}> appears more than once.`)
-		seen.add(id)
 
 		const resolver = RESOLVERS[id]
 		if (resolver.kind === "tool") {
 			const built = resolver.build(ctx)
-			if (!built) return "" // omitted (e.g. fetchPatent without EPO keys)
-			tools[meta.label] = built
-			return meta.wrapper ?? ""
+			if (!built) {
+				replacements.set(id, "") // omitted (e.g. fetchPatent without EPO keys)
+			} else {
+				tools[meta.label] = built
+				replacements.set(id, meta.wrapper ?? "")
+			}
+		} else {
+			replacements.set(id, (await resolver.resolve(ctx)) ?? "")
 		}
-		return resolver.resolve(ctx) ?? ""
-	})
+	}
 
+	for (const [name, c] of counts)
+		if (c > 1) warnings.push(`<${name}> appears ${c} times.`)
+
+	const system = template.replace(
+		TOKEN_RE,
+		(match, name: string) => replacements.get(name) ?? match,
+	)
 	// Optional blocks resolve to "" — collapse the blank lines they leave behind
 	// so output stays clean (mirrors the old assemble() filter-then-join).
 	const cleaned = system.replace(/\n{3,}/g, "\n\n").trim()

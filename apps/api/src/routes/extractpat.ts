@@ -155,7 +155,7 @@ extractpatRouter.post("/extract", async (c) => {
 			400,
 		)
 
-	const { system: systemStr } = render(
+	const { system: systemStr } = await render(
 		settings.prompts.extractpat || DEFAULT_TEMPLATE_EXTRACTPAT,
 		{ settings },
 		"extractpat",
@@ -262,7 +262,7 @@ extractpatRouter.post("/extract/stream", async (c) => {
 			400,
 		)
 
-	const { system: systemStr } = render(
+	const { system: systemStr } = await render(
 		settings.prompts.extractpat || DEFAULT_TEMPLATE_EXTRACTPAT,
 		{ settings },
 		"extractpat",
