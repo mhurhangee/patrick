@@ -1,8 +1,13 @@
-import { readdir, stat } from "node:fs/promises"
-import { extname, join } from "node:path"
+import { stat } from "node:fs/promises"
 import type { TaskEntry, TaskType } from "@patrickos/shared"
 import { Hono } from "hono"
-import { ensureTaskDirs, readTasks, writeTasks } from "../lib/fs"
+import {
+	ensureTaskDirs,
+	listArtifacts,
+	listSources,
+	readTasks,
+	writeTasks,
+} from "../lib/fs"
 
 export const tasksRouter = new Hono()
 
@@ -65,9 +70,6 @@ tasksRouter.delete("/", async (c) => {
 
 // ─── Folder file listing ──────────────────────────────────────────────────────
 
-const SOURCE_EXTS = new Set([".pdf", ".docx", ".doc"])
-const SKIP_DIRS = new Set(["artifacts", "chats", "extractions"])
-
 tasksRouter.get("/files", async (c) => {
 	const path = c.req.query("path")
 	if (!path) return c.json({ error: "path required" }, 400)
@@ -93,51 +95,3 @@ tasksRouter.get("/probe", async (c) => {
 		return c.json({ exists: false, sourceCount: 0 })
 	}
 })
-
-async function listSources(taskPath: string) {
-	try {
-		const entries = await readdir(taskPath, { withFileTypes: true })
-		const files = []
-		for (const entry of entries) {
-			if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue
-			if (!entry.isFile()) continue
-			const ext = extname(entry.name).toLowerCase()
-			if (!SOURCE_EXTS.has(ext)) continue
-			files.push({
-				filename: entry.name,
-				path: join(taskPath, entry.name),
-				ext: ext.slice(1),
-			})
-		}
-		return files
-	} catch {
-		return []
-	}
-}
-
-const ARTIFACT_EXTS = new Set([".json", ".docx"])
-
-async function listArtifacts(taskPath: string) {
-	const artifactsPath = join(taskPath, "artifacts")
-	try {
-		const entries = await readdir(artifactsPath, { withFileTypes: true })
-		const files = []
-		for (const entry of entries) {
-			if (!entry.isFile()) continue
-			const ext = extname(entry.name).toLowerCase()
-			if (!ARTIFACT_EXTS.has(ext)) continue
-			const filePath = join(artifactsPath, entry.name)
-			const s = await stat(filePath)
-			files.push({
-				filename: entry.name,
-				path: filePath,
-				ext: ext.slice(1),
-				createdAt: s.birthtime.toISOString(),
-				updatedAt: s.mtime.toISOString(),
-			})
-		}
-		return files
-	} catch {
-		return []
-	}
-}

@@ -20,8 +20,8 @@ export type RenderResult = {
 
 // Render a template string against a context. The set of tool tokens present in
 // the template IS the agent's toolset — that's the push/pull lever (include
-// <EXTRACTEDDATA> to push content, or omit it and keep <READFILE> to pull).
-// Unknown / out-of-surface / duplicate tokens warn but never block.
+// <OPENDOCUMENTS> to push the open docs' content, or keep <READFILE> to let the
+// agent pull). Unknown / out-of-surface / duplicate tokens warn but never block.
 //
 // Async because some context resolvers read files (notes, extractions) — and
 // each token is resolved once, only if it appears, so that I/O is lazy.

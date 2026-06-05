@@ -11,6 +11,21 @@ export type TokenKind = "context" | "scope" | "tool"
 
 export type SurfaceId = "agentpat" | "draftpat" | "notepat" | "extractpat"
 
+// How much of an OPEN document the agent gets, per the OPEN=CONTEXT model:
+//   original    — the source itself (PDF file part / artifact text), nothing else
+//   derivations — its cheap derived layer (extractions, notes), not the original
+//   both        — everything (default)
+// Chosen per open doc in the source viewer, sent with the chat request.
+export type ContextMode = "original" | "derivations" | "both"
+
+// One open document as sent from the client with a chat request. `path` is the
+// absolute file path (also the asset id); `mode` is the per-doc context choice.
+export type OpenDoc = {
+	path: string
+	kind: "source" | "artifact"
+	mode: ContextMode
+}
+
 // Friendly labels + one-liners per kind, for grouping in the token shelf.
 export const KIND_INFO: Record<TokenKind, { label: string; help: string }> = {
 	context: {
@@ -63,14 +78,6 @@ export const CATALOG = {
 		surfaces: ["agentpat"],
 		wrapper: "# Task\nTask folder: {folder}\nPath: {path}{typeLines}",
 	},
-	EXISTINGEXTRACTIONS: {
-		kind: "context",
-		label: "Existing extractions",
-		description: "Sources already extracted by ExtractPat, as a readable list.",
-		surfaces: ["agentpat"],
-		wrapper:
-			"# Existing Extractions\nThese sources have already been extracted by ExtractPat. The structured result is saved as JSON — read it with the readFile tool (it is far cheaper than re-reading the PDF). Do NOT propose extractSource for a source listed here; only offer it for sources that are NOT yet extracted.\n{list}",
-	},
 	EXCLUDED: {
 		kind: "context",
 		label: "Excluded documents",
@@ -80,22 +87,6 @@ export const CATALOG = {
 			"# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose extracting from them, and do NOT rely on them in your response:\n{list}",
 	},
 
-	EXTRACTEDDATA: {
-		kind: "context",
-		label: "Extracted data",
-		description:
-			"The structured ExtractPat data for your open sources, inline (vs. the agent reading the JSON itself).",
-		surfaces: ["agentpat"],
-		wrapper:
-			"# Extracted Data\nStructured data already extracted from the open sources:\n{list}",
-	},
-	NOTES: {
-		kind: "context",
-		label: "Notes",
-		description: "Your written notes on the open sources, inline.",
-		surfaces: ["agentpat"],
-		wrapper: "# Notes\nThe attorney's notes on the open sources:\n{list}",
-	},
 	DOCTYPE: {
 		kind: "context",
 		label: "Document type",
@@ -120,14 +111,24 @@ Every field in the schema is an object { content, locations }. Populate:
   - Return an empty array if no content was found`,
 	},
 
-	// ─── Source scope ─────────────────────────────────────────────────────────────
-	OPENSOURCES: {
+	// ─── Source scope (the OPEN=CONTEXT spine) ───────────────────────────────────
+	OPENDOCUMENTS: {
 		kind: "scope",
-		label: "Open sources",
-		description: "Every source currently open in a tab (in AI context).",
+		label: "Open documents",
+		description:
+			"Each document the attorney has open, in full — original (PDF file part / artifact text), its derivations, and its notes — per the doc's context mode.",
 		surfaces: ["agentpat"],
 		wrapper:
-			"# Open Documents\n\nThe following files are currently in context:\n{list}",
+			"# Open Documents\nThe attorney has opened these documents — this is the context they have deliberately curated for you. Treat it as your primary, authoritative material and reason over it fully. Any open PDFs are attached above as file parts.\n\n{list}",
+	},
+	CLOSEDDOCUMENTS: {
+		kind: "scope",
+		label: "Other documents",
+		description:
+			"Awareness-only roster of documents that exist in the task but aren't open (filename, type, which derivations exist, notes) — never their content.",
+		surfaces: ["agentpat"],
+		wrapper:
+			"# Other Documents in the Task (not open)\nThese exist in the task folder but are NOT open, so you see only awareness-level metadata — never their full content. Use this to notice potentially relevant material and to suggest the attorney open it. Do NOT rely on these as the basis for any substantive claim or prior-art analysis — for that you need the open original.\n\n{list}",
 	},
 	CURRENTSOURCE: {
 		kind: "scope",

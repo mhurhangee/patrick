@@ -4,13 +4,13 @@ import {
 	type ChatMessage,
 	CONTEXT_OVERFLOW_MARKER,
 	DEFAULT_TEMPLATE_AGENTPAT,
+	type OpenDoc,
 } from "@patrickos/shared"
 import type { ModelMessage } from "ai"
 import { createAgentUIStreamResponse, generateText, ToolLoopAgent } from "ai"
 import { Hono } from "hono"
 import {
 	deleteChat,
-	listExtractions,
 	readChat,
 	readChatIndex,
 	readSettings,
@@ -238,7 +238,7 @@ chatsRouter.post("/:id/messages", async (c) => {
 		apiKey,
 		detailedModel,
 		taskPath,
-		openFilePaths,
+		openDocs,
 		excludedPaths,
 	} = await c.req.json<{
 		messages: { id: string; role: "user" | "assistant"; parts: unknown[] }[]
@@ -246,17 +246,17 @@ chatsRouter.post("/:id/messages", async (c) => {
 		apiKey: string
 		detailedModel: string
 		taskPath: string
-		openFilePaths: string[]
+		openDocs?: OpenDoc[]
 		excludedPaths?: string[]
 	}>()
 
+	const open = openDocs ?? []
 	const excludedSet = new Set(excludedPaths ?? [])
 
 	const settings = await readSettings()
 
 	const tasks = await readTasks()
 	const taskType = tasks.find((p) => p.path === taskPath)?.taskType
-	const extractedSources = await listExtractions(taskPath)
 
 	const template = settings.prompts.agentpat || DEFAULT_TEMPLATE_AGENTPAT
 	const { system, tools, warnings, report } = await render(
@@ -265,17 +265,16 @@ chatsRouter.post("/:id/messages", async (c) => {
 			settings,
 			taskPath,
 			taskType,
-			openFilePaths: openFilePaths ?? [],
-			extractedSources,
+			openDocs: open,
 			excludedFiles: [...excludedSet].map((p) => p.split("/").at(-1) ?? p),
 			excludedPaths: excludedSet,
 		},
 		"agentpat",
 	)
-	const fileParts = await buildFileParts(openFilePaths ?? [])
+	const fileParts = await buildFileParts(open)
 
-	// What context did this turn actually get? (Empty tokens flagged — e.g.
-	// <EXTRACTEDDATA> present but unfilled means the agent will lean on readFile.)
+	// What context did this turn actually get? (Empty scope tokens flagged — e.g.
+	// <OPENDOCUMENTS> empty means nothing is open.)
 	const ctxTokens = report
 		.filter((t) => t.kind !== "tool")
 		.map((t) => (t.filled ? t.id : `${t.id}(empty)`))

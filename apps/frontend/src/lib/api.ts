@@ -5,6 +5,7 @@ import type {
 	ExtractionRecord,
 	ExtractionSummary,
 	Flags,
+	OpenDoc,
 	Settings,
 	SurfaceId,
 	TaskType,
@@ -64,7 +65,7 @@ export const api = {
 			surface: SurfaceId
 			template: string
 			taskPath?: string
-			openFilePaths?: string[]
+			openDocs?: OpenDoc[]
 			excludedFiles?: string[]
 			assetType?: string
 			currentSourceName?: string

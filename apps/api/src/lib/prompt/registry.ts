@@ -4,8 +4,8 @@ import {
 	ASSET_CONFIGS,
 	CATALOG,
 	type ExtractionRecord,
-	type ExtractionSummary,
 	fill,
+	type OpenDoc,
 	type Settings,
 	TASK_CONFIGS,
 	type TaskType,
@@ -14,7 +14,13 @@ import {
 import { type Tool, tool } from "ai"
 import { z } from "zod"
 import { fetchPatent } from "../epo-ops"
-import { readExtraction, readNote } from "../fs"
+import {
+	listArtifacts,
+	listExtractions,
+	listSources,
+	readExtraction,
+	readNote,
+} from "../fs"
 
 // Everything a resolver / tool-builder might need, assembled per request. Fields
 // are per-surface — a resolver returns null (or a tool builder returns null)
@@ -25,9 +31,9 @@ export type ResolveCtx = {
 	// AgentPat
 	taskPath?: string
 	taskType?: TaskType
-	openFilePaths?: string[]
-	extractedSources?: ExtractionSummary[]
-	/** Basenames of excluded files — for the prompt text. */
+	/** The documents the attorney has open, with their per-doc context mode. */
+	openDocs?: OpenDoc[]
+	/** Basenames of excluded files — for the prompt text + closed-docs filtering. */
 	excludedFiles?: string[]
 	/** Full paths of excluded files — for gating the readFile tool. */
 	excludedPaths?: Set<string>
@@ -55,13 +61,13 @@ const w = (id: TokenId) => CATALOG[id].wrapper ?? ""
 const basename = (p: string) => p.split("/").at(-1) ?? p
 
 // Render an extraction record's flat fields as readable bullet lines.
-function formatExtraction(rec: ExtractionRecord): string {
-	const lines = Object.entries(rec.details)
+function formatExtractionBody(rec: ExtractionRecord): string {
+	return Object.entries(rec.details)
 		.filter(
 			([, v]) => v != null && v !== "" && !(Array.isArray(v) && v.length === 0),
 		)
 		.map(([k, v]) => `- ${k}: ${Array.isArray(v) ? v.join("; ") : String(v)}`)
-	return `## ${rec.filename} (${rec.assetType})\n${lines.join("\n")}`
+		.join("\n")
 }
 
 // Pull plain text out of a stored Plate note (JSON value) — no Plate on the
@@ -123,26 +129,96 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 		},
 	},
 
-	OPENSOURCES: {
+	// Open docs = the OPEN=CONTEXT spine. Each open doc rendered in full per its
+	// context mode: PDFs' originals go out-of-band as file parts (we just point at
+	// them here); artifact text + derivations + notes go inline.
+	OPENDOCUMENTS: {
 		kind: "scope",
-		resolve: ({ openFilePaths }) => {
-			if (!openFilePaths?.length) return null
-			const list = openFilePaths.map((p) => `- ${basename(p)}`).join("\n")
-			return fill(w("OPENSOURCES"), { list })
+		resolve: async ({ taskPath, openDocs }) => {
+			if (!taskPath || !openDocs?.length) return null
+			const blocks: string[] = []
+			for (const doc of openDocs) {
+				const name = basename(doc.path)
+				if (doc.kind === "artifact") {
+					// Artifact = the attorney's own draft; full text inline (unless they've
+					// dropped it to derivations-only, which an artifact has none of).
+					const text =
+						doc.mode === "derivations"
+							? ""
+							: plateToText(await readFile(doc.path, "utf8").catch(() => ""))
+					blocks.push(
+						`## ${name} (artifact — your draft)\n${text || "(empty)"}`,
+					)
+					continue
+				}
+				const lines = [`## ${name}`]
+				const isPdf = name.toLowerCase().endsWith(".pdf")
+				const wantOriginal = doc.mode !== "derivations"
+				const wantDerived = doc.mode !== "original"
+				if (wantOriginal)
+					lines.push(
+						isPdf
+							? "_Original PDF attached above as a file part._"
+							: "_Original has no text representation; rely on its derivations._",
+					)
+				else lines.push("_Original withheld (derivations-only mode)._")
+				if (wantDerived) {
+					const rec = await readExtraction(taskPath, name)
+					if (rec)
+						lines.push(`### Extracted data\n${formatExtractionBody(rec)}`)
+					const raw = await readNote(taskPath, name)
+					const noteText = raw ? plateToText(raw) : ""
+					if (noteText) lines.push(`### Notes\n${noteText}`)
+				}
+				blocks.push(lines.join("\n"))
+			}
+			return fill(w("OPENDOCUMENTS"), { list: blocks.join("\n\n") })
 		},
 	},
 
-	EXISTINGEXTRACTIONS: {
-		kind: "context",
-		resolve: ({ extractedSources }) => {
-			if (!extractedSources?.length) return null
-			const list = extractedSources
-				.map(
-					(a) =>
-						`- ${a.filename} (${a.assetType}) → derivations/extractions/${a.filename}.json`,
+	// Closed docs = cheap awareness only. Every source/artifact NOT open and NOT
+	// excluded, as one metadata line — never its content. The triage layer.
+	CLOSEDDOCUMENTS: {
+		kind: "scope",
+		resolve: async ({ taskPath, openDocs, excludedFiles }) => {
+			if (!taskPath) return null
+			const openNames = new Set((openDocs ?? []).map((d) => basename(d.path)))
+			const excluded = new Set(excludedFiles ?? [])
+			const skip = (name: string) => openNames.has(name) || excluded.has(name)
+
+			const [sources, artifacts, extractions] = await Promise.all([
+				listSources(taskPath),
+				listArtifacts(taskPath),
+				listExtractions(taskPath),
+			])
+			const typeByName = new Map(
+				extractions.map((e) => [e.filename, e.assetType]),
+			)
+
+			const lines: string[] = []
+			for (const s of sources) {
+				if (skip(s.filename)) continue
+				const type = typeByName.get(s.filename)
+				const raw = await readNote(taskPath, s.filename)
+				const hasNote = !!(raw && plateToText(raw).trim())
+				lines.push(
+					`- ${s.filename}${type ? ` (${type})` : ""} — derivations: ${
+						type ? "extraction" : "none"
+					}; notes: ${hasNote ? "yes" : "no"}`,
 				)
-				.join("\n")
-			return fill(w("EXISTINGEXTRACTIONS"), { list })
+			}
+			// Artifacts: one entry per draft (.json is the source of truth; skip .docx
+			// exports) with a short slice, since they have no derivations/notes.
+			for (const a of artifacts) {
+				if (a.ext !== "json" || skip(a.filename)) continue
+				const title = a.filename.replace(/\.json$/, "")
+				const text = plateToText(await readFile(a.path, "utf8").catch(() => ""))
+				const slice = text.replace(/\s+/g, " ").trim().slice(0, 200)
+				lines.push(`- ${title} (artifact)${slice ? ` — "${slice}…"` : ""}`)
+			}
+			return lines.length
+				? fill(w("CLOSEDDOCUMENTS"), { list: lines.join("\n") })
+				: null
 		},
 	},
 
@@ -152,37 +228,6 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			if (!excludedFiles?.length) return null
 			const list = excludedFiles.map((f) => `- ${f}`).join("\n")
 			return fill(w("EXCLUDED"), { list })
-		},
-	},
-
-	EXTRACTEDDATA: {
-		kind: "context",
-		resolve: async ({ taskPath, openFilePaths }) => {
-			if (!taskPath || !openFilePaths?.length) return null
-			const blocks: string[] = []
-			for (const p of openFilePaths) {
-				const rec = await readExtraction(taskPath, basename(p))
-				if (rec) blocks.push(formatExtraction(rec))
-			}
-			return blocks.length
-				? fill(w("EXTRACTEDDATA"), { list: blocks.join("\n\n") })
-				: null
-		},
-	},
-
-	NOTES: {
-		kind: "context",
-		resolve: async ({ taskPath, openFilePaths }) => {
-			if (!taskPath || !openFilePaths?.length) return null
-			const blocks: string[] = []
-			for (const p of openFilePaths) {
-				const raw = await readNote(taskPath, basename(p))
-				const text = raw ? plateToText(raw) : ""
-				if (text) blocks.push(`## ${basename(p)}\n${text}`)
-			}
-			return blocks.length
-				? fill(w("NOTES"), { list: blocks.join("\n\n") })
-				: null
 		},
 	},
 

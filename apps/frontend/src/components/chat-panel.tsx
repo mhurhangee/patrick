@@ -5,6 +5,7 @@ import {
 	CONTEXT_OVERFLOW_MARKER,
 	contextWindowFor,
 	MODELS_BY_ID,
+	type OpenDoc,
 } from "@patrickos/shared"
 import {
 	DefaultChatTransport,
@@ -271,11 +272,12 @@ function ChatPane({
 	onNewChatWithSummary: (summary: string) => void
 	onForkChat: (sourceChatId: string, uptoMessageId: string) => void
 }) {
-	const openAssetIdsRef = useRef<string[]>([])
-	// Exclude "do not read" sources from what AgentPat receives as context.
-	openAssetIdsRef.current = openAssets
+	// What the attorney has open IS the AI's context (OPEN=CONTEXT). Exclude any
+	// "do not read" docs. Mode is "both" for now — the per-doc toggle lands next.
+	const openDocsRef = useRef<OpenDoc[]>([])
+	openDocsRef.current = openAssets
 		.filter((a) => !doNotRead.has(a.id))
-		.map((a) => a.id)
+		.map((a) => ({ path: a.path, kind: a.kind, mode: "both" }))
 	// Excluded source paths — sent so the server can block the agent's tools too.
 	const excludedPathsRef = useRef<string[]>([])
 	excludedPathsRef.current = Array.from(doNotRead)
@@ -319,7 +321,7 @@ function ChatPane({
 					...body,
 					id,
 					messages: uiMessages,
-					openFilePaths: openAssetIdsRef.current,
+					openDocs: openDocsRef.current,
 					excludedPaths: excludedPathsRef.current,
 				},
 			}),

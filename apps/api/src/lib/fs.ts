@@ -4,9 +4,10 @@ import {
 	readFile,
 	rename,
 	rm,
+	stat,
 	writeFile,
 } from "node:fs/promises"
-import { basename, dirname, join } from "node:path"
+import { basename, dirname, extname, join } from "node:path"
 import {
 	type Chat,
 	type ChatIndexEntry,
@@ -283,6 +284,74 @@ export async function writeFlags(
 	flags: Flags,
 ): Promise<void> {
 	await writeJson(flagsPath(taskPath), flags)
+}
+
+// ─── Folder roster (sources + artifacts on disk) ─────────────────────────────
+// The authoritative list of documents in a task folder. Used by the /files route
+// (sidebar) and the closed-docs context resolver.
+
+export type FolderDoc = {
+	filename: string
+	path: string
+	ext: string
+	createdAt?: string
+	updatedAt?: string
+}
+
+const SOURCE_EXTS = new Set([".pdf", ".docx", ".doc"])
+const SKIP_DIRS = new Set([
+	"artifacts",
+	"chats",
+	"derivations",
+	"notes",
+	"meta",
+])
+const ARTIFACT_EXTS = new Set([".json", ".docx"])
+
+export async function listSources(taskPath: string): Promise<FolderDoc[]> {
+	try {
+		const entries = await readdir(taskPath, { withFileTypes: true })
+		const files: FolderDoc[] = []
+		for (const entry of entries) {
+			if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue
+			if (!entry.isFile()) continue
+			const ext = extname(entry.name).toLowerCase()
+			if (!SOURCE_EXTS.has(ext)) continue
+			files.push({
+				filename: entry.name,
+				path: join(taskPath, entry.name),
+				ext: ext.slice(1),
+			})
+		}
+		return files
+	} catch {
+		return []
+	}
+}
+
+export async function listArtifacts(taskPath: string): Promise<FolderDoc[]> {
+	const dir = artifactsDir(taskPath)
+	try {
+		const entries = await readdir(dir, { withFileTypes: true })
+		const files: FolderDoc[] = []
+		for (const entry of entries) {
+			if (!entry.isFile()) continue
+			const ext = extname(entry.name).toLowerCase()
+			if (!ARTIFACT_EXTS.has(ext)) continue
+			const filePath = join(dir, entry.name)
+			const s = await stat(filePath)
+			files.push({
+				filename: entry.name,
+				path: filePath,
+				ext: ext.slice(1),
+				createdAt: s.birthtime.toISOString(),
+				updatedAt: s.mtime.toISOString(),
+			})
+		}
+		return files
+	} catch {
+		return []
+	}
 }
 
 export async function ensureTaskDirs(taskPath: string): Promise<void> {

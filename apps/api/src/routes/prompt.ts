@@ -1,11 +1,12 @@
 import {
 	isTokenId,
+	type OpenDoc,
 	type SurfaceId,
 	TOKEN_RE,
 	type TokenId,
 } from "@patrickos/shared"
 import { Hono } from "hono"
-import { listExtractions, readSettings, readTasks } from "../lib/fs"
+import { readSettings, readTasks } from "../lib/fs"
 import { type ResolveCtx, render } from "../lib/prompt"
 
 export const promptRouter = new Hono()
@@ -18,7 +19,7 @@ promptRouter.post("/render", async (c) => {
 		surface: SurfaceId
 		template: string
 		taskPath?: string
-		openFilePaths?: string[]
+		openDocs?: OpenDoc[]
 		excludedFiles?: string[]
 		assetType?: string
 		currentSourceName?: string
@@ -30,14 +31,12 @@ promptRouter.post("/render", async (c) => {
 	const taskType = taskPath
 		? (await readTasks()).find((t) => t.path === taskPath)?.taskType
 		: undefined
-	const extractedSources = taskPath ? await listExtractions(taskPath) : []
 
 	const ctx: ResolveCtx = {
 		settings,
 		taskPath,
 		taskType,
-		openFilePaths: body.openFilePaths,
-		extractedSources,
+		openDocs: body.openDocs,
 		excludedFiles: body.excludedFiles,
 		assetType: body.assetType,
 		currentSourceName: body.currentSourceName,
