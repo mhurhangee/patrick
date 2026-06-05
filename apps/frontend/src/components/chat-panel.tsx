@@ -3,6 +3,7 @@ import {
 	type ApiAsset,
 	type ApiChat,
 	CONTEXT_OVERFLOW_MARKER,
+	type ContextMode,
 	contextWindowFor,
 	MODELS_BY_ID,
 	type OpenDoc,
@@ -38,6 +39,7 @@ import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { AssistantParts, type ToolContext } from "./chat-message-parts"
 import { ChatOverflowNotice } from "./chat-overflow-notice"
+import { ContextModeMenu } from "./context-mode-menu"
 import { ContextRing } from "./context-ring"
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel"
 
@@ -55,6 +57,8 @@ function ChatInputBar({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
+	contextMode,
+	onSetContextMode,
 	input,
 	onInputChange,
 	onSend,
@@ -69,6 +73,8 @@ function ChatInputBar({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead?: Set<string>
+	contextMode?: Record<string, ContextMode>
+	onSetContextMode?: (id: string, mode: ContextMode) => void
 	input: string
 	onInputChange: (value: string) => void
 	onSend: () => void
@@ -115,27 +121,38 @@ function ChatInputBar({
 						</span>
 					) : (
 						<div className="flex flex-wrap items-center gap-1">
-							{visible.map((asset) => (
-								<span
-									key={asset.id}
-									className="group/chip inline-flex items-center gap-1"
-								>
-									<button
-										type="button"
-										onClick={() => onOpenAsset(asset.id)}
-										className="cursor-pointer capitalize truncate text-xxs font-medium text-muted-foreground hover:text-foreground"
+							{visible.map((asset) => {
+								// The context-mode lever only matters for PDFs (the heavy
+								// originals); other docs are always sent in full.
+								const isPdf = asset.filename.toLowerCase().endsWith(".pdf")
+								return (
+									<span
+										key={asset.id}
+										className="group/chip inline-flex items-center gap-1"
 									>
-										{asset.title}
-									</button>
-									<button
-										type="button"
-										onClick={() => onRemoveAsset(asset.id)}
-										className="opacity-0 transition-opacity group-hover/chip:opacity-100 text-muted-foreground"
-									>
-										<X size={9} />
-									</button>
-								</span>
-							))}
+										<button
+											type="button"
+											onClick={() => onOpenAsset(asset.id)}
+											className="cursor-pointer capitalize truncate text-xxs font-medium text-muted-foreground hover:text-foreground"
+										>
+											{asset.title}
+										</button>
+										{isPdf && onSetContextMode ? (
+											<ContextModeMenu
+												mode={contextMode?.[asset.id] ?? "both"}
+												onChange={(m) => onSetContextMode(asset.id, m)}
+											/>
+										) : null}
+										<button
+											type="button"
+											onClick={() => onRemoveAsset(asset.id)}
+											className="opacity-0 transition-opacity group-hover/chip:opacity-100 text-muted-foreground"
+										>
+											<X size={9} />
+										</button>
+									</span>
+								)
+							})}
 						</div>
 					)}
 					<div className="flex items-center gap-2">
@@ -180,6 +197,8 @@ function AgentPatPane({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
+	contextMode,
+	onSetContextMode,
 	focusNonce,
 }: {
 	onSend: (message: string) => void
@@ -187,6 +206,8 @@ function AgentPatPane({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
+	contextMode: Record<string, ContextMode>
+	onSetContextMode: (id: string, mode: ContextMode) => void
 	focusNonce: number
 }) {
 	const [input, setInput] = useState("")
@@ -220,6 +241,8 @@ function AgentPatPane({
 				onRemoveAsset={onRemoveAsset}
 				onOpenAsset={onOpenAsset}
 				doNotRead={doNotRead}
+				contextMode={contextMode}
+				onSetContextMode={onSetContextMode}
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
@@ -243,6 +266,8 @@ function ChatPane({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
+	contextMode,
+	onSetContextMode,
 	onOpenSource,
 	onExtracted,
 	initialMessages,
@@ -260,6 +285,8 @@ function ChatPane({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
+	contextMode: Record<string, ContextMode>
+	onSetContextMode: (id: string, mode: ContextMode) => void
 	onOpenSource: (filename: string) => void
 	onExtracted: () => void
 	initialMessages: UIMessage[]
@@ -277,7 +304,11 @@ function ChatPane({
 	const openDocsRef = useRef<OpenDoc[]>([])
 	openDocsRef.current = openAssets
 		.filter((a) => !doNotRead.has(a.id))
-		.map((a) => ({ path: a.path, kind: a.kind, mode: "both" }))
+		.map((a) => ({
+			path: a.path,
+			kind: a.kind,
+			mode: contextMode[a.id] ?? "both",
+		}))
 	// Excluded source paths — sent so the server can block the agent's tools too.
 	const excludedPathsRef = useRef<string[]>([])
 	excludedPathsRef.current = Array.from(doNotRead)
@@ -756,6 +787,8 @@ function ChatPane({
 				onRemoveAsset={onRemoveAsset}
 				onOpenAsset={onOpenAsset}
 				doNotRead={doNotRead}
+				contextMode={contextMode}
+				onSetContextMode={onSetContextMode}
 				input={input}
 				onInputChange={setInput}
 				onSend={send}
@@ -780,6 +813,8 @@ function ChatPaneLoader({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
+	contextMode: Record<string, ContextMode>
+	onSetContextMode: (id: string, mode: ContextMode) => void
 	onOpenSource: (filename: string) => void
 	onExtracted: () => void
 	initialMessage?: string | null
@@ -848,6 +883,8 @@ export function ChatPanel({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
+	contextMode,
+	onSetContextMode,
 	onOpenSource,
 	onExtracted,
 	onOpenSettings,
@@ -871,6 +908,8 @@ export function ChatPanel({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
+	contextMode: Record<string, ContextMode>
+	onSetContextMode: (id: string, mode: ContextMode) => void
 	onOpenSource: (filename: string) => void
 	onExtracted: () => void
 	onOpenSettings: () => void
@@ -951,6 +990,8 @@ export function ChatPanel({
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
+					contextMode={contextMode}
+					onSetContextMode={onSetContextMode}
 					focusNonce={composerFocusNonce}
 				/>
 			) : (
@@ -961,6 +1002,8 @@ export function ChatPanel({
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
+					contextMode={contextMode}
+					onSetContextMode={onSetContextMode}
 					onOpenSource={onOpenSource}
 					onExtracted={onExtracted}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
