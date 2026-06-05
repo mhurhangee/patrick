@@ -42,12 +42,12 @@ export function PlateDocEditor({
 
 	useEffect(() => {
 		if (askpatAssetType)
-			localStorage.setItem("askpat-asset-type", askpatAssetType)
+			localStorage.setItem("editor-asset-type", askpatAssetType)
 		// Source-name only applies to NotePat; clear it otherwise so DraftPat
 		// never inherits a stale note's source.
 		if (askpatSourceName)
-			localStorage.setItem("askpat-source-name", askpatSourceName)
-		else localStorage.removeItem("askpat-source-name")
+			localStorage.setItem("editor-source-name", askpatSourceName)
+		else localStorage.removeItem("editor-source-name")
 	}, [askpatAssetType, askpatSourceName])
 
 	// Flush on unmount (tab switch, close) so the last edit is never lost.

@@ -84,8 +84,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
 		setEffort(s.ai.effort ?? DEFAULT_EFFORT)
 		setShowThinking(s.ai.showThinking ?? DEFAULT_SHOW_THINKING)
 		setApiKey(key)
-		localStorage.setItem("askpat-provider", p)
-		localStorage.setItem("askpat-quick-model", quick)
+		localStorage.setItem("editor-provider", p)
+		localStorage.setItem("editor-quick-model", quick)
 		localStorage.setItem(`ai-${p}-key`, key)
 	}
 
@@ -135,8 +135,8 @@ export function AIProvider({ children }: { children: ReactNode }) {
 			| "gatewayKey"
 		// Runtime cache for editor fetch callbacks
 		localStorage.setItem(`ai-${prov}-key`, key)
-		localStorage.setItem("askpat-provider", prov)
-		localStorage.setItem("askpat-quick-model", quick)
+		localStorage.setItem("editor-provider", prov)
+		localStorage.setItem("editor-quick-model", quick)
 		setProvider(prov)
 		setApiKey(key)
 		setQuickModel(quick)
