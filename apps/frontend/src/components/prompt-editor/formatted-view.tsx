@@ -1,51 +1,32 @@
 import { CATALOG, isTokenId, type SurfaceId, TOKEN_RE } from "@patrickos/shared"
 import type { ReactNode } from "react"
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { KIND_CHIP, TokenInspector } from "./inspector"
+import { KIND_CHIP } from "./inspector"
 
-// A clickable token chip with its inspector popover.
+// A token chip in the preview. Clicking it scrolls the Source pane to the token.
 function Chip({
 	name,
-	surface,
-	value,
+	onClick,
 }: {
 	name: string
-	surface: SurfaceId
-	value?: string
+	onClick?: (name: string) => void
 }) {
 	const known = isTokenId(name)
 	const kind = known ? CATALOG[name].kind : "unknown"
 	return (
-		<Popover>
-			<PopoverTrigger asChild>
-				<button
-					type="button"
-					data-token={name}
-					className={cn(
-						"rounded px-1 font-medium font-mono text-[11px] transition-colors",
-						KIND_CHIP[kind],
-					)}
-				>
-					{known && kind === "tool" ? "🔧 " : ""}
-					{name}
-				</button>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-80">
-				{known ? (
-					<TokenInspector tokenId={name} surface={surface} value={value} />
-				) : (
-					<p className="text-muted-foreground text-xs">
-						Unknown token <code>&lt;{name}&gt;</code> — left in the prompt
-						as-is.
-					</p>
-				)}
-			</PopoverContent>
-		</Popover>
+		<button
+			type="button"
+			data-token={name}
+			onClick={() => onClick?.(name)}
+			title={known ? CATALOG[name].description : "Unknown token"}
+			className={cn(
+				"rounded px-1 font-medium font-mono text-[11px] transition-colors",
+				KIND_CHIP[kind],
+			)}
+		>
+			{known && kind === "tool" ? "🔧 " : ""}
+			{name}
+		</button>
 	)
 }
 
@@ -65,8 +46,8 @@ function inlineText(text: string, keyPrefix: string): ReactNode[] {
 // is solely a token, show its resolved value beneath (faded).
 function renderLineContent(
 	line: string,
-	surface: SurfaceId,
 	perToken: Record<string, string>,
+	onTokenClick: ((name: string) => void) | undefined,
 	keyPrefix: string,
 ): ReactNode[] {
 	const nodes: ReactNode[] = []
@@ -74,7 +55,6 @@ function renderLineContent(
 	let last = 0
 	let m: RegExpExecArray | null = re.exec(line)
 	let i = 0
-	// Fresh regex (TOKEN_RE is global/stateful — never call .test on it directly).
 	const stripped = line.replace(new RegExp(TOKEN_RE.source, "g"), "")
 	const soleToken = stripped !== line && stripped.trim() === ""
 	while (m !== null) {
@@ -83,12 +63,7 @@ function renderLineContent(
 		const name = m[1]
 		const value = perToken[name]
 		nodes.push(
-			<Chip
-				key={`${keyPrefix}-c${i}`}
-				name={name}
-				surface={surface}
-				value={value}
-			/>,
+			<Chip key={`${keyPrefix}-c${i}`} name={name} onClick={onTokenClick} />,
 		)
 		if (soleToken && value?.trim())
 			nodes.push(
@@ -110,16 +85,17 @@ function renderLineContent(
 
 export function FormattedView({
 	template,
-	surface,
 	perToken,
+	onTokenClick,
 }: {
 	template: string
 	surface: SurfaceId
 	perToken: Record<string, string>
+	onTokenClick?: (name: string) => void
 }) {
 	const lines = template.split("\n")
 	return (
-		<div className="space-y-1 px-1 py-2 text-xs leading-relaxed">
+		<div className="space-y-1 px-3 py-2 text-xs leading-relaxed">
 			{lines.map((line, idx) => {
 				const key = `l${idx}`
 				const heading = line.match(/^(#{1,3})\s+(.*)$/)
@@ -135,7 +111,7 @@ export function FormattedView({
 								level === 3 && "text-xs",
 							)}
 						>
-							{renderLineContent(heading[2], surface, perToken, key)}
+							{renderLineContent(heading[2], perToken, onTokenClick, key)}
 						</div>
 					)
 				}
@@ -145,14 +121,16 @@ export function FormattedView({
 						<div key={key} className="ml-3 flex gap-1.5">
 							<span className="text-muted-foreground">•</span>
 							<span>
-								{renderLineContent(bullet[2], surface, perToken, key)}
+								{renderLineContent(bullet[2], perToken, onTokenClick, key)}
 							</span>
 						</div>
 					)
 				}
 				if (line.trim() === "") return <div key={key} className="h-2" />
 				return (
-					<div key={key}>{renderLineContent(line, surface, perToken, key)}</div>
+					<div key={key}>
+						{renderLineContent(line, perToken, onTokenClick, key)}
+					</div>
 				)
 			})}
 		</div>

@@ -2,7 +2,8 @@ import type { SurfaceId } from "@patrickos/shared"
 import { useEffect, useRef, useState } from "react"
 import { api } from "@/lib/api"
 import { FormattedView } from "./formatted-view"
-import { RawEditor } from "./raw-editor"
+import { RawEditor, type RawEditorHandle } from "./raw-editor"
+import { TokenShelf } from "./token-shelf"
 
 type Preview = {
 	system: string
@@ -10,10 +11,13 @@ type Preview = {
 	warnings: string[]
 }
 
-// The prompt template editor: the raw <TOKEN> source on the left (the thing
-// that's saved), a live rendered preview with resolved values on the right.
-// Clicking a token in the source jumps the preview to it. Live values come from
-// /prompt/render against the active task — same engine the AI uses.
+// The prompt template editor:
+//  - a token shelf (available tokens not in the prompt, click to insert)
+//  - Source (left): the editable <TOKEN> template, each token annotated with its
+//    description. Clicking a pill scrolls the preview to it.
+//  - Preview (right): the rendered prompt with live resolved values. Clicking a
+//    chip scrolls the source to it.
+// Live values come from /prompt/render against the active task.
 export function PromptEditor({
 	surface,
 	value,
@@ -26,6 +30,7 @@ export function PromptEditor({
 	taskPath?: string
 }) {
 	const [preview, setPreview] = useState<Preview | null>(null)
+	const rawRef = useRef<RawEditorHandle>(null)
 	const previewRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
@@ -49,7 +54,8 @@ export function PromptEditor({
 	const perToken = preview?.perToken ?? {}
 	const warnings = preview?.warnings ?? []
 
-	function jumpToToken(name: string) {
+	// Source pill click → scroll the preview to that token.
+	function scrollPreviewTo(name: string) {
 		previewRef.current
 			?.querySelector(`[data-token="${name}"]`)
 			?.scrollIntoView({ block: "center", behavior: "smooth" })
@@ -57,18 +63,25 @@ export function PromptEditor({
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col gap-2">
+			<TokenShelf
+				surface={surface}
+				value={value}
+				onInsert={(name) => rawRef.current?.insertToken(name)}
+			/>
+
 			<div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
-				{/* Source — the editable, saved template */}
+				{/* Source — editable template, tokens annotated with descriptions */}
 				<div className="flex flex-col overflow-hidden rounded-md border bg-background">
 					<div className="shrink-0 border-b px-3 py-1.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
 						Source
 					</div>
 					<div className="min-h-0 flex-1 overflow-auto">
 						<RawEditor
+							ref={rawRef}
 							value={value}
 							onChange={onChange}
 							surface={surface}
-							onTokenClick={jumpToToken}
+							onTokenClick={scrollPreviewTo}
 						/>
 					</div>
 				</div>
@@ -88,6 +101,7 @@ export function PromptEditor({
 							template={value}
 							surface={surface}
 							perToken={perToken}
+							onTokenClick={(name) => rawRef.current?.scrollToToken(name)}
 						/>
 					</div>
 				</div>

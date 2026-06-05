@@ -58,3 +58,5 @@ project/
 profile/
 # pdf token-measurement samples (may be copyrighted, bulky)
 apps/api/scripts/pdf-samples/
+
+/screenshots

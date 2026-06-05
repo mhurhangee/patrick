@@ -10,20 +10,45 @@ import {
 	EditorView,
 	ViewPlugin,
 	type ViewUpdate,
+	WidgetType,
 } from "@codemirror/view"
 import {
 	CATALOG,
 	isTokenId,
 	type SurfaceId,
 	TOKEN_RE,
+	type TokenId,
 	tokensForSurface,
 } from "@patrickos/shared"
-import CodeMirror from "@uiw/react-codemirror"
-import { useMemo, useRef } from "react"
+import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror"
+import { forwardRef, useImperativeHandle, useMemo, useRef } from "react"
 
-// Style every <TOKEN> as a coloured, clickable pill (kind-coloured; unknown =
-// red squiggle). The source stays pure source — no inline previews; the live
-// values live in the Preview pane beside this one.
+export type RawEditorHandle = {
+	insertToken: (name: string) => void
+	scrollToToken: (name: string) => void
+}
+
+// A token's description, shown faded beneath it — the Source counterpart to the
+// live values the Preview shows. Static (from the catalog), so no dynamic state.
+class DescWidget extends WidgetType {
+	text: string
+	constructor(text: string) {
+		super()
+		this.text = text
+	}
+	eq(o: DescWidget) {
+		return o.text === this.text
+	}
+	toDOM() {
+		const el = document.createElement("span")
+		el.className = "cm-token-desc"
+		el.textContent = this.text
+		return el
+	}
+}
+
+// Pills for every <TOKEN> (kind-coloured; unknown = squiggle) + an inline
+// description beneath known tokens.
 function buildDeco(view: EditorView): DecorationSet {
 	const builder = new RangeSetBuilder<Decoration>()
 	const re = new RegExp(TOKEN_RE.source, "g")
@@ -33,23 +58,34 @@ function buildDeco(view: EditorView): DecorationSet {
 		let m: RegExpExecArray | null = re.exec(text)
 		while (m !== null) {
 			const name = m[1]
-			const kind = isTokenId(name) ? CATALOG[name].kind : "unknown"
+			const known = isTokenId(name)
+			const kind = known ? CATALOG[name as TokenId].kind : "unknown"
 			const start = from + m.index
+			const end = start + m[0].length
 			builder.add(
 				start,
-				start + m[0].length,
+				end,
 				Decoration.mark({
 					class: `cm-token cm-token-${kind}`,
 					attributes: { "data-token": name },
 				}),
 			)
+			if (known)
+				builder.add(
+					end,
+					end,
+					Decoration.widget({
+						widget: new DescWidget(CATALOG[name as TokenId].description),
+						side: 1,
+					}),
+				)
 			m = re.exec(text)
 		}
 	}
 	return builder.finish()
 }
 
-const tokenPills = ViewPlugin.fromClass(
+const tokenDeco = ViewPlugin.fromClass(
 	class {
 		decorations: DecorationSet
 		constructor(view: EditorView) {
@@ -63,8 +99,8 @@ const tokenPills = ViewPlugin.fromClass(
 	{ decorations: (v) => v.decorations },
 )
 
-// Inherit the container's colours (follows light/dark) + style pills and the
-// @ menu popover.
+// Inherit the container's colours (follows light/dark) + style pills, the inline
+// description, and the @ menu popover.
 const editorTheme = EditorView.theme({
 	"&": { backgroundColor: "transparent", color: "inherit", fontSize: "12px" },
 	"&.cm-focused": { outline: "none" },
@@ -102,6 +138,13 @@ const editorTheme = EditorView.theme({
 		color: "rgb(220,38,38)",
 		textDecoration: "underline wavy rgb(220,38,38)",
 	},
+	".cm-token-desc": {
+		display: "block",
+		margin: "1px 0 2px 1.5em",
+		fontStyle: "italic",
+		fontSize: "11px",
+		opacity: "0.5",
+	},
 	".cm-tooltip": {
 		backgroundColor: "var(--popover, #fff)",
 		color: "var(--popover-foreground, inherit)",
@@ -129,25 +172,47 @@ function tokenSource(surface: SurfaceId) {
 	}
 }
 
-export function RawEditor({
-	value,
-	onChange,
-	surface,
-	onTokenClick,
-}: {
-	value: string
-	onChange: (v: string) => void
-	surface: SurfaceId
-	/** Clicking a token pill — used to jump the Preview pane to it. */
-	onTokenClick?: (name: string) => void
-}) {
+export const RawEditor = forwardRef<
+	RawEditorHandle,
+	{
+		value: string
+		onChange: (v: string) => void
+		surface: SurfaceId
+		/** Clicking a token pill — used to sync the Preview pane to it. */
+		onTokenClick?: (name: string) => void
+	}
+>(({ value, onChange, surface, onTokenClick }, ref) => {
+	const cmRef = useRef<ReactCodeMirrorRef>(null)
 	const clickRef = useRef(onTokenClick)
 	clickRef.current = onTokenClick
+
+	useImperativeHandle(ref, () => ({
+		insertToken(name) {
+			const view = cmRef.current?.view
+			if (!view) return
+			const { from, to } = view.state.selection.main
+			const token = `<${name}>`
+			view.dispatch({
+				changes: { from, to, insert: token },
+				selection: { anchor: from + token.length },
+			})
+			view.focus()
+		},
+		scrollToToken(name) {
+			const view = cmRef.current?.view
+			if (!view) return
+			const idx = view.state.doc.toString().indexOf(`<${name}>`)
+			if (idx >= 0)
+				view.dispatch({
+					effects: EditorView.scrollIntoView(idx, { y: "center" }),
+				})
+		},
+	}))
 
 	const extensions = useMemo(
 		() => [
 			EditorView.lineWrapping,
-			tokenPills,
+			tokenDeco,
 			editorTheme,
 			autocompletion({ override: [tokenSource(surface)] }),
 			EditorView.domEventHandlers({
@@ -165,6 +230,7 @@ export function RawEditor({
 
 	return (
 		<CodeMirror
+			ref={cmRef}
 			value={value}
 			onChange={onChange}
 			extensions={extensions}
@@ -179,4 +245,6 @@ export function RawEditor({
 			className="h-full text-xs"
 		/>
 	)
-}
+})
+
+RawEditor.displayName = "RawEditor"

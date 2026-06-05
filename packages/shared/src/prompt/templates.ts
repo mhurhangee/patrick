@@ -8,6 +8,8 @@
 // instructions are actually sent. Dynamic <TOKEN> blocks resolve identically to
 // the old helper functions.
 
+import { isTokenId, type SurfaceId, TOKEN_RE, type TokenId } from "./catalog"
+
 export const DEFAULT_TEMPLATE_AGENTPAT = `# Identity
 You are AgentPat, an expert AI patent attorney assistant. You help patent attorneys with patent prosecution, drafting, and analysis. Write in formal, precise language appropriate for patent practice.
 
@@ -106,3 +108,36 @@ Rules:
 - CRITICAL: Always end with a punctuation mark.
 - CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc.
 - If no context is provided or you can't generate a continuation, return "0" without explanation.`
+
+// Default template per surface — also the source of each surface's "recommended"
+// token set (the tokens we ship in the default).
+export const DEFAULT_TEMPLATES: Record<SurfaceId, string> = {
+	agentpat: DEFAULT_TEMPLATE_AGENTPAT,
+	draftpat: DEFAULT_TEMPLATE_DRAFTPAT,
+	notepat: DEFAULT_TEMPLATE_NOTEPAT,
+	extractpat: DEFAULT_TEMPLATE_EXTRACTPAT,
+}
+
+// Unique tokens present in a surface's default template — "recommended".
+export function recommendedTokens(surface: SurfaceId): TokenId[] {
+	const out: TokenId[] = []
+	const re = new RegExp(TOKEN_RE.source, "g")
+	let m: RegExpExecArray | null = re.exec(DEFAULT_TEMPLATES[surface])
+	while (m !== null) {
+		if (isTokenId(m[1]) && !out.includes(m[1])) out.push(m[1])
+		m = re.exec(DEFAULT_TEMPLATES[surface])
+	}
+	return out
+}
+
+// Unique known tokens present in an arbitrary template string.
+export function tokensInTemplate(template: string): TokenId[] {
+	const out: TokenId[] = []
+	const re = new RegExp(TOKEN_RE.source, "g")
+	let m: RegExpExecArray | null = re.exec(template)
+	while (m !== null) {
+		if (isTokenId(m[1]) && !out.includes(m[1])) out.push(m[1])
+		m = re.exec(template)
+	}
+	return out
+}

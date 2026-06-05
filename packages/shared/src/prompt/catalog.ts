@@ -11,6 +11,16 @@ export type TokenKind = "context" | "scope" | "tool"
 
 export type SurfaceId = "agentpat" | "draftpat" | "notepat" | "extractpat"
 
+// Friendly labels + one-liners per kind, for grouping in the token shelf.
+export const KIND_INFO: Record<TokenKind, { label: string; help: string }> = {
+	context: {
+		label: "Context",
+		help: "Information from your task the AI can use",
+	},
+	scope: { label: "Sources", help: "Which source documents the AI sees" },
+	tool: { label: "Tools", help: "Abilities you give the AI" },
+}
+
 export type TokenMeta = {
 	kind: TokenKind
 	/** Short, human-facing — shown in the chip's collapsed/inspect view. */
