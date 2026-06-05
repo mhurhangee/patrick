@@ -1,10 +1,14 @@
 import type { AiEffort, SurfaceId } from "@patrickos/shared"
 import {
+	DEFAULT_DETAILED_MODEL,
 	DEFAULT_PROMPT_CONTEXT,
+	DEFAULT_QUICK_MODEL,
 	DEFAULT_TEMPLATE_AGENTPAT,
 	DEFAULT_TEMPLATE_DRAFTPAT,
 	DEFAULT_TEMPLATE_EXTRACTPAT,
 	DEFAULT_TEMPLATE_NOTEPAT,
+	modelsForProvider,
+	type Provider,
 } from "@patrickos/shared"
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
@@ -34,12 +38,6 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import {
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
-	modelsForProvider,
-	type Provider,
-} from "@/lib/ai-models"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 

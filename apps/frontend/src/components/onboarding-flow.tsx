@@ -1,7 +1,11 @@
 import {
+	DEFAULT_DETAILED_MODEL,
+	DEFAULT_QUICK_MODEL,
 	DEFAULT_TEMPLATE_AGENTPAT,
 	DEFAULT_TEMPLATE_DRAFTPAT,
 	DEFAULT_TEMPLATE_EXTRACTPAT,
+	modelsForProvider,
+	type Provider,
 	TASK_CONFIGS,
 	type TaskType,
 } from "@patrickos/shared"
@@ -25,12 +29,6 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import {
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
-	modelsForProvider,
-	type Provider,
-} from "@/lib/ai-models"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
