@@ -44,9 +44,9 @@ export const CATALOG = {
 	ATTORNEY: {
 		kind: "context",
 		label: "Attorney",
-		description: "Who the AI is assisting, from the user's profile.",
+		description: "Who the AI is assisting (your freeform profile / 'You').",
 		surfaces: ["agentpat", "draftpat", "notepat", "extractpat"],
-		wrapper: "# Attorney\nYou are assisting {who}.",
+		wrapper: "# Attorney\nYou are assisting:\n{body}",
 	},
 	PRACTICECONTEXT: {
 		kind: "context",

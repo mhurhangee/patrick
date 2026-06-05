@@ -230,16 +230,8 @@ export function SettingsPanel({
 	const [activeTab, setActiveTab] = useState<Tab>("you")
 
 	// YOU
-	const [name, setName] = useState("")
-	const [firm, setFirm] = useState("")
-	const [role, setRole] = useState("")
-	const [jurisdiction, setJurisdiction] = useState("")
-	const [savedAccount, setSavedAccount] = useState({
-		name: "",
-		firm: "",
-		role: "",
-		jurisdiction: "",
-	})
+	const [about, setAbout] = useState("")
+	const [savedAbout, setSavedAbout] = useState("")
 
 	// AI
 	const [tempProvider, setTempProvider] = useState<Provider>(ai.provider)
@@ -297,16 +289,8 @@ export function SettingsPanel({
 				google: s.ai.googleKey ?? "",
 			}
 
-			setName(s.profile.name)
-			setFirm(s.profile.firm)
-			setRole(s.profile.role)
-			setJurisdiction(s.profile.jurisdiction)
-			setSavedAccount({
-				name: s.profile.name,
-				firm: s.profile.firm,
-				role: s.profile.role,
-				jurisdiction: s.profile.jurisdiction,
-			})
+			setAbout(s.profile.about)
+			setSavedAbout(s.profile.about)
 
 			setTempProvider(p)
 			setTempDetailedModel(detailed)
@@ -370,11 +354,7 @@ export function SettingsPanel({
 	const detailedModelOptions = modelOptions
 
 	// Dirty flags
-	const isAccountDirty =
-		name !== savedAccount.name ||
-		firm !== savedAccount.firm ||
-		role !== savedAccount.role ||
-		jurisdiction !== savedAccount.jurisdiction
+	const isAccountDirty = about !== savedAbout
 
 	const isProviderDirty =
 		tempProvider !== savedProviderSnap.provider ||
@@ -386,8 +366,8 @@ export function SettingsPanel({
 
 	// Save handlers
 	async function saveAccount() {
-		await api.settings.update({ profile: { name, firm, role, jurisdiction } })
-		setSavedAccount({ name, firm, role, jurisdiction })
+		await api.settings.update({ profile: { about } })
+		setSavedAbout(about)
 	}
 
 	async function saveProvider() {
@@ -512,15 +492,9 @@ export function SettingsPanel({
 				<div className="flex flex-col flex-1 overflow-hidden">
 					{activeTab === "you" && (
 						<YouSection
-							name={name}
-							firm={firm}
-							role={role}
-							jurisdiction={jurisdiction}
+							about={about}
 							isDirty={isAccountDirty}
-							onNameChange={setName}
-							onFirmChange={setFirm}
-							onRoleChange={setRole}
-							onJurisdictionChange={setJurisdiction}
+							onAboutChange={setAbout}
 							onSave={saveAccount}
 						/>
 					)}
@@ -647,26 +621,14 @@ export function SettingsPanel({
 // ─── You section ──────────────────────────────────────────────────────────────
 
 function YouSection({
-	name,
-	firm,
-	role,
-	jurisdiction,
+	about,
 	isDirty,
-	onNameChange,
-	onFirmChange,
-	onRoleChange,
-	onJurisdictionChange,
+	onAboutChange,
 	onSave,
 }: {
-	name: string
-	firm: string
-	role: string
-	jurisdiction: string
+	about: string
 	isDirty: boolean
-	onNameChange: (v: string) => void
-	onFirmChange: (v: string) => void
-	onRoleChange: (v: string) => void
-	onJurisdictionChange: (v: string) => void
+	onAboutChange: (v: string) => void
 	onSave: () => Promise<void>
 }) {
 	const { status, wrap } = useSaveButton()
@@ -674,7 +636,7 @@ function YouSection({
 	return (
 		<SectionLayout
 			title="You"
-			description="Identifies this profile (name + firm label it) and is given to every AI surface via the <ATTORNEY> token. For freeform practice preferences, use Practice Context."
+			description="Freeform — who you are, given to every AI surface via the <ATTORNEY> token. The first line also labels this profile in the switcher. For how you like to work, use Practice Context."
 			footer={
 				<>
 					<div />
@@ -686,48 +648,14 @@ function YouSection({
 				</>
 			}
 		>
-			<div className="flex flex-col gap-4 max-w-sm">
-				<div className="grid grid-cols-2 gap-3">
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-name">Name</Label>
-						<Input
-							id="s-name"
-							value={name}
-							onChange={(e) => onNameChange(e.target.value)}
-							placeholder="Jane Smith"
-						/>
-					</div>
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-firm">Firm</Label>
-						<Input
-							id="s-firm"
-							value={firm}
-							onChange={(e) => onFirmChange(e.target.value)}
-							placeholder="Smith & Associates IP"
-						/>
-					</div>
-				</div>
-				<div className="grid grid-cols-2 gap-3">
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-role">Role</Label>
-						<Input
-							id="s-role"
-							value={role}
-							onChange={(e) => onRoleChange(e.target.value)}
-							placeholder="Patent Attorney"
-						/>
-					</div>
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-jur">Jurisdiction</Label>
-						<Input
-							id="s-jur"
-							value={jurisdiction}
-							onChange={(e) => onJurisdictionChange(e.target.value)}
-							placeholder="USPTO, EPO…"
-						/>
-					</div>
-				</div>
-			</div>
+			<Textarea
+				value={about}
+				onChange={(e) => onAboutChange(e.target.value)}
+				placeholder={
+					"e.g. Jane Smith — registered patent attorney at Smith & Associates IP.\nI prosecute before the USPTO and EPO, mostly software and electronics."
+				}
+				className="min-h-[200px] max-w-2xl text-sm"
+			/>
 		</SectionLayout>
 	)
 }

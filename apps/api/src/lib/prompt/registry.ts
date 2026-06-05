@@ -60,15 +60,8 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	ATTORNEY: {
 		kind: "context",
 		resolve: ({ settings }) => {
-			const { name, firm, role, jurisdiction } = settings.profile
-			if (!name && !firm) return null
-			const rolePart = role ? ` (${role})` : ""
-			const firmPart = firm ? ` at ${firm}` : ""
-			const jurisdictionPart = jurisdiction
-				? `, practising before ${jurisdiction}`
-				: ""
-			const who = `${name}${rolePart}${firmPart}${jurisdictionPart}`
-			return fill(w("ATTORNEY"), { who })
+			const about = settings.profile.about.trim()
+			return about ? fill(w("ATTORNEY"), { body: about }) : null
 		},
 	},
 

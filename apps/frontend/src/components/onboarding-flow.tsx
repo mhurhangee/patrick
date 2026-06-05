@@ -73,7 +73,7 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 	you: {
 		title: "Tell us about yourself",
 		description:
-			"This personalizes every AI response to your practice. Your name and firm appear in document drafts. You can change these any time in Settings.",
+			"A freeform note about who you are — given to the AI on every request via the <ATTORNEY> token. Whatever you'd tell a new associate about yourself. Change it any time in Settings.",
 	},
 	ai: {
 		title: "Connect your AI provider",
@@ -162,8 +162,8 @@ function MoreInfo({ items }: { items: string[] }) {
 
 const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 	you: [
-		"Your name and firm appear in every AI-drafted document.",
-		"This information is included in every AI request to help personalize responses.",
+		"Freeform — write about yourself however you like; the first line labels this profile.",
+		"Included in every AI request (via the <ATTORNEY> token) to personalise responses.",
 		"Stored in settings.yaml on your machine — never sent to PatrickOS.",
 	],
 	ai: [
@@ -205,10 +205,7 @@ export function OnboardingFlow({
 	const [saving, setSaving] = useState(false)
 
 	// YOU
-	const [name, setName] = useState("")
-	const [firm, setFirm] = useState("")
-	const [role, setRole] = useState("")
-	const [jurisdiction, setJurisdiction] = useState("")
+	const [about, setAbout] = useState("")
 
 	// AI
 	const [provider, setProvider] = useState<Provider>("anthropic")
@@ -269,10 +266,7 @@ export function OnboardingFlow({
 	// Load existing settings once on mount
 	useEffect(() => {
 		api.settings.get().then((s) => {
-			setName(s.profile.name || "")
-			setFirm(s.profile.firm || "")
-			setRole(s.profile.role || "")
-			setJurisdiction(s.profile.jurisdiction || "")
+			setAbout(s.profile.about || "")
 			const p = (s.ai.provider as Provider) || "anthropic"
 			setProvider(p)
 			setKeys({
@@ -315,7 +309,7 @@ export function OnboardingFlow({
 	async function saveCurrentStep() {
 		const step = STEPS[stepIndex]
 		if (step === "you") {
-			await api.settings.update({ profile: { name, firm, role, jurisdiction } })
+			await api.settings.update({ profile: { about } })
 		} else if (step === "ai") {
 			const keyField = `${provider}Key` as
 				| "anthropicKey"
@@ -526,48 +520,14 @@ export function OnboardingFlow({
 							)}
 
 							{stepId === "you" && (
-								<div className="flex flex-col gap-4">
-									<div className="grid grid-cols-2 gap-3">
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-name">Name</Label>
-											<Input
-												id="ob-name"
-												value={name}
-												onChange={(e) => setName(e.target.value)}
-												placeholder="Jane Smith"
-											/>
-										</div>
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-firm">Firm</Label>
-											<Input
-												id="ob-firm"
-												value={firm}
-												onChange={(e) => setFirm(e.target.value)}
-												placeholder="Smith & Associates IP"
-											/>
-										</div>
-									</div>
-									<div className="grid grid-cols-2 gap-3">
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-role">Role</Label>
-											<Input
-												id="ob-role"
-												value={role}
-												onChange={(e) => setRole(e.target.value)}
-												placeholder="Patent Attorney"
-											/>
-										</div>
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-jur">Jurisdiction</Label>
-											<Input
-												id="ob-jur"
-												value={jurisdiction}
-												onChange={(e) => setJurisdiction(e.target.value)}
-												placeholder="USPTO, EPO…"
-											/>
-										</div>
-									</div>
-								</div>
+								<Textarea
+									value={about}
+									onChange={(e) => setAbout(e.target.value)}
+									placeholder={
+										"e.g. Jane Smith — registered patent attorney at Smith & Associates IP.\nI prosecute before the USPTO and EPO, mostly software and electronics."
+									}
+									className="min-h-[160px] text-sm"
+								/>
 							)}
 
 							{stepId === "ai" && (

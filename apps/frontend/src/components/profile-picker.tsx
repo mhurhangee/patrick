@@ -26,7 +26,7 @@ async function pickFolderNative(): Promise<string | null> {
 type FolderState =
 	| { status: "idle" }
 	| { status: "checking" }
-	| { status: "exists"; name: string; firm: string }
+	| { status: "exists"; label: string }
 	| { status: "new" }
 	| { status: "error"; message: string }
 
@@ -64,11 +64,10 @@ export function ProfilePicker({
 					// Load the settings to show who this profile belongs to
 					await api.config.setDir(trimmed)
 					const s = await api.settings.get()
-					setFolderState({
-						status: "exists",
-						name: s.profile.name || "Unknown",
-						firm: s.profile.firm || "",
-					})
+					const label =
+						s.profile.about.split("\n")[0]?.trim().slice(0, 60) ||
+						"Unnamed profile"
+					setFolderState({ status: "exists", label })
 				} else {
 					setFolderState({ status: "new" })
 				}
@@ -161,8 +160,7 @@ export function ProfilePicker({
 					{folderState.status === "exists" && (
 						<div className="rounded-md border bg-muted/40 px-3 py-2">
 							<p className="text-xs font-medium">
-								Profile found — {folderState.name}
-								{folderState.firm ? ` · ${folderState.firm}` : ""}
+								Profile found — {folderState.label}
 							</p>
 							<p className="text-xs text-muted-foreground mt-0.5">
 								Your existing settings will be loaded.

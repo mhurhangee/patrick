@@ -18,11 +18,12 @@ export type AiProvider = "anthropic" | "openai" | "google" | "gateway"
 export type AiEffort = "low" | "medium" | "high"
 
 export type Settings = {
+	// Freeform "who you are" — injected into every AI surface via <ATTORNEY>.
+	// Also the profile's label in the picker (first line). Freeform by design:
+	// consistent with the rest of the prompt system, and nothing structured to
+	// feel like data harvesting.
 	profile: {
-		name: string
-		firm: string
-		role: string
-		jurisdiction: string
+		about: string
 	}
 	ai: {
 		provider: AiProvider
@@ -54,7 +55,7 @@ export type Settings = {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-	profile: { name: "", firm: "", role: "", jurisdiction: "" },
+	profile: { about: "" },
 	ai: {
 		provider: "anthropic",
 		model: "",
