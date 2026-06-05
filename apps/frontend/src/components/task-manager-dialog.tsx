@@ -179,14 +179,12 @@ function AddFolderPanel({
 
 	return (
 		<>
-			<div className="shrink-0 border-b px-6 py-4">
-				<h2 className="text-base font-semibold font-heading">
-					Add task folder
-				</h2>
-				<p className="text-xs text-muted-foreground mt-0.5">
+			<DialogHeader>
+				<DialogTitle>Add task folder</DialogTitle>
+				<DialogDescription>
 					Point PatrickOS at an existing folder on your machine.
-				</p>
-			</div>
+				</DialogDescription>
+			</DialogHeader>
 
 			<div className="flex-1 overflow-y-auto px-6 py-4">
 				<div className="flex flex-col gap-4 max-w-md">
@@ -312,6 +310,10 @@ function EditFolderPanel({
 }) {
 	const [name, setName] = useState(task.name)
 	const [savedName, setSavedName] = useState(task.name)
+	const [taskType, setTaskType] = useState<TaskType | "">(task.taskType ?? "")
+	const [savedTaskType, setSavedTaskType] = useState<TaskType | "">(
+		task.taskType ?? "",
+	)
 	const [deleteOpen, setDeleteOpen] = useState(false)
 	const [deleting, setDeleting] = useState(false)
 	const { status, wrap } = useSaveButton()
@@ -320,15 +322,23 @@ function EditFolderPanel({
 	useEffect(() => {
 		setName(task.name)
 		setSavedName(task.name)
+		setTaskType(task.taskType ?? "")
+		setSavedTaskType(task.taskType ?? "")
 	}, [task.path])
 
-	const isDirty = name !== savedName
+	const isDirty = name !== savedName || taskType !== savedTaskType
 
 	async function handleSave() {
+		if (taskType && taskType !== savedTaskType) {
+			await onSetTaskType(task.path, taskType)
+			setSavedTaskType(taskType)
+		}
 		const trimmed = name.trim() || task.name
-		const updated = await onRename(task.path, trimmed)
-		setSavedName(updated.name)
-		setName(updated.name)
+		if (trimmed !== savedName) {
+			const updated = await onRename(task.path, trimmed)
+			setSavedName(updated.name)
+			setName(updated.name)
+		}
 	}
 
 	async function handleDelete() {
@@ -344,10 +354,10 @@ function EditFolderPanel({
 	return (
 		<>
 			<DialogHeader>
-				<DialogTitle>Edit Task</DialogTitle>
-				<DialogDescription>
-					<span className="font-semibold mr-2 ml-2">{savedName}</span>{" "}
-					<span className="font-mono">{task.path}</span>
+				<DialogTitle>Edit task folder</DialogTitle>
+				<DialogDescription className="truncate">
+					<span className="font-medium text-foreground">{savedName}</span>
+					<span className="ml-2 font-mono text-xs">{task.path}</span>
 				</DialogDescription>
 			</DialogHeader>
 
@@ -367,8 +377,8 @@ function EditFolderPanel({
 					<div className="flex flex-col gap-1.5">
 						<Label>Task type</Label>
 						<Select
-							value={task.taskType ?? ""}
-							onValueChange={(v) => onSetTaskType(task.path, v as TaskType)}
+							value={taskType}
+							onValueChange={(v) => setTaskType(v as TaskType)}
 						>
 							<SelectTrigger>
 								<SelectValue placeholder="Select a task type…" />
