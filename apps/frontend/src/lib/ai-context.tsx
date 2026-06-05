@@ -1,16 +1,16 @@
 import type { AiEffort } from "@patrickos/shared"
 import {
+	DEFAULT_DETAILED_MODEL,
+	DEFAULT_QUICK_MODEL,
+	type Provider,
+} from "@patrickos/shared"
+import {
 	createContext,
 	type ReactNode,
 	useContext,
 	useEffect,
 	useState,
 } from "react"
-import {
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
-	type Provider,
-} from "@/lib/ai-models"
 import { api } from "@/lib/api"
 
 type KeyStatus = "idle" | "verifying" | "valid" | "invalid"

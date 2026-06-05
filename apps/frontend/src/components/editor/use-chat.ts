@@ -85,6 +85,8 @@ function createChatTransport({ api }: { api: string }) {
 				const model = localStorage.getItem("askpat-quick-model") || ""
 				const apiKey = localStorage.getItem(`ai-${provider}-key`) || ""
 				const assetType = localStorage.getItem("askpat-asset-type") || undefined
+				const sourceName =
+					localStorage.getItem("askpat-source-name") || undefined
 
 				return fetch(input, {
 					...init,
@@ -95,6 +97,7 @@ function createChatTransport({ api }: { api: string }) {
 						selectedMarkdown,
 						documentMarkdown,
 						assetType,
+						sourceName,
 						provider,
 						apiKey,
 						model,
@@ -113,7 +116,7 @@ export const useChat = () => {
 	const options = usePluginOption(aiChatPlugin, "chatOptions")
 
 	const transport = useMemo(
-		() => createChatTransport({ api: options.api || "/ai/askpat/command" }),
+		() => createChatTransport({ api: options.api || "/ai/editor/command" }),
 		[options.api],
 	)
 

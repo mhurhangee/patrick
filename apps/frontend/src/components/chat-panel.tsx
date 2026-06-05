@@ -3,6 +3,8 @@ import {
 	type ApiAsset,
 	type ApiChat,
 	CONTEXT_OVERFLOW_MARKER,
+	contextWindowFor,
+	MODELS_BY_ID,
 } from "@patrickos/shared"
 import {
 	DefaultChatTransport,
@@ -31,7 +33,6 @@ import {
 } from "@/components/ui/empty"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import { contextWindowFor, MODELS_BY_ID } from "@/lib/ai-models"
 import { api, BASE_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { AssistantParts, type ToolContext } from "./chat-message-parts"

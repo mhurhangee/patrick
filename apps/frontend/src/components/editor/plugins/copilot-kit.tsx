@@ -14,17 +14,7 @@ export const CopilotKit = [
 	CopilotPlugin.configure(({ api }) => ({
 		options: {
 			completeOptions: {
-				api: `${BASE_URL}/ai/askpat/copilot`,
-				body: {
-					system: `You are an AI writing assistant for patent attorneys. Continue the text naturally up to the next punctuation mark.
-
-Rules:
-- Maintain the formal, precise style of patent documents.
-- Do not repeat given text. Continue seamlessly from where it ends.
-- CRITICAL: Always end with a punctuation mark.
-- CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc.
-- If no context is provided or you can't generate a continuation, return "0" without explanation.`,
-				},
+				api: `${BASE_URL}/ai/editor/copilot`,
 				fetch: (async (input, init) => {
 					// Inject AI settings (BYOK — keys never stored server-side)
 					const initBody = JSON.parse((init?.body as string) ?? "{}")

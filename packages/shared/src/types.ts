@@ -18,11 +18,12 @@ export type AiProvider = "anthropic" | "openai" | "google" | "gateway"
 export type AiEffort = "low" | "medium" | "high"
 
 export type Settings = {
+	// Freeform "who you are" — injected into every AI surface via <ATTORNEY>.
+	// Also the profile's label in the picker (first line). Freeform by design:
+	// consistent with the rest of the prompt system, and nothing structured to
+	// feel like data harvesting.
 	profile: {
-		name: string
-		firm: string
-		role: string
-		jurisdiction: string
+		about: string
 	}
 	ai: {
 		provider: AiProvider
@@ -37,10 +38,14 @@ export type Settings = {
 		googleKey: string
 		gatewayKey: string
 	}
+	// Full, fully-exposed system-prompt templates per surface (markdown with
+	// <TOKEN> markers). Empty = use the shipped DEFAULT_TEMPLATE_*. `context` is
+	// the shared practice-preferences text, injected via <PRACTICECONTEXT>.
 	prompts: {
 		context: string
 		agentpat: string
-		askpat: string
+		draftpat: string
+		notepat: string
 		extractpat: string
 	}
 	integrations: {
@@ -50,7 +55,7 @@ export type Settings = {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-	profile: { name: "", firm: "", role: "", jurisdiction: "" },
+	profile: { about: "" },
 	ai: {
 		provider: "anthropic",
 		model: "",
@@ -62,7 +67,13 @@ export const DEFAULT_SETTINGS: Settings = {
 		googleKey: "",
 		gatewayKey: "",
 	},
-	prompts: { context: "", agentpat: "", askpat: "", extractpat: "" },
+	prompts: {
+		context: "",
+		agentpat: "",
+		draftpat: "",
+		notepat: "",
+		extractpat: "",
+	},
 	integrations: { epoOpsKey: "", epoOpsSecret: "" },
 }
 

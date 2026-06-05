@@ -420,7 +420,7 @@ function GutterMenu({
 						className="text-primary-foreground bg-primary"
 					>
 						<Clover />
-						AskPat
+						DraftPat
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 

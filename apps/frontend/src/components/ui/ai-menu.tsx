@@ -52,6 +52,15 @@ import { cn } from "@/lib/utils"
 import { useAI } from "@/lib/ai-context"
 import { AIChatEditor } from "./ai-chat-editor"
 
+// Which inline assistant is active, from the open document's type (set on mount
+// via the askpat-asset-type key). Notes → NotePat, everything else → DraftPat.
+function assistantName(): string {
+	return typeof window !== "undefined" &&
+		localStorage.getItem("askpat-asset-type") === "note"
+		? "NotePat"
+		: "DraftPat"
+}
+
 export function AIMenu() {
 	const { api, editor } = useEditorPlugin(AIChatPlugin)
 	const mode = usePluginOption(AIChatPlugin, "mode")
@@ -233,7 +242,7 @@ export function AIMenu() {
 								}
 							}}
 							onValueChange={setInput}
-							placeholder="AskPat..."
+							placeholder={`${assistantName()}...`}
 							data-plate-focus
 							autoFocus
 						/>
@@ -471,7 +480,7 @@ export const AIMenuItems = ({
 		return (
 			<CommandGroup>
 				<div className="px-3 py-2 text-xs text-muted-foreground">
-					Add an API key in Settings to use AskPat.
+					Add an API key in Settings to use {assistantName()}.
 				</div>
 			</CommandGroup>
 		)

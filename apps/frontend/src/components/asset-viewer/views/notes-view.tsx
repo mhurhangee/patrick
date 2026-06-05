@@ -45,6 +45,7 @@ export function NotesView({ asset }: { asset: ApiAsset }) {
 			initialValue={initialValue}
 			onSave={handleSave}
 			askpatAssetType="note"
+			askpatSourceName={asset.filename}
 			plugins={NotesEditorKit}
 		/>
 	)

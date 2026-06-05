@@ -1,21 +1,13 @@
-import { readdir, readFile, stat } from "node:fs/promises"
-import { extname, join } from "node:path"
 import {
 	type Chat,
 	type ChatIndexEntry,
 	type ChatMessage,
 	CONTEXT_OVERFLOW_MARKER,
+	DEFAULT_TEMPLATE_AGENTPAT,
 } from "@patrickos/shared"
 import type { ModelMessage } from "ai"
-import {
-	createAgentUIStreamResponse,
-	generateText,
-	ToolLoopAgent,
-	tool,
-} from "ai"
+import { createAgentUIStreamResponse, generateText, ToolLoopAgent } from "ai"
 import { Hono } from "hono"
-import { z } from "zod"
-import { fetchPatent } from "../lib/epo-ops"
 import {
 	deleteChat,
 	listExtractions,
@@ -26,11 +18,8 @@ import {
 	writeChat,
 	writeChatIndex,
 } from "../lib/fs"
-import {
-	buildAgentPatPrompt,
-	createModel,
-	reasoningOptions,
-} from "../lib/patent-prompt"
+import { createModel, reasoningOptions } from "../lib/patent-prompt"
+import { buildFileParts, render } from "../lib/prompt"
 
 // Chat title from the first user message's text (sliced), used for fork.
 function titleFromMessages(messages: ChatMessage[]): string {
@@ -49,26 +38,6 @@ function isContextOverflow(message: string): boolean {
 		message,
 	)
 }
-
-// No execute — a client-side confirmation tool. The loop stops, the call is
-// forwarded to the client which runs ExtractPat and feeds the result back.
-const extractSource = tool({
-	description:
-		"Propose running ExtractPat on a source document to extract structured data (e.g. office action dates, claims, cited references). Use when a source has not been extracted yet and structured data would help answer the user. The user must confirm before it runs. Only US Office Actions and EP Examination Reports can currently be extracted.",
-	inputSchema: z.object({
-		filename: z
-			.string()
-			.describe(
-				"The source filename to extract from, e.g. 'office-action.pdf'",
-			),
-		assetType: z
-			.string()
-			.optional()
-			.describe(
-				"Document type id if known (e.g. 'us-office-action', 'ep-examination-report'); omit to auto-detect",
-			),
-	}),
-})
 
 export const chatsRouter = new Hono()
 
@@ -289,14 +258,21 @@ chatsRouter.post("/:id/messages", async (c) => {
 	const taskType = tasks.find((p) => p.path === taskPath)?.taskType
 	const extractedSources = await listExtractions(taskPath)
 
-	const { system, fileParts } = await buildAgentPatPrompt({
-		settings,
-		taskPath,
-		openFilePaths: openFilePaths ?? [],
-		taskType,
-		extractedSources,
-		excludedFiles: [...excludedSet].map((p) => p.split("/").at(-1) ?? p),
-	})
+	const template = settings.prompts.agentpat || DEFAULT_TEMPLATE_AGENTPAT
+	const { system, tools } = await render(
+		template,
+		{
+			settings,
+			taskPath,
+			taskType,
+			openFilePaths: openFilePaths ?? [],
+			extractedSources,
+			excludedFiles: [...excludedSet].map((p) => p.split("/").at(-1) ?? p),
+			excludedPaths: excludedSet,
+		},
+		"agentpat",
+	)
+	const fileParts = await buildFileParts(openFilePaths ?? [])
 
 	const resolvedProvider = provider || settings.ai.provider
 	const keyField = `${resolvedProvider}Key` as
@@ -313,93 +289,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 		settings.ai.effort,
 		settings.ai.showThinking,
 	)
-
-	const fsTools = {
-		listDirectory: tool({
-			description:
-				"List files and folders inside a directory in the task folder",
-			inputSchema: z.object({
-				path: z
-					.string()
-					.describe(
-						"Absolute path to list. Use the task path to list the root.",
-					),
-			}),
-			execute: async ({ path: dirPath }) => {
-				const target = dirPath || taskPath
-				if (!target.startsWith(taskPath))
-					return { error: "Path outside task folder" }
-				try {
-					const entries = await readdir(target, { withFileTypes: true })
-					return entries.map((e) => ({
-						name: e.name,
-						type: e.isDirectory() ? "directory" : "file",
-						path: join(target, e.name),
-					}))
-				} catch {
-					return { error: `Could not list: ${target}` }
-				}
-			},
-		}),
-		readFile: tool({
-			description:
-				"Read the text content of a file in the task folder (use for .txt, .md, .json, .docx — not PDFs, those are injected as file parts)",
-			inputSchema: z.object({
-				path: z.string().describe("Absolute path to the file"),
-			}),
-			execute: async ({ path: filePath }) => {
-				if (!filePath.startsWith(taskPath))
-					return { error: "Path outside task folder" }
-				if (excludedSet.has(filePath))
-					return {
-						error:
-							"This document is excluded from AgentPat by the attorney. Do not read or use it.",
-					}
-				const ext = extname(filePath).toLowerCase()
-				try {
-					if (ext === ".pdf") {
-						const s = await stat(filePath)
-						return {
-							note: "PDF file — open it in the editor to include it in AI context",
-							size: s.size,
-						}
-					}
-					const content = await readFile(filePath, "utf8")
-					return { content: content.slice(0, 20000) } // cap at 20k chars
-				} catch {
-					return { error: `Could not read: ${filePath}` }
-				}
-			},
-		}),
-	}
-
-	const epoAuth = settings.integrations
-	const epoOpsAuth = {
-		consumerKey: epoAuth.epoOpsKey,
-		consumerSecret: epoAuth.epoOpsSecret,
-	}
-	const fetchPatentTool = tool({
-		description:
-			"Fetch structured patent data from EPO OPS by publication number (e.g. EP1234567, US9876543, WO2020123456)",
-		inputSchema: z.object({
-			publicationNumber: z.string().describe("Patent publication number"),
-		}),
-		execute: async ({ publicationNumber }) => {
-			try {
-				return await fetchPatent(publicationNumber, epoOpsAuth)
-			} catch (err) {
-				return { error: String(err) }
-			}
-		},
-	})
-
-	const tools = {
-		extractSource,
-		...fsTools,
-		...(epoAuth.epoOpsKey && epoAuth.epoOpsSecret
-			? { fetchPatent: fetchPatentTool }
-			: {}),
-	}
 
 	const agent = new ToolLoopAgent({
 		model,

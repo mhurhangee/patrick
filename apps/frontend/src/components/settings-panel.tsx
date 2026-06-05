@@ -1,12 +1,18 @@
-import type { AiEffort } from "@patrickos/shared"
+import type { AiEffort, SurfaceId } from "@patrickos/shared"
 import {
-	DEFAULT_PROMPT_AGENTPAT,
-	DEFAULT_PROMPT_ASKPAT,
+	DEFAULT_DETAILED_MODEL,
 	DEFAULT_PROMPT_CONTEXT,
-	DEFAULT_PROMPT_EXTRACTPAT,
+	DEFAULT_QUICK_MODEL,
+	DEFAULT_TEMPLATE_AGENTPAT,
+	DEFAULT_TEMPLATE_DRAFTPAT,
+	DEFAULT_TEMPLATE_EXTRACTPAT,
+	DEFAULT_TEMPLATE_NOTEPAT,
+	modelsForProvider,
+	type Provider,
 } from "@patrickos/shared"
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
+import { PromptEditor } from "@/components/prompt-editor"
 import { useTheme } from "@/components/theme-provider"
 import {
 	AlertDialog,
@@ -32,12 +38,6 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import {
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
-	modelsForProvider,
-	type Provider,
-} from "@/lib/ai-models"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -49,7 +49,8 @@ type Tab =
 	| "ai-epo"
 	| "prompts-context"
 	| "prompts-agent"
-	| "prompts-ask"
+	| "prompts-draft"
+	| "prompts-note"
 	| "prompts-extract"
 	| "appearance"
 
@@ -92,11 +93,7 @@ function SaveButton({
 	onClick: () => void
 }) {
 	return (
-		<Button
-			onClick={onClick}
-			disabled={!isDirty || status === "saving"}
-			variant="outline"
-		>
+		<Button onClick={onClick} disabled={!isDirty || status === "saving"}>
 			{status === "saving" ? (
 				<Loader2 size={12} className="animate-spin" />
 			) : status === "saved" ? (
@@ -117,23 +114,38 @@ function SectionLayout({
 	description,
 	children,
 	footer,
+	fill = false,
 }: {
 	title: string
 	description: string
 	children: ReactNode
 	footer?: ReactNode
+	/** Make the body fill the available height (no outer scroll) — for the
+	 *  full-height prompt editor. */
+	fill?: boolean
 }) {
 	return (
 		<>
-			<div className="shrink-0 border-b px-8 py-5">
-				<h2 className="text-lg font-semibold font-heading tracking-tight">
+			<div className="flex h-14 shrink-0 items-center border-b px-8">
+				<h2 className="font-heading font-semibold text-base tracking-tight">
 					{title}
 				</h2>
-				<p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
 			</div>
-			<div className="flex-1 overflow-y-auto px-8 py-6">{children}</div>
+			<div
+				className={cn(
+					"flex-1 px-8 py-6",
+					fill ? "flex min-h-0 flex-col overflow-hidden" : "overflow-y-auto",
+				)}
+			>
+				{description && (
+					<p className="mb-4 max-w-2xl shrink-0 text-muted-foreground text-xs">
+						{description}
+					</p>
+				)}
+				{children}
+			</div>
 			{footer && (
-				<div className="flex shrink-0 items-center justify-between border-t px-8 py-3">
+				<div className="flex h-14 shrink-0 items-center justify-between border-t px-8">
 					{footer}
 				</div>
 			)}
@@ -172,7 +184,12 @@ type NavGroup = {
 }
 
 const NAV_GROUPS: NavGroup[] = [
-	{ items: [{ id: "you", label: "You" }] },
+	{
+		items: [
+			{ id: "you", label: "You" },
+			{ id: "prompts-context", label: "Practice Context", indent: true },
+		],
+	},
 	{
 		label: "AI",
 		items: [
@@ -183,9 +200,9 @@ const NAV_GROUPS: NavGroup[] = [
 	{
 		label: "Prompts",
 		items: [
-			{ id: "prompts-context", label: "Practice Context", indent: true },
 			{ id: "prompts-agent", label: "AgentPat", indent: true },
-			{ id: "prompts-ask", label: "AskPat", indent: true },
+			{ id: "prompts-draft", label: "DraftPat", indent: true },
+			{ id: "prompts-note", label: "NotePat", indent: true },
 			{ id: "prompts-extract", label: "ExtractPat", indent: true },
 		],
 	},
@@ -198,26 +215,21 @@ export function SettingsPanel({
 	open,
 	onClose,
 	onSwitchProfile,
+	taskPath,
 }: {
 	open: boolean
 	onClose: () => void
 	onSwitchProfile: () => void
+	/** Active task path — used for live prompt-preview values. */
+	taskPath?: string
 }) {
 	const ai = useAI()
 	const { theme, setTheme } = useTheme()
 	const [activeTab, setActiveTab] = useState<Tab>("you")
 
 	// YOU
-	const [name, setName] = useState("")
-	const [firm, setFirm] = useState("")
-	const [role, setRole] = useState("")
-	const [jurisdiction, setJurisdiction] = useState("")
-	const [savedAccount, setSavedAccount] = useState({
-		name: "",
-		firm: "",
-		role: "",
-		jurisdiction: "",
-	})
+	const [about, setAbout] = useState("")
+	const [savedAbout, setSavedAbout] = useState("")
 
 	// AI
 	const [tempProvider, setTempProvider] = useState<Provider>(ai.provider)
@@ -244,11 +256,13 @@ export function SettingsPanel({
 	// Prompts
 	const [practiceContext, setPracticeContext] = useState("")
 	const [agentPatInstructions, setAgentPatInstructions] = useState("")
-	const [askPatInstructions, setAskPatInstructions] = useState("")
+	const [draftPatInstructions, setDraftPatInstructions] = useState("")
+	const [notePatInstructions, setNotePatInstructions] = useState("")
 	const [extractPatInstructions, setExtractPatInstructions] = useState("")
 	const [savedPracticeContext, setSavedPracticeContext] = useState("")
 	const [savedAgentPat, setSavedAgentPat] = useState("")
-	const [savedAskPat, setSavedAskPat] = useState("")
+	const [savedDraftPat, setSavedDraftPat] = useState("")
+	const [savedNotePat, setSavedNotePat] = useState("")
 	const [savedExtractPat, setSavedExtractPat] = useState("")
 
 	// EPO
@@ -273,16 +287,8 @@ export function SettingsPanel({
 				google: s.ai.googleKey ?? "",
 			}
 
-			setName(s.profile.name)
-			setFirm(s.profile.firm)
-			setRole(s.profile.role)
-			setJurisdiction(s.profile.jurisdiction)
-			setSavedAccount({
-				name: s.profile.name,
-				firm: s.profile.firm,
-				role: s.profile.role,
-				jurisdiction: s.profile.jurisdiction,
-			})
+			setAbout(s.profile.about)
+			setSavedAbout(s.profile.about)
 
 			setTempProvider(p)
 			setTempDetailedModel(detailed)
@@ -303,8 +309,10 @@ export function SettingsPanel({
 			setSavedPracticeContext(s.prompts.context)
 			setAgentPatInstructions(s.prompts.agentpat)
 			setSavedAgentPat(s.prompts.agentpat)
-			setAskPatInstructions(s.prompts.askpat)
-			setSavedAskPat(s.prompts.askpat)
+			setDraftPatInstructions(s.prompts.draftpat)
+			setSavedDraftPat(s.prompts.draftpat)
+			setNotePatInstructions(s.prompts.notepat)
+			setSavedNotePat(s.prompts.notepat)
 			setExtractPatInstructions(s.prompts.extractpat)
 			setSavedExtractPat(s.prompts.extractpat)
 			setEpoKey(s.integrations?.epoOpsKey ?? "")
@@ -344,11 +352,7 @@ export function SettingsPanel({
 	const detailedModelOptions = modelOptions
 
 	// Dirty flags
-	const isAccountDirty =
-		name !== savedAccount.name ||
-		firm !== savedAccount.firm ||
-		role !== savedAccount.role ||
-		jurisdiction !== savedAccount.jurisdiction
+	const isAccountDirty = about !== savedAbout
 
 	const isProviderDirty =
 		tempProvider !== savedProviderSnap.provider ||
@@ -360,8 +364,8 @@ export function SettingsPanel({
 
 	// Save handlers
 	async function saveAccount() {
-		await api.settings.update({ profile: { name, firm, role, jurisdiction } })
-		setSavedAccount({ name, firm, role, jurisdiction })
+		await api.settings.update({ profile: { about } })
+		setSavedAbout(about)
 	}
 
 	async function saveProvider() {
@@ -391,9 +395,13 @@ export function SettingsPanel({
 		await api.settings.update({ prompts: { agentpat: agentPatInstructions } })
 		setSavedAgentPat(agentPatInstructions)
 	}
-	async function saveAskPat() {
-		await api.settings.update({ prompts: { askpat: askPatInstructions } })
-		setSavedAskPat(askPatInstructions)
+	async function saveDraftPat() {
+		await api.settings.update({ prompts: { draftpat: draftPatInstructions } })
+		setSavedDraftPat(draftPatInstructions)
+	}
+	async function saveNotePat() {
+		await api.settings.update({ prompts: { notepat: notePatInstructions } })
+		setSavedNotePat(notePatInstructions)
 	}
 	async function saveExtractPat() {
 		await api.settings.update({
@@ -423,7 +431,7 @@ export function SettingsPanel({
 		>
 			{/* Sidebar */}
 			<div className="w-52 border-r flex flex-col shrink-0">
-				<div className="px-5 py-4 border-b">
+				<div className="flex h-14 items-center border-b px-5">
 					<p className="text-sm font-semibold font-heading">Settings</p>
 				</div>
 				<nav className="flex-1 overflow-y-auto p-2">
@@ -454,7 +462,7 @@ export function SettingsPanel({
 						</div>
 					))}
 				</nav>
-				<div className="p-3 border-t">
+				<div className="flex h-14 items-center border-t px-3">
 					<button
 						type="button"
 						onClick={handleSwitchProfile}
@@ -466,27 +474,25 @@ export function SettingsPanel({
 			</div>
 
 			{/* Content */}
-			<div className="flex-1 flex flex-col overflow-hidden">
-				{/* Top bar */}
-				<div className="flex items-center justify-end border-b px-4 py-2 shrink-0">
-					<Button type="button" variant="ghost" size="icon" onClick={onClose}>
-						<X size={16} />
-					</Button>
-				</div>
+			<div className="relative flex-1 flex flex-col overflow-hidden">
+				{/* Close — floats in the section header band */}
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					onClick={onClose}
+					className="absolute right-3 top-2 z-10"
+				>
+					<X size={16} />
+				</Button>
 
 				{/* Active section */}
 				<div className="flex flex-col flex-1 overflow-hidden">
 					{activeTab === "you" && (
 						<YouSection
-							name={name}
-							firm={firm}
-							role={role}
-							jurisdiction={jurisdiction}
+							about={about}
 							isDirty={isAccountDirty}
-							onNameChange={setName}
-							onFirmChange={setFirm}
-							onRoleChange={setRole}
-							onJurisdictionChange={setJurisdiction}
+							onAboutChange={setAbout}
 							onSave={saveAccount}
 						/>
 					)}
@@ -534,47 +540,70 @@ export function SettingsPanel({
 					{activeTab === "prompts-context" && (
 						<PromptSection
 							title="Practice Context"
-							description="Freeform context included in every AI call — prosecution style, specialisations, formatting preferences."
+							description="Freeform notes about how you practise, injected into every AI surface via the <PRACTICECONTEXT> token. Prosecution style, specialisations, house formatting — whatever you'd tell a new associate."
 							defaultPrompt={DEFAULT_PROMPT_CONTEXT}
 							value={practiceContext}
 							savedValue={savedPracticeContext}
 							onChange={setPracticeContext}
 							onSave={saveContext}
+							placeholder={
+								"e.g.\n- Prefer the narrowest amendment that overcomes the rejection.\n- Always cite MPEP sections for US matters.\n- House style: British English, formal tone, no contractions."
+							}
 						/>
 					)}
 					{activeTab === "prompts-agent" && (
 						<PromptSection
 							title="AgentPat"
-							description="Task-aware research assistant. Controls how it reasons across your task."
-							defaultPrompt={DEFAULT_PROMPT_AGENTPAT}
+							description="Task-aware research assistant. The full system-prompt template — edit any part; <TOKENS> inject live context and wire tools."
+							defaultPrompt={DEFAULT_TEMPLATE_AGENTPAT}
 							value={agentPatInstructions}
 							savedValue={savedAgentPat}
 							onChange={setAgentPatInstructions}
 							onSave={saveAgentPat}
+							surface="agentpat"
+							taskPath={taskPath}
 							showAlert
 						/>
 					)}
-					{activeTab === "prompts-ask" && (
+					{activeTab === "prompts-draft" && (
 						<PromptSection
-							title="AskPat"
-							description="In-editor writing assistant. Controls how it drafts and refines document content."
-							defaultPrompt={DEFAULT_PROMPT_ASKPAT}
-							value={askPatInstructions}
-							savedValue={savedAskPat}
-							onChange={setAskPatInstructions}
-							onSave={saveAskPat}
+							title="DraftPat"
+							description="In-editor writing assistant for artifacts. The full template controlling how it drafts and refines document content."
+							defaultPrompt={DEFAULT_TEMPLATE_DRAFTPAT}
+							value={draftPatInstructions}
+							savedValue={savedDraftPat}
+							onChange={setDraftPatInstructions}
+							onSave={saveDraftPat}
+							surface="draftpat"
+							taskPath={taskPath}
+							showAlert
+						/>
+					)}
+					{activeTab === "prompts-note" && (
+						<PromptSection
+							title="NotePat"
+							description="In-editor assistant for per-source Notes. The full template; <CURRENTSOURCE> makes it aware of the document the note belongs to."
+							defaultPrompt={DEFAULT_TEMPLATE_NOTEPAT}
+							value={notePatInstructions}
+							savedValue={savedNotePat}
+							onChange={setNotePatInstructions}
+							onSave={saveNotePat}
+							surface="notepat"
+							taskPath={taskPath}
 							showAlert
 						/>
 					)}
 					{activeTab === "prompts-extract" && (
 						<PromptSection
 							title="ExtractPat"
-							description="PDF metadata extraction. Controls what fields are pulled from uploaded sources."
-							defaultPrompt={DEFAULT_PROMPT_EXTRACTPAT}
+							description="Structured PDF extraction. The full template — keep <LOCATIONINSTRUCTION> and the field guidance, or extraction may break."
+							defaultPrompt={DEFAULT_TEMPLATE_EXTRACTPAT}
 							value={extractPatInstructions}
 							savedValue={savedExtractPat}
 							onChange={setExtractPatInstructions}
 							onSave={saveExtractPat}
+							surface="extractpat"
+							taskPath={taskPath}
 							showAlert
 						/>
 					)}
@@ -590,26 +619,14 @@ export function SettingsPanel({
 // ─── You section ──────────────────────────────────────────────────────────────
 
 function YouSection({
-	name,
-	firm,
-	role,
-	jurisdiction,
+	about,
 	isDirty,
-	onNameChange,
-	onFirmChange,
-	onRoleChange,
-	onJurisdictionChange,
+	onAboutChange,
 	onSave,
 }: {
-	name: string
-	firm: string
-	role: string
-	jurisdiction: string
+	about: string
 	isDirty: boolean
-	onNameChange: (v: string) => void
-	onFirmChange: (v: string) => void
-	onRoleChange: (v: string) => void
-	onJurisdictionChange: (v: string) => void
+	onAboutChange: (v: string) => void
 	onSave: () => Promise<void>
 }) {
 	const { status, wrap } = useSaveButton()
@@ -617,7 +634,7 @@ function YouSection({
 	return (
 		<SectionLayout
 			title="You"
-			description="Your name and firm appear in AI-drafted documents."
+			description="Freeform — who you are, given to every AI surface via the <ATTORNEY> token. The first line also labels this profile in the switcher. For how you like to work, use Practice Context."
 			footer={
 				<>
 					<div />
@@ -629,48 +646,14 @@ function YouSection({
 				</>
 			}
 		>
-			<div className="flex flex-col gap-4 max-w-sm">
-				<div className="grid grid-cols-2 gap-3">
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-name">Name</Label>
-						<Input
-							id="s-name"
-							value={name}
-							onChange={(e) => onNameChange(e.target.value)}
-							placeholder="Jane Smith"
-						/>
-					</div>
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-firm">Firm</Label>
-						<Input
-							id="s-firm"
-							value={firm}
-							onChange={(e) => onFirmChange(e.target.value)}
-							placeholder="Smith & Associates IP"
-						/>
-					</div>
-				</div>
-				<div className="grid grid-cols-2 gap-3">
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-role">Role</Label>
-						<Input
-							id="s-role"
-							value={role}
-							onChange={(e) => onRoleChange(e.target.value)}
-							placeholder="Patent Attorney"
-						/>
-					</div>
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="s-jur">Jurisdiction</Label>
-						<Input
-							id="s-jur"
-							value={jurisdiction}
-							onChange={(e) => onJurisdictionChange(e.target.value)}
-							placeholder="USPTO, EPO…"
-						/>
-					</div>
-				</div>
-			</div>
+			<Textarea
+				value={about}
+				onChange={(e) => onAboutChange(e.target.value)}
+				placeholder={
+					"e.g. Jane Smith — registered patent attorney at Smith & Associates IP.\nI prosecute before the USPTO and EPO, mostly software and electronics."
+				}
+				className="min-h-[200px] max-w-2xl text-sm"
+			/>
 		</SectionLayout>
 	)
 }
@@ -791,8 +774,8 @@ function ByokSection({
 				</>
 			}
 		>
-			<div className="flex flex-col gap-6 max-w-md">
-				<div className="grid grid-cols-4 gap-3">
+			<div className="flex flex-col gap-6 max-w-2xl">
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 					{PROVIDER_OPTIONS.map((p) => (
 						<button
 							key={p.id}
@@ -870,7 +853,7 @@ function ByokSection({
 				<div className="grid grid-cols-2 gap-4">
 					<ModelSelect
 						label="Quick model"
-						description="AskPat and ExtractPat — fast and cheap."
+						description="DraftPat, NotePat and ExtractPat — fast and cheap."
 						value={tempQuickModel}
 						options={quickModelOptions}
 						onChange={onQuickModelChange}
@@ -1011,6 +994,9 @@ function PromptSection({
 	onChange,
 	onSave,
 	showAlert = false,
+	surface,
+	taskPath,
+	placeholder,
 }: {
 	title: string
 	description: string
@@ -1020,6 +1006,11 @@ function PromptSection({
 	onChange: (v: string) => void
 	onSave: () => Promise<void>
 	showAlert?: boolean
+	/** When set, edit as a full <TOKEN> template (PromptEditor); else plain text. */
+	surface?: SurfaceId
+	taskPath?: string
+	/** Placeholder for the plain-text (non-surface) variant. */
+	placeholder?: string
 }) {
 	const [alertOpen, setAlertOpen] = useState(false)
 	const { status, wrap } = useSaveButton()
@@ -1033,6 +1024,7 @@ function PromptSection({
 			<SectionLayout
 				title={title}
 				description={description}
+				fill={!!surface}
 				footer={
 					<>
 						{defaultPrompt ? (
@@ -1053,12 +1045,21 @@ function PromptSection({
 					</>
 				}
 			>
-				<Textarea
-					value={displayValue}
-					onChange={(e) => onChange(e.target.value)}
-					placeholder="Enter custom instructions…"
-					className="min-h-[320px] font-mono text-xs"
-				/>
+				{surface ? (
+					<PromptEditor
+						surface={surface}
+						value={displayValue}
+						onChange={onChange}
+						taskPath={taskPath}
+					/>
+				) : (
+					<Textarea
+						value={displayValue}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder={placeholder ?? "Enter custom instructions…"}
+						className="min-h-[320px] font-mono text-xs"
+					/>
+				)}
 			</SectionLayout>
 
 			{showAlert && (

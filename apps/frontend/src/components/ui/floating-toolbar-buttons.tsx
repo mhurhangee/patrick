@@ -38,10 +38,10 @@ export function FloatingToolbarButtons() {
 						<AIToolbarButton
 							className="bg-primary text-primary-foreground"
 							disabled={!connectedToAI}
-							tooltip={!connectedToAI ? "Add an API key in Settings to use AskPat" : undefined}
+							tooltip={!connectedToAI ? "Add an API key in Settings to use DraftPat" : undefined}
 						>
 							<Clover />
-							AskPat
+							DraftPat
 						</AIToolbarButton>
 					</ToolbarGroup>
 					<ToolbarGroup>

@@ -9,13 +9,16 @@ export function PlateDocEditor({
 	initialValue,
 	onSave,
 	askpatAssetType,
+	askpatSourceName,
 	plugins,
 	debounceMs = 500,
 }: {
 	initialValue?: Value
 	onSave: (value: Value) => void
-	/** Tells the AskPat inline AI what kind of document is open. */
+	/** Tells the inline editor AI (DraftPat/NotePat) what kind of document is open. */
 	askpatAssetType?: string
+	/** For NotePat: the source filename this note is attached to (→ <CURRENTSOURCE>). */
+	askpatSourceName?: string
 	/** Plugin set passed to the editor (defaults to the full kit). */
 	plugins?: ComponentProps<typeof PlateEditor>["plugins"]
 	debounceMs?: number
@@ -40,7 +43,12 @@ export function PlateDocEditor({
 	useEffect(() => {
 		if (askpatAssetType)
 			localStorage.setItem("askpat-asset-type", askpatAssetType)
-	}, [askpatAssetType])
+		// Source-name only applies to NotePat; clear it otherwise so DraftPat
+		// never inherits a stale note's source.
+		if (askpatSourceName)
+			localStorage.setItem("askpat-source-name", askpatSourceName)
+		else localStorage.removeItem("askpat-source-name")
+	}, [askpatAssetType, askpatSourceName])
 
 	// Flush on unmount (tab switch, close) so the last edit is never lost.
 	useEffect(() => {

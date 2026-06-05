@@ -1,7 +1,11 @@
 import {
-	DEFAULT_PROMPT_AGENTPAT,
-	DEFAULT_PROMPT_ASKPAT,
-	DEFAULT_PROMPT_EXTRACTPAT,
+	DEFAULT_DETAILED_MODEL,
+	DEFAULT_QUICK_MODEL,
+	DEFAULT_TEMPLATE_AGENTPAT,
+	DEFAULT_TEMPLATE_DRAFTPAT,
+	DEFAULT_TEMPLATE_EXTRACTPAT,
+	modelsForProvider,
+	type Provider,
 	TASK_CONFIGS,
 	type TaskType,
 } from "@patrickos/shared"
@@ -25,12 +29,6 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
-import {
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
-	modelsForProvider,
-	type Provider,
-} from "@/lib/ai-models"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -55,7 +53,7 @@ type StepId =
 	| "you"
 	| "ai"
 	| "agentpat"
-	| "askpat"
+	| "draftpat"
 	| "extractpat"
 	| "tutorial"
 	| "task"
@@ -63,7 +61,7 @@ const STEPS: StepId[] = [
 	"you",
 	"ai",
 	"agentpat",
-	"askpat",
+	"draftpat",
 	"extractpat",
 	"tutorial",
 	"task",
@@ -73,7 +71,7 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 	you: {
 		title: "Tell us about yourself",
 		description:
-			"This personalizes every AI response to your practice. Your name and firm appear in document drafts. You can change these any time in Settings.",
+			"A freeform note about who you are — given to the AI on every request via the <ATTORNEY> token. Whatever you'd tell a new associate about yourself. Change it any time in Settings.",
 	},
 	ai: {
 		title: "Connect your AI provider",
@@ -85,10 +83,10 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 		description:
 			"AgentPat is your task-aware research assistant. This prompt shapes how it reasons across your task — prosecution style, claim strategy, response tone. The built-in default works well; customize it to your practice.",
 	},
-	askpat: {
-		title: "AskPat system prompt",
+	draftpat: {
+		title: "DraftPat system prompt",
 		description:
-			"AskPat lives inside the document editor — it drafts, refines, and rewrites sections on demand. Leave blank to use the built-in default.",
+			"DraftPat lives inside the document editor — it drafts, refines, and rewrites sections on demand. Leave blank to use the built-in default.",
 	},
 	extractpat: {
 		title: "ExtractPat system prompt",
@@ -162,8 +160,8 @@ function MoreInfo({ items }: { items: string[] }) {
 
 const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 	you: [
-		"Your name and firm appear in every AI-drafted document.",
-		"This information is included in every AI request to help personalize responses.",
+		"Freeform — write about yourself however you like; the first line labels this profile.",
+		"Included in every AI request (via the <ATTORNEY> token) to personalise responses.",
 		"Stored in settings.yaml on your machine — never sent to PatrickOS.",
 	],
 	ai: [
@@ -177,9 +175,9 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 		"The default prompt instructs AgentPat on patent prosecution conventions and response format.",
 		"You can edit it here or reset to the default any time in Settings.",
 	],
-	askpat: [
-		"This prompt is used by the in-editor AI assistant (AskPat).",
-		"It shapes how AskPat drafts, strengthens, and reformats document sections.",
+	draftpat: [
+		"This prompt is used by the in-editor AI assistant (DraftPat).",
+		"It shapes how DraftPat drafts, strengthens, and reformats document sections.",
 	],
 	extractpat: [
 		"ExtractPat reads PDFs and extracts structured metadata into extractions/ in your task folder.",
@@ -205,10 +203,7 @@ export function OnboardingFlow({
 	const [saving, setSaving] = useState(false)
 
 	// YOU
-	const [name, setName] = useState("")
-	const [firm, setFirm] = useState("")
-	const [role, setRole] = useState("")
-	const [jurisdiction, setJurisdiction] = useState("")
+	const [about, setAbout] = useState("")
 
 	// AI
 	const [provider, setProvider] = useState<Provider>("anthropic")
@@ -263,16 +258,13 @@ export function OnboardingFlow({
 
 	// Prompts
 	const [agentPatPrompt, setAgentPatPrompt] = useState("")
-	const [askPatPrompt, setAskPatPrompt] = useState("")
+	const [draftPatPrompt, setDraftPatPrompt] = useState("")
 	const [extractPatPrompt, setExtractPatPrompt] = useState("")
 
 	// Load existing settings once on mount
 	useEffect(() => {
 		api.settings.get().then((s) => {
-			setName(s.profile.name || "")
-			setFirm(s.profile.firm || "")
-			setRole(s.profile.role || "")
-			setJurisdiction(s.profile.jurisdiction || "")
+			setAbout(s.profile.about || "")
 			const p = (s.ai.provider as Provider) || "anthropic"
 			setProvider(p)
 			setKeys({
@@ -283,9 +275,9 @@ export function OnboardingFlow({
 			})
 			setQuickModel(s.ai.quickModel || DEFAULT_QUICK_MODEL[p])
 			setDetailedModel(s.ai.model || DEFAULT_DETAILED_MODEL[p])
-			setAgentPatPrompt(s.prompts.agentpat || DEFAULT_PROMPT_AGENTPAT)
-			setAskPatPrompt(s.prompts.askpat || DEFAULT_PROMPT_ASKPAT)
-			setExtractPatPrompt(s.prompts.extractpat || DEFAULT_PROMPT_EXTRACTPAT)
+			setAgentPatPrompt(s.prompts.agentpat || DEFAULT_TEMPLATE_AGENTPAT)
+			setDraftPatPrompt(s.prompts.draftpat || DEFAULT_TEMPLATE_DRAFTPAT)
+			setExtractPatPrompt(s.prompts.extractpat || DEFAULT_TEMPLATE_EXTRACTPAT)
 		})
 	}, [])
 
@@ -315,7 +307,7 @@ export function OnboardingFlow({
 	async function saveCurrentStep() {
 		const step = STEPS[stepIndex]
 		if (step === "you") {
-			await api.settings.update({ profile: { name, firm, role, jurisdiction } })
+			await api.settings.update({ profile: { about } })
 		} else if (step === "ai") {
 			const keyField = `${provider}Key` as
 				| "anthropicKey"
@@ -341,8 +333,8 @@ export function OnboardingFlow({
 			)
 		} else if (step === "agentpat") {
 			await api.settings.update({ prompts: { agentpat: agentPatPrompt } })
-		} else if (step === "askpat") {
-			await api.settings.update({ prompts: { askpat: askPatPrompt } })
+		} else if (step === "draftpat") {
+			await api.settings.update({ prompts: { draftpat: draftPatPrompt } })
 		} else if (step === "extractpat") {
 			await api.settings.update({ prompts: { extractpat: extractPatPrompt } })
 		}
@@ -526,48 +518,14 @@ export function OnboardingFlow({
 							)}
 
 							{stepId === "you" && (
-								<div className="flex flex-col gap-4">
-									<div className="grid grid-cols-2 gap-3">
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-name">Name</Label>
-											<Input
-												id="ob-name"
-												value={name}
-												onChange={(e) => setName(e.target.value)}
-												placeholder="Jane Smith"
-											/>
-										</div>
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-firm">Firm</Label>
-											<Input
-												id="ob-firm"
-												value={firm}
-												onChange={(e) => setFirm(e.target.value)}
-												placeholder="Smith & Associates IP"
-											/>
-										</div>
-									</div>
-									<div className="grid grid-cols-2 gap-3">
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-role">Role</Label>
-											<Input
-												id="ob-role"
-												value={role}
-												onChange={(e) => setRole(e.target.value)}
-												placeholder="Patent Attorney"
-											/>
-										</div>
-										<div className="flex flex-col gap-1.5">
-											<Label htmlFor="ob-jur">Jurisdiction</Label>
-											<Input
-												id="ob-jur"
-												value={jurisdiction}
-												onChange={(e) => setJurisdiction(e.target.value)}
-												placeholder="USPTO, EPO…"
-											/>
-										</div>
-									</div>
-								</div>
+								<Textarea
+									value={about}
+									onChange={(e) => setAbout(e.target.value)}
+									placeholder={
+										"e.g. Jane Smith — registered patent attorney at Smith & Associates IP.\nI prosecute before the USPTO and EPO, mostly software and electronics."
+									}
+									className="min-h-[160px] text-sm"
+								/>
 							)}
 
 							{stepId === "ai" && (
@@ -653,7 +611,7 @@ export function OnboardingFlow({
 										<div className="flex flex-col gap-1.5">
 											<Label>Quick model</Label>
 											<p className="text-xs text-muted-foreground">
-												AskPat, ExtractPat — fast
+												DraftPat, NotePat, ExtractPat — fast
 											</p>
 											<Select value={quickModel} onValueChange={setQuickModel}>
 												<SelectTrigger>
@@ -723,10 +681,10 @@ export function OnboardingFlow({
 								/>
 							)}
 
-							{stepId === "askpat" && (
+							{stepId === "draftpat" && (
 								<Textarea
-									value={askPatPrompt}
-									onChange={(e) => setAskPatPrompt(e.target.value)}
+									value={draftPatPrompt}
+									onChange={(e) => setDraftPatPrompt(e.target.value)}
 									className="min-h-[280px] font-mono text-xs"
 								/>
 							)}

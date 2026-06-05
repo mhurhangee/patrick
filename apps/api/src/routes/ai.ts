@@ -1,7 +1,7 @@
-import { createAnthropic } from "@ai-sdk/anthropic"
-import { createOpenAI } from "@ai-sdk/openai"
+import { DEFAULT_QUICK_MODEL } from "@patrickos/shared"
 import { createGateway, generateText } from "ai"
 import { Hono } from "hono"
+import { createModel } from "../lib/patent-prompt"
 
 export const aiRouter = new Hono()
 
@@ -26,12 +26,9 @@ aiRouter.post("/verify", async (c) => {
 
 	try {
 		const key = apiKey.trim()
-		const model =
-			provider === "anthropic"
-				? createAnthropic({ apiKey: key })("claude-haiku-4-5")
-				: provider === "openai"
-					? createOpenAI({ apiKey: key })("gpt-4o-mini")
-					: createGateway({ apiKey: key })("anthropic/claude-haiku-4.5")
+		// Verify with the provider's fast model from the shared catalog (via the
+		// same createModel the app uses — so prefix/vendor handling stays correct).
+		const model = createModel(provider, key, DEFAULT_QUICK_MODEL[provider])
 
 		await generateText({ model, prompt: "hi", maxOutputTokens: 1 })
 		return c.json({ valid: true })
