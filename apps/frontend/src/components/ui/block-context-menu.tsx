@@ -147,7 +147,7 @@ export function BlockContextMenu({ children }: { children: ReactNode }) {
 							className="text-primary-foreground bg-primary hover:bg-primary/90"
 						>
 							<Clover />
-							AskPat
+							DraftPat
 						</ContextMenuItem>
 					</ContextMenuGroup>
 

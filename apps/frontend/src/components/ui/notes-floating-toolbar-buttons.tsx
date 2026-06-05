@@ -23,7 +23,7 @@ import { LinkToolbarButton } from "./link-toolbar-button"
 import { MarkToolbarButton } from "./mark-toolbar-button"
 import { ToolbarButton, ToolbarGroup } from "./toolbar"
 
-// Floating (selection-only) toolbar for Notes — AskPat + marks + link, no
+// Floating (selection-only) toolbar for Notes — NotePat + marks + link, no
 // comment/suggestion buttons (those are artifact/review chrome). Keeps notes a
 // clean writing surface with no persistent toolbar.
 export function NotesFloatingToolbarButtons() {
@@ -41,12 +41,12 @@ export function NotesFloatingToolbarButtons() {
 					disabled={!connectedToAI}
 					tooltip={
 						!connectedToAI
-							? "Add an API key in Settings to use AskPat"
+							? "Add an API key in Settings to use NotePat"
 							: undefined
 					}
 				>
 					<Clover />
-					AskPat
+					NotePat
 				</AIToolbarButton>
 			</ToolbarGroup>
 			<ToolbarGroup>

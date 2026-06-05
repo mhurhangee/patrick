@@ -63,9 +63,9 @@ const groups: Group[] = [
 			{
 				focusEditor: false,
 				icon: <Clover />,
-				keywords: ["ai", "askpat"],
+				keywords: ["ai", "askpat", "draftpat", "notepat"],
 				className: "bg-primary text-primary-foreground",
-				value: "AskPat",
+				value: "Ask AI",
 				onSelect: (editor) => {
 					editor.getApi(AIChatPlugin).aiChat.show()
 				},

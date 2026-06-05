@@ -8,6 +8,7 @@ import { AutoformatKit } from "@/components/editor/plugins/autoformat-kit"
 import { BasicBlocksKit } from "@/components/editor/plugins/basic-blocks-kit"
 import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit"
 import { BlockPlaceholderKit } from "@/components/editor/plugins/block-placeholder-kit"
+import { BlockSelectionKit } from "@/components/editor/plugins/block-selection-kit"
 import { CalloutKit } from "@/components/editor/plugins/callout-kit"
 import { CodeBlockKit } from "@/components/editor/plugins/code-block-kit"
 import { ColumnKit } from "@/components/editor/plugins/column-kit"
@@ -34,7 +35,7 @@ import { ToggleKit } from "@/components/editor/plugins/toggle-kit"
 // EditorKit, but without the artifact/chrome bits: no fixed toolbar, no docx
 // export, no table-of-contents, no drag-handle/block menu. The floating toolbar
 // is the leaner Notes variant (no comment/suggestion buttons). AI stays on
-// (copilot ghost-text, slash "Ask AI", floating "AskPat").
+// (copilot ghost-text, slash "Ask AI", floating "NotePat").
 export const NotesEditorKit = [
 	...CopilotKit,
 	...AIKit,
@@ -70,6 +71,9 @@ export const NotesEditorKit = [
 	...SlashKit,
 	...AutoformatKit,
 	...CursorOverlayKit,
+	// Block selection — no block menu/drag chrome, but the AI command flow needs
+	// the blockSelection API (submitAIChat reads selected blocks).
+	...BlockSelectionKit,
 	...ExitBreakKit,
 	TrailingBlockPlugin,
 

@@ -18,6 +18,7 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog"
 import {
@@ -342,12 +343,13 @@ function EditFolderPanel({
 
 	return (
 		<>
-			<div className="shrink-0 border-b px-6 py-4">
-				<h2 className="text-base font-semibold font-heading">{savedName}</h2>
-				<p className="text-xs text-muted-foreground mt-0.5 font-mono truncate">
-					{task.path}
-				</p>
-			</div>
+			<DialogHeader>
+				<DialogTitle>Edit Task</DialogTitle>
+				<DialogDescription>
+					<span className="font-semibold mr-2 ml-2">{savedName}</span>{" "}
+					<span className="font-mono">{task.path}</span>
+				</DialogDescription>
+			</DialogHeader>
 
 			<div className="flex-1 overflow-y-auto px-6 py-4">
 				<div className="flex flex-col gap-4 max-w-md">
@@ -427,7 +429,6 @@ function EditFolderPanel({
 				</AlertDialog>
 
 				<Button
-					variant="outline"
 					disabled={!isDirty || status === "saving"}
 					onClick={() => wrap(handleSave)}
 				>
@@ -593,7 +594,7 @@ export function TaskManagerDialog({
 								className="w-full"
 								onClick={() => setPanelState("new")}
 							>
-								Add folder
+								Add task
 							</Button>
 						</SidebarFooter>
 					</Sidebar>

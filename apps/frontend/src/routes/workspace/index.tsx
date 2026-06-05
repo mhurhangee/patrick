@@ -166,15 +166,19 @@ function WorkspaceContent({
 							<EmptyHeader>
 								<EmptyTitle>No task selected</EmptyTitle>
 								<EmptyDescription>
-									Select or create a task to get started.
+									Select or add a task folder to get started.
 								</EmptyDescription>
 							</EmptyHeader>
 							<EmptyContent className="flex flex-row items-center justify-center gap-2">
-								<Button variant="outline" onClick={() => openTasks()}>
+								<Button
+									variant="outline"
+									className="w-16"
+									onClick={() => openTasks()}
+								>
 									Select
 								</Button>
-								<Button variant="secondary" onClick={() => openTasks("new")}>
-									Create
+								<Button className="w-16" onClick={() => openTasks("new")}>
+									Add
 								</Button>
 							</EmptyContent>
 						</Empty>

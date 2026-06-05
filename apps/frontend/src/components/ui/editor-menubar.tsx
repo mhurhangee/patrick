@@ -286,11 +286,11 @@ export function EditorMenubar() {
 						variant="default"
 						size="sm"
 						disabled={!connectedToAI}
-						title={!connectedToAI ? "Add an API key in Settings to use AskPat" : undefined}
+						title={!connectedToAI ? "Add an API key in Settings to use DraftPat" : undefined}
 						onMouseDown={(e) => e.preventDefault()}
 						onClick={() => aiApi.aiChat.show()}
 					>
-						<Clover /> AskPat
+						<Clover /> DraftPat
 					</Button>
 				)}
 			</div>
