@@ -267,7 +267,6 @@ chatsRouter.post("/:id/messages", async (c) => {
 			taskType,
 			openDocs: open,
 			excludedFiles: [...excludedSet].map((p) => p.split("/").at(-1) ?? p),
-			excludedPaths: excludedSet,
 		},
 		"agentpat",
 	)

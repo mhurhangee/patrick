@@ -19,9 +19,10 @@ export type RenderResult = {
 }
 
 // Render a template string against a context. The set of tool tokens present in
-// the template IS the agent's toolset — that's the push/pull lever (include
-// <OPENDOCUMENTS> to push the open docs' content, or keep <READFILE> to let the
-// agent pull). Unknown / out-of-surface / duplicate tokens warn but never block.
+// the template IS the agent's toolset — adding/removing a <TOOLNAME> wires or
+// drops that tool. Context flows in via the open/closed document tokens, not a
+// silent pull channel. Unknown / out-of-surface / duplicate tokens warn but
+// never block.
 //
 // Async because some context resolvers read files (notes, extractions) — and
 // each token is resolved once, only if it appears, so that I/O is lazy.

@@ -148,22 +148,6 @@ Every field in the schema is an object { content, locations }. Populate:
 		wrapper:
 			"- `extractSource` — propose extracting structured data from a not-yet-extracted source; the user confirms before it runs.",
 	},
-	READFILE: {
-		kind: "tool",
-		label: "readFile",
-		description:
-			"Read the text content of a file in the task folder (use for .txt, .md, .json, .docx — not PDFs, those are injected as file parts)",
-		surfaces: ["agentpat"],
-		wrapper:
-			"- `readFile` — read a text file in the task folder (.txt/.md/.json/.docx). PDFs are already attached; don't read those.",
-	},
-	LISTDIRECTORY: {
-		kind: "tool",
-		label: "listDirectory",
-		description: "List files and folders inside a directory in the task folder",
-		surfaces: ["agentpat"],
-		wrapper: "- `listDirectory` — browse the files/folders in the task folder.",
-	},
 	FETCHPATENT: {
 		kind: "tool",
 		label: "fetchPatent",

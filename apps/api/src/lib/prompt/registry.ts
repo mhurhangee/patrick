@@ -1,5 +1,4 @@
-import { readdir, readFile, stat } from "node:fs/promises"
-import { extname, join } from "node:path"
+import { readFile } from "node:fs/promises"
 import {
 	ASSET_CONFIGS,
 	CATALOG,
@@ -35,8 +34,6 @@ export type ResolveCtx = {
 	openDocs?: OpenDoc[]
 	/** Basenames of excluded files — for the prompt text + closed-docs filtering. */
 	excludedFiles?: string[]
-	/** Full paths of excluded files — for gating the readFile tool. */
-	excludedPaths?: Set<string>
 	// Editor surfaces (DraftPat / NotePat)
 	/** Document/asset type id open in the editor (DraftPat), or "note". */
 	assetType?: string
@@ -277,74 +274,6 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 						),
 				}),
 			}),
-	},
-
-	LISTDIRECTORY: {
-		kind: "tool",
-		build: ({ taskPath }) =>
-			taskPath == null
-				? null
-				: tool({
-						description: CATALOG.LISTDIRECTORY.description,
-						inputSchema: z.object({
-							path: z
-								.string()
-								.describe(
-									"Absolute path to list. Use the task path to list the root.",
-								),
-						}),
-						execute: async ({ path: dirPath }) => {
-							const target = dirPath || taskPath
-							if (!target.startsWith(taskPath))
-								return { error: "Path outside task folder" }
-							try {
-								const entries = await readdir(target, { withFileTypes: true })
-								return entries.map((e) => ({
-									name: e.name,
-									type: e.isDirectory() ? "directory" : "file",
-									path: join(target, e.name),
-								}))
-							} catch {
-								return { error: `Could not list: ${target}` }
-							}
-						},
-					}),
-	},
-
-	READFILE: {
-		kind: "tool",
-		build: ({ taskPath, excludedPaths }) =>
-			taskPath == null
-				? null
-				: tool({
-						description: CATALOG.READFILE.description,
-						inputSchema: z.object({
-							path: z.string().describe("Absolute path to the file"),
-						}),
-						execute: async ({ path: filePath }) => {
-							if (!filePath.startsWith(taskPath))
-								return { error: "Path outside task folder" }
-							if (excludedPaths?.has(filePath))
-								return {
-									error:
-										"This document is excluded from AgentPat by the attorney. Do not read or use it.",
-								}
-							const ext = extname(filePath).toLowerCase()
-							try {
-								if (ext === ".pdf") {
-									const s = await stat(filePath)
-									return {
-										note: "PDF file — open it in the editor to include it in AI context",
-										size: s.size,
-									}
-								}
-								const content = await readFile(filePath, "utf8")
-								return { content: content.slice(0, 20000) } // cap at 20k chars
-							} catch {
-								return { error: `Could not read: ${filePath}` }
-							}
-						},
-					}),
 	},
 
 	FETCHPATENT: {
