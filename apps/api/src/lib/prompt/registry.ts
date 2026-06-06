@@ -220,6 +220,24 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	},
 
 	// ─── Tools ──────────────────────────────────────────────────────────────────
+	REQUESTOPENFILE: {
+		kind: "tool",
+		// No execute — a client-side confirmation tool. The loop stops; the client
+		// shows an accept/reject card and, on accept, opens the file so it's attached
+		// on the next turn (OPEN=CONTEXT: only the user can put a doc in context).
+		build: () =>
+			tool({
+				description: CATALOG.REQUESTOPENFILE.description,
+				inputSchema: z.object({
+					filename: z
+						.string()
+						.describe(
+							"The exact filename to open, as shown in the Other Documents list (e.g. 'US7557198.pdf')",
+						),
+				}),
+			}),
+	},
+
 	EXTRACTSOURCE: {
 		kind: "tool",
 		// No execute — a client-side confirmation tool. The loop stops, the call is

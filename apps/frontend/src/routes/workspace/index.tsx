@@ -259,6 +259,13 @@ function WorkspaceContent({
 									)
 									if (src) openExtraction(src.id)
 								}}
+								onOpenFile={(filename) => {
+									// requestOpenFile acceptance — open the source into context.
+									const src = asset.assets.find(
+										(a) => a.kind === "source" && a.filename === filename,
+									)
+									if (src) asset.openAsset(src.id)
+								}}
 								onExtracted={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}
 							/>

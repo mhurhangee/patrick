@@ -11,6 +11,7 @@ import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
 import { cn } from "@/lib/utils"
 import { ExtractSourceTool } from "./extract-source-tool"
+import { RequestOpenFileTool } from "./request-open-file-tool"
 
 type Part = UIMessage["parts"][number]
 
@@ -27,6 +28,8 @@ export type ToolContext = {
 	}) => void
 	/** Open a source by filename so the user can review its extraction. */
 	onReview: (filename: string) => void
+	/** Open a source by filename into context (requestOpenFile acceptance). */
+	onOpenFile: (filename: string) => void
 	/** Notify the workspace that an extraction changed (refresh badges). */
 	onExtracted: () => void
 }
@@ -37,6 +40,7 @@ const TOOL_COMPONENTS: Record<
 	string,
 	FC<{ part: ToolUIPart | DynamicToolUIPart; ctx: ToolContext }>
 > = {
+	requestOpenFile: RequestOpenFileTool,
 	extractSource: ExtractSourceTool,
 }
 
@@ -53,20 +57,6 @@ type ToolPresenter = {
 }
 
 const PRESENTERS: Record<string, ToolPresenter> = {
-	listDirectory: {
-		runningLabel: "Searching…",
-		summary: (_input, output) =>
-			Array.isArray(output) ? `${output.length} items` : null,
-	},
-	readFile: {
-		runningLabel: "Reading…",
-		summary: (input, output) => {
-			if (output?.note) return "PDF (open in editor for context)"
-			if (typeof output?.content === "string")
-				return `${output.content.length} chars`
-			return input?.path?.split("/").at(-1) ?? null
-		},
-	},
 	fetchPatent: {
 		runningLabel: "Fetching…",
 		summary: (input, output) =>

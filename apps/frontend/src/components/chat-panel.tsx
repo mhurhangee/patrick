@@ -244,6 +244,7 @@ function ChatPane({
 	onOpenAsset,
 	doNotRead,
 	onOpenSource,
+	onOpenFile,
 	onExtracted,
 	initialMessages,
 	initialMessage,
@@ -261,6 +262,7 @@ function ChatPane({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenSource: (filename: string) => void
+	onOpenFile: (filename: string) => void
 	onExtracted: () => void
 	initialMessages: UIMessage[]
 	initialMessage?: string | null
@@ -340,6 +342,7 @@ function ChatPane({
 		addToolOutput: (args) =>
 			addToolOutput(args as Parameters<typeof addToolOutput>[0]),
 		onReview: onOpenSource,
+		onOpenFile,
 		onExtracted,
 	}
 
@@ -781,6 +784,7 @@ function ChatPaneLoader({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenSource: (filename: string) => void
+	onOpenFile: (filename: string) => void
 	onExtracted: () => void
 	initialMessage?: string | null
 	taskId: string
@@ -849,6 +853,7 @@ export function ChatPanel({
 	onOpenAsset,
 	doNotRead,
 	onOpenSource,
+	onOpenFile,
 	onExtracted,
 	onOpenSettings,
 }: {
@@ -872,6 +877,7 @@ export function ChatPanel({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenSource: (filename: string) => void
+	onOpenFile: (filename: string) => void
 	onExtracted: () => void
 	onOpenSettings: () => void
 }) {
@@ -962,6 +968,7 @@ export function ChatPanel({
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
 					onOpenSource={onOpenSource}
+					onOpenFile={onOpenFile}
 					onExtracted={onExtracted}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
 					taskId={taskId}

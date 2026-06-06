@@ -132,6 +132,15 @@ Every field in the schema is an object { content, locations }. Populate:
 	},
 
 	// ─── Tools (presence wires the tool + emits its blurb) ────────────────────────
+	REQUESTOPENFILE: {
+		kind: "tool",
+		label: "requestOpenFile",
+		description:
+			"Propose opening a document that exists in the task but is NOT currently open, so its full content enters your context. Use when a closed document (from the Other Documents list) is needed to answer accurately — e.g. to read a cited prior-art reference or check an exact date. The attorney accepts or rejects; on accept the document is opened and attached on the next turn. Only request files that appear in the Other Documents list.",
+		surfaces: ["agentpat"],
+		wrapper:
+			"- `requestOpenFile` — propose opening a closed document (one from the Other Documents list) so you can read its full content. The attorney accepts or rejects; on accept it is attached on your next turn. Use this instead of guessing from a signpost.",
+	},
 	EXTRACTSOURCE: {
 		kind: "tool",
 		label: "extractSource",
