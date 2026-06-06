@@ -1,4 +1,4 @@
-import type { ApiAsset } from "@patrickos/shared"
+import type { ApiAsset, DocMeta } from "@patrickos/shared"
 import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
 import { Fragment } from "react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,9 @@ export function AssetViewer({
 	chatCollapsed,
 	doNotRead,
 	onToggleDoNotRead,
+	docMeta,
+	onSetSignpost,
+	onSetTags,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -47,6 +50,9 @@ export function AssetViewer({
 	chatCollapsed: boolean
 	doNotRead: Set<string>
 	onToggleDoNotRead: (id: string) => void
+	docMeta: Record<string, DocMeta>
+	onSetSignpost: (filename: string, value: string) => void
+	onSetTags: (filename: string, tags: string[]) => void
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -60,6 +66,9 @@ export function AssetViewer({
 		onAssetUpdate,
 		doNotRead,
 		onToggleDoNotRead,
+		docMeta,
+		onSetSignpost,
+		onSetTags,
 	}
 
 	return (

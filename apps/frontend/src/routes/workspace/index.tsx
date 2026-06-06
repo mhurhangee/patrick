@@ -203,6 +203,9 @@ function WorkspaceContent({
 								chatCollapsed={chatCollapsed}
 								doNotRead={asset.doNotRead}
 								onToggleDoNotRead={asset.toggleDoNotRead}
+								docMeta={asset.docMeta}
+								onSetSignpost={asset.setSignpost}
+								onSetTags={asset.setTags}
 							/>
 						</ResizablePanel>
 						<ResizableHandle
