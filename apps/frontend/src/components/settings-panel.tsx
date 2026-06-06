@@ -5,7 +5,6 @@ import {
 	DEFAULT_QUICK_MODEL,
 	DEFAULT_TEMPLATE_AGENTPAT,
 	DEFAULT_TEMPLATE_DRAFTPAT,
-	DEFAULT_TEMPLATE_EXTRACTPAT,
 	DEFAULT_TEMPLATE_NOTEPAT,
 	modelsForProvider,
 	type Provider,
@@ -203,7 +202,6 @@ const NAV_GROUPS: NavGroup[] = [
 			{ id: "prompts-agent", label: "AgentPat", indent: true },
 			{ id: "prompts-draft", label: "DraftPat", indent: true },
 			{ id: "prompts-note", label: "NotePat", indent: true },
-			{ id: "prompts-extract", label: "ExtractPat", indent: true },
 		],
 	},
 	{ items: [{ id: "appearance", label: "Appearance" }] },
@@ -258,12 +256,10 @@ export function SettingsPanel({
 	const [agentPatInstructions, setAgentPatInstructions] = useState("")
 	const [draftPatInstructions, setDraftPatInstructions] = useState("")
 	const [notePatInstructions, setNotePatInstructions] = useState("")
-	const [extractPatInstructions, setExtractPatInstructions] = useState("")
 	const [savedPracticeContext, setSavedPracticeContext] = useState("")
 	const [savedAgentPat, setSavedAgentPat] = useState("")
 	const [savedDraftPat, setSavedDraftPat] = useState("")
 	const [savedNotePat, setSavedNotePat] = useState("")
-	const [savedExtractPat, setSavedExtractPat] = useState("")
 
 	// EPO
 	const [epoKey, setEpoKey] = useState("")
@@ -313,8 +309,6 @@ export function SettingsPanel({
 			setSavedDraftPat(s.prompts.draftpat)
 			setNotePatInstructions(s.prompts.notepat)
 			setSavedNotePat(s.prompts.notepat)
-			setExtractPatInstructions(s.prompts.extractpat)
-			setSavedExtractPat(s.prompts.extractpat)
 			setEpoKey(s.integrations?.epoOpsKey ?? "")
 			setSavedEpoKey(s.integrations?.epoOpsKey ?? "")
 			setEpoSecret(s.integrations?.epoOpsSecret ?? "")
@@ -402,12 +396,6 @@ export function SettingsPanel({
 	async function saveNotePat() {
 		await api.settings.update({ prompts: { notepat: notePatInstructions } })
 		setSavedNotePat(notePatInstructions)
-	}
-	async function saveExtractPat() {
-		await api.settings.update({
-			prompts: { extractpat: extractPatInstructions },
-		})
-		setSavedExtractPat(extractPatInstructions)
 	}
 	async function saveEpo() {
 		await api.settings.update({
@@ -589,20 +577,6 @@ export function SettingsPanel({
 							onChange={setNotePatInstructions}
 							onSave={saveNotePat}
 							surface="notepat"
-							taskPath={taskPath}
-							showAlert
-						/>
-					)}
-					{activeTab === "prompts-extract" && (
-						<PromptSection
-							title="ExtractPat"
-							description="Structured PDF extraction. The full template — keep <LOCATIONINSTRUCTION> and the field guidance, or extraction may break."
-							defaultPrompt={DEFAULT_TEMPLATE_EXTRACTPAT}
-							value={extractPatInstructions}
-							savedValue={savedExtractPat}
-							onChange={setExtractPatInstructions}
-							onSave={saveExtractPat}
-							surface="extractpat"
 							taskPath={taskPath}
 							showAlert
 						/>
@@ -853,7 +827,7 @@ function ByokSection({
 				<div className="grid grid-cols-2 gap-4">
 					<ModelSelect
 						label="Quick model"
-						description="DraftPat, NotePat and ExtractPat — fast and cheap."
+						description="DraftPat and NotePat — fast and cheap."
 						value={tempQuickModel}
 						options={quickModelOptions}
 						onChange={onQuickModelChange}

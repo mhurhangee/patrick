@@ -205,12 +205,6 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 		},
 	},
 
-	LOCATIONINSTRUCTION: {
-		kind: "context",
-		// Pure boilerplate — the whole block lives in the catalog wrapper.
-		resolve: () => w("LOCATIONINSTRUCTION"),
-	},
-
 	CURRENTSOURCE: {
 		kind: "scope",
 		resolve: ({ currentSourceName }) =>

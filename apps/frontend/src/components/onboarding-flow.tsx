@@ -3,7 +3,6 @@ import {
 	DEFAULT_QUICK_MODEL,
 	DEFAULT_TEMPLATE_AGENTPAT,
 	DEFAULT_TEMPLATE_DRAFTPAT,
-	DEFAULT_TEMPLATE_EXTRACTPAT,
 	modelsForProvider,
 	type Provider,
 	TASK_CONFIGS,
@@ -49,20 +48,12 @@ async function pickFolderNative(): Promise<string | null> {
 	}
 }
 
-type StepId =
-	| "you"
-	| "ai"
-	| "agentpat"
-	| "draftpat"
-	| "extractpat"
-	| "tutorial"
-	| "task"
+type StepId = "you" | "ai" | "agentpat" | "draftpat" | "tutorial" | "task"
 const STEPS: StepId[] = [
 	"you",
 	"ai",
 	"agentpat",
 	"draftpat",
-	"extractpat",
 	"tutorial",
 	"task",
 ]
@@ -87,11 +78,6 @@ const STEP_HEADINGS: Record<StepId, { title: string; description: string }> = {
 		title: "DraftPat system prompt",
 		description:
 			"DraftPat lives inside the document editor — it drafts, refines, and rewrites sections on demand. Leave blank to use the built-in default.",
-	},
-	extractpat: {
-		title: "ExtractPat system prompt",
-		description:
-			"ExtractPat reads your PDFs and extracts structured metadata: office action dates, claim numbers, cited references. Leave blank to use the built-in default.",
 	},
 	tutorial: {
 		title: "How it works",
@@ -179,13 +165,9 @@ const STEP_MORE_INFO: Partial<Record<StepId, string[]>> = {
 		"This prompt is used by the in-editor AI assistant (DraftPat).",
 		"It shapes how DraftPat drafts, strengthens, and reformats document sections.",
 	],
-	extractpat: [
-		"ExtractPat reads PDFs and extracts structured metadata into extractions/ in your task folder.",
-		"The default prompt targets common patent prosecution fields — office action dates, claim numbers, cited references.",
-	],
 	task: [
 		"PatrickOS never modifies your existing files — PDFs and Word docs are read-only sources.",
-		"It creates three subfolders: chats/ (conversation history), artifacts/ (AI-drafted documents), extractions/ (extracted metadata).",
+		"It creates subfolders for chats/ (conversation history), artifacts/ (AI-drafted documents), and notes/ (your per-source notes).",
 		"You can add more tasks any time from the sidebar.",
 	],
 }
@@ -259,7 +241,6 @@ export function OnboardingFlow({
 	// Prompts
 	const [agentPatPrompt, setAgentPatPrompt] = useState("")
 	const [draftPatPrompt, setDraftPatPrompt] = useState("")
-	const [extractPatPrompt, setExtractPatPrompt] = useState("")
 
 	// Load existing settings once on mount
 	useEffect(() => {
@@ -277,7 +258,6 @@ export function OnboardingFlow({
 			setDetailedModel(s.ai.model || DEFAULT_DETAILED_MODEL[p])
 			setAgentPatPrompt(s.prompts.agentpat || DEFAULT_TEMPLATE_AGENTPAT)
 			setDraftPatPrompt(s.prompts.draftpat || DEFAULT_TEMPLATE_DRAFTPAT)
-			setExtractPatPrompt(s.prompts.extractpat || DEFAULT_TEMPLATE_EXTRACTPAT)
 		})
 	}, [])
 
@@ -335,8 +315,6 @@ export function OnboardingFlow({
 			await api.settings.update({ prompts: { agentpat: agentPatPrompt } })
 		} else if (step === "draftpat") {
 			await api.settings.update({ prompts: { draftpat: draftPatPrompt } })
-		} else if (step === "extractpat") {
-			await api.settings.update({ prompts: { extractpat: extractPatPrompt } })
 		}
 		// "task" is handled separately in handleNext — returns the path
 	}
@@ -611,7 +589,7 @@ export function OnboardingFlow({
 										<div className="flex flex-col gap-1.5">
 											<Label>Quick model</Label>
 											<p className="text-xs text-muted-foreground">
-												DraftPat, NotePat, ExtractPat — fast
+												DraftPat, NotePat — fast
 											</p>
 											<Select value={quickModel} onValueChange={setQuickModel}>
 												<SelectTrigger>
@@ -685,14 +663,6 @@ export function OnboardingFlow({
 								<Textarea
 									value={draftPatPrompt}
 									onChange={(e) => setDraftPatPrompt(e.target.value)}
-									className="min-h-[280px] font-mono text-xs"
-								/>
-							)}
-
-							{stepId === "extractpat" && (
-								<Textarea
-									value={extractPatPrompt}
-									onChange={(e) => setExtractPatPrompt(e.target.value)}
 									className="min-h-[280px] font-mono text-xs"
 								/>
 							)}

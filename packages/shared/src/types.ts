@@ -46,7 +46,6 @@ export type Settings = {
 		agentpat: string
 		draftpat: string
 		notepat: string
-		extractpat: string
 	}
 	integrations: {
 		epoOpsKey: string
@@ -72,7 +71,6 @@ export const DEFAULT_SETTINGS: Settings = {
 		agentpat: "",
 		draftpat: "",
 		notepat: "",
-		extractpat: "",
 	},
 	integrations: { epoOpsKey: "", epoOpsSecret: "" },
 }

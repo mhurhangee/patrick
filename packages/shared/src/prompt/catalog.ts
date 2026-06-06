@@ -9,7 +9,7 @@
 
 export type TokenKind = "context" | "scope" | "tool"
 
-export type SurfaceId = "agentpat" | "draftpat" | "notepat" | "extractpat"
+export type SurfaceId = "agentpat" | "draftpat" | "notepat"
 
 // One open document as sent from the client with a chat request, under
 // OPEN=CONTEXT: opening a doc puts its full content in the agent's context.
@@ -53,7 +53,7 @@ export const CATALOG = {
 		kind: "context",
 		label: "Attorney",
 		description: "Who the AI is assisting (your freeform profile / 'You').",
-		surfaces: ["agentpat", "draftpat", "notepat", "extractpat"],
+		surfaces: ["agentpat", "draftpat", "notepat"],
 		wrapper: "# Attorney\nYou are assisting:\n{body}",
 	},
 	PRACTICECONTEXT: {
@@ -61,7 +61,7 @@ export const CATALOG = {
 		label: "Practice context",
 		description:
 			"The attorney's house style / standing instructions (shared across surfaces).",
-		surfaces: ["agentpat", "draftpat", "notepat", "extractpat"],
+		surfaces: ["agentpat", "draftpat", "notepat"],
 		wrapper: "# Practice Preferences\n{body}",
 	},
 	TASK: {
@@ -88,22 +88,6 @@ export const CATALOG = {
 		surfaces: ["draftpat"],
 		wrapper: "# Document\n{aiContext}",
 	},
-	LOCATIONINSTRUCTION: {
-		kind: "context",
-		label: "Field locations",
-		description:
-			"How ExtractPat should record where on the page each field was found. Required for the locate feature.",
-		surfaces: ["extractpat"],
-		wrapper: `# Field Locations
-Every field in the schema is an object { content, locations }. Populate:
-- content: the extracted value (string, date, or array as required)
-- locations: an array of { page, zone } indicating where in the document the value was found
-  - page: 1-based page number
-  - zone: "top" | "upper-centre" | "centre" | "lower-centre" | "bottom"
-  - Return multiple entries if the content spans non-adjacent locations
-  - Return an empty array if no content was found`,
-	},
-
 	// ─── Source scope (the OPEN=CONTEXT spine) ───────────────────────────────────
 	OPENDOCUMENTS: {
 		kind: "scope",
