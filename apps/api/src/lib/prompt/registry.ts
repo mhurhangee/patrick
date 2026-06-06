@@ -238,29 +238,6 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			}),
 	},
 
-	EXTRACTSOURCE: {
-		kind: "tool",
-		// No execute — a client-side confirmation tool. The loop stops, the call is
-		// forwarded to the client which runs ExtractPat and feeds the result back.
-		build: () =>
-			tool({
-				description: CATALOG.EXTRACTSOURCE.description,
-				inputSchema: z.object({
-					filename: z
-						.string()
-						.describe(
-							"The source filename to extract from, e.g. 'office-action.pdf'",
-						),
-					assetType: z
-						.string()
-						.optional()
-						.describe(
-							"Document type id if known (e.g. 'us-office-action', 'ep-examination-report'); omit to auto-detect",
-						),
-				}),
-			}),
-	},
-
 	FETCHPATENT: {
 		kind: "tool",
 		build: ({ settings }) => {

@@ -7,14 +7,12 @@ import {
 	stat,
 	writeFile,
 } from "node:fs/promises"
-import { basename, dirname, extname, join } from "node:path"
+import { dirname, extname, join } from "node:path"
 import {
 	type Chat,
 	type ChatIndexEntry,
 	DEFAULT_SETTINGS,
 	EMPTY_FLAGS,
-	type ExtractionRecord,
-	type ExtractionSummary,
 	type Flags,
 	type Settings,
 	type TaskEntry,
@@ -52,11 +50,6 @@ function chatFilePath(taskPath: string, chatId: string) {
 
 export function artifactsDir(taskPath: string) {
 	return join(taskPath, "artifacts")
-}
-
-// Derivations live under derivations/<kind>/ — ExtractPat is derivation #1.
-function extractionsDir(taskPath: string) {
-	return join(taskPath, "derivations", "extractions")
 }
 
 // Per-source human-authored notes (Plate JSON) — top-level, not a derivation.
@@ -180,63 +173,6 @@ export async function deleteChat(
 	await rm(chatFilePath(taskPath, chatId), { force: true })
 }
 
-// ─── Extractions (ExtractPat results) ─────────────────────────────────────────────
-
-function extractionFilePath(taskPath: string, sourceFilename: string) {
-	return join(extractionsDir(taskPath), `${sourceFilename}.json`)
-}
-
-export async function readExtraction(
-	taskPath: string,
-	sourceFilename: string,
-): Promise<ExtractionRecord | null> {
-	return readJson<ExtractionRecord | null>(
-		extractionFilePath(taskPath, sourceFilename),
-		null,
-	)
-}
-
-export async function writeExtraction(
-	taskPath: string,
-	record: ExtractionRecord,
-): Promise<void> {
-	await writeJson(extractionFilePath(taskPath, record.filename), record)
-}
-
-export async function deleteExtraction(
-	taskPath: string,
-	sourceFilename: string,
-): Promise<void> {
-	await rm(extractionFilePath(taskPath, sourceFilename), { force: true })
-}
-
-export async function listExtractions(
-	taskPath: string,
-): Promise<ExtractionSummary[]> {
-	try {
-		const entries = await readdir(extractionsDir(taskPath), {
-			withFileTypes: true,
-		})
-		const summaries: ExtractionSummary[] = []
-		for (const entry of entries) {
-			if (!entry.isFile() || !entry.name.endsWith(".json")) continue
-			const record = await readJson<ExtractionRecord | null>(
-				join(extractionsDir(taskPath), entry.name),
-				null,
-			)
-			if (!record) continue
-			summaries.push({
-				filename: record.filename ?? basename(entry.name, ".json"),
-				assetType: record.assetType,
-				updatedAt: record.updatedAt,
-			})
-		}
-		return summaries
-	} catch {
-		return []
-	}
-}
-
 // ─── Notes (notes/{filename}.json — per-source Plate JSON) ───────────────────
 
 function noteFilePath(taskPath: string, sourceFilename: string) {
@@ -358,7 +294,6 @@ export async function ensureTaskDirs(taskPath: string): Promise<void> {
 	await Promise.all([
 		mkdir(artifactsDir(taskPath), { recursive: true }),
 		mkdir(chatsDir(taskPath), { recursive: true }),
-		mkdir(extractionsDir(taskPath), { recursive: true }),
 		mkdir(notesDir(taskPath), { recursive: true }),
 	])
 }

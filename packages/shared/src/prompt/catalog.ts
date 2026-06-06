@@ -141,15 +141,6 @@ Every field in the schema is an object { content, locations }. Populate:
 		wrapper:
 			"- `requestOpenFile` — propose opening a closed document (one from the Other Documents list) so you can read its full content. The attorney accepts or rejects; on accept it is attached on your next turn. Use this instead of guessing from a signpost.",
 	},
-	EXTRACTSOURCE: {
-		kind: "tool",
-		label: "extractSource",
-		description:
-			"Propose running ExtractPat on a source document to extract structured data (e.g. office action dates, claims, cited references). Use when a source has not been extracted yet and structured data would help answer the user. The user must confirm before it runs. Only US Office Actions and EP Examination Reports can currently be extracted.",
-		surfaces: ["agentpat"],
-		wrapper:
-			"- `extractSource` — propose extracting structured data from a not-yet-extracted source; the user confirms before it runs.",
-	},
 	FETCHPATENT: {
 		kind: "tool",
 		label: "fetchPatent",
