@@ -206,6 +206,24 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	},
 
 	// ─── Tools ──────────────────────────────────────────────────────────────────
+	SUGGESTTAGS: {
+		kind: "tool",
+		// Client-side confirmation tool — on accept the client merges the tags into
+		// the source's metadata (meta/docmeta.json).
+		build: () =>
+			tool({
+				description: CATALOG.SUGGESTTAGS.description,
+				inputSchema: z.object({
+					filename: z
+						.string()
+						.describe("The exact source filename to tag, e.g. 'US7557198.pdf'"),
+					tags: z
+						.array(z.string())
+						.describe("One or more short freeform tags to add"),
+				}),
+			}),
+	},
+
 	SUGGESTSIGNPOST: {
 		kind: "tool",
 		// No execute — a client-side confirmation tool. On accept the client saves

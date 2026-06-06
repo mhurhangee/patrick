@@ -117,6 +117,15 @@ export const CATALOG = {
 		wrapper:
 			"- `suggestSignpost` — propose a one-line signpost for a source (what the document is). The attorney accepts or rejects; on accept it's saved as the doc's signpost (shown in the Other Documents list).",
 	},
+	SUGGESTTAGS: {
+		kind: "tool",
+		label: "suggestTags",
+		description:
+			"Propose one or more freeform tags (short triage labels like 'prior-art', 'cited', 'independent-claims', 'superseded') for a source, to help organise the task's documents. The attorney accepts or rejects; on accept they're added to the doc's tags. Tags are awareness/triage metadata — they help you and the attorney filter, not a substitute for opening a document.",
+		surfaces: ["agentpat"],
+		wrapper:
+			"- `suggestTags` — propose freeform triage tags for a source; the attorney accepts or rejects, and on accept they're added to the doc's tags.",
+	},
 	REQUESTOPENFILE: {
 		kind: "tool",
 		label: "requestOpenFile",
