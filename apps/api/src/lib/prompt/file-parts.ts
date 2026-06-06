@@ -10,12 +10,11 @@ export type FilePart = {
 	mediaType: "application/pdf"
 }
 
-// Attach the PDF original only for docs whose context mode includes it
-// (everything except "derivations" — the OPEN=CONTEXT per-doc lever).
+// Attach every open PDF as a file part — under OPEN=CONTEXT, opening a doc means
+// the agent gets the real document.
 export async function buildFileParts(openDocs: OpenDoc[]): Promise<FilePart[]> {
 	const parts: FilePart[] = []
 	for (const doc of openDocs) {
-		if (doc.mode === "derivations") continue
 		if (!doc.path.toLowerCase().endsWith(".pdf")) continue
 		try {
 			const data = await readFile(doc.path)

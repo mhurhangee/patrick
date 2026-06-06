@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises"
 import {
 	ASSET_CONFIGS,
 	CATALOG,
-	type ExtractionRecord,
 	fill,
 	type OpenDoc,
 	type Settings,
@@ -13,13 +12,7 @@ import {
 import { type Tool, tool } from "ai"
 import { z } from "zod"
 import { fetchPatent } from "../epo-ops"
-import {
-	listArtifacts,
-	listExtractions,
-	listSources,
-	readExtraction,
-	readNote,
-} from "../fs"
+import { listArtifacts, listSources, readNote } from "../fs"
 
 // Everything a resolver / tool-builder might need, assembled per request. Fields
 // are per-surface — a resolver returns null (or a tool builder returns null)
@@ -30,7 +23,7 @@ export type ResolveCtx = {
 	// AgentPat
 	taskPath?: string
 	taskType?: TaskType
-	/** The documents the attorney has open, with their per-doc context mode. */
+	/** The documents the attorney has open (OPEN=CONTEXT: open ⇒ full content). */
 	openDocs?: OpenDoc[]
 	/** Basenames of excluded files — for the prompt text + closed-docs filtering. */
 	excludedFiles?: string[]
@@ -56,16 +49,6 @@ export type Resolver = ContextResolver | ToolResolver
 
 const w = (id: TokenId) => CATALOG[id].wrapper ?? ""
 const basename = (p: string) => p.split("/").at(-1) ?? p
-
-// Render an extraction record's flat fields as readable bullet lines.
-function formatExtractionBody(rec: ExtractionRecord): string {
-	return Object.entries(rec.details)
-		.filter(
-			([, v]) => v != null && v !== "" && !(Array.isArray(v) && v.length === 0),
-		)
-		.map(([k, v]) => `- ${k}: ${Array.isArray(v) ? v.join("; ") : String(v)}`)
-		.join("\n")
-}
 
 // Pull plain text out of a stored Plate note (JSON value) — no Plate on the
 // server, so walk the node tree and collect text, one top-level block per line.
@@ -126,9 +109,9 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 		},
 	},
 
-	// Open docs = the OPEN=CONTEXT spine. Each open doc rendered in full per its
-	// context mode: PDFs' originals go out-of-band as file parts (we just point at
-	// them here); artifact text + derivations + notes go inline.
+	// Open docs = the OPEN=CONTEXT spine. The source itself in full (PDFs go
+	// out-of-band as file parts, artifact text inline) plus its notes — nothing
+	// derived stands between the agent and the real document.
 	OPENDOCUMENTS: {
 		kind: "scope",
 		resolve: async ({ taskPath, openDocs }) => {
@@ -137,44 +120,33 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			for (const doc of openDocs) {
 				const name = basename(doc.path)
 				if (doc.kind === "artifact") {
-					// Artifact = the attorney's own draft; full text inline (unless they've
-					// dropped it to derivations-only, which an artifact has none of).
-					const text =
-						doc.mode === "derivations"
-							? ""
-							: plateToText(await readFile(doc.path, "utf8").catch(() => ""))
+					const text = plateToText(
+						await readFile(doc.path, "utf8").catch(() => ""),
+					)
 					blocks.push(
 						`## ${name} (artifact — your draft)\n${text || "(empty)"}`,
 					)
 					continue
 				}
-				const lines = [`## ${name}`]
 				const isPdf = name.toLowerCase().endsWith(".pdf")
-				const wantOriginal = doc.mode !== "derivations"
-				const wantDerived = doc.mode !== "original"
-				if (wantOriginal)
-					lines.push(
-						isPdf
-							? "_Original PDF attached above as a file part._"
-							: "_Original has no text representation; rely on its derivations._",
-					)
-				else lines.push("_Original withheld (derivations-only mode)._")
-				if (wantDerived) {
-					const rec = await readExtraction(taskPath, name)
-					if (rec)
-						lines.push(`### Extracted data\n${formatExtractionBody(rec)}`)
-					const raw = await readNote(taskPath, name)
-					const noteText = raw ? plateToText(raw) : ""
-					if (noteText) lines.push(`### Notes\n${noteText}`)
-				}
+				const lines = [
+					`## ${name}`,
+					isPdf
+						? "_Full document attached above as a file part._"
+						: "_This document has no text representation in context; open it in the editor or rely on its notes._",
+				]
+				const raw = await readNote(taskPath, name)
+				const noteText = raw ? plateToText(raw) : ""
+				if (noteText) lines.push(`### Notes\n${noteText}`)
 				blocks.push(lines.join("\n"))
 			}
 			return fill(w("OPENDOCUMENTS"), { list: blocks.join("\n\n") })
 		},
 	},
 
-	// Closed docs = cheap awareness only. Every source/artifact NOT open and NOT
-	// excluded, as one metadata line — never its content. The triage layer.
+	// Closed docs = a cheap signpost only. Every source/artifact NOT open and NOT
+	// excluded, as one line: filename, file type, and any note the attorney wrote
+	// (the note is the awareness layer) — never the document's content.
 	CLOSEDDOCUMENTS: {
 		kind: "scope",
 		resolve: async ({ taskPath, openDocs, excludedFiles }) => {
@@ -183,29 +155,24 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			const excluded = new Set(excludedFiles ?? [])
 			const skip = (name: string) => openNames.has(name) || excluded.has(name)
 
-			const [sources, artifacts, extractions] = await Promise.all([
+			const [sources, artifacts] = await Promise.all([
 				listSources(taskPath),
 				listArtifacts(taskPath),
-				listExtractions(taskPath),
 			])
-			const typeByName = new Map(
-				extractions.map((e) => [e.filename, e.assetType]),
-			)
 
 			const lines: string[] = []
 			for (const s of sources) {
 				if (skip(s.filename)) continue
-				const type = typeByName.get(s.filename)
 				const raw = await readNote(taskPath, s.filename)
-				const hasNote = !!(raw && plateToText(raw).trim())
+				const note = raw ? plateToText(raw).replace(/\s+/g, " ").trim() : ""
 				lines.push(
-					`- ${s.filename}${type ? ` (${type})` : ""} — derivations: ${
-						type ? "extraction" : "none"
-					}; notes: ${hasNote ? "yes" : "no"}`,
+					`- ${s.filename} (${s.ext.toUpperCase()})${
+						note ? ` — ${note.slice(0, 280)}` : ""
+					}`,
 				)
 			}
 			// Artifacts: one entry per draft (.json is the source of truth; skip .docx
-			// exports) with a short slice, since they have no derivations/notes.
+			// exports) with a short slice.
 			for (const a of artifacts) {
 				if (a.ext !== "json" || skip(a.filename)) continue
 				const title = a.filename.replace(/\.json$/, "")

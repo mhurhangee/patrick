@@ -11,19 +11,12 @@ export type TokenKind = "context" | "scope" | "tool"
 
 export type SurfaceId = "agentpat" | "draftpat" | "notepat" | "extractpat"
 
-// How much of an OPEN document the agent gets, per the OPEN=CONTEXT model:
-//   original    — the source itself (PDF file part / artifact text), nothing else
-//   derivations — its cheap derived layer (extractions, notes), not the original
-//   both        — everything (default)
-// Chosen per open doc in the source viewer, sent with the chat request.
-export type ContextMode = "original" | "derivations" | "both"
-
-// One open document as sent from the client with a chat request. `path` is the
-// absolute file path (also the asset id); `mode` is the per-doc context choice.
+// One open document as sent from the client with a chat request, under
+// OPEN=CONTEXT: opening a doc puts its full content in the agent's context.
+// `path` is the absolute file path (also the asset id).
 export type OpenDoc = {
 	path: string
 	kind: "source" | "artifact"
-	mode: ContextMode
 }
 
 // Friendly labels + one-liners per kind, for grouping in the token shelf.
@@ -116,7 +109,7 @@ Every field in the schema is an object { content, locations }. Populate:
 		kind: "scope",
 		label: "Open documents",
 		description:
-			"Each document the attorney has open, in full — original (PDF file part / artifact text), its derivations, and its notes — per the doc's context mode.",
+			"Each document the attorney has open, in full — the source itself (PDF file part / artifact text) plus its notes.",
 		surfaces: ["agentpat"],
 		wrapper:
 			"# Open Documents\nThe attorney has opened these documents — this is the context they have deliberately curated for you. Treat it as your primary, authoritative material and reason over it fully. Any open PDFs are attached above as file parts.\n\n{list}",
@@ -125,10 +118,10 @@ Every field in the schema is an object { content, locations }. Populate:
 		kind: "scope",
 		label: "Other documents",
 		description:
-			"Awareness-only roster of documents that exist in the task but aren't open (filename, type, which derivations exist, notes) — never their content.",
+			"Awareness-only signpost for documents that exist in the task but aren't open (filename, type, and any note) — never their content.",
 		surfaces: ["agentpat"],
 		wrapper:
-			"# Other Documents in the Task (not open)\nThese exist in the task folder but are NOT open, so you see only awareness-level metadata — never their full content. Use this to notice potentially relevant material and to suggest the attorney open it. Do NOT rely on these as the basis for any substantive claim or prior-art analysis — for that you need the open original.\n\n{list}",
+			"# Other Documents in the Task (not open)\nThese exist in the task folder but are NOT open, so you see only a short signpost (filename, type, and any note the attorney wrote) — never their content. Use it to notice potentially relevant material and to suggest the attorney open it. Do NOT rely on a signpost as the basis for any substantive or factual claim — to use a document's content, it must be open.\n\n{list}",
 	},
 	CURRENTSOURCE: {
 		kind: "scope",

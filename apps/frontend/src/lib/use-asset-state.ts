@@ -1,4 +1,4 @@
-import type { ApiAsset, ContextMode } from "@patrickos/shared"
+import type { ApiAsset } from "@patrickos/shared"
 import { useCallback, useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
@@ -44,11 +44,6 @@ export function useAssetState(currentTaskId: string) {
 	const [splitView, setSplitView] = useState(false)
 	// Per-source-tab toggle: document (PDF) vs ExtractPat extraction. Default "source".
 	const [tabView, setTabView] = useState<Record<string, AssetView>>({})
-	// Per-open-doc AI context mode (OPEN=CONTEXT). Absent ⇒ "both". Lets the
-	// attorney drop a heavy PDF to "derivations" without closing it.
-	const [contextMode, setContextModeMap] = useState<
-		Record<string, ContextMode>
-	>({})
 	const [extractedFilenames, setExtractedFilenames] = useState<Set<string>>(
 		new Set(),
 	)
@@ -111,10 +106,6 @@ export function useAssetState(currentTaskId: string) {
 
 	function setAssetView(id: string, view: AssetView) {
 		setTabView((prev) => ({ ...prev, [id]: view }))
-	}
-
-	function setContextMode(id: string, mode: ContextMode) {
-		setContextModeMap((prev) => ({ ...prev, [id]: mode }))
 	}
 
 	function selectTab(id: string) {
@@ -230,7 +221,6 @@ export function useAssetState(currentTaskId: string) {
 		activeTab,
 		splitView,
 		tabView,
-		contextMode,
 		openAssets,
 		extractedFilenames,
 		doNotRead,
@@ -238,7 +228,6 @@ export function useAssetState(currentTaskId: string) {
 		refresh,
 		openAsset,
 		setAssetView,
-		setContextMode,
 		selectTab,
 		toggleSplitView,
 		closeTab,
