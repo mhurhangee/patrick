@@ -14,7 +14,7 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { cn } from "@/lib/utils"
+import { assetLabel, cn } from "@/lib/utils"
 import { AssetPane } from "./asset-pane"
 import type { LocateState } from "./views/source-view"
 
@@ -146,9 +146,12 @@ export function AssetViewer({
 								<button
 									type="button"
 									onClick={() => onTabClick(asset.id)}
-									className="max-w-[120px] cursor-pointer truncate capitalize font-medium"
+									className={cn(
+										"max-w-[120px] cursor-pointer truncate font-medium",
+										asset.kind === "artifact" && "capitalize",
+									)}
 								>
-									{asset.title}
+									{assetLabel(asset)}
 								</button>
 								<button
 									type="button"

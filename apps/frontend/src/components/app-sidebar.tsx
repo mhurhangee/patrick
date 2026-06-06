@@ -52,7 +52,7 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { assetLabel, cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 // ─── Collapsible section ──────────────────────────────────────────────────────
@@ -560,7 +560,8 @@ export function AppSidebar({
 													{starred && <Star className="shrink-0 p-[2px]" />}
 													<span
 														className={cn(
-															"capitalize min-w-0 flex-1 truncate",
+															"min-w-0 flex-1 truncate",
+															kind === "artifact" && "capitalize",
 															excluded &&
 																"text-muted-foreground/40 line-through",
 														)}
@@ -568,7 +569,7 @@ export function AppSidebar({
 															excluded ? "Excluded from AgentPat" : undefined
 														}
 													>
-														{asset.title}
+														{assetLabel(asset)}
 													</span>
 												</SidebarMenuSubButton>
 												{kind === "source" ? (

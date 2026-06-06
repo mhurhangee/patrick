@@ -35,7 +35,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useAI } from "@/lib/ai-context"
 import { api, BASE_URL } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { assetLabel, cn } from "@/lib/utils"
 import { AssistantParts, type ToolContext } from "./chat-message-parts"
 import { ChatOverflowNotice } from "./chat-overflow-notice"
 import { ContextRing } from "./context-ring"
@@ -123,9 +123,12 @@ function ChatInputBar({
 									<button
 										type="button"
 										onClick={() => onOpenAsset(asset.id)}
-										className="cursor-pointer capitalize truncate text-xxs font-medium text-muted-foreground hover:text-foreground"
+										className={cn(
+											"cursor-pointer truncate text-xxs font-medium text-muted-foreground hover:text-foreground",
+											asset.kind === "artifact" && "capitalize",
+										)}
 									>
-										{asset.title}
+										{assetLabel(asset)}
 									</button>
 									<button
 										type="button"
