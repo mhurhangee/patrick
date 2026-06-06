@@ -65,7 +65,6 @@ export const api = {
 			taskPath?: string
 			openDocs?: OpenDoc[]
 			excludedFiles?: string[]
-			assetType?: string
 			currentSourceName?: string
 		}) =>
 			request<{

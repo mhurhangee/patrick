@@ -25,13 +25,7 @@ function fileToAsset(
 		title,
 		filename: file.filename,
 		path: file.path,
-		type: "",
 		content: "",
-		date: file.createdAt ?? "",
-		notes: "",
-		metadata: {},
-		details: null,
-		tags: [],
 		createdAt: file.createdAt ?? "",
 		updatedAt: file.updatedAt ?? "",
 	}

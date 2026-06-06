@@ -431,7 +431,9 @@ export function AppSidebar({
 
 	const openSet = new Set(openTabIds)
 	const openChatSet = new Set(openChatIds)
-	const sorted = [...assets].sort((a, b) => a.date.localeCompare(b.date))
+	const sorted = [...assets].sort((a, b) =>
+		a.createdAt.localeCompare(b.createdAt),
+	)
 	const assetGroups: {
 		kind: "source" | "artifact"
 		label: string

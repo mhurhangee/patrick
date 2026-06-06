@@ -61,9 +61,7 @@ You are DraftPat, an AI writing assistant embedded in a patent document editor. 
 - Broaden claims beyond the disclosed embodiments
 - Use trade names or jargon without definition
 
-<PRACTICECONTEXT>
-
-<DOCTYPE>`
+<PRACTICECONTEXT>`
 
 // NotePat — inline AI inside the per-source Notes editor. Note-scoped; sees the
 // source the note is attached to. (Fuller context is a template edit away.)

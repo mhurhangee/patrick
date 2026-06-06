@@ -80,14 +80,6 @@ export const CATALOG = {
 			"# Excluded Documents\nThe attorney has marked these documents as do-not-read. Do NOT read them (readFile is blocked), do NOT propose extracting from them, and do NOT rely on them in your response:\n{list}",
 	},
 
-	DOCTYPE: {
-		kind: "context",
-		label: "Document type",
-		description:
-			"Guidance for the kind of document open in the editor (claims, response…).",
-		surfaces: ["draftpat"],
-		wrapper: "# Document\n{aiContext}",
-	},
 	// ─── Source scope (the OPEN=CONTEXT spine) ───────────────────────────────────
 	OPENDOCUMENTS: {
 		kind: "scope",

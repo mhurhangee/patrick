@@ -345,10 +345,6 @@ importers:
         version: 7.3.3(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.1)(yaml@2.9.0)
 
   packages/shared:
-    dependencies:
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
       typescript:
         specifier: ~5.9.3

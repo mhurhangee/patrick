@@ -21,7 +21,6 @@ promptRouter.post("/render", async (c) => {
 		taskPath?: string
 		openDocs?: OpenDoc[]
 		excludedFiles?: string[]
-		assetType?: string
 		currentSourceName?: string
 	}>()
 
@@ -38,7 +37,6 @@ promptRouter.post("/render", async (c) => {
 		taskType,
 		openDocs: body.openDocs,
 		excludedFiles: body.excludedFiles,
-		assetType: body.assetType,
 		currentSourceName: body.currentSourceName,
 	}
 

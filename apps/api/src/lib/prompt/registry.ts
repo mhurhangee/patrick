@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises"
 import {
-	ASSET_CONFIGS,
 	CATALOG,
 	fill,
 	type OpenDoc,
@@ -27,9 +26,7 @@ export type ResolveCtx = {
 	openDocs?: OpenDoc[]
 	/** Basenames of excluded files — for the prompt text + closed-docs filtering. */
 	excludedFiles?: string[]
-	// Editor surfaces (DraftPat / NotePat)
-	/** Document/asset type id open in the editor (DraftPat), or "note". */
-	assetType?: string
+	// Editor surfaces (NotePat)
 	/** Filename of the source a note is attached to (NotePat). */
 	currentSourceName?: string
 }
@@ -192,16 +189,6 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			if (!excludedFiles?.length) return null
 			const list = excludedFiles.map((f) => `- ${f}`).join("\n")
 			return fill(w("EXCLUDED"), { list })
-		},
-	},
-
-	DOCTYPE: {
-		kind: "context",
-		resolve: ({ assetType }) => {
-			const aiContext = assetType
-				? ASSET_CONFIGS.find((c) => c.id === assetType)?.aiContext
-				: undefined
-			return aiContext ? fill(w("DOCTYPE"), { aiContext }) : null
 		},
 	},
 

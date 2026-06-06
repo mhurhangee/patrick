@@ -79,7 +79,7 @@ editorAiRouter.post("/command", async (c) => {
 			: settings.prompts.draftpat || DEFAULT_TEMPLATE_DRAFTPAT
 	const { system } = await render(
 		template,
-		{ settings, assetType, currentSourceName: sourceName },
+		{ settings, currentSourceName: sourceName },
 		surface,
 	)
 

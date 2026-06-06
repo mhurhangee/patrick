@@ -146,13 +146,7 @@ export type ApiAsset = {
 	title: string
 	filename: string
 	path: string
-	type: string // AssetType tag (may be empty until extracted)
 	content: string // Plate JSON for artifacts, empty for sources
-	date: string
-	notes: string
-	metadata: Record<string, unknown>
-	details: Record<string, unknown> | null
-	tags: string[]
 	createdAt: string
 	updatedAt: string
 }

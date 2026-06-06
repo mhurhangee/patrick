@@ -33,13 +33,7 @@ function ArtifactEditor({
 		// malformed content — start empty
 	}
 
-	return (
-		<PlateDocEditor
-			initialValue={initialValue}
-			onSave={handleSave}
-			askpatAssetType={asset.type}
-		/>
-	)
+	return <PlateDocEditor initialValue={initialValue} onSave={handleSave} />
 }
 
 // Renders one open asset: a source (document + its views) or an artifact editor.

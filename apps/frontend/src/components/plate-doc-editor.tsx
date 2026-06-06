@@ -41,8 +41,9 @@ export function PlateDocEditor({
 	}
 
 	useEffect(() => {
-		if (askpatAssetType)
-			localStorage.setItem("editor-asset-type", askpatAssetType)
+		// "note" routes NotePat; anything else (artifacts) routes DraftPat. Always
+		// write it so opening an artifact clears a stale "note" from a prior note tab.
+		localStorage.setItem("editor-asset-type", askpatAssetType ?? "")
 		// Source-name only applies to NotePat; clear it otherwise so DraftPat
 		// never inherits a stale note's source.
 		if (askpatSourceName)
