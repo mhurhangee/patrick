@@ -1,9 +1,8 @@
-import type { ApiAsset, FieldLocation, TaskType } from "@patrickos/shared"
+import type { ApiAsset } from "@patrickos/shared"
 import type { Value } from "platejs"
 import { PlateDocEditor } from "@/components/plate-doc-editor"
 import { BASE_URL } from "@/lib/api"
 import { SourcePane } from "./source-pane"
-import type { LocateState } from "./views/source-view"
 
 // An artifact (Plate draft) — persisted to artifacts/ on debounced save.
 function ArtifactEditor({
@@ -48,38 +47,16 @@ export function AssetPane({
 	asset,
 	tabView,
 	onSetAssetView,
-	extractedFilenames,
 	onAssetUpdate,
-	provider,
-	apiKey,
-	model,
-	onExtracted,
-	locate,
-	onLocate,
-	onLocatePrev,
-	onLocateNext,
-	onLocateClear,
 	doNotRead,
 	onToggleDoNotRead,
-	taskType,
 }: {
 	asset: ApiAsset
 	tabView: Record<string, string>
 	onSetAssetView: (id: string, view: string) => void
-	extractedFilenames: Set<string>
 	onAssetUpdate: (updated: ApiAsset) => void
-	provider: string
-	apiKey: string
-	model: string
-	onExtracted: () => void
-	locate: LocateState | null
-	onLocate: (sourcePath: string, locations: FieldLocation[]) => void
-	onLocatePrev: () => void
-	onLocateNext: () => void
-	onLocateClear: () => void
 	doNotRead: Set<string>
 	onToggleDoNotRead: (id: string) => void
-	taskType?: TaskType
 }) {
 	if (asset.kind === "source") {
 		return (
@@ -88,19 +65,8 @@ export function AssetPane({
 				asset={asset}
 				view={tabView[asset.id] ?? "source"}
 				onSetView={(v) => onSetAssetView(asset.id, v)}
-				extracted={extractedFilenames.has(asset.filename)}
-				locate={locate}
-				onLocate={onLocate}
-				onLocatePrev={onLocatePrev}
-				onLocateNext={onLocateNext}
-				onLocateClear={onLocateClear}
 				excludedFromAgent={doNotRead.has(asset.id)}
 				onToggleExclude={() => onToggleDoNotRead(asset.id)}
-				provider={provider}
-				apiKey={apiKey}
-				model={model}
-				onExtracted={onExtracted}
-				taskType={taskType}
 			/>
 		)
 	}

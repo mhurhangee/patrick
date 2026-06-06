@@ -33,9 +33,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -115,21 +112,19 @@ function CollapsibleSection({
 	)
 }
 
-// Per-source kebab — star, AgentPat exclusion, derivations (extract today), and
-// file ops. Delete/Rename are deliberately disabled: the app never mutates the
-// attorney's original files — that's the OS's job (see CLAUDE.md).
+// Per-source kebab — star, AgentPat exclusion, and file ops. Delete/Rename are
+// deliberately disabled: the app never mutates the attorney's original files —
+// that's the OS's job (see CLAUDE.md).
 function SourceActionsMenu({
 	starred,
 	excluded,
 	onToggleStar,
 	onToggleDoNotRead,
-	onOpenExtraction,
 }: {
 	starred: boolean
 	excluded: boolean
 	onToggleStar: () => void
 	onToggleDoNotRead: () => void
-	onOpenExtraction: () => void
 }) {
 	return (
 		<DropdownMenu>
@@ -149,16 +144,6 @@ function SourceActionsMenu({
 				<DropdownMenuItem onClick={onToggleDoNotRead}>
 					{excluded ? "Include in AgentPat" : "Exclude from AgentPat"}
 				</DropdownMenuItem>
-
-				<DropdownMenuSeparator />
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>Derive</DropdownMenuSubTrigger>
-					<DropdownMenuSubContent>
-						<DropdownMenuItem onClick={onOpenExtraction}>
-							Extract data
-						</DropdownMenuItem>
-					</DropdownMenuSubContent>
-				</DropdownMenuSub>
 
 				<DropdownMenuSeparator />
 				{/* Disabled on purpose — manage originals via the file system. */}
@@ -393,7 +378,6 @@ export function AppSidebar({
 	starredIds,
 	onToggleDoNotRead,
 	onToggleStar,
-	onOpenExtraction,
 	onRenameArtifact,
 	onDeleteArtifact,
 	onOpen,
@@ -424,7 +408,6 @@ export function AppSidebar({
 	starredIds: Set<string>
 	onToggleDoNotRead: (id: string) => void
 	onToggleStar: (id: string) => void
-	onOpenExtraction: (id: string) => void
 	onRenameArtifact: (id: string, newTitle: string) => void
 	onDeleteArtifact: (id: string) => void
 	onOpen: (id: string) => void
@@ -580,7 +563,6 @@ export function AppSidebar({
 														onToggleDoNotRead={() =>
 															onToggleDoNotRead(asset.id)
 														}
-														onOpenExtraction={() => onOpenExtraction(asset.id)}
 													/>
 												) : (
 													<ArtifactActionsMenu

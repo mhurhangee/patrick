@@ -10,7 +10,6 @@ import { type FC, type ReactNode, useState } from "react"
 import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
 import { cn } from "@/lib/utils"
-import { ExtractSourceTool } from "./extract-source-tool"
 import { RequestOpenFileTool } from "./request-open-file-tool"
 
 type Part = UIMessage["parts"][number]
@@ -26,12 +25,8 @@ export type ToolContext = {
 		toolCallId: string
 		output: unknown
 	}) => void
-	/** Open a source by filename so the user can review its extraction. */
-	onReview: (filename: string) => void
 	/** Open a source by filename into context (requestOpenFile acceptance). */
 	onOpenFile: (filename: string) => void
-	/** Notify the workspace that an extraction changed (refresh badges). */
-	onExtracted: () => void
 }
 
 // Tools with bespoke, interactive UI — these render their own card (not the
@@ -41,7 +36,6 @@ const TOOL_COMPONENTS: Record<
 	FC<{ part: ToolUIPart | DynamicToolUIPart; ctx: ToolContext }>
 > = {
 	requestOpenFile: RequestOpenFileTool,
-	extractSource: ExtractSourceTool,
 }
 
 // ─── Tool presenters (generative UI) ───────────────────────────────────────────

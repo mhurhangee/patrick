@@ -101,11 +101,6 @@ function WorkspaceContent({
 	const [settingsOpen, setSettingsOpen] = useState(false)
 	const [tutorialOpen, setTutorialOpen] = useState(false)
 
-	// Open a source tab in its extraction view (used by the chat Review button)
-	function openExtraction(sourceId: string) {
-		asset.openAsset(sourceId, "extraction")
-	}
-
 	function openTasks(panel: "empty" | "new" = "empty") {
 		setTasksDefaultPanel(panel)
 		setTasksOpen(true)
@@ -142,7 +137,6 @@ function WorkspaceContent({
 				starredIds={asset.starred}
 				onToggleDoNotRead={asset.toggleDoNotRead}
 				onToggleStar={asset.toggleStar}
-				onOpenExtraction={openExtraction}
 				onRenameArtifact={asset.renameArtifact}
 				onDeleteArtifact={asset.deleteArtifact}
 				onOpen={asset.openAsset}
@@ -201,24 +195,14 @@ function WorkspaceContent({
 								splitView={asset.splitView}
 								tabView={asset.tabView}
 								onSetAssetView={asset.setAssetView}
-								extractedFilenames={asset.extractedFilenames}
 								onTabClick={asset.selectTab}
 								onTabClose={asset.closeTab}
-								onOpen={asset.openAsset}
 								onSplitToggle={asset.toggleSplitView}
 								onChatToggle={toggleChat}
 								onAssetUpdate={asset.updateAsset}
 								chatCollapsed={chatCollapsed}
-								provider={ai.provider}
-								apiKey={ai.apiKey}
-								model={ai.detailedModel}
-								onExtracted={asset.refresh}
 								doNotRead={asset.doNotRead}
 								onToggleDoNotRead={asset.toggleDoNotRead}
-								taskType={
-									task.tasks.find((t) => t.path === task.currentTaskId)
-										?.taskType
-								}
 							/>
 						</ResizablePanel>
 						<ResizableHandle
@@ -253,12 +237,6 @@ function WorkspaceContent({
 								onRemoveAsset={asset.closeTab}
 								onOpenAsset={asset.selectTab}
 								doNotRead={asset.doNotRead}
-								onOpenSource={(filename) => {
-									const src = asset.assets.find(
-										(a) => a.kind === "source" && a.filename === filename,
-									)
-									if (src) openExtraction(src.id)
-								}}
 								onOpenFile={(filename) => {
 									// requestOpenFile acceptance — open the source into context.
 									const src = asset.assets.find(
@@ -266,7 +244,6 @@ function WorkspaceContent({
 									)
 									if (src) asset.openAsset(src.id)
 								}}
-								onExtracted={asset.refresh}
 								onOpenSettings={() => setSettingsOpen(true)}
 							/>
 						</ResizablePanel>

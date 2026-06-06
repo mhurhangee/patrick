@@ -1,6 +1,6 @@
-import type { ApiAsset, FieldLocation, TaskType } from "@patrickos/shared"
+import type { ApiAsset } from "@patrickos/shared"
 import { ChevronLeft, ChevronRight, Columns3, X } from "lucide-react"
-import { Fragment, useState } from "react"
+import { Fragment } from "react"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
@@ -16,7 +16,6 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { assetLabel, cn } from "@/lib/utils"
 import { AssetPane } from "./asset-pane"
-import type { LocateState } from "./views/source-view"
 
 export function AssetViewer({
 	assets,
@@ -25,21 +24,14 @@ export function AssetViewer({
 	splitView,
 	tabView,
 	onSetAssetView,
-	extractedFilenames,
 	onTabClick,
 	onTabClose,
-	onOpen,
 	onSplitToggle,
 	onChatToggle,
 	onAssetUpdate,
 	chatCollapsed,
-	provider,
-	apiKey,
-	model,
-	onExtracted,
 	doNotRead,
 	onToggleDoNotRead,
-	taskType,
 }: {
 	assets: ApiAsset[]
 	openTabIds: string[]
@@ -47,21 +39,14 @@ export function AssetViewer({
 	splitView: boolean
 	tabView: Record<string, string>
 	onSetAssetView: (id: string, view: string) => void
-	extractedFilenames: Set<string>
 	onTabClick: (id: string) => void
 	onTabClose: (id: string) => void
-	onOpen: (id: string, view?: string) => void
 	onSplitToggle: () => void
 	onChatToggle: () => void
 	onAssetUpdate: (updated: ApiAsset) => void
 	chatCollapsed: boolean
-	provider: string
-	apiKey: string
-	model: string
-	onExtracted: () => void
 	doNotRead: Set<string>
 	onToggleDoNotRead: (id: string) => void
-	taskType?: TaskType
 }) {
 	const openAssets = openTabIds
 		.map((id) => assets.find((a) => a.id === id))
@@ -69,47 +54,12 @@ export function AssetViewer({
 	const activeAsset =
 		openAssets.find((a) => a.id === activeTab) ?? openAssets[0]
 
-	const [locate, setLocate] = useState<LocateState | null>(null)
-
-	function handleLocate(sourcePath: string, locations: FieldLocation[]) {
-		if (!locations.length) return
-		// Open + focus the source in its document view so the highlight is visible.
-		onOpen(sourcePath, "source")
-		setLocate({ sourcePath, locations, index: 0 })
-	}
-	function locatePrev() {
-		setLocate((l) =>
-			l
-				? {
-						...l,
-						index: (l.index - 1 + l.locations.length) % l.locations.length,
-					}
-				: l,
-		)
-	}
-	function locateNext() {
-		setLocate((l) =>
-			l ? { ...l, index: (l.index + 1) % l.locations.length } : l,
-		)
-	}
-
 	const paneProps = {
 		tabView,
 		onSetAssetView,
-		extractedFilenames,
 		onAssetUpdate,
-		provider,
-		apiKey,
-		model,
-		onExtracted,
-		locate,
-		onLocate: handleLocate,
-		onLocatePrev: locatePrev,
-		onLocateNext: locateNext,
-		onLocateClear: () => setLocate(null),
 		doNotRead,
 		onToggleDoNotRead,
-		taskType,
 	}
 
 	return (

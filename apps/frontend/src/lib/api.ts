@@ -2,8 +2,6 @@ import type {
 	ApiChat,
 	ApiChatMessage,
 	ApiTask,
-	ExtractionRecord,
-	ExtractionSummary,
 	Flags,
 	OpenDoc,
 	Settings,
@@ -75,102 +73,6 @@ export const api = {
 				perToken: Record<string, string>
 				warnings: string[]
 			}>("/prompt/render", json(input, { method: "POST" })),
-	},
-	extractpat: {
-		// assetType: a specific source type id, or "auto" to classify first
-		extract: (
-			filePath: string,
-			assetType: string,
-			provider: string,
-			apiKey: string,
-			model: string,
-		) =>
-			request<ExtractionRecord>(
-				"/ai/extractpat/extract",
-				json(
-					{ filePath, assetType, provider, apiKey, model },
-					{ method: "POST" },
-				),
-			),
-	},
-	extractpatStream: {
-		// Streams the extraction. Calls handlers as NDJSON lines arrive.
-		run: async (
-			filePath: string,
-			assetType: string,
-			provider: string,
-			apiKey: string,
-			model: string,
-			handlers: {
-				onMeta?: (assetType: string) => void
-				onPartial?: (object: Record<string, unknown>) => void
-				onDone?: (record: ExtractionRecord) => void
-			},
-		) => {
-			const res = await fetch(`${BASE_URL}/ai/extractpat/extract/stream`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ filePath, assetType, provider, apiKey, model }),
-			})
-			if (!res.ok || !res.body) {
-				let detail = ""
-				try {
-					const body = (await res.json()) as { error?: string }
-					if (body?.error) detail = ` — ${body.error}`
-				} catch {}
-				throw new Error(`API ${res.status}${detail}`)
-			}
-			const reader = res.body.getReader()
-			const decoder = new TextDecoder()
-			let buf = ""
-			for (;;) {
-				const { done, value } = await reader.read()
-				if (done) break
-				buf += decoder.decode(value, { stream: true })
-				let nl: number
-				// biome-ignore lint/suspicious/noAssignInExpressions: stream line splitting
-				while ((nl = buf.indexOf("\n")) >= 0) {
-					const line = buf.slice(0, nl).trim()
-					buf = buf.slice(nl + 1)
-					if (!line) continue
-					const msg = JSON.parse(line) as {
-						type: string
-						assetType?: string
-						object?: Record<string, unknown>
-						record?: ExtractionRecord
-						message?: string
-					}
-					if (msg.type === "meta" && msg.assetType)
-						handlers.onMeta?.(msg.assetType)
-					else if (msg.type === "partial" && msg.object)
-						handlers.onPartial?.(msg.object)
-					else if (msg.type === "done" && msg.record)
-						handlers.onDone?.(msg.record)
-					else if (msg.type === "error")
-						throw new Error(msg.message ?? "Extraction failed.")
-				}
-			}
-		},
-	},
-	extractions: {
-		list: (taskPath: string) =>
-			request<ExtractionSummary[]>(
-				`/extractions?taskPath=${encodeURIComponent(taskPath)}`,
-			),
-		get: (taskPath: string, filename: string) =>
-			request<ExtractionRecord | null>(
-				`/extractions/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
-			),
-		save: (taskPath: string, record: ExtractionRecord) =>
-			request<ExtractionRecord>(
-				"/extractions/file",
-				json({ taskPath, record }, { method: "PUT" }),
-			),
-		delete: (taskPath: string, filename: string) =>
-			request<{ ok: boolean }>(
-				`/extractions/file?taskPath=${encodeURIComponent(taskPath)}&filename=${encodeURIComponent(filename)}`,
-				{ method: "DELETE" },
-			),
 	},
 	// Per-file flags (excluded + starred) — one file, meta/flags.json.
 	flags: {

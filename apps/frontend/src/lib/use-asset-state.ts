@@ -42,11 +42,8 @@ export function useAssetState(currentTaskId: string) {
 	const [openTabIds, setOpenTabIds] = useState<string[]>([])
 	const [activeTab, setActiveTab] = useState("")
 	const [splitView, setSplitView] = useState(false)
-	// Per-source-tab toggle: document (PDF) vs ExtractPat extraction. Default "source".
+	// Per-source-tab toggle: Source | Notes. Default "source".
 	const [tabView, setTabView] = useState<Record<string, AssetView>>({})
-	const [extractedFilenames, setExtractedFilenames] = useState<Set<string>>(
-		new Set(),
-	)
 	// Sources the user has flagged "do not read" — excluded from AgentPat context.
 	const [doNotRead, setDoNotRead] = useState<Set<string>>(new Set())
 	// Sources the user has starred ("key documents").
@@ -55,7 +52,6 @@ export function useAssetState(currentTaskId: string) {
 	const refresh = useCallback(() => {
 		if (!currentTaskId) {
 			setAssets([])
-			setExtractedFilenames(new Set())
 			setDoNotRead(new Set())
 			setStarred(new Set())
 			return
@@ -78,11 +74,6 @@ export function useAssetState(currentTaskId: string) {
 			setDoNotRead(idsForFilenames(new Set(flags.excluded)))
 			setStarred(idsForFilenames(new Set(flags.starred)))
 		})
-		api.extractions
-			.list(currentTaskId)
-			.then((summaries) =>
-				setExtractedFilenames(new Set(summaries.map((s) => s.filename))),
-			)
 	}, [currentTaskId])
 
 	useEffect(() => {
@@ -222,7 +213,6 @@ export function useAssetState(currentTaskId: string) {
 		splitView,
 		tabView,
 		openAssets,
-		extractedFilenames,
 		doNotRead,
 		starred,
 		refresh,

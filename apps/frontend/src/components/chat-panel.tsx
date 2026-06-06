@@ -246,9 +246,7 @@ function ChatPane({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
-	onOpenSource,
 	onOpenFile,
-	onExtracted,
 	initialMessages,
 	initialMessage,
 	taskId,
@@ -264,9 +262,7 @@ function ChatPane({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
-	onOpenSource: (filename: string) => void
 	onOpenFile: (filename: string) => void
-	onExtracted: () => void
 	initialMessages: UIMessage[]
 	initialMessage?: string | null
 	taskId: string
@@ -344,9 +340,7 @@ function ChatPane({
 		taskId,
 		addToolOutput: (args) =>
 			addToolOutput(args as Parameters<typeof addToolOutput>[0]),
-		onReview: onOpenSource,
 		onOpenFile,
-		onExtracted,
 	}
 
 	const isStreaming = status === "streaming" || status === "submitted"
@@ -786,9 +780,7 @@ function ChatPaneLoader({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
-	onOpenSource: (filename: string) => void
 	onOpenFile: (filename: string) => void
-	onExtracted: () => void
 	initialMessage?: string | null
 	taskId: string
 	provider: string
@@ -855,9 +847,7 @@ export function ChatPanel({
 	onRemoveAsset,
 	onOpenAsset,
 	doNotRead,
-	onOpenSource,
 	onOpenFile,
-	onExtracted,
 	onOpenSettings,
 }: {
 	chats: ApiChat[]
@@ -879,9 +869,7 @@ export function ChatPanel({
 	onRemoveAsset: (id: string) => void
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
-	onOpenSource: (filename: string) => void
 	onOpenFile: (filename: string) => void
-	onExtracted: () => void
 	onOpenSettings: () => void
 }) {
 	const { connectedToAI } = useAI()
@@ -970,9 +958,7 @@ export function ChatPanel({
 					onRemoveAsset={onRemoveAsset}
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
-					onOpenSource={onOpenSource}
 					onOpenFile={onOpenFile}
-					onExtracted={onExtracted}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
 					taskId={taskId}
 					provider={provider}
