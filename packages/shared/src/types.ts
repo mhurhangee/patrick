@@ -125,6 +125,11 @@ export type Flags = {
 
 export const EMPTY_FLAGS: Flags = { excluded: [], starred: [] }
 
+// Per-source signpost — a short one-liner ("what is this document"), filename-keyed,
+// stored in meta/signposts.json. The cheap awareness layer for CLOSED docs (and the
+// callout at the top of a source's notes). Separate from notes (content) and flags.
+export type Signposts = Record<string, string>
+
 // ─── Frontend API types ───────────────────────────────────────────────────────
 // Bridge types used by frontend components during the file system migration.
 // These will be replaced as components are rewritten.

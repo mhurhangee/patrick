@@ -11,7 +11,7 @@ import {
 import { type Tool, tool } from "ai"
 import { z } from "zod"
 import { fetchPatent } from "../epo-ops"
-import { listArtifacts, listSources, readNote } from "../fs"
+import { listArtifacts, listSources, readNote, readSignposts } from "../fs"
 
 // Everything a resolver / tool-builder might need, assembled per request. Fields
 // are per-surface — a resolver returns null (or a tool builder returns null)
@@ -107,12 +107,13 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	},
 
 	// Open docs = the OPEN=CONTEXT spine. The source itself in full (PDFs go
-	// out-of-band as file parts, artifact text inline) plus its notes — nothing
-	// derived stands between the agent and the real document.
+	// out-of-band as file parts, artifact text inline) plus its signpost + notes —
+	// nothing derived stands between the agent and the real document.
 	OPENDOCUMENTS: {
 		kind: "scope",
 		resolve: async ({ taskPath, openDocs }) => {
 			if (!taskPath || !openDocs?.length) return null
+			const signposts = await readSignposts(taskPath)
 			const blocks: string[] = []
 			for (const doc of openDocs) {
 				const name = basename(doc.path)
@@ -132,6 +133,7 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 						? "_Full document attached above as a file part._"
 						: "_This document has no text representation in context; open it in the editor or rely on its notes._",
 				]
+				if (signposts[name]) lines.push(`_Signpost: ${signposts[name]}_`)
 				const raw = await readNote(taskPath, name)
 				const noteText = raw ? plateToText(raw) : ""
 				if (noteText) lines.push(`### Notes\n${noteText}`)
@@ -142,8 +144,8 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	},
 
 	// Closed docs = a cheap signpost only. Every source/artifact NOT open and NOT
-	// excluded, as one line: filename, file type, and any note the attorney wrote
-	// (the note is the awareness layer) — never the document's content.
+	// excluded, as one line: filename, file type, and its signpost (the one-liner
+	// the attorney/agent wrote) — never the document's content.
 	CLOSEDDOCUMENTS: {
 		kind: "scope",
 		resolve: async ({ taskPath, openDocs, excludedFiles }) => {
@@ -152,19 +154,19 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			const excluded = new Set(excludedFiles ?? [])
 			const skip = (name: string) => openNames.has(name) || excluded.has(name)
 
-			const [sources, artifacts] = await Promise.all([
+			const [sources, artifacts, signposts] = await Promise.all([
 				listSources(taskPath),
 				listArtifacts(taskPath),
+				readSignposts(taskPath),
 			])
 
 			const lines: string[] = []
 			for (const s of sources) {
 				if (skip(s.filename)) continue
-				const raw = await readNote(taskPath, s.filename)
-				const note = raw ? plateToText(raw).replace(/\s+/g, " ").trim() : ""
+				const signpost = signposts[s.filename]
 				lines.push(
 					`- ${s.filename} (${s.ext.toUpperCase()})${
-						note ? ` — ${note.slice(0, 280)}` : ""
+						signpost ? ` — ${signpost}` : ""
 					}`,
 				)
 			}

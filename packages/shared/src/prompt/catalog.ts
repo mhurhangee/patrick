@@ -85,7 +85,7 @@ export const CATALOG = {
 		kind: "scope",
 		label: "Open documents",
 		description:
-			"Each document the attorney has open, in full — the source itself (PDF file part / artifact text) plus its notes.",
+			"Each document the attorney has open, in full — the source itself (PDF file part / artifact text) plus its signpost and notes.",
 		surfaces: ["agentpat"],
 		wrapper:
 			"# Open Documents\nThe attorney has opened these documents — this is the context they have deliberately curated for you. Treat it as your primary, authoritative material and reason over it fully. Any open PDFs are attached as file parts on the most recent message — they're attached once, to the latest turn, to save tokens, so they may not appear alongside earlier turns; your earlier responses were grounded in the documents open at the time, so trust them.\n\n{list}",
@@ -94,10 +94,10 @@ export const CATALOG = {
 		kind: "scope",
 		label: "Other documents",
 		description:
-			"Awareness-only signpost for documents that exist in the task but aren't open (filename, type, and any note) — never their content.",
+			"Awareness-only signpost for documents that exist in the task but aren't open (filename, type, and a one-line signpost) — never their content.",
 		surfaces: ["agentpat"],
 		wrapper:
-			"# Other Documents in the Task (not open)\nThese exist in the task folder but are NOT open, so you see only a short signpost (filename, type, and any note the attorney wrote) — never their content. Use it to notice potentially relevant material and to suggest the attorney open it. Do NOT rely on a signpost as the basis for any substantive or factual claim — to use a document's content, it must be open.\n\n{list}",
+			"# Other Documents in the Task (not open)\nThese exist in the task folder but are NOT open, so you see only a short signpost (filename, type, and a one-line note of what it is) — never their content. Use it to notice potentially relevant material and to suggest the attorney open it. Do NOT rely on a signpost as the basis for any substantive or factual claim — to use a document's content, it must be open.\n\n{list}",
 	},
 	CURRENTSOURCE: {
 		kind: "scope",

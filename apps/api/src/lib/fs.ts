@@ -15,6 +15,7 @@ import {
 	EMPTY_FLAGS,
 	type Flags,
 	type Settings,
+	type Signposts,
 	type TaskEntry,
 } from "@patrickos/shared"
 import YAML from "yaml"
@@ -60,6 +61,11 @@ function notesDir(taskPath: string) {
 // Filename-keyed flags (excluded/starred) — one file under meta/.
 function flagsPath(taskPath: string) {
 	return join(taskPath, "meta", "flags.json")
+}
+
+// Filename-keyed signposts (one-liner "what is this doc") — one file under meta/.
+function signpostsPath(taskPath: string) {
+	return join(taskPath, "meta", "signposts.json")
 }
 
 // ─── YAML ────────────────────────────────────────────────────────────────────
@@ -220,6 +226,25 @@ export async function writeFlags(
 	flags: Flags,
 ): Promise<void> {
 	await writeJson(flagsPath(taskPath), flags)
+}
+
+// ─── Signposts (meta/signposts.json — filename → one-liner) ──────────────────
+
+export async function readSignposts(taskPath: string): Promise<Signposts> {
+	return readJson<Signposts>(signpostsPath(taskPath), {})
+}
+
+// Set (or, when blank, clear) one source's signpost.
+export async function writeSignpost(
+	taskPath: string,
+	filename: string,
+	signpost: string,
+): Promise<void> {
+	const all = await readSignposts(taskPath)
+	const next = { ...all }
+	if (signpost.trim()) next[filename] = signpost.trim()
+	else delete next[filename]
+	await writeJson(signpostsPath(taskPath), next)
 }
 
 // ─── Folder roster (sources + artifacts on disk) ─────────────────────────────

@@ -5,6 +5,7 @@ import type {
 	Flags,
 	OpenDoc,
 	Settings,
+	Signposts,
 	SurfaceId,
 	TaskType,
 } from "@patrickos/shared"
@@ -81,6 +82,16 @@ export const api = {
 			request<{ ok: boolean }>(
 				"/flags",
 				json({ taskPath, flags }, { method: "PUT" }),
+			),
+	},
+	// Per-source signposts (one-liner) — one file, meta/signposts.json.
+	signposts: {
+		get: (taskPath: string) =>
+			request<Signposts>(`/signposts?taskPath=${encodeURIComponent(taskPath)}`),
+		set: (taskPath: string, filename: string, signpost: string) =>
+			request<{ ok: boolean }>(
+				"/signposts",
+				json({ taskPath, filename, signpost }, { method: "PUT" }),
 			),
 	},
 	// Per-source notes — Plate JSON in notes/{filename}.json.
