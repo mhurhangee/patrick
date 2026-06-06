@@ -17,7 +17,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { TagEditor } from "./tag-editor"
 
@@ -49,66 +48,59 @@ function ManagerRow({
 		setSignpost(meta?.signpost ?? "")
 	}, [meta?.signpost])
 	const label = asset.kind === "artifact" ? asset.title : asset.filename
-	const type =
-		asset.kind === "artifact"
-			? "Artifact"
-			: (asset.filename.split(".").at(-1) ?? "").toUpperCase()
 
+	// One dense row: star · name · signpost · tags · exclude — table-like columns.
 	return (
-		<div className="border-b px-1 py-2 last:border-b-0">
-			<div className="flex items-center gap-2">
-				<button
-					type="button"
-					onClick={onToggleStar}
-					title={starred ? "Unstar" : "Star"}
-					className={cn(
-						"shrink-0",
-						starred
-							? "text-foreground"
-							: "text-muted-foreground/40 hover:text-foreground",
-					)}
-				>
-					<Star size={13} />
-				</button>
-				<span
-					className={cn(
-						"min-w-0 flex-1 truncate text-xs",
-						asset.kind === "artifact" && "capitalize",
-						excluded && "text-muted-foreground/40 line-through",
-					)}
-				>
-					{label}
-				</span>
-				<span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-					{type}
-				</span>
-				<button
-					type="button"
-					onClick={onToggleExclude}
-					title={excluded ? "Include in AgentPat" : "Exclude from AgentPat"}
-					className={cn(
-						"shrink-0",
-						excluded
-							? "text-destructive/70 hover:text-destructive"
-							: "text-muted-foreground/40 hover:text-foreground",
-					)}
-				>
-					{excluded ? <Ban size={13} /> : <Eye size={13} />}
-				</button>
-			</div>
-			<Textarea
+		<div className="flex items-center gap-2 rounded px-1 py-1 text-xs hover:bg-muted/40">
+			<button
+				type="button"
+				onClick={onToggleStar}
+				title={starred ? "Unstar" : "Star"}
+				className={cn(
+					"shrink-0",
+					starred
+						? "text-foreground"
+						: "text-muted-foreground/40 hover:text-foreground",
+				)}
+			>
+				<Star size={12} />
+			</button>
+			<span
+				className={cn(
+					"w-40 shrink-0 truncate",
+					asset.kind === "artifact" && "capitalize",
+					excluded && "text-muted-foreground/40 line-through",
+				)}
+				title={label}
+			>
+				{label}
+			</span>
+			<input
+				type="text"
 				value={signpost}
 				onChange={(e) => setSignpost(e.target.value)}
 				onBlur={() => onSignpost(signpost)}
-				placeholder="Signpost — one line on what this document is…"
-				rows={1}
-				className="mt-1.5 min-h-0 resize-none bg-background p-2 text-xs"
+				placeholder="signpost…"
+				className="min-w-0 flex-1 border-0 bg-transparent outline-none placeholder:text-muted-foreground/40"
 			/>
 			<TagEditor
 				tags={meta?.tags ?? []}
 				onChange={onTags}
-				className="mt-1.5 px-1"
+				className="w-48 shrink-0"
 			/>
+			<button
+				type="button"
+				onClick={onToggleExclude}
+				title={excluded ? "Include in AgentPat" : "Exclude from AgentPat"}
+				className={cn(
+					"shrink-0",
+					excluded
+						? "text-destructive/70 hover:text-destructive"
+						: "text-muted-foreground/40 hover:text-foreground",
+				)}
+			>
+				{excluded ? <Ban size={12} /> : <Eye size={12} />}
+			</button>
 		</div>
 	)
 }
