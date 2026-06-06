@@ -19,8 +19,8 @@ export function NotesView({ asset }: { asset: ApiAsset }) {
 		setLoading(true)
 		Promise.all([
 			api.notes.get(asset.taskId, asset.filename),
-			api.signposts.get(asset.taskId),
-		]).then(([noteRes, signposts]) => {
+			api.docmeta.get(asset.taskId),
+		]).then(([noteRes, meta]) => {
 			if (cancelled) return
 			try {
 				setInitialValue(
@@ -29,7 +29,7 @@ export function NotesView({ asset }: { asset: ApiAsset }) {
 			} catch {
 				setInitialValue(undefined)
 			}
-			setSignpost(signposts[asset.filename] ?? "")
+			setSignpost(meta[asset.filename]?.signpost ?? "")
 			setLoading(false)
 		})
 		return () => {
@@ -45,7 +45,9 @@ export function NotesView({ asset }: { asset: ApiAsset }) {
 
 	function saveSignpost(value: string) {
 		if (saveTimer.current) clearTimeout(saveTimer.current)
-		api.signposts.set(asset.taskId, asset.filename, value).catch(() => {})
+		api.docmeta
+			.update(asset.taskId, asset.filename, { signpost: value })
+			.catch(() => {})
 	}
 
 	function onSignpostChange(value: string) {

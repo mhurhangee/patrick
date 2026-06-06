@@ -1,4 +1,4 @@
-import type { ApiAsset } from "@patrickos/shared"
+import type { ApiAsset, DocMeta, DocMetaMap } from "@patrickos/shared"
 import { useCallback, useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
@@ -38,16 +38,14 @@ export function useAssetState(currentTaskId: string) {
 	const [splitView, setSplitView] = useState(false)
 	// Per-source-tab toggle: Source | Notes. Default "source".
 	const [tabView, setTabView] = useState<Record<string, AssetView>>({})
-	// Sources the user has flagged "do not read" — excluded from AgentPat context.
-	const [doNotRead, setDoNotRead] = useState<Set<string>>(new Set())
-	// Sources the user has starred ("key documents").
-	const [starred, setStarred] = useState<Set<string>>(new Set())
+	// Per-doc metadata (signpost/tags/excluded/starred), keyed by filename — the
+	// single source of truth; excluded/starred sets below are derived from it.
+	const [docMeta, setDocMeta] = useState<DocMetaMap>({})
 
 	const refresh = useCallback(() => {
 		if (!currentTaskId) {
 			setAssets([])
-			setDoNotRead(new Set())
-			setStarred(new Set())
+			setDocMeta({})
 			return
 		}
 		api.tasks.listFiles(currentTaskId).then(async ({ sources, artifacts }) => {
@@ -58,16 +56,8 @@ export function useAssetState(currentTaskId: string) {
 				fileToAsset(f, "artifact", currentTaskId),
 			)
 			setAssets([...sourceAssets, ...artifactAssets])
-			// Restore persisted per-file flags (stored by filename; cover sources + artifacts).
-			const flaggable = [...sourceAssets, ...artifactAssets]
-			const idsForFilenames = (filenames: Set<string>) =>
-				new Set(
-					flaggable.filter((s) => filenames.has(s.filename)).map((s) => s.id),
-				)
-			const flags = await api.flags.get(currentTaskId)
-			setDoNotRead(idsForFilenames(new Set(flags.excluded)))
-			setStarred(idsForFilenames(new Set(flags.starred)))
 		})
+		api.docmeta.get(currentTaskId).then(setDocMeta)
 	}, [currentTaskId])
 
 	useEffect(() => {
@@ -160,40 +150,56 @@ export function useAssetState(currentTaskId: string) {
 		refresh()
 	}
 
-	// Filenames for a set of asset ids — flags persist by filename so they travel
-	// with the task folder.
-	function filenamesFor(ids: Set<string>) {
-		return [...ids]
-			.map((x) => assets.find((a) => a.id === x)?.filename)
-			.filter((f): f is string => !!f)
-	}
+	// Metadata is keyed by filename so it travels with the task folder; the UI
+	// keys most things by asset id, so map id → filename when persisting.
+	const filenameFor = (id: string) => assets.find((a) => a.id === id)?.filename
 
-	// Flags share one file — always write both lists so a toggle of one preserves
-	// the other.
-	function persistFlags(excludedIds: Set<string>, starredIds: Set<string>) {
-		api.flags
-			.set(currentTaskId, {
-				excluded: filenamesFor(excludedIds),
-				starred: filenamesFor(starredIds),
-			})
-			.catch(() => {})
+	// Merge a patch into one doc's metadata — optimistic local update + persist.
+	function patchDocMeta(filename: string, patch: Partial<DocMeta>) {
+		setDocMeta((prev) => {
+			const merged: DocMeta = { ...prev[filename], ...patch }
+			// Mirror the server's prune so derived sets update immediately.
+			const clean: DocMeta = {}
+			if (merged.signpost?.trim()) clean.signpost = merged.signpost.trim()
+			if (merged.tags?.length) clean.tags = merged.tags
+			if (merged.excluded) clean.excluded = true
+			if (merged.starred) clean.starred = true
+			const next = { ...prev }
+			if (Object.keys(clean).length) next[filename] = clean
+			else delete next[filename]
+			return next
+		})
+		api.docmeta.update(currentTaskId, filename, patch).catch(() => {})
 	}
 
 	function toggleDoNotRead(id: string) {
-		const next = new Set(doNotRead)
-		if (next.has(id)) next.delete(id)
-		else next.add(id)
-		setDoNotRead(next)
-		persistFlags(next, starred)
+		const filename = filenameFor(id)
+		if (filename)
+			patchDocMeta(filename, { excluded: !docMeta[filename]?.excluded })
 	}
 
 	function toggleStar(id: string) {
-		const next = new Set(starred)
-		if (next.has(id)) next.delete(id)
-		else next.add(id)
-		setStarred(next)
-		persistFlags(doNotRead, next)
+		const filename = filenameFor(id)
+		if (filename)
+			patchDocMeta(filename, { starred: !docMeta[filename]?.starred })
 	}
+
+	function setSignpost(filename: string, signpost: string) {
+		patchDocMeta(filename, { signpost })
+	}
+
+	function setTags(filename: string, tags: string[]) {
+		patchDocMeta(filename, { tags })
+	}
+
+	// Derived id-sets — excluded/starred live in docMeta (by filename); most of
+	// the UI works in asset ids, so project them across the current assets.
+	const doNotRead = new Set(
+		assets.filter((a) => docMeta[a.filename]?.excluded).map((a) => a.id),
+	)
+	const starred = new Set(
+		assets.filter((a) => docMeta[a.filename]?.starred).map((a) => a.id),
+	)
 
 	// Open documents for chat context/chips.
 	const openAssets = openTabIds
@@ -206,6 +212,7 @@ export function useAssetState(currentTaskId: string) {
 		activeTab,
 		splitView,
 		tabView,
+		docMeta,
 		openAssets,
 		doNotRead,
 		starred,
@@ -221,5 +228,7 @@ export function useAssetState(currentTaskId: string) {
 		deleteArtifact,
 		toggleDoNotRead,
 		toggleStar,
+		setSignpost,
+		setTags,
 	}
 }

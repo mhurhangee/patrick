@@ -34,7 +34,7 @@ export function SuggestSignpostTool({
 	async function accept() {
 		setBusy(true)
 		try {
-			await api.signposts.set(ctx.taskId, filename, signpost)
+			await api.docmeta.update(ctx.taskId, filename, { signpost })
 			ctx.addToolOutput({
 				tool: "suggestSignpost",
 				toolCallId: part.toolCallId,

@@ -11,7 +11,7 @@ import {
 import { type Tool, tool } from "ai"
 import { z } from "zod"
 import { fetchPatent } from "../epo-ops"
-import { listArtifacts, listSources, readNote, readSignposts } from "../fs"
+import { listArtifacts, listSources, readDocMeta, readNote } from "../fs"
 
 // Everything a resolver / tool-builder might need, assembled per request. Fields
 // are per-surface — a resolver returns null (or a tool builder returns null)
@@ -113,7 +113,7 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 		kind: "scope",
 		resolve: async ({ taskPath, openDocs }) => {
 			if (!taskPath || !openDocs?.length) return null
-			const signposts = await readSignposts(taskPath)
+			const meta = await readDocMeta(taskPath)
 			const blocks: string[] = []
 			for (const doc of openDocs) {
 				const name = basename(doc.path)
@@ -133,7 +133,9 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 						? "_Full document attached above as a file part._"
 						: "_This document has no text representation in context; open it in the editor or rely on its notes._",
 				]
-				if (signposts[name]) lines.push(`_Signpost: ${signposts[name]}_`)
+				const m = meta[name]
+				if (m?.signpost) lines.push(`_Signpost: ${m.signpost}_`)
+				if (m?.tags?.length) lines.push(`_Tags: ${m.tags.join(", ")}_`)
 				const raw = await readNote(taskPath, name)
 				const noteText = raw ? plateToText(raw) : ""
 				if (noteText) lines.push(`### Notes\n${noteText}`)
@@ -154,19 +156,20 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 			const excluded = new Set(excludedFiles ?? [])
 			const skip = (name: string) => openNames.has(name) || excluded.has(name)
 
-			const [sources, artifacts, signposts] = await Promise.all([
+			const [sources, artifacts, meta] = await Promise.all([
 				listSources(taskPath),
 				listArtifacts(taskPath),
-				readSignposts(taskPath),
+				readDocMeta(taskPath),
 			])
 
 			const lines: string[] = []
 			for (const s of sources) {
 				if (skip(s.filename)) continue
-				const signpost = signposts[s.filename]
+				const m = meta[s.filename]
+				const tags = m?.tags?.length ? ` [${m.tags.join(", ")}]` : ""
 				lines.push(
-					`- ${s.filename} (${s.ext.toUpperCase()})${
-						signpost ? ` — ${signpost}` : ""
+					`- ${s.filename} (${s.ext.toUpperCase()})${tags}${
+						m?.signpost ? ` — ${m.signpost}` : ""
 					}`,
 				)
 			}

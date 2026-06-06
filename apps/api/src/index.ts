@@ -4,13 +4,12 @@ import { aiRouter } from "./routes/ai"
 import { artifactsRouter } from "./routes/artifacts"
 import { chatsRouter } from "./routes/chats"
 import { configRouter } from "./routes/config"
+import { docMetaRouter } from "./routes/docmeta"
 import { editorAiRouter } from "./routes/editor-ai"
 import { filesRouter } from "./routes/files"
-import { flagsRouter } from "./routes/flags"
 import { notesRouter } from "./routes/notes"
 import { promptRouter } from "./routes/prompt"
 import { settingsRouter } from "./routes/settings"
-import { signpostsRouter } from "./routes/signposts"
 import { tasksRouter } from "./routes/tasks"
 
 const app = new Hono()
@@ -20,8 +19,7 @@ app.use("*", cors())
 app.get("/health", (c) => c.json({ ok: true }))
 app.route("/config", configRouter)
 app.route("/tasks", tasksRouter)
-app.route("/flags", flagsRouter)
-app.route("/signposts", signpostsRouter)
+app.route("/docmeta", docMetaRouter)
 app.route("/notes", notesRouter)
 app.route("/chats", chatsRouter)
 app.route("/files", filesRouter)

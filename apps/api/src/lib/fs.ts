@@ -12,10 +12,9 @@ import {
 	type Chat,
 	type ChatIndexEntry,
 	DEFAULT_SETTINGS,
-	EMPTY_FLAGS,
-	type Flags,
+	type DocMeta,
+	type DocMetaMap,
 	type Settings,
-	type Signposts,
 	type TaskEntry,
 } from "@patrickos/shared"
 import YAML from "yaml"
@@ -58,14 +57,9 @@ function notesDir(taskPath: string) {
 	return join(taskPath, "notes")
 }
 
-// Filename-keyed flags (excluded/starred) — one file under meta/.
-function flagsPath(taskPath: string) {
-	return join(taskPath, "meta", "flags.json")
-}
-
-// Filename-keyed signposts (one-liner "what is this doc") — one file under meta/.
-function signpostsPath(taskPath: string) {
-	return join(taskPath, "meta", "signposts.json")
+// Filename-keyed per-doc metadata (signpost/tags/excluded/starred) — one file.
+function docMetaPath(taskPath: string) {
+	return join(taskPath, "meta", "docmeta.json")
 }
 
 // ─── YAML ────────────────────────────────────────────────────────────────────
@@ -215,36 +209,32 @@ export async function deleteNote(
 	await rm(noteFilePath(taskPath, sourceFilename), { force: true })
 }
 
-// ─── Flags (meta/flags.json — excluded + starred, filename-keyed) ────────────
+// ─── Doc metadata (meta/docmeta.json — signpost/tags/excluded/starred) ───────
 
-export async function readFlags(taskPath: string): Promise<Flags> {
-	return readJson<Flags>(flagsPath(taskPath), EMPTY_FLAGS)
+export async function readDocMeta(taskPath: string): Promise<DocMetaMap> {
+	return readJson<DocMetaMap>(docMetaPath(taskPath), {})
 }
 
-export async function writeFlags(
-	taskPath: string,
-	flags: Flags,
-): Promise<void> {
-	await writeJson(flagsPath(taskPath), flags)
-}
-
-// ─── Signposts (meta/signposts.json — filename → one-liner) ──────────────────
-
-export async function readSignposts(taskPath: string): Promise<Signposts> {
-	return readJson<Signposts>(signpostsPath(taskPath), {})
-}
-
-// Set (or, when blank, clear) one source's signpost.
-export async function writeSignpost(
+// Merge a patch into one doc's metadata, then prune empties so the file stays
+// sparse (blank signpost / empty tags / false flags drop out; an emptied entry
+// is removed entirely).
+export async function updateDocMeta(
 	taskPath: string,
 	filename: string,
-	signpost: string,
-): Promise<void> {
-	const all = await readSignposts(taskPath)
+	patch: Partial<DocMeta>,
+): Promise<DocMetaMap> {
+	const all = await readDocMeta(taskPath)
+	const merged: DocMeta = { ...all[filename], ...patch }
+	const clean: DocMeta = {}
+	if (merged.signpost?.trim()) clean.signpost = merged.signpost.trim()
+	if (merged.tags?.length) clean.tags = merged.tags
+	if (merged.excluded) clean.excluded = true
+	if (merged.starred) clean.starred = true
 	const next = { ...all }
-	if (signpost.trim()) next[filename] = signpost.trim()
+	if (Object.keys(clean).length) next[filename] = clean
 	else delete next[filename]
-	await writeJson(signpostsPath(taskPath), next)
+	await writeJson(docMetaPath(taskPath), next)
+	return next
 }
 
 // ─── Folder roster (sources + artifacts on disk) ─────────────────────────────

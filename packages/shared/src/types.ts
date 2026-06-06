@@ -116,19 +116,23 @@ export type Chat = {
 // Filename-keyed flags that travel with the task folder. One file, both lists,
 // covering sources + artifacts. (Previously extractions/_excluded + _starred.)
 
-export type Flags = {
-	/** Filenames flagged "do not read" — dropped from AgentPat context. */
-	excluded: string[]
-	/** Filenames flagged "key document" (star). */
-	starred: string[]
+// Per-document awareness metadata, filename-keyed, in meta/docmeta.json. One
+// home for everything *about* a doc that isn't its content: the signpost
+// (one-liner "what is this"), tags (freeform labels), and the do-not-read /
+// star flags. Applies to sources and artifacts alike. Stored sparsely — only
+// non-empty fields are kept.
+export type DocMeta = {
+	/** One-line "what is this document" — the cheap awareness layer for closed docs. */
+	signpost?: string
+	/** Freeform labels for triage/filtering. */
+	tags?: string[]
+	/** "Do not read" — dropped from AgentPat context. */
+	excluded?: boolean
+	/** "Key document" star. */
+	starred?: boolean
 }
 
-export const EMPTY_FLAGS: Flags = { excluded: [], starred: [] }
-
-// Per-source signpost — a short one-liner ("what is this document"), filename-keyed,
-// stored in meta/signposts.json. The cheap awareness layer for CLOSED docs (and the
-// callout at the top of a source's notes). Separate from notes (content) and flags.
-export type Signposts = Record<string, string>
+export type DocMetaMap = Record<string, DocMeta>
 
 // ─── Frontend API types ───────────────────────────────────────────────────────
 // Bridge types used by frontend components during the file system migration.

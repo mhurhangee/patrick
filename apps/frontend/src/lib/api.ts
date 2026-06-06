@@ -2,10 +2,10 @@ import type {
 	ApiChat,
 	ApiChatMessage,
 	ApiTask,
-	Flags,
+	DocMeta,
+	DocMetaMap,
 	OpenDoc,
 	Settings,
-	Signposts,
 	SurfaceId,
 	TaskType,
 } from "@patrickos/shared"
@@ -74,24 +74,15 @@ export const api = {
 				warnings: string[]
 			}>("/prompt/render", json(input, { method: "POST" })),
 	},
-	// Per-file flags (excluded + starred) — one file, meta/flags.json.
-	flags: {
+	// Per-doc metadata (signpost / tags / excluded / starred) — meta/docmeta.json.
+	docmeta: {
 		get: (taskPath: string) =>
-			request<Flags>(`/flags?taskPath=${encodeURIComponent(taskPath)}`),
-		set: (taskPath: string, flags: Flags) =>
-			request<{ ok: boolean }>(
-				"/flags",
-				json({ taskPath, flags }, { method: "PUT" }),
-			),
-	},
-	// Per-source signposts (one-liner) — one file, meta/signposts.json.
-	signposts: {
-		get: (taskPath: string) =>
-			request<Signposts>(`/signposts?taskPath=${encodeURIComponent(taskPath)}`),
-		set: (taskPath: string, filename: string, signpost: string) =>
-			request<{ ok: boolean }>(
-				"/signposts",
-				json({ taskPath, filename, signpost }, { method: "PUT" }),
+			request<DocMetaMap>(`/docmeta?taskPath=${encodeURIComponent(taskPath)}`),
+		// Merge a patch into one doc's metadata; returns the new map.
+		update: (taskPath: string, filename: string, patch: Partial<DocMeta>) =>
+			request<DocMetaMap>(
+				"/docmeta",
+				json({ taskPath, filename, patch }, { method: "PUT" }),
 			),
 	},
 	// Per-source notes — Plate JSON in notes/{filename}.json.
