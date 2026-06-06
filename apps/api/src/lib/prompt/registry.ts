@@ -203,6 +203,28 @@ export const RESOLVERS: Record<TokenId, Resolver> = {
 	},
 
 	// ─── Tools ──────────────────────────────────────────────────────────────────
+	SUGGESTSIGNPOST: {
+		kind: "tool",
+		// No execute — a client-side confirmation tool. On accept the client saves
+		// the signpost for that source (meta/signposts.json).
+		build: () =>
+			tool({
+				description: CATALOG.SUGGESTSIGNPOST.description,
+				inputSchema: z.object({
+					filename: z
+						.string()
+						.describe(
+							"The exact source filename to label, e.g. 'US7557198.pdf'",
+						),
+					signpost: z
+						.string()
+						.describe(
+							"The one-line signpost: what this document is, in a sentence",
+						),
+				}),
+			}),
+	},
+
 	REQUESTOPENFILE: {
 		kind: "tool",
 		// No execute — a client-side confirmation tool. The loop stops; the client

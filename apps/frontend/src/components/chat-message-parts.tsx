@@ -11,6 +11,7 @@ import { Streamdown } from "streamdown"
 import "streamdown/styles.css"
 import { cn } from "@/lib/utils"
 import { RequestOpenFileTool } from "./request-open-file-tool"
+import { SuggestSignpostTool } from "./suggest-signpost-tool"
 
 type Part = UIMessage["parts"][number]
 
@@ -36,6 +37,7 @@ const TOOL_COMPONENTS: Record<
 	FC<{ part: ToolUIPart | DynamicToolUIPart; ctx: ToolContext }>
 > = {
 	requestOpenFile: RequestOpenFileTool,
+	suggestSignpost: SuggestSignpostTool,
 }
 
 // ─── Tool presenters (generative UI) ───────────────────────────────────────────

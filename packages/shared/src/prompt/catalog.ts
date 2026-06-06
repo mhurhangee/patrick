@@ -108,6 +108,15 @@ export const CATALOG = {
 	},
 
 	// ─── Tools (presence wires the tool + emits its blurb) ────────────────────────
+	SUGGESTSIGNPOST: {
+		kind: "tool",
+		label: "suggestSignpost",
+		description:
+			"Propose a one-line signpost (what a document is, in a sentence) for a source — especially a closed one with no signpost yet, or an open one you've now read — so it's labelled in the Other Documents list for future turns. The attorney accepts or rejects; on accept it's saved as that source's signpost. Keep it factual and short (e.g. 'US prior-art patent, Davis, on actuator linkages').",
+		surfaces: ["agentpat"],
+		wrapper:
+			"- `suggestSignpost` — propose a one-line signpost for a source (what the document is). The attorney accepts or rejects; on accept it's saved as the doc's signpost (shown in the Other Documents list).",
+	},
 	REQUESTOPENFILE: {
 		kind: "tool",
 		label: "requestOpenFile",

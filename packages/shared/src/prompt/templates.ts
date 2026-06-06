@@ -41,6 +41,7 @@ You are AgentPat, an expert AI patent attorney assistant. You help patent attorn
 # Tools
 You have these tools available:
 <REQUESTOPENFILE>
+<SUGGESTSIGNPOST>
 <FETCHPATENT>`
 
 // DraftPat — inline AI inside the artifact (document) editor.
