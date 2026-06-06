@@ -1,8 +1,8 @@
 import type { DocMeta } from "@patrickos/shared"
-import { ChevronDown, ChevronRight, X } from "lucide-react"
+import { ChevronDown, ChevronRight } from "lucide-react"
 import { useRef, useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
+import { TagEditor } from "../tag-editor"
 
 // A collapsible per-doc metadata header (signpost + tags), shown at the top of
 // every document tab. The signpost is the one-liner the agent sees even when the
@@ -26,15 +26,6 @@ export function DocMetaBar({
 		setSignpost(value)
 		if (timer.current) clearTimeout(timer.current)
 		timer.current = setTimeout(() => onSignpost(value), 600)
-	}
-
-	function addTag(raw: string) {
-		const t = raw.trim().toLowerCase()
-		if (t && !tags.includes(t)) onTags([...tags, t])
-	}
-
-	function removeTag(t: string) {
-		onTags(tags.filter((x) => x !== t))
 	}
 
 	return (
@@ -76,41 +67,7 @@ export function DocMetaBar({
 						rows={2}
 						className="min-h-0 resize-none bg-background p-2 text-xs"
 					/>
-					<div className="flex flex-wrap items-center gap-1">
-						{tags.map((t) => (
-							<span
-								key={t}
-								className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[11px]"
-							>
-								{t}
-								<button
-									type="button"
-									onClick={() => removeTag(t)}
-									className="text-muted-foreground hover:text-foreground"
-								>
-									<X size={10} />
-								</button>
-							</span>
-						))}
-						<input
-							type="text"
-							placeholder="add tag…"
-							className={cn(
-								"min-w-[80px] flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/50",
-							)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === ",") {
-									e.preventDefault()
-									addTag(e.currentTarget.value)
-									e.currentTarget.value = ""
-								}
-							}}
-							onBlur={(e) => {
-								addTag(e.currentTarget.value)
-								e.currentTarget.value = ""
-							}}
-						/>
-					</div>
+					<TagEditor tags={tags} onChange={onTags} />
 				</div>
 			)}
 		</div>

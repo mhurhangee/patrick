@@ -8,6 +8,7 @@ import {
 	Plus,
 	RefreshCw,
 	Settings2,
+	SlidersHorizontal,
 	Star,
 } from "lucide-react"
 import { type ReactNode, useState } from "react"
@@ -63,11 +64,11 @@ type SectionAction = {
 
 function CollapsibleSection({
 	label,
-	action,
+	actions,
 	children,
 }: {
 	label: string
-	action?: SectionAction
+	actions?: SectionAction[]
 	children: ReactNode
 }) {
 	const [open, setOpen] = useState(true)
@@ -91,8 +92,9 @@ function CollapsibleSection({
 							</button>
 						</SidebarGroupLabel>
 					</CollapsibleTrigger>
-					{action && (
+					{actions?.map((action) => (
 						<button
+							key={action.label}
 							type="button"
 							title={action.label}
 							onClick={action.onClick}
@@ -102,7 +104,7 @@ function CollapsibleSection({
 							{action.icon}
 							<span className="sr-only">{action.label}</span>
 						</button>
-					)}
+					))}
 				</div>
 				<CollapsibleContent>
 					<SidebarMenu className="mb-2 ml-2">{children}</SidebarMenu>
@@ -383,6 +385,7 @@ export function AppSidebar({
 	onOpen,
 	onClose,
 	onRefreshSources,
+	onManageSources,
 	onCreateArtifact,
 	onOpenChat,
 	onNewChat,
@@ -413,6 +416,7 @@ export function AppSidebar({
 	onOpen: (id: string) => void
 	onClose: (id: string) => void
 	onRefreshSources: () => void
+	onManageSources: () => void
 	onCreateArtifact: () => void
 	onOpenChat: (id: string) => void
 	onNewChat: () => void
@@ -438,27 +442,36 @@ export function AppSidebar({
 		kind: "source" | "artifact"
 		label: string
 		items: ApiAsset[]
-		action: SectionAction
+		actions: SectionAction[]
 	}[] = [
 		{
 			kind: "source",
 			label: "Sources",
 			items: sorted.filter((a) => a.kind === "source"),
-			action: {
-				icon: <RefreshCw className="size-4" />,
-				label: "Refresh sources",
-				onClick: onRefreshSources,
-			},
+			actions: [
+				{
+					icon: <SlidersHorizontal className="size-4" />,
+					label: "Manage documents",
+					onClick: onManageSources,
+				},
+				{
+					icon: <RefreshCw className="size-4" />,
+					label: "Refresh sources",
+					onClick: onRefreshSources,
+				},
+			],
 		},
 		{
 			kind: "artifact",
 			label: "Artifacts",
 			items: sorted.filter((a) => a.kind === "artifact"),
-			action: {
-				icon: <Plus className="size-4" />,
-				label: "New artifact",
-				onClick: onCreateArtifact,
-			},
+			actions: [
+				{
+					icon: <Plus className="size-4" />,
+					label: "New artifact",
+					onClick: onCreateArtifact,
+				},
+			],
 		},
 	]
 	const sortedChats = [...chats].sort(
@@ -496,8 +509,8 @@ export function AppSidebar({
 			<SidebarContent>
 				{/* Sources + Artifacts — only shown when a task is selected */}
 				{currentTaskId &&
-					assetGroups.map(({ kind, label, items, action }) => (
-						<CollapsibleSection key={kind} label={label} action={action}>
+					assetGroups.map(({ kind, label, items, actions }) => (
+						<CollapsibleSection key={kind} label={label} actions={actions}>
 							{tasksLoading ? (
 								<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">
 									<Skeleton className="h-3 w-3/4" />
@@ -590,12 +603,14 @@ export function AppSidebar({
 				{currentTaskId && (
 					<CollapsibleSection
 						label="Chats"
-						action={{
-							icon: <Plus className="size-4" />,
-							label: "New chat",
-							onClick: onNewChat,
-							disabled: !connectedToAI,
-						}}
+						actions={[
+							{
+								icon: <Plus className="size-4" />,
+								label: "New chat",
+								onClick: onNewChat,
+								disabled: !connectedToAI,
+							},
+						]}
 					>
 						{tasksLoading ? (
 							<div className="flex flex-col gap-1.5 px-3 py-1 group-data-[collapsible=icon]:hidden">

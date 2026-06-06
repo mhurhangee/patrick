@@ -7,6 +7,7 @@ import { ChatPanel } from "@/components/chat-panel"
 import { OnboardingFlow } from "@/components/onboarding-flow"
 import { ProfilePicker } from "@/components/profile-picker"
 import { SettingsPanel } from "@/components/settings-panel"
+import { SourceManagerDialog } from "@/components/source-manager-dialog"
 import { TaskManagerDialog } from "@/components/task-manager-dialog"
 import { TutorialOverlay } from "@/components/tutorial-overlay"
 import { Button } from "@/components/ui/button"
@@ -100,6 +101,7 @@ function WorkspaceContent({
 	)
 	const [settingsOpen, setSettingsOpen] = useState(false)
 	const [tutorialOpen, setTutorialOpen] = useState(false)
+	const [sourceManagerOpen, setSourceManagerOpen] = useState(false)
 
 	function openTasks(panel: "empty" | "new" = "empty") {
 		setTasksDefaultPanel(panel)
@@ -142,6 +144,7 @@ function WorkspaceContent({
 				onOpen={asset.openAsset}
 				onClose={asset.closeTab}
 				onRefreshSources={asset.refresh}
+				onManageSources={() => setSourceManagerOpen(true)}
 				onCreateArtifact={asset.createArtifact}
 				onOpenChat={chat.openChat}
 				onNewChat={chat.newChat}
@@ -285,6 +288,21 @@ function WorkspaceContent({
 			<TutorialOverlay
 				open={tutorialOpen}
 				onClose={() => setTutorialOpen(false)}
+			/>
+			<SourceManagerDialog
+				open={sourceManagerOpen}
+				onOpenChange={setSourceManagerOpen}
+				assets={asset.assets}
+				docMeta={asset.docMeta}
+				currentTaskPath={task.currentTaskId}
+				tasks={task.tasks}
+				onSetTaskType={task.setTaskType}
+				doNotRead={asset.doNotRead}
+				starred={asset.starred}
+				onToggleDoNotRead={asset.toggleDoNotRead}
+				onToggleStar={asset.toggleStar}
+				onSetSignpost={asset.setSignpost}
+				onSetTags={asset.setTags}
 			/>
 		</SidebarProvider>
 	)
