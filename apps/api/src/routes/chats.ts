@@ -313,28 +313,32 @@ chatsRouter.post("/:id/messages", async (c) => {
 						const modelMessages = Array.isArray(rawPrompt)
 							? (rawPrompt as ModelMessage[])
 							: []
-						return {
-							...baseArgs,
-							model,
-							prompt: [
-								{
-									role: "user" as const,
-									content: [
-										{
-											type: "text" as const,
-											text: "Source documents attached for reference.",
-										},
-										...fileParts,
-									],
-								},
-								{
-									role: "assistant" as const,
-									content:
-										"I have reviewed the attached source documents and will use them as context throughout our conversation.",
-								},
-								...modelMessages,
-							] as ModelMessage[],
+						// Attach the open PDFs to the LATEST user message rather than a
+						// synthetic preamble rebuilt every turn. Rebuilding the preamble
+						// from the current open set rewrote history, so a closed doc made
+						// the model think its earlier answers were unsupported. Anchoring
+						// the parts to the current turn keeps history stable; the system
+						// prompt (OPENDOCUMENTS) explains the attachments are ephemeral.
+						let lastUserIdx = -1
+						for (let i = modelMessages.length - 1; i >= 0; i--) {
+							if (modelMessages[i].role === "user") {
+								lastUserIdx = i
+								break
+							}
 						}
+						const prompt = modelMessages.map((m, i) => {
+							if (i !== lastUserIdx) return m
+							const existing =
+								typeof m.content === "string"
+									? [{ type: "text" as const, text: m.content }]
+									: m.content
+							return { ...m, content: [...existing, ...fileParts] }
+						}) as ModelMessage[]
+						// No user message to anchor to (shouldn't happen) — fall back to a
+						// trailing parts-only message so the PDFs still reach the model.
+						if (lastUserIdx === -1)
+							prompt.push({ role: "user", content: [...fileParts] })
+						return { ...baseArgs, model, prompt }
 					}
 				: undefined,
 	})

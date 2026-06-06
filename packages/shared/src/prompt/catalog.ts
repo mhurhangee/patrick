@@ -112,7 +112,7 @@ Every field in the schema is an object { content, locations }. Populate:
 			"Each document the attorney has open, in full — the source itself (PDF file part / artifact text) plus its notes.",
 		surfaces: ["agentpat"],
 		wrapper:
-			"# Open Documents\nThe attorney has opened these documents — this is the context they have deliberately curated for you. Treat it as your primary, authoritative material and reason over it fully. Any open PDFs are attached above as file parts.\n\n{list}",
+			"# Open Documents\nThe attorney has opened these documents — this is the context they have deliberately curated for you. Treat it as your primary, authoritative material and reason over it fully. Any open PDFs are attached as file parts on the most recent message — they're attached once, to the latest turn, to save tokens, so they may not appear alongside earlier turns; your earlier responses were grounded in the documents open at the time, so trust them.\n\n{list}",
 	},
 	CLOSEDDOCUMENTS: {
 		kind: "scope",
