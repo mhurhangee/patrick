@@ -250,6 +250,8 @@ function WorkspaceContent({
 									)
 									if (src) asset.openAsset(src.id)
 								}}
+								onSetSignpost={asset.setSignpost}
+								onAddTags={asset.addTags}
 								onOpenSettings={() => setSettingsOpen(true)}
 							/>
 						</ResizablePanel>

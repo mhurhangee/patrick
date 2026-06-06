@@ -1,7 +1,7 @@
 import type { ApiAsset, ApiTask, DocMeta, TaskType } from "@patrickos/shared"
 import { TASK_CONFIGS } from "@patrickos/shared"
 import { Ban, Eye, Star } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
 	Dialog,
 	DialogContent,
@@ -44,6 +44,10 @@ function ManagerRow({
 	onTags: (tags: string[]) => void
 }) {
 	const [signpost, setSignpost] = useState(meta?.signpost ?? "")
+	// Reflect external changes (e.g. AgentPat suggestions) into the field.
+	useEffect(() => {
+		setSignpost(meta?.signpost ?? "")
+	}, [meta?.signpost])
 	const label = asset.kind === "artifact" ? asset.title : asset.filename
 	const type =
 		asset.kind === "artifact"

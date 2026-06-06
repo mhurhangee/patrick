@@ -1,6 +1,6 @@
 import type { DocMeta } from "@patrickos/shared"
 import { ChevronDown, ChevronRight } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { TagEditor } from "../tag-editor"
 
@@ -21,6 +21,11 @@ export function DocMetaBar({
 	const [open, setOpen] = useState(false)
 	const [signpost, setSignpost] = useState(meta?.signpost ?? "")
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+	// Reflect external changes (e.g. AgentPat's suggestSignpost) into the field.
+	useEffect(() => {
+		setSignpost(meta?.signpost ?? "")
+	}, [meta?.signpost])
 
 	function onSignpostChange(value: string) {
 		setSignpost(value)

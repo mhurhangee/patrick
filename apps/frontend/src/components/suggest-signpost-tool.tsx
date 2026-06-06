@@ -1,13 +1,11 @@
 import type { DynamicToolUIPart, ToolUIPart } from "ai"
 import { Signpost } from "lucide-react"
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { api } from "@/lib/api"
 import type { ToolContext } from "./chat-message-parts"
 
 // Generative UI for the suggestSignpost tool — a human-in-the-loop confirm card.
-// The agent proposes a one-line signpost for a source; on accept the client saves
-// it (meta/signposts.json) so the doc is labelled in the Other Documents list.
+// The agent proposes a one-line signpost for a source; on accept it's saved via
+// the shared asset state (updates the open tab live), labelling the doc.
 
 function Card({ children }: { children: React.ReactNode }) {
 	return (
@@ -24,25 +22,19 @@ export function SuggestSignpostTool({
 	part: ToolUIPart | DynamicToolUIPart
 	ctx: ToolContext
 }) {
-	const [busy, setBusy] = useState(false)
 	const input = part.input as
 		| { filename?: string; signpost?: string }
 		| undefined
 	const filename = input?.filename ?? "this document"
 	const signpost = input?.signpost ?? ""
 
-	async function accept() {
-		setBusy(true)
-		try {
-			await api.docmeta.update(ctx.taskId, filename, { signpost })
-			ctx.addToolOutput({
-				tool: "suggestSignpost",
-				toolCallId: part.toolCallId,
-				output: { saved: true, filename, signpost },
-			})
-		} catch {
-			setBusy(false)
-		}
+	function accept() {
+		ctx.onSetSignpost(filename, signpost)
+		ctx.addToolOutput({
+			tool: "suggestSignpost",
+			toolCallId: part.toolCallId,
+			output: { saved: true, filename, signpost },
+		})
 	}
 
 	function reject() {
@@ -101,10 +93,10 @@ export function SuggestSignpostTool({
 			</div>
 			<p className="mt-1 pl-5 italic text-muted-foreground">“{signpost}”</p>
 			<div className="mt-2 flex gap-2 pl-5">
-				<Button size="xs" onClick={accept} disabled={busy}>
+				<Button size="xs" onClick={accept}>
 					Save
 				</Button>
-				<Button size="xs" variant="ghost" onClick={reject} disabled={busy}>
+				<Button size="xs" variant="ghost" onClick={reject}>
 					Not now
 				</Button>
 			</div>

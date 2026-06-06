@@ -247,6 +247,8 @@ function ChatPane({
 	onOpenAsset,
 	doNotRead,
 	onOpenFile,
+	onSetSignpost,
+	onAddTags,
 	initialMessages,
 	initialMessage,
 	taskId,
@@ -263,6 +265,8 @@ function ChatPane({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenFile: (filename: string) => void
+	onSetSignpost: (filename: string, signpost: string) => void
+	onAddTags: (filename: string, tags: string[]) => void
 	initialMessages: UIMessage[]
 	initialMessage?: string | null
 	taskId: string
@@ -341,6 +345,8 @@ function ChatPane({
 		addToolOutput: (args) =>
 			addToolOutput(args as Parameters<typeof addToolOutput>[0]),
 		onOpenFile,
+		onSetSignpost,
+		onAddTags,
 	}
 
 	const isStreaming = status === "streaming" || status === "submitted"
@@ -781,6 +787,8 @@ function ChatPaneLoader({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenFile: (filename: string) => void
+	onSetSignpost: (filename: string, signpost: string) => void
+	onAddTags: (filename: string, tags: string[]) => void
 	initialMessage?: string | null
 	taskId: string
 	provider: string
@@ -848,6 +856,8 @@ export function ChatPanel({
 	onOpenAsset,
 	doNotRead,
 	onOpenFile,
+	onSetSignpost,
+	onAddTags,
 	onOpenSettings,
 }: {
 	chats: ApiChat[]
@@ -870,6 +880,8 @@ export function ChatPanel({
 	onOpenAsset: (id: string) => void
 	doNotRead: Set<string>
 	onOpenFile: (filename: string) => void
+	onSetSignpost: (filename: string, signpost: string) => void
+	onAddTags: (filename: string, tags: string[]) => void
 	onOpenSettings: () => void
 }) {
 	const { connectedToAI } = useAI()
@@ -959,6 +971,8 @@ export function ChatPanel({
 					onOpenAsset={onOpenAsset}
 					doNotRead={doNotRead}
 					onOpenFile={onOpenFile}
+					onSetSignpost={onSetSignpost}
+					onAddTags={onAddTags}
 					initialMessage={pendingMessages[activeChat.id] ?? null}
 					taskId={taskId}
 					provider={provider}

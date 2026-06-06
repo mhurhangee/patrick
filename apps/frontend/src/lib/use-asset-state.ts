@@ -192,6 +192,14 @@ export function useAssetState(currentTaskId: string) {
 		patchDocMeta(filename, { tags })
 	}
 
+	// Merge tags into a doc's existing set (used by AgentPat's suggestTags so the
+	// agent never clobbers the attorney's tags).
+	function addTags(filename: string, tags: string[]) {
+		const existing = docMeta[filename]?.tags ?? []
+		const incoming = tags.map((t) => t.trim().toLowerCase()).filter(Boolean)
+		patchDocMeta(filename, { tags: [...new Set([...existing, ...incoming])] })
+	}
+
 	// Derived id-sets — excluded/starred live in docMeta (by filename); most of
 	// the UI works in asset ids, so project them across the current assets.
 	const doNotRead = new Set(
@@ -230,5 +238,6 @@ export function useAssetState(currentTaskId: string) {
 		toggleStar,
 		setSignpost,
 		setTags,
+		addTags,
 	}
 }

@@ -29,6 +29,10 @@ export type ToolContext = {
 	}) => void
 	/** Open a source by filename into context (requestOpenFile acceptance). */
 	onOpenFile: (filename: string) => void
+	/** Set a doc's signpost (suggestSignpost acceptance) — updates local state. */
+	onSetSignpost: (filename: string, signpost: string) => void
+	/** Merge tags into a doc (suggestTags acceptance) — updates local state. */
+	onAddTags: (filename: string, tags: string[]) => void
 }
 
 // Tools with bespoke, interactive UI — these render their own card (not the
