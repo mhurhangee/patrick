@@ -5,8 +5,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Inlined from shadcn/tailwind.css so we own it without the CLI as a runtime
-   dep: radix data-state variants, no-scrollbar utility, accordion keyframes. */
+/* radix data-state variants, no-scrollbar utility, accordion keyframes */
 @theme inline {
 	@keyframes accordion-down {
 		from {
@@ -103,6 +102,7 @@
 }
 
 :root {
+	--ui-scale: 1;
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.147 0.004 49.25);
 	--card: oklch(1 0 0);
@@ -218,10 +218,25 @@
 	* {
 		@apply border-border outline-ring/50;
 	}
-	body {
-		@apply bg-background text-foreground;
+	html,
+	body,
+	#root {
+		height: 100%;
 	}
 	html {
+		font-size: calc(15px * var(--ui-scale));
 		@apply font-sans;
+	}
+	body {
+		@apply overflow-hidden bg-background text-foreground;
+	}
+	h1 {
+		@apply font-heading text-2xl font-semibold tracking-tight;
+	}
+	h2 {
+		@apply font-heading text-xl font-semibold tracking-tight;
+	}
+	h3 {
+		@apply text-base font-semibold;
 	}
 }

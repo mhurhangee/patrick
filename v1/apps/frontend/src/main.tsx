@@ -4,6 +4,9 @@ import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@/components/theme-provider";
 import { routeTree } from "./routeTree.gen";
 import "./index.css";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { queryClient } from "@/lib/query-client";
 
 const router = createRouter({ routeTree });
 
@@ -18,8 +21,12 @@ if (!rootElement) throw new Error("Root element #root not found");
 
 createRoot(rootElement).render(
 	<StrictMode>
-		<ThemeProvider>
-			<RouterProvider router={router} />
-		</ThemeProvider>
+		<QueryClientProvider client={queryClient}>
+			<ThemeProvider>
+				<TooltipProvider>
+					<RouterProvider router={router} />
+				</TooltipProvider>
+			</ThemeProvider>
+		</QueryClientProvider>
 	</StrictMode>,
 );
