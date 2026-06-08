@@ -1,23 +1,9 @@
 # PatrickOS
 
-Open-source, agent-first patent prosecution assistant. Runs on your machine, your API keys, your files.
+Agent-first patent prosecution assistant. **Open source. Private by design.** Everything lives in the attorney's folder, in open formats, readable without the app.
 
-## Monorepo
-
-```
-apps/frontend   React + Vite — browser + Tauri webview
-apps/api        Hono on Bun — API server / Tauri sidecar
-apps/desktop    Tauri desktop wrapper
-packages/db     Drizzle schema + shared types
-```
-
-## Quick start
-
-```bash
-pnpm install
-pnpm dev           # browser dev (frontend + API)
-pnpm build:api     # compile API binary
-pnpm dev:desktop   # Tauri desktop dev
-```
-
-See `CLAUDE.md` for full architecture and development context.
+> **Re-foundation in progress.** The repo currently holds two versions:
+> - **`v0/`** — original system, frozen but working (reference + fallback).
+> - **`v1/`** — active rebuild on Word-native `.docx` + AI-driven tracked changes.
+>
+> `v0/` will be removed once `v1/` reaches parity.
