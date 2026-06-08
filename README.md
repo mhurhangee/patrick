@@ -1,4 +1,4 @@
-# PatrickOS
+# Patrick (formerly PatrickOS)
 
 Agent-first patent prosecution assistant. **Open source. Private by design.** Everything lives in the attorney's folder, in open formats, readable without the app.
 

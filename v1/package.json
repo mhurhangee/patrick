@@ -1,0 +1,21 @@
+{
+	"name": "patrick",
+	"version": "0.0.1",
+	"private": true,
+	"packageManager": "pnpm@11.5.2",
+	"scripts": {
+		"dev": "pnpm --filter frontend --filter api --parallel dev",
+		"dev:desktop": "pnpm --filter desktop dev",
+		"typecheck": "pnpm -r --parallel --if-present typecheck",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"knip": "knip",
+		"check": "pnpm typecheck && pnpm lint:fix && pnpm knip"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.16",
+		"knip": "^6.16.1",
+		"typescript": "^6.0.3"
+	}
+}

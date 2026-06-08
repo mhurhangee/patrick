@@ -1,4 +1,4 @@
-# PatrickOS v1 — Claude context
+# Patrick v1 — Claude context
 
 **Status: greenfield re-foundation (started 2026-06-08). Nothing here is load-bearing yet — we build deliberately.** The original system lives in `../v0` (frozen, working). Reference it, copy from it *intentionally*, inherit nothing by default.
 
@@ -6,7 +6,7 @@
 A run of pivots left v0 well-understood but carrying scar tissue, with Plate woven through the editor layer. A spike (`../v0/spike/docx-editor`) proved a better substrate: **@eigenpal/docx-editor** — a local, Apache-2.0, **ProseMirror**-based WYSIWYG **.docx** editor with first-class **agent tools** (`read_document` / `find_text` / `suggest_change` / `add_comment` …) that produce **native Word tracked changes**, driven by **AI SDK v6**. That collapses the two hardest things we were hand-building (a real editor + high-quality tracked changes) into an off-the-shelf, Word-native foundation. v1 is built around it.
 
 ## Vision (unchanged from v0)
-Agent-first patent prosecution assistant. **Open source, private by design, local-first (Tauri).** Everything lives in the attorney's folder, open formats, readable without the app. Every competitor is cloud SaaS; PatrickOS is the opposite.
+Agent-first patent prosecution assistant. **Open source, private by design, local-first (Tauri).** Everything lives in the attorney's folder, open formats, readable without the app. Every competitor is cloud SaaS; Patrick is the opposite.
 
 ## Foundation (new in v1)
 - **Artifacts = `.docx`** — supersedes v0's Plate-JSON *and* the brief-lived markdown-source-of-truth plan. docx is an open ISO standard, native to the attorney's real world (Word, the USPTO), with native redlines. Edited via docx-editor.

@@ -1,4 +1,4 @@
-# PatrickOS — repository root
+# Patrick (formerly PatrickOS) — repository root
 
 Two versions live side by side during the **v1 re-foundation**:
 
