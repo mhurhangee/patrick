@@ -27,6 +27,7 @@ import {
 	mockTasks,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useWorkspace } from "@/lib/workspace";
 
 type RowState = "closed" | "open" | "focused";
 
@@ -41,6 +42,11 @@ const artifactMenu = [
 const chatMenu = ["Rename", "Star", "Delete"];
 
 export function AppSidebar() {
+	const { isOpen, focused, open } = useWorkspace();
+
+	const docState = (id: string): RowState =>
+		focused === id ? "focused" : isOpen(id) ? "open" : "closed";
+
 	return (
 		<div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
 			<TaskSwitcher />
@@ -58,9 +64,10 @@ export function AppSidebar() {
 								icon={<DocIcon kind={s.kind} />}
 								label={s.filename}
 								sub={<Awareness signpost={s.signpost} tags={s.tags} />}
-								state={s.open ? "open" : "closed"}
+								state={docState(s.id)}
 								muted={s.excluded}
 								menu={sourceMenu}
+								onClick={() => open(s.id)}
 								trailing={
 									s.excluded ? (
 										<EyeOff className="size-3.5" />
@@ -75,8 +82,9 @@ export function AppSidebar() {
 								key={a.id}
 								icon={<DocIcon kind="docx" />}
 								label={a.title}
-								state={a.focused ? "focused" : a.open ? "open" : "closed"}
+								state={docState(a.id)}
 								menu={artifactMenu}
+								onClick={() => open(a.id)}
 							/>
 						))}
 					</Section>
@@ -253,6 +261,7 @@ function NavRow({
 	muted,
 	trailing,
 	menu,
+	onClick,
 }: {
 	icon: ReactNode;
 	label: string;
@@ -261,6 +270,7 @@ function NavRow({
 	muted?: boolean;
 	trailing?: ReactNode;
 	menu: string[];
+	onClick?: () => void;
 }) {
 	return (
 		<div
@@ -276,6 +286,7 @@ function NavRow({
 		>
 			<button
 				type="button"
+				onClick={onClick}
 				className="flex min-w-0 flex-1 items-start gap-2 py-1.5 pl-2 text-left"
 			>
 				<span className="mt-0.5 shrink-0">{icon}</span>
