@@ -18,6 +18,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	useCreateDocument,
 	useDeleteDocument,
@@ -33,6 +34,9 @@ import { type DocKind, useWorkspace } from "@/lib/workspace";
 import { Section } from "./section";
 
 type RowState = "closed" | "open" | "focused";
+
+// Sort key: starred first (0), excluded last (2), everything else between (1).
+const rank = (d: Document) => (d.starred ? 0 : d.excluded ? 2 : 1);
 
 export function DocumentsNav() {
 	const navigate = useNavigate();
@@ -89,17 +93,22 @@ export function DocumentsNav() {
 		del.mutate(filename);
 	};
 
+	// Starred float to the top, excluded sink to the bottom; otherwise keep the
+	// backend's alphabetical order (Array.sort is stable).
+	const ordered = [...(documents ?? [])].sort((a, b) => rank(a) - rank(b));
+
 	return (
 		<Section
 			label="Documents"
 			action={<DocumentsActions onNew={newDocument} onRefresh={refresh} />}
 		>
+			{!documents && [0, 1, 2].map((i) => <DocumentRowSkeleton key={i} />)}
 			{documents?.length === 0 && (
 				<p className="px-2 py-1 text-xs text-muted-foreground">
 					No documents in this task's folder.
 				</p>
 			)}
-			{documents?.map((doc) => (
+			{ordered.map((doc) => (
 				<DocumentRow
 					key={doc.filename}
 					doc={doc}
@@ -182,10 +191,10 @@ function DocumentRow({
 				doc.excluded && "opacity-55",
 			)}
 		>
-			<div className="flex items-center pr-1">
-				{renaming ? (
-					<div className="flex min-w-0 flex-1 items-center gap-2 py-0.5 pl-2">
-						<DocIcon kind={kind} />
+			<div className="flex items-start gap-2 py-1 pr-1 pl-2">
+				<DocIcon kind={kind} className="mt-0.5" />
+				<div className="min-w-0 flex-1">
+					{renaming ? (
 						<RenameField
 							filename={doc.filename}
 							onCommit={(to) => {
@@ -194,21 +203,25 @@ function DocumentRow({
 							}}
 							onCancel={() => setRenaming(false)}
 						/>
-					</div>
-				) : (
-					<button
-						type="button"
-						onClick={onOpen}
-						className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pl-2 text-left"
-					>
-						<DocIcon kind={kind} />
-						<span className="min-w-0 flex-1 truncate text-sm">
+					) : (
+						<button
+							type="button"
+							onClick={onOpen}
+							className="block w-full truncate text-left text-sm leading-tight"
+						>
 							{doc.filename}
-						</span>
-					</button>
-				)}
+						</button>
+					)}
+					{/* Label hugs the filename; chromeless at rest, editable in place. */}
+					<InlineEdit
+						value={doc.label ?? ""}
+						onCommit={(label) => onUpdate({ label })}
+						placeholder="Add a label…"
+						className="px-0 py-0.5 text-xs leading-tight text-muted-foreground"
+					/>
+				</div>
 				{/* shrink-0 — the title truncates, these stay pinned right. */}
-				<div className="flex shrink-0 items-center gap-0.5 pl-1">
+				<div className="flex shrink-0 items-center gap-0.5">
 					{doc.starred && (
 						<Star className="size-3.5 fill-current text-primary" />
 					)}
@@ -225,14 +238,6 @@ function DocumentRow({
 					/>
 				</div>
 			</div>
-			<div className="pr-2 pb-1 pl-8">
-				<InlineEdit
-					value={doc.label ?? ""}
-					onCommit={(label) => onUpdate({ label })}
-					placeholder="Add a label…"
-					className="text-xs text-muted-foreground"
-				/>
-			</div>
 
 			<AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
 				<AlertDialogContent>
@@ -244,10 +249,7 @@ function DocumentRow({
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							className="bg-destructive text-white hover:bg-destructive/90"
-							onClick={onDelete}
-						>
+						<AlertDialogAction variant="destructive" onClick={onDelete}>
 							Delete
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -368,13 +370,26 @@ function MenuItem({
 	);
 }
 
-function DocIcon({ kind }: { kind: DocKind }) {
+function DocIcon({ kind, className }: { kind: DocKind; className?: string }) {
 	return (
 		<FileText
 			className={cn(
 				"size-4 shrink-0",
 				kind === "pdf" ? "text-red-500/80" : "text-sky-600/80",
+				className,
 			)}
 		/>
+	);
+}
+
+function DocumentRowSkeleton() {
+	return (
+		<div className="flex items-start gap-2 py-1 pr-1 pl-2">
+			<Skeleton className="mt-0.5 size-4 rounded-sm" />
+			<div className="min-w-0 flex-1 space-y-1.5 py-0.5">
+				<Skeleton className="h-3.5 w-32" />
+				<Skeleton className="h-3 w-20" />
+			</div>
+		</div>
 	);
 }

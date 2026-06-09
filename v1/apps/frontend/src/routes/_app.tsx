@@ -18,7 +18,7 @@ import { getStoredProfileId, useActiveProfile } from "@/lib/active-profile";
 import { getStoredTaskId } from "@/lib/active-task";
 import { applyAppearance } from "@/lib/appearance";
 import { LayoutProvider, useLayout } from "@/lib/layout";
-import { useWorkspace, WorkspaceProvider } from "@/lib/workspace";
+import { WorkspaceProvider } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_app")({
 	beforeLoad: () => {
@@ -81,27 +81,13 @@ function AppShell() {
 	);
 }
 
-/** The same toggle buttons as the viewer tab strip, for the spots that lack one
- *  (an empty workspace, /profile) — so a collapsed panel is never a dead end. */
+/** Nav toggle for routes without a viewer bar of their own (e.g. /profile), so a
+ *  collapsed sidebar is never a dead end. The workspace hosts its own toggles. */
 function EdgeToggles() {
-	const { columnList } = useWorkspace();
 	const onWorkspace = useLocation().pathname.endsWith("/workspace");
-
-	// When the document viewer is showing its own flanking toggles, defer to them.
-	if (onWorkspace && columnList.length > 0) return null;
+	if (onWorkspace) return null;
 
 	return (
-		<>
-			<PanelToggleButton
-				side="nav"
-				className="absolute top-1.5 left-1.5 z-10"
-			/>
-			{onWorkspace && (
-				<PanelToggleButton
-					side="chat"
-					className="absolute top-1.5 right-1.5 z-10"
-				/>
-			)}
-		</>
+		<PanelToggleButton side="nav" className="absolute top-1.5 left-1.5 z-10" />
 	);
 }

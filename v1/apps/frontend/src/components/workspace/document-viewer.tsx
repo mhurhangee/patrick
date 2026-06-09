@@ -20,9 +20,17 @@ export function DocumentViewer() {
 	const { columnList, setColumns } = useWorkspace();
 
 	if (columnList.length === 0) {
+		// Mirror the Column's bar so the panel toggles live at the viewer's edges
+		// (not floating over the chat panel) even with nothing open.
 		return (
-			<div className="flex h-full items-center justify-center bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-				Open a document from the sidebar to add it to context.
+			<div className="flex h-full flex-col">
+				<div className="flex shrink-0 items-center justify-between border-b bg-background">
+					<PanelToggleButton side="nav" className="ml-1" />
+					<PanelToggleButton side="chat" className="mr-1" />
+				</div>
+				<div className="flex flex-1 items-center justify-center bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+					Open a document from the sidebar to add it to context.
+				</div>
 			</div>
 		);
 	}
