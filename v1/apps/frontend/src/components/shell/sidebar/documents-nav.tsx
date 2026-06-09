@@ -1,7 +1,8 @@
 import type { Document } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
-import { EyeOff, FileText, MoreHorizontal, Plus, Star } from "lucide-react";
+import { EyeOff, MoreHorizontal, Plus, Star } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
 import {
 	AlertDialog,
@@ -192,7 +193,11 @@ function DocumentRow({
 			)}
 		>
 			<div className="flex items-start gap-2 py-1 pr-1 pl-2">
-				<DocIcon kind={kind} className="mt-0.5" />
+				<DocIcon
+					kind={kind}
+					editable={!!doc.createdInPatrick}
+					className="mt-0.5"
+				/>
 				<div className="min-w-0 flex-1">
 					{renaming ? (
 						<RenameField
@@ -367,18 +372,6 @@ function MenuItem({
 		>
 			{children}
 		</button>
-	);
-}
-
-function DocIcon({ kind, className }: { kind: DocKind; className?: string }) {
-	return (
-		<FileText
-			className={cn(
-				"size-4 shrink-0",
-				kind === "pdf" ? "text-red-500/80" : "text-sky-600/80",
-				className,
-			)}
-		/>
 	);
 }
 

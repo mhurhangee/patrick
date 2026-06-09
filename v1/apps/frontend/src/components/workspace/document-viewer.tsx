@@ -2,8 +2,9 @@ import { SortableKeyboardPlugin } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { Columns2, FileText, X } from "lucide-react";
+import { Columns2, X } from "lucide-react";
 import { Fragment } from "react";
+import { DocIcon } from "@/components/doc-icon";
 import { PanelToggleButton } from "@/components/shell/panel-toggle-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -157,12 +158,7 @@ function Tab({
 				isDragging && "opacity-50",
 			)}
 		>
-			<FileText
-				className={cn(
-					"size-3.5 shrink-0",
-					doc.kind === "pdf" ? "text-red-500/80" : "text-sky-600/80",
-				)}
-			/>
+			<DocIcon kind={doc.kind} editable={doc.editable} className="size-3.5" />
 			<span className="max-w-44 truncate">{doc.label}</span>
 			<button
 				type="button"
