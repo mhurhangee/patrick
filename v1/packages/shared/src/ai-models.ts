@@ -135,3 +135,23 @@ export function modelsForProvider(provider: Provider): CuratedModel[] {
 	if (provider === "gateway") return GATEWAY_MODELS;
 	return CURATED_MODELS[provider] ?? [];
 }
+
+type Vendor = "anthropic" | "openai" | "google";
+
+// Input tokens one PDF page costs per vendor (extracted text + a rendered page
+// image) — roughly constant across a vendor's models. Measured in v0.
+const PDF_TOKENS_PER_PAGE: Record<Vendor, number> = {
+	anthropic: 1562,
+	openai: 944,
+	google: 520,
+};
+
+function vendorForModel(modelId: string): Vendor {
+	const v = modelId.split("/")[0];
+	return v === "openai" || v === "google" ? v : "anthropic";
+}
+
+/** Rough input-token cost of sending an N-page PDF to the given model. */
+export function estimatePdfTokens(pages: number, modelId: string): number {
+	return pages * PDF_TOKENS_PER_PAGE[vendorForModel(modelId)];
+}

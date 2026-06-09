@@ -1,4 +1,4 @@
-import { basename } from "node:path";
+import { basename, extname, join } from "node:path";
 import { createTask, type DocumentMeta, type Task } from "@patrick/shared";
 import { Hono } from "hono";
 import {
@@ -54,4 +54,26 @@ tasks.put("/:id/documents", async (c) => {
 	const meta = await c.req.json<DocumentMeta>();
 	await writeDocumentMeta(task.folder, meta);
 	return c.json({ ok: true });
+});
+
+const MIME: Record<string, string> = {
+	".pdf": "application/pdf",
+	".docx":
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	".doc": "application/msword",
+};
+
+// Stream a document's raw bytes for the viewer. basename() blocks path traversal.
+tasks.get("/:id/documents/:filename", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const name = basename(c.req.param("filename"));
+	const file = Bun.file(join(task.folder, name));
+	if (!(await file.exists())) return c.json({ error: "file not found" }, 404);
+	return new Response(file, {
+		headers: {
+			"Content-Type":
+				MIME[extname(name).toLowerCase()] ?? "application/octet-stream",
+		},
+	});
 });

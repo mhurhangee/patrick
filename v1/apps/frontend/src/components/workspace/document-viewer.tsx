@@ -11,6 +11,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { PdfViewer } from "@/components/workspace/pdf-viewer";
 import { cn } from "@/lib/utils";
 import { useWorkspace, type WorkspaceColumn } from "@/lib/workspace";
 
@@ -173,23 +174,19 @@ function DocContent({ id }: { id: string }) {
 	const { getDoc } = useWorkspace();
 	const doc = getDoc(id);
 	if (!doc) return null;
+	if (doc.kind === "pdf") return <PdfViewer filename={doc.id} />;
 	return (
 		<div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-			<FileText
-				className={cn(
-					"size-10",
-					doc.kind === "pdf" ? "text-red-500/70" : "text-sky-600/70",
-				)}
-			/>
+			<FileText className="size-10 text-sky-600/70" />
 			<div>
 				<div className="text-sm font-medium">{doc.label}</div>
 				<div className="text-xs text-muted-foreground">
-					{doc.kind.toUpperCase()} · open in context
+					DOCX · open in context
 				</div>
 			</div>
 			<p className="max-w-xs text-xs text-muted-foreground">
-				Document viewing is the next step. For now this confirms the file is
-				open and part of AgentPat's context.
+				Word documents open in the editor — that's the next push. For now this
+				confirms the file is open and part of AgentPat's context.
 			</p>
 		</div>
 	);

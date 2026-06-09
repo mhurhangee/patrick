@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 
 export default defineConfig({
 	plugins: [
@@ -10,6 +11,28 @@ export default defineConfig({
 		tanstackRouter({ target: "react", autoCodeSplitting: true }),
 		react(),
 		tailwindcss(),
+		// pdf.js runtime assets (WASM image decoders, CMaps, fallback fonts) served
+		// at /pdfjs/* — needed for scanned/JBIG2 PDFs, CJK text, and missing fonts.
+		// stripBase flattens the matched files into dest (no node_modules nesting).
+		viteStaticCopy({
+			targets: [
+				{
+					src: "node_modules/pdfjs-dist/wasm/*",
+					dest: "pdfjs/wasm",
+					rename: { stripBase: true },
+				},
+				{
+					src: "node_modules/pdfjs-dist/cmaps/*",
+					dest: "pdfjs/cmaps",
+					rename: { stripBase: true },
+				},
+				{
+					src: "node_modules/pdfjs-dist/standard_fonts/*",
+					dest: "pdfjs/standard_fonts",
+					rename: { stripBase: true },
+				},
+			],
+		}),
 	],
 	resolve: {
 		alias: {
