@@ -4,7 +4,11 @@ import { useEffect } from "react";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile, useUpdateProfile } from "@/hooks/use-profiles";
+import {
+	useDeleteProfile,
+	useProfile,
+	useUpdateProfile,
+} from "@/hooks/use-profiles";
 import { useActiveProfile } from "@/lib/active-profile";
 
 export const Route = createFileRoute("/profiles/$id")({
@@ -17,9 +21,16 @@ function ProfileSetup() {
 	const { setActiveProfileId } = useActiveProfile();
 	const { data: profile, isLoading } = useProfile(id);
 	const update = useUpdateProfile();
+	const del = useDeleteProfile();
 
 	// Picking/creating a profile here makes it the active one.
 	useEffect(() => setActiveProfileId(id), [id, setActiveProfileId]);
+
+	const deleteProfile = async () => {
+		await del.mutateAsync(id);
+		setActiveProfileId(undefined);
+		navigate({ to: "/profiles" });
+	};
 
 	const back = (
 		<Button asChild variant="ghost" size="sm" className="-ml-2">
@@ -49,6 +60,7 @@ function ProfileSetup() {
 						subtitle="Review your details, then continue to pick a task."
 						saving={update.isPending}
 						onSave={(next) => update.mutate(next)}
+						onDelete={deleteProfile}
 						primaryAction={{
 							label: "Continue to tasks →",
 							onClick: () => navigate({ to: "/tasks" }),

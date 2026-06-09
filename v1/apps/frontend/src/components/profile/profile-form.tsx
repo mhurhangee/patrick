@@ -1,6 +1,7 @@
 import type { Profile } from "@patrick/shared";
 import { Check, Loader2 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AiSection } from "./ai-section";
@@ -25,6 +26,7 @@ export function ProfileForm({
 	fallbackTitle = "Profile",
 	subtitle,
 	primaryAction,
+	onDelete,
 }: {
 	profile: Profile;
 	/** Persist the draft. Called debounced on edit, and flushed on leave. */
@@ -39,6 +41,8 @@ export function ProfileForm({
 	subtitle?: string;
 	/** A footer navigation action (e.g. "Continue to tasks"); flushes first. */
 	primaryAction?: { label: string; onClick: () => void };
+	/** When set, a destructive delete control appears in the footer. */
+	onDelete?: () => void | Promise<void>;
 }) {
 	const [draft, setDraft] = useState(profile);
 	const [pending, setPending] = useState(false);
@@ -65,6 +69,16 @@ export function ProfileForm({
 		setPending(true);
 		if (timer.current) clearTimeout(timer.current);
 		timer.current = setTimeout(commit, AUTOSAVE_DELAY);
+	}
+
+	// Drop any pending save without writing — used before deleting so the
+	// unmount flush can't re-create the just-deleted profile.
+	function cancel() {
+		if (timer.current) {
+			clearTimeout(timer.current);
+			timer.current = null;
+		}
+		setPending(false);
 	}
 
 	// Flush any pending save when leaving the form.
@@ -108,7 +122,7 @@ export function ProfileForm({
 					<TabsTrigger value="appearance">Appearance</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="identity" className="pt-4">
+				<TabsContent value="identity" className="space-y-6 pt-4">
 					<IdentitySection
 						value={draft.identity}
 						onChange={(identity) => set({ identity })}
@@ -137,9 +151,22 @@ export function ProfileForm({
 					/>
 				</TabsContent>
 			</Tabs>
+			<div className="flex justify-between">
+				{onDelete && (
+					<>
+						<ConfirmDelete
+							label="Delete profile"
+							title="Delete this profile?"
+							description="This permanently removes the profile and its settings. Your tasks and their folders are not affected."
+							onConfirm={() => {
+								cancel();
+								return onDelete();
+							}}
+						/>
+					</>
+				)}
 
-			{primaryAction && (
-				<div className="flex justify-end">
+				{primaryAction && (
 					<Button
 						onClick={() => {
 							commit();
@@ -148,8 +175,8 @@ export function ProfileForm({
 					>
 						{primaryAction.label}
 					</Button>
-				</div>
-			)}
+				)}
+			</div>
 		</div>
 	);
 }

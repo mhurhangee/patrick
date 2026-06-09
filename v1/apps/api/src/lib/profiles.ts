@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import {
 	type Profile,
@@ -36,4 +36,8 @@ export async function writeProfile(profile: Profile): Promise<void> {
 	const path = profilePath(profile.id);
 	await mkdir(dirname(path), { recursive: true });
 	await writeFile(path, stringify(profile), "utf8");
+}
+
+export async function deleteProfile(id: string): Promise<void> {
+	await rm(dirname(profilePath(id)), { recursive: true, force: true });
 }

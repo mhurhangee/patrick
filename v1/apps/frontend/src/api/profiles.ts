@@ -7,4 +7,5 @@ export const profilesApi = {
 	create: (name: string) => api.post<Profile>("/profiles", { name }),
 	update: (profile: Profile) =>
 		api.put<Profile>(`/profiles/${profile.id}`, profile),
+	remove: (id: string) => api.del<{ ok: boolean }>(`/profiles/${id}`),
 };

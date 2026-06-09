@@ -11,3 +11,11 @@ export function profilesDir(): string {
 export function profilePath(id: string): string {
 	return join(profilesDir(), id, "profile.yaml");
 }
+
+export function tasksDir(): string {
+	return join(CONFIG_DIR, "tasks");
+}
+
+export function taskPath(id: string): string {
+	return join(tasksDir(), id, "task.yaml");
+}

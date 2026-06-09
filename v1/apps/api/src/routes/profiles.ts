@@ -1,6 +1,11 @@
 import { createProfile, type Profile } from "@patrick/shared";
 import { Hono } from "hono";
-import { listProfiles, readProfile, writeProfile } from "../lib/profiles";
+import {
+	deleteProfile,
+	listProfiles,
+	readProfile,
+	writeProfile,
+} from "../lib/profiles";
 
 export const profiles = new Hono();
 
@@ -27,4 +32,9 @@ profiles.put("/:id", async (c) => {
 	const profile: Profile = { ...body, id };
 	await writeProfile(profile);
 	return c.json(profile);
+});
+
+profiles.delete("/:id", async (c) => {
+	await deleteProfile(c.req.param("id"));
+	return c.json({ ok: true });
 });

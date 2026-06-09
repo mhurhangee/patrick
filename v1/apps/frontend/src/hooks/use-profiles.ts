@@ -1,4 +1,4 @@
-import type { Profile } from "@patrick/shared";
+import type { Profile, ProfileSummary } from "@patrick/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { profilesApi } from "@/api/profiles";
 
@@ -35,5 +35,25 @@ export function useUpdateProfile() {
 			qc.setQueryData(keys.one(saved.id), saved);
 			qc.invalidateQueries({ queryKey: keys.list });
 		},
+	});
+}
+
+export function useDeleteProfile() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => profilesApi.remove(id),
+		// Optimistic: drop it from the list now so leaving is instant.
+		onMutate: async (id) => {
+			await qc.cancelQueries({ queryKey: keys.list });
+			const prev = qc.getQueryData<ProfileSummary[]>(keys.list);
+			qc.setQueryData<ProfileSummary[]>(keys.list, (xs) =>
+				xs?.filter((p) => p.id !== id),
+			);
+			return { prev };
+		},
+		onError: (_e, _id, ctx) => {
+			if (ctx?.prev) qc.setQueryData(keys.list, ctx.prev);
+		},
+		onSettled: () => qc.invalidateQueries({ queryKey: keys.list }),
 	});
 }

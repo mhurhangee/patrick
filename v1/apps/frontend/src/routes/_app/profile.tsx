@@ -1,9 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile, useUpdateProfile } from "@/hooks/use-profiles";
+import {
+	useDeleteProfile,
+	useProfile,
+	useUpdateProfile,
+} from "@/hooks/use-profiles";
 import { useActiveProfile } from "@/lib/active-profile";
 
 export const Route = createFileRoute("/_app/profile")({
@@ -11,9 +15,17 @@ export const Route = createFileRoute("/_app/profile")({
 });
 
 function Profile() {
-	const { activeProfileId } = useActiveProfile();
+	const navigate = useNavigate();
+	const { activeProfileId, setActiveProfileId } = useActiveProfile();
 	const { data: profile, isLoading } = useProfile(activeProfileId);
 	const update = useUpdateProfile();
+	const del = useDeleteProfile();
+
+	const deleteProfile = async (id: string) => {
+		await del.mutateAsync(id);
+		setActiveProfileId(undefined);
+		navigate({ to: "/profiles" });
+	};
 
 	const nav = (
 		<div className="flex items-center justify-between">
@@ -46,6 +58,7 @@ function Profile() {
 						nav={nav}
 						saving={update.isPending}
 						onSave={(next) => update.mutate(next)}
+						onDelete={() => deleteProfile(profile.id)}
 					/>
 				)}
 			</div>

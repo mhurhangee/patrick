@@ -7,6 +7,7 @@ import "./index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ActiveProfileProvider } from "@/lib/active-profile";
+import { ActiveTaskProvider } from "@/lib/active-task";
 import { queryClient } from "@/lib/query-client";
 
 const router = createRouter({ routeTree });
@@ -24,11 +25,13 @@ createRoot(rootElement).render(
 	<StrictMode>
 		<QueryClientProvider client={queryClient}>
 			<ActiveProfileProvider>
-				<ThemeProvider>
-					<TooltipProvider>
-						<RouterProvider router={router} />
-					</TooltipProvider>
-				</ThemeProvider>
+				<ActiveTaskProvider>
+					<ThemeProvider>
+						<TooltipProvider>
+							<RouterProvider router={router} />
+						</TooltipProvider>
+					</ThemeProvider>
+				</ActiveTaskProvider>
 			</ActiveProfileProvider>
 		</QueryClientProvider>
 	</StrictMode>,

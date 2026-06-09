@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/resizable";
 import { useProfile } from "@/hooks/use-profiles";
 import { getStoredProfileId, useActiveProfile } from "@/lib/active-profile";
+import { getStoredTaskId } from "@/lib/active-task";
 import { applyAppearance } from "@/lib/appearance";
 import { LayoutProvider, useLayout } from "@/lib/layout";
 import { WorkspaceProvider } from "@/lib/workspace";
@@ -16,6 +17,7 @@ import { WorkspaceProvider } from "@/lib/workspace";
 export const Route = createFileRoute("/_app")({
 	beforeLoad: () => {
 		if (!getStoredProfileId()) throw redirect({ to: "/profiles" });
+		if (!getStoredTaskId()) throw redirect({ to: "/tasks" });
 	},
 	component: AppLayout,
 });
