@@ -17,7 +17,7 @@ function Home() {
 				Open-source, agent-first patent prosecution assistant.
 			</p>
 			<Button size="lg" asChild>
-				<a href="/workspace" className="text-sm font-medium">
+				<a href="/profiles" className="text-sm font-medium">
 					Workspace
 				</a>
 			</Button>

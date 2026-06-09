@@ -3,30 +3,23 @@ import { Plus } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateProfile, useProfiles } from "@/hooks/use-profiles";
-import { useActiveProfile } from "@/lib/active-profile";
 import { initialsOf } from "@/lib/text";
 
-export const Route = createFileRoute("/profiles")({
-	component: Profiles,
+export const Route = createFileRoute("/profiles/")({
+	component: ProfilesPicker,
 });
 
-function Profiles() {
+function ProfilesPicker() {
 	const navigate = useNavigate();
-	const { setActiveProfileId } = useActiveProfile();
 	const { data: profiles, isLoading } = useProfiles();
 	const create = useCreateProfile();
 
-	const select = (id: string) => {
-		setActiveProfileId(id);
-		navigate({ to: "/workspace" });
-	};
+	const review = (id: string) =>
+		navigate({ to: "/profiles/$id", params: { id } });
 
 	const createNew = () =>
 		create.mutate("Untitled profile", {
-			onSuccess: (profile) => {
-				setActiveProfileId(profile.id);
-				navigate({ to: "/profile" });
-			},
+			onSuccess: (profile) => review(profile.id),
 		});
 
 	return (
@@ -51,7 +44,7 @@ function Profiles() {
 								<button
 									type="button"
 									key={p.id}
-									onClick={() => select(p.id)}
+									onClick={() => review(p.id)}
 									className="flex items-center gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-accent"
 								>
 									<span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
