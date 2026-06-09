@@ -18,6 +18,8 @@ GlobalWorkerOptions.workerSrc = workerUrl;
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 2.5;
 const STEP = 0.2;
+// Render the current page ± this many pages; the rest stay blank placeholders.
+const OVERSCAN = 3;
 
 function formatTokens(n: number): string {
 	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
@@ -113,6 +115,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 							page={page}
 							scale={scale}
 							pageNumber={i + 1}
+							active={Math.abs(i + 1 - current) <= OVERSCAN}
 						/>
 					))}
 				</div>
@@ -168,18 +171,26 @@ function PdfPage({
 	page,
 	scale,
 	pageNumber,
+	active,
 }: {
 	page: PDFPageProxy;
 	scale: number;
 	pageNumber: number;
+	active: boolean;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	// Logical viewport drives CSS size; we render the backing store at ×dpr.
+	// Logical viewport drives CSS size (always reserved); we paint the backing
+	// store at ×dpr only while `active`, and free it when scrolled away.
 	const viewport = useMemo(() => page.getViewport({ scale }), [page, scale]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
+		if (!active) {
+			canvas.width = 0;
+			canvas.height = 0;
+			return;
+		}
 		const dpr = window.devicePixelRatio || 1;
 		const renderViewport = page.getViewport({ scale: scale * dpr });
 		canvas.width = Math.floor(renderViewport.width);
@@ -187,7 +198,7 @@ function PdfPage({
 		const task = page.render({ canvas, viewport: renderViewport });
 		task.promise.catch(() => {}); // ignore cancellation on re-render/unmount
 		return () => task.cancel();
-	}, [page, scale]);
+	}, [page, scale, active]);
 
 	return (
 		<div
