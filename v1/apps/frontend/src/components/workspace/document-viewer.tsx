@@ -11,6 +11,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { DocxViewer } from "@/components/workspace/docx-viewer";
 import { PdfViewer } from "@/components/workspace/pdf-viewer";
 import { cn } from "@/lib/utils";
 import { useWorkspace, type WorkspaceColumn } from "@/lib/workspace";
@@ -175,19 +176,5 @@ function DocContent({ id }: { id: string }) {
 	const doc = getDoc(id);
 	if (!doc) return null;
 	if (doc.kind === "pdf") return <PdfViewer filename={doc.id} />;
-	return (
-		<div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-			<FileText className="size-10 text-sky-600/70" />
-			<div>
-				<div className="text-sm font-medium">{doc.label}</div>
-				<div className="text-xs text-muted-foreground">
-					DOCX · open in context
-				</div>
-			</div>
-			<p className="max-w-xs text-xs text-muted-foreground">
-				Word documents open in the editor — that's the next push. For now this
-				confirms the file is open and part of AgentPat's context.
-			</p>
-		</div>
-	);
+	return <DocxViewer filename={doc.id} />;
 }
