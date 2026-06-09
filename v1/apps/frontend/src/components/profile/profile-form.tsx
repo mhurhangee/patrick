@@ -1,23 +1,23 @@
 import type { Profile } from "@patrick/shared";
-import { Check, Loader2 } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { ConfirmDelete } from "@/components/confirm-delete";
+import { SaveStatus } from "@/components/save-status";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAutosave } from "@/hooks/use-autosave";
 import { AiSection } from "./ai-section";
 import { AppearanceSection } from "./appearance-section";
 import { ExamplesSection } from "./examples-section";
 import { IdentitySection } from "./identity-section";
 import { PromptSection } from "./prompt-section";
 
-const AUTOSAVE_DELAY = 600;
 const TAB_ORDER = ["identity", "ai", "prompt", "examples", "appearance"];
 
 /**
  * Reusable profile editor. Mount with `key={profile.id}` so switching profiles
- * resets the draft. Edits auto-save (debounced) — there's no save button; a
- * status line reports "Saving…/Saved". `primaryAction` (the gate's Continue)
- * flushes any pending save before running.
+ * resets the draft. Edits auto-save (debounced); a status line reports the state.
+ * `primaryAction` (the gate's Continue) steps through the tabs, then runs on the
+ * last; `onDelete` adds a footer delete (cancels pending saves first).
  */
 export function ProfileForm({
 	profile,
@@ -31,73 +31,22 @@ export function ProfileForm({
 	onDelete,
 }: {
 	profile: Profile;
-	/** Persist the draft. Called debounced on edit, and flushed on leave. */
 	onSave: (profile: Profile) => void;
-	/** True while a save is in flight (drives the status line). */
 	saving?: boolean;
-	/** Route-specific navigation rendered above the title (back/switch links). */
 	nav?: ReactNode;
-	/** Shown as the title until the profile has a name. */
 	fallbackTitle?: string;
-	/** Extra muted line under the identity (e.g. an onboarding instruction). */
 	subtitle?: string;
-	/** Tab to open on first render (e.g. deep-link to "ai"). */
 	initialTab?: string;
-	/** A footer navigation action (e.g. "Continue to tasks"); flushes first.
-	 *  When set, the button steps through the tabs, then runs on the last. */
 	primaryAction?: { label: string; onClick: () => void };
-	/** When set, a destructive delete control appears in the footer. */
 	onDelete?: () => void | Promise<void>;
 }) {
 	const [draft, setDraft] = useState(profile);
-	const [pending, setPending] = useState(false);
-	const [hasSaved, setHasSaved] = useState(false);
 	const [tab, setTab] = useState(initialTab ?? "identity");
+	const { status: autoStatus, flush, cancel } = useAutosave(draft, onSave);
+	const status = saving ? "saving" : autoStatus;
 
-	const draftRef = useRef(draft);
-	draftRef.current = draft;
-	const onSaveRef = useRef(onSave);
-	onSaveRef.current = onSave;
-	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	function commit() {
-		if (timer.current) {
-			clearTimeout(timer.current);
-			timer.current = null;
-		}
-		setPending(false);
-		setHasSaved(true);
-		onSaveRef.current(draftRef.current);
-	}
-
-	function set(patch: Partial<Profile>) {
+	const set = (patch: Partial<Profile>) =>
 		setDraft((d) => ({ ...d, ...patch }));
-		setPending(true);
-		if (timer.current) clearTimeout(timer.current);
-		timer.current = setTimeout(commit, AUTOSAVE_DELAY);
-	}
-
-	// Drop any pending save without writing — used before deleting so the
-	// unmount flush can't re-create the just-deleted profile.
-	function cancel() {
-		if (timer.current) {
-			clearTimeout(timer.current);
-			timer.current = null;
-		}
-		setPending(false);
-	}
-
-	// Flush any pending save when leaving the form.
-	useEffect(() => {
-		return () => {
-			if (timer.current) {
-				clearTimeout(timer.current);
-				onSaveRef.current(draftRef.current);
-			}
-		};
-	}, []);
-
-	const status = saving || pending ? "saving" : hasSaved ? "saved" : "idle";
 
 	return (
 		<div className="space-y-6">
@@ -128,7 +77,7 @@ export function ProfileForm({
 					<TabsTrigger value="appearance">Appearance</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="identity" className="space-y-6 pt-4">
+				<TabsContent value="identity" className="pt-4">
 					<IdentitySection
 						value={draft.identity}
 						onChange={(identity) => set({ identity })}
@@ -158,6 +107,7 @@ export function ProfileForm({
 					/>
 				</TabsContent>
 			</Tabs>
+
 			<div className="flex justify-between">
 				{onDelete && (
 					<ConfirmDelete
@@ -182,7 +132,7 @@ export function ProfileForm({
 										setTab(TAB_ORDER[idx + 1] ?? tab);
 										return;
 									}
-									commit();
+									flush();
 									primaryAction.onClick();
 								}}
 							>
@@ -192,24 +142,5 @@ export function ProfileForm({
 					})()}
 			</div>
 		</div>
-	);
-}
-
-function SaveStatus({ status }: { status: "idle" | "saving" | "saved" }) {
-	if (status === "idle") return null;
-	return (
-		<span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-			{status === "saving" ? (
-				<>
-					<Loader2 className="size-3.5 animate-spin" />
-					Saving…
-				</>
-			) : (
-				<>
-					<Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-					Saved
-				</>
-			)}
-		</span>
 	);
 }

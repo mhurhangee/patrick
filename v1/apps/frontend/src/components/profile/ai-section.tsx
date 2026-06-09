@@ -1,8 +1,6 @@
 import {
 	type AiEffort,
 	type AiSettings,
-	type CuratedModel,
-	contextWindowFor,
 	DEFAULT_DETAILED_MODEL,
 	DEFAULT_QUICK_MODEL,
 	modelsForProvider,
@@ -30,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { cn } from "@/lib/utils";
+import { ModelSelect } from "./model-select";
 
 const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
 	[
@@ -59,12 +58,6 @@ const EFFORTS: { id: AiEffort; label: string }[] = [
 	{ id: "medium", label: "Medium — balanced" },
 	{ id: "high", label: "High — thorough" },
 ];
-
-function formatContext(tokens: number): string {
-	return tokens >= 1_000_000
-		? `${tokens / 1_000_000}M context`
-		: `${Math.round(tokens / 1000)}K context`;
-}
 
 export function AiSection({
 	value,
@@ -244,48 +237,5 @@ export function AiSection({
 				</Button>
 			</Field>
 		</FieldGroup>
-	);
-}
-
-function ModelSelect({
-	label,
-	description,
-	value,
-	models,
-	onChange,
-}: {
-	label: string;
-	description: string;
-	value: string;
-	models: CuratedModel[];
-	onChange: (id: string) => void;
-}) {
-	const selected = models.find((m) => m.id === value);
-	return (
-		<Field>
-			<FieldLabel>{label}</FieldLabel>
-			<Select value={value} onValueChange={onChange}>
-				<SelectTrigger className="w-full">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					{models.map((m) => (
-						<SelectItem key={m.id} value={m.id}>
-							{m.name}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-			<FieldDescription>
-				{description}
-				{selected && (
-					<span className="mt-0.5 block tabular-nums">
-						{selected.pricingPerM &&
-							`$${selected.pricingPerM.input.toFixed(2)} in · $${selected.pricingPerM.output.toFixed(2)} out per M · `}
-						{formatContext(contextWindowFor(selected.id))}
-					</span>
-				)}
-			</FieldDescription>
-		</Field>
 	);
 }
