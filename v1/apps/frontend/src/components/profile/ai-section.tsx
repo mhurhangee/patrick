@@ -28,7 +28,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useVerifyKey } from "@/hooks/use-verify-key";
+import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { cn } from "@/lib/utils";
 
 const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
@@ -74,8 +74,11 @@ export function AiSection({
 	onChange: (value: AiSettings) => void;
 }) {
 	const set = (patch: Partial<AiSettings>) => onChange({ ...value, ...patch });
-	const { status, verify, reset } = useVerifyKey();
 	const [showKey, setShowKey] = useState(false);
+
+	// Cached by [provider, key]; editing the key changes the key → status resets.
+	const verification = useKeyVerification(value.provider, value.apiKey);
+	const status = keyStatusOf(verification);
 
 	const models = modelsForProvider(value.provider);
 
@@ -91,7 +94,6 @@ export function AiSection({
 				? value.detailedModel
 				: DEFAULT_DETAILED_MODEL[provider],
 		});
-		reset();
 	}
 
 	return (
@@ -127,26 +129,25 @@ export function AiSection({
 							type={showKey ? "text" : "password"}
 							value={value.apiKey}
 							placeholder={PROVIDER_PLACEHOLDER[value.provider]}
-							className="pr-8"
-							onChange={(e) => {
-								set({ apiKey: e.target.value });
-								reset();
-							}}
+							className="pr-9"
+							onChange={(e) => set({ apiKey: e.target.value })}
 						/>
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							className="absolute top-1/2 right-1 size-7 -translate-y-1/2 text-muted-foreground"
-							onClick={() => setShowKey((s) => !s)}
-						>
-							{showKey ? <EyeOff /> : <Eye />}
-						</Button>
+						<div className="absolute inset-y-0 right-1 flex items-center">
+							<Button
+								variant="ghost"
+								size="icon"
+								type="button"
+								className="size-7 text-muted-foreground"
+								onClick={() => setShowKey((s) => !s)}
+							>
+								{showKey ? <EyeOff /> : <Eye />}
+							</Button>
+						</div>
 					</div>
 					<Button
 						variant="secondary"
 						disabled={!value.apiKey || status === "verifying"}
-						onClick={() => verify(value.provider, value.apiKey)}
+						onClick={() => verification.refetch()}
 					>
 						{status === "verifying" ? (
 							<Loader2 className="animate-spin" />
@@ -158,10 +159,7 @@ export function AiSection({
 						<Button
 							variant="ghost"
 							className="text-muted-foreground"
-							onClick={() => {
-								set({ apiKey: "" });
-								reset();
-							}}
+							onClick={() => set({ apiKey: "" })}
 						>
 							Clear
 						</Button>

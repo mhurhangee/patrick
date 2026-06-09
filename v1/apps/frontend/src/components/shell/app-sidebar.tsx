@@ -18,6 +18,11 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import {
+	type KeyStatus,
+	keyStatusOf,
+	useKeyVerification,
+} from "@/hooks/use-key-verification";
 import { useProfile } from "@/hooks/use-profiles";
 import { useActiveProfile } from "@/lib/active-profile";
 import {
@@ -194,13 +199,34 @@ function TaskSwitcher() {
 	);
 }
 
+const DOT_COLOR: Record<KeyStatus, string> = {
+	valid: "bg-emerald-500",
+	invalid: "bg-amber-500",
+	verifying: "bg-muted-foreground/40 animate-pulse",
+	idle: "bg-muted-foreground/40",
+};
+
 function SidebarFooter() {
 	const { activeProfileId } = useActiveProfile();
 	const { data: profile } = useProfile(activeProfileId);
 
 	const name = profile?.identity.name || "No profile";
 	const firm = profile?.identity.firm || "";
-	const connected = !!profile?.ai.apiKey;
+
+	const hasKey = !!profile?.ai.apiKey;
+	const verification = useKeyVerification(
+		profile?.ai.provider,
+		profile?.ai.apiKey,
+		{ enabled: hasKey },
+	);
+	const status = keyStatusOf(verification);
+	const dotTitle = !hasKey
+		? "No API key set"
+		: status === "valid"
+			? "AI key verified"
+			: status === "verifying"
+				? "Verifying API key…"
+				: "API key not verified — check in profile";
 
 	return (
 		<div className="flex items-center gap-1 p-2">
@@ -223,19 +249,9 @@ function SidebarFooter() {
 					</span>
 				</Link>
 			</Button>
-			<Button
-				asChild
-				variant="ghost"
-				size="icon"
-				title={connected ? "AI configured" : "No API key set"}
-			>
+			<Button asChild variant="ghost" size="icon" title={dotTitle}>
 				<Link to="/profile">
-					<span
-						className={cn(
-							"size-2.5 rounded-full",
-							connected ? "bg-emerald-500" : "bg-muted-foreground/40",
-						)}
-					/>
+					<span className={cn("size-2.5 rounded-full", DOT_COLOR[status])} />
 				</Link>
 			</Button>
 			<Button asChild variant="ghost" size="icon" title="Switch profile">
