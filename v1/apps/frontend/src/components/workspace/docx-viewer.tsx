@@ -12,6 +12,10 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.1;
 
+function formatTokens(n: number): string {
+	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
 /**
  * Renders a .docx via @eigenpal/docx-editor (ProseMirror). Originals open
  * read-only; Patrick-owned docs are editable and autosave their bytes back to
@@ -90,6 +94,29 @@ export function DocxViewer({
 function ReadOnlyDocx({ buffer }: { buffer: ArrayBuffer }) {
 	const ref = useRef<DocxEditorRef>(null);
 	const [zoom, setZoom] = useState(1);
+	const [page, setPage] = useState(1);
+	const [pages, setPages] = useState(0);
+	const [tokens, setTokens] = useState<number | null>(null);
+	const gotTokens = useRef(false);
+
+	// The editor has no page-change event, so poll its current/total page. Token
+	// estimate (~chars/4) is computed once the document agent is available.
+	useEffect(() => {
+		const id = setInterval(() => {
+			const ed = ref.current;
+			if (!ed) return;
+			setPage(ed.getCurrentPage() || 1);
+			setPages(ed.getTotalPages() || 0);
+			if (!gotTokens.current) {
+				const chars = ed.getAgent()?.getCharacterCount(true);
+				if (chars && chars > 0) {
+					gotTokens.current = true;
+					setTokens(Math.ceil(chars / 4));
+				}
+			}
+		}, 400);
+		return () => clearInterval(id);
+	}, []);
 
 	const apply = (next: number) => {
 		const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +next.toFixed(2)));
@@ -109,6 +136,14 @@ function ReadOnlyDocx({ buffer }: { buffer: ArrayBuffer }) {
 			</div>
 
 			<div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-md backdrop-blur">
+				{pages > 0 && (
+					<>
+						<span className="px-1.5 tabular-nums">
+							{page} / {pages}
+						</span>
+						<span className="h-4 w-px bg-border" />
+					</>
+				)}
 				<Button
 					variant="ghost"
 					size="icon"
@@ -130,6 +165,17 @@ function ReadOnlyDocx({ buffer }: { buffer: ArrayBuffer }) {
 				>
 					<Plus />
 				</Button>
+				{tokens != null && (
+					<>
+						<span className="h-4 w-px bg-border" />
+						<span
+							className="px-1.5 text-muted-foreground"
+							title="Estimated input tokens (~characters ÷ 4)"
+						>
+							~{formatTokens(tokens)} tokens
+						</span>
+					</>
+				)}
 			</div>
 		</div>
 	);
