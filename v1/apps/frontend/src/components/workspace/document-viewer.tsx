@@ -8,8 +8,6 @@ import {
 	ChevronRight,
 	Columns2,
 	FileText,
-	PanelLeft,
-	PanelRight,
 	X,
 } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
@@ -110,8 +108,15 @@ function Column({
 
 function PanelToggle({ side }: { side: "left" | "right" }) {
 	const { toggleNav, toggleChat, navCollapsed, chatCollapsed } = useLayout();
+
 	const isLeft = side === "left";
 	const collapsed = isLeft ? navCollapsed : chatCollapsed;
+
+	const ChevronIcon = isLeft === collapsed ? ChevronRight : ChevronLeft;
+
+	const label = isLeft ? "sidebar" : "AgentPat";
+	const title = `${collapsed ? "Show" : "Hide"} ${label}`;
+
 	return (
 		<Button
 			variant="ghost"
@@ -120,28 +125,10 @@ function PanelToggle({ side }: { side: "left" | "right" }) {
 				"size-7 shrink-0 text-muted-foreground",
 				isLeft ? "ml-1" : "mr-1",
 			)}
-			title={
-				isLeft
-					? collapsed
-						? "Show sidebar"
-						: "Hide sidebar"
-					: collapsed
-						? "Show AgentPat"
-						: "Hide AgentPat"
-			}
+			title={title}
 			onClick={isLeft ? toggleNav : toggleChat}
 		>
-			{isLeft ? (
-				collapsed ? (
-					<ChevronRight />
-				) : (
-					<ChevronLeft />
-				)
-			) : collapsed ? (
-				<ChevronLeft />
-			) : (
-				<ChevronRight />
-			)}
+			<ChevronIcon />
 		</Button>
 	);
 }

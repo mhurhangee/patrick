@@ -275,7 +275,7 @@ function NavRow({
 	return (
 		<div
 			className={cn(
-				"group flex items-start gap-1 rounded-sm border-l-2 pr-1 transition-colors hover:bg-sidebar-accent",
+				"group flex items-start gap-1 rounded-none border-l-2 pr-1 transition-colors hover:bg-sidebar-accent",
 				state === "focused"
 					? "border-primary bg-sidebar-accent/50"
 					: state === "open"
