@@ -58,6 +58,7 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 			label: m.label,
 			excluded: m.excluded,
 			starred: m.starred,
+			createdInPatrick: m.createdInPatrick,
 		});
 	}
 	return docs.sort((a, b) => a.filename.localeCompare(b.filename));

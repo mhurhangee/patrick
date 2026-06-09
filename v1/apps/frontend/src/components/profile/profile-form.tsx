@@ -114,7 +114,7 @@ export function ProfileForm({
 			</div>
 
 			<Tabs defaultValue="identity">
-				<TabsList>
+				<TabsList className="w-full justify-start">
 					<TabsTrigger value="identity">Identity</TabsTrigger>
 					<TabsTrigger value="ai">AI</TabsTrigger>
 					<TabsTrigger value="prompt">Prompt</TabsTrigger>

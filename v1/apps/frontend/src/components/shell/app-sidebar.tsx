@@ -1,3 +1,4 @@
+import type { Document } from "@patrick/shared";
 import { Link } from "@tanstack/react-router";
 import {
 	ArrowLeftRight,
@@ -6,10 +7,9 @@ import {
 	FileText,
 	MessageSquare,
 	MoreHorizontal,
-	Plus,
 	Star,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { InlineEdit } from "@/components/inline-edit";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
@@ -24,36 +24,22 @@ import {
 	useKeyVerification,
 } from "@/hooks/use-key-verification";
 import { useProfile } from "@/hooks/use-profiles";
-import { useActiveProfile } from "@/lib/active-profile";
 import {
-	activeTask,
-	mockArtifacts,
-	mockChats,
-	mockSources,
-	mockTasks,
-} from "@/lib/mock-data";
+	useSaveDocuments,
+	useTask,
+	useTaskDocuments,
+	useTasks,
+} from "@/hooks/use-tasks";
+import { useActiveProfile } from "@/lib/active-profile";
+import { useActiveTask } from "@/lib/active-task";
+import { mockChats } from "@/lib/mock-data";
 import { initialsOf } from "@/lib/text";
 import { cn } from "@/lib/utils";
-import { useWorkspace } from "@/lib/workspace";
+import { type DocKind, useWorkspace } from "@/lib/workspace";
 
 type RowState = "closed" | "open" | "focused";
 
-const sourceMenu = ["Rename", "Add tag", "Star", "Exclude from AgentPat"];
-const artifactMenu = [
-	"Rename",
-	"Add tag",
-	"Star",
-	"Exclude from AgentPat",
-	"Delete",
-];
-const chatMenu = ["Rename", "Star", "Delete"];
-
 export function AppSidebar() {
-	const { isOpen, focused, open } = useWorkspace();
-
-	const docState = (id: string): RowState =>
-		focused === id ? "focused" : isOpen(id) ? "open" : "closed";
-
 	return (
 		<div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
 			<TaskSwitcher />
@@ -61,59 +47,8 @@ export function AppSidebar() {
 
 			<ScrollArea className="min-h-0 flex-1">
 				<div className="space-y-5 p-2">
-					<Section
-						label="Documents"
-						action={<RowAction title="Add document" />}
-					>
-						{mockSources.map((s) => (
-							<NavRow
-								key={s.id}
-								icon={<DocIcon kind={s.kind} />}
-								label={s.filename}
-								sub={<Awareness signpost={s.signpost} tags={s.tags} />}
-								state={docState(s.id)}
-								muted={s.excluded}
-								menu={sourceMenu}
-								onClick={() => open(s.id)}
-								trailing={
-									s.excluded ? (
-										<EyeOff className="size-3.5" />
-									) : s.starred ? (
-										<Star className="size-3.5 fill-current text-primary" />
-									) : null
-								}
-							/>
-						))}
-						{mockArtifacts.map((a) => (
-							<NavRow
-								key={a.id}
-								icon={<DocIcon kind="docx" />}
-								label={a.title}
-								state={docState(a.id)}
-								menu={artifactMenu}
-								onClick={() => open(a.id)}
-							/>
-						))}
-					</Section>
-
-					<Section label="Chats" action={<RowAction title="New chat" />}>
-						{mockChats.map((c) => (
-							<NavRow
-								key={c.id}
-								icon={
-									<MessageSquare className="size-4 text-muted-foreground" />
-								}
-								label={c.title}
-								sub={
-									<span className="block truncate text-xs text-muted-foreground">
-										{c.preview}
-									</span>
-								}
-								state={c.active ? "focused" : "closed"}
-								menu={chatMenu}
-							/>
-						))}
-					</Section>
+					<DocumentsSection />
+					<ChatsSection />
 				</div>
 			</ScrollArea>
 
@@ -123,34 +58,11 @@ export function AppSidebar() {
 	);
 }
 
-function DocIcon({ kind }: { kind: "pdf" | "docx" }) {
-	return (
-		<FileText
-			className={cn(
-				"size-4",
-				kind === "pdf" ? "text-red-500/80" : "text-sky-600/80",
-			)}
-		/>
-	);
-}
-
-function Awareness({ signpost, tags }: { signpost: string; tags: string[] }) {
-	return (
-		<span className="mt-0.5 flex min-w-0 items-center gap-1">
-			{tags.map((t) => (
-				<span
-					key={t}
-					className="shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground"
-				>
-					{t}
-				</span>
-			))}
-			<span className="truncate text-xs text-muted-foreground">{signpost}</span>
-		</span>
-	);
-}
-
 function TaskSwitcher() {
+	const { activeTaskId, setActiveTaskId } = useActiveTask();
+	const { data: task } = useTask(activeTaskId);
+	const { data: tasks } = useTasks();
+
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
@@ -160,28 +72,31 @@ function TaskSwitcher() {
 				>
 					<div className="min-w-0 flex-1">
 						<div className="truncate text-sm font-medium">
-							{activeTask.title}
+							{task?.label || "No task"}
 						</div>
 						<div className="truncate text-xs text-muted-foreground">
-							{activeTask.reference}
+							{task?.folder}
 						</div>
 					</div>
 					<ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
 				</button>
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-72 gap-0.5 p-1">
-				{mockTasks.map((t) => (
+				{tasks?.map((t) => (
 					<button
 						type="button"
 						key={t.id}
+						onClick={() => setActiveTaskId(t.id)}
 						className={cn(
-							"flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left hover:bg-accent",
-							t.id === activeTask.id && "bg-accent",
+							"flex w-full flex-col rounded-sm px-2 py-1 text-left hover:bg-accent",
+							t.id === activeTaskId && "bg-accent",
 						)}
 					>
-						<span className="truncate text-sm">{t.title}</span>
-						<span className="ml-auto shrink-0 text-xs text-muted-foreground">
-							{t.reference}
+						<span className="truncate text-sm">
+							{t.label || "Untitled task"}
+						</span>
+						<span className="truncate text-xs text-muted-foreground">
+							{t.folder}
 						</span>
 					</button>
 				))}
@@ -196,6 +111,211 @@ function TaskSwitcher() {
 				</Button>
 			</PopoverContent>
 		</Popover>
+	);
+}
+
+function DocumentsSection() {
+	const { activeTaskId } = useActiveTask();
+	const { data: documents } = useTaskDocuments(activeTaskId);
+	const save = useSaveDocuments(activeTaskId ?? "");
+	const { isOpen, focused, open } = useWorkspace();
+
+	const update = (filename: string, patch: Partial<Document>) =>
+		save.mutate(
+			(documents ?? []).map((d) =>
+				d.filename === filename ? { ...d, ...patch } : d,
+			),
+		);
+
+	return (
+		<Section label="Documents">
+			{documents?.length === 0 && (
+				<p className="px-2 py-1 text-xs text-muted-foreground">
+					No documents in this task's folder.
+				</p>
+			)}
+			{documents?.map((doc) => (
+				<DocumentRow
+					key={doc.filename}
+					doc={doc}
+					state={
+						focused === doc.filename
+							? "focused"
+							: isOpen(doc.filename)
+								? "open"
+								: "closed"
+					}
+					onOpen={() => open(doc.filename)}
+					onUpdate={(patch) => update(doc.filename, patch)}
+				/>
+			))}
+		</Section>
+	);
+}
+
+function DocumentRow({
+	doc,
+	state,
+	onOpen,
+	onUpdate,
+}: {
+	doc: Document;
+	state: RowState;
+	onOpen: () => void;
+	onUpdate: (patch: Partial<Document>) => void;
+}) {
+	const kind: DocKind = doc.filename.toLowerCase().endsWith(".pdf")
+		? "pdf"
+		: "docx";
+
+	return (
+		<div
+			className={cn(
+				"group rounded-none border-l-2 transition-colors hover:bg-sidebar-accent",
+				state === "focused"
+					? "border-primary bg-sidebar-accent/50"
+					: state === "open"
+						? "border-primary/40"
+						: "border-transparent",
+				doc.excluded && "opacity-55",
+			)}
+		>
+			<div className="flex items-center gap-1 pr-1">
+				<button
+					type="button"
+					onClick={onOpen}
+					className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pl-2 text-left"
+				>
+					<DocIcon kind={kind} />
+					<span className="min-w-0 flex-1 truncate text-sm">
+						{doc.filename}
+					</span>
+				</button>
+				{doc.starred && (
+					<Star className="size-3.5 shrink-0 fill-current text-primary group-hover:hidden" />
+				)}
+				{doc.excluded && (
+					<EyeOff className="size-3.5 shrink-0 text-muted-foreground group-hover:hidden" />
+				)}
+				<DocumentMenu doc={doc} onUpdate={onUpdate} />
+			</div>
+			<div className="pr-2 pb-1 pl-8">
+				<InlineEdit
+					value={doc.label ?? ""}
+					onCommit={(label) => onUpdate({ label })}
+					placeholder="Add a label…"
+					className="text-xs text-muted-foreground"
+				/>
+			</div>
+		</div>
+	);
+}
+
+function DocumentMenu({
+	doc,
+	onUpdate,
+}: {
+	doc: Document;
+	onUpdate: (patch: Partial<Document>) => void;
+}) {
+	return (
+		<Popover>
+			<PopoverTrigger asChild>
+				<button
+					type="button"
+					title="More"
+					className="hidden shrink-0 rounded p-1 text-muted-foreground hover:bg-accent group-hover:block data-[state=open]:block"
+				>
+					<MoreHorizontal className="size-4" />
+				</button>
+			</PopoverTrigger>
+			<PopoverContent align="start" className="w-52 gap-0.5 p-1">
+				<MenuItem onClick={() => onUpdate({ starred: !doc.starred })}>
+					{doc.starred ? "Unstar" : "Star"}
+				</MenuItem>
+				<MenuItem onClick={() => onUpdate({ excluded: !doc.excluded })}>
+					{doc.excluded ? "Include for AgentPat" : "Exclude from AgentPat"}
+				</MenuItem>
+				<Separator className="my-0.5" />
+				<MenuItem
+					destructive
+					disabled={!doc.createdInPatrick}
+					title={
+						doc.createdInPatrick
+							? undefined
+							: "Original file — manage it in your folder"
+					}
+				>
+					Delete
+				</MenuItem>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+function MenuItem({
+	children,
+	onClick,
+	destructive,
+	disabled,
+	title,
+}: {
+	children: React.ReactNode;
+	onClick?: () => void;
+	destructive?: boolean;
+	disabled?: boolean;
+	title?: string;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			title={title}
+			className={cn(
+				"flex w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-40",
+				destructive && "text-destructive",
+			)}
+		>
+			{children}
+		</button>
+	);
+}
+
+function ChatsSection() {
+	return (
+		<Section label="Chats">
+			{mockChats.map((c) => (
+				<div
+					key={c.id}
+					className={cn(
+						"group flex items-start gap-2 rounded-none border-l-2 py-1.5 pr-1 pl-2 transition-colors hover:bg-sidebar-accent",
+						c.active
+							? "border-primary bg-sidebar-accent/50"
+							: "border-transparent",
+					)}
+				>
+					<MessageSquare className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+					<span className="min-w-0 flex-1">
+						<span className="block truncate text-sm">{c.title}</span>
+						<span className="block truncate text-xs text-muted-foreground">
+							{c.preview}
+						</span>
+					</span>
+				</div>
+			))}
+		</Section>
+	);
+}
+
+function DocIcon({ kind }: { kind: DocKind }) {
+	return (
+		<FileText
+			className={cn(
+				"size-4 shrink-0",
+				kind === "pdf" ? "text-red-500/80" : "text-sky-600/80",
+			)}
+		/>
 	);
 }
 
@@ -265,118 +385,19 @@ function SidebarFooter() {
 
 function Section({
 	label,
-	action,
 	children,
 }: {
 	label: string;
-	action?: ReactNode;
-	children: ReactNode;
+	children: React.ReactNode;
 }) {
 	return (
 		<div>
-			<div className="flex items-center justify-between px-2 pb-1">
+			<div className="px-2 pb-1">
 				<span className="text-xs font-medium text-muted-foreground">
 					{label}
 				</span>
-				{action}
 			</div>
 			<div className="space-y-0.5">{children}</div>
 		</div>
-	);
-}
-
-function NavRow({
-	icon,
-	label,
-	sub,
-	state,
-	muted,
-	trailing,
-	menu,
-	onClick,
-}: {
-	icon: ReactNode;
-	label: string;
-	sub?: ReactNode;
-	state: RowState;
-	muted?: boolean;
-	trailing?: ReactNode;
-	menu: string[];
-	onClick?: () => void;
-}) {
-	return (
-		<div
-			className={cn(
-				"group flex items-start gap-1 rounded-none border-l-2 pr-1 transition-colors hover:bg-sidebar-accent",
-				state === "focused"
-					? "border-primary bg-sidebar-accent/50"
-					: state === "open"
-						? "border-primary/40"
-						: "border-transparent",
-				muted && "opacity-50",
-			)}
-		>
-			<button
-				type="button"
-				onClick={onClick}
-				className="flex min-w-0 flex-1 items-start gap-2 py-1.5 pl-2 text-left"
-			>
-				<span className="mt-0.5 shrink-0">{icon}</span>
-				<span className="min-w-0 flex-1">
-					<span className="block truncate text-sm">{label}</span>
-					{sub}
-				</span>
-			</button>
-			{trailing && (
-				<span className="mt-1.5 px-1 text-muted-foreground group-hover:hidden">
-					{trailing}
-				</span>
-			)}
-			<RowMenu items={menu} />
-		</div>
-	);
-}
-
-function RowMenu({ items }: { items: string[] }) {
-	return (
-		<Popover>
-			<PopoverTrigger asChild>
-				<button
-					type="button"
-					title="More"
-					className="mt-1 hidden rounded p-1 text-muted-foreground hover:bg-accent group-hover:block data-[state=open]:block"
-				>
-					<MoreHorizontal className="size-4" />
-				</button>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-48 gap-0.5 p-1">
-				{items.map((item) => (
-					<button
-						type="button"
-						key={item}
-						className={cn(
-							"flex w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent",
-							item === "Delete" && "text-destructive",
-						)}
-					>
-						{item}
-					</button>
-				))}
-			</PopoverContent>
-		</Popover>
-	);
-}
-
-function RowAction({ title }: { title: string }) {
-	return (
-		<Button
-			type="button"
-			variant="ghost"
-			size="icon"
-			className="size-6 text-muted-foreground"
-			title={title}
-		>
-			<Plus />
-		</Button>
 	);
 }

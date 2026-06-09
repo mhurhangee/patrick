@@ -2,15 +2,8 @@ import { SortableKeyboardPlugin } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import {
-	Check,
-	ChevronLeft,
-	ChevronRight,
-	Columns2,
-	FileText,
-	X,
-} from "lucide-react";
-import { Fragment, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, Columns2, FileText, X } from "lucide-react";
+import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	ResizableHandle,
@@ -19,7 +12,7 @@ import {
 } from "@/components/ui/resizable";
 import { useLayout } from "@/lib/layout";
 import { cn } from "@/lib/utils";
-import { getDoc, useWorkspace, type WorkspaceColumn } from "@/lib/workspace";
+import { useWorkspace, type WorkspaceColumn } from "@/lib/workspace";
 
 export function DocumentViewer() {
 	const { columnList, setColumns } = useWorkspace();
@@ -156,6 +149,7 @@ function Tab({
 		accept: "tab",
 		plugins: [SortableKeyboardPlugin],
 	});
+	const { getDoc } = useWorkspace();
 	const doc = getDoc(id);
 	if (!doc) return null;
 
@@ -203,101 +197,27 @@ function Tab({
 }
 
 function DocContent({ id }: { id: string }) {
+	const { getDoc } = useWorkspace();
 	const doc = getDoc(id);
 	if (!doc) return null;
-	return doc.kind === "docx" ? (
-		<OaResponse />
-	) : (
-		<PdfPreview label={doc.label} />
-	);
-}
-
-function OaResponse() {
 	return (
-		<div>
-			<div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur">
+		<div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+			<FileText
+				className={cn(
+					"size-10",
+					doc.kind === "pdf" ? "text-red-500/70" : "text-sky-600/70",
+				)}
+			/>
+			<div>
+				<div className="text-sm font-medium">{doc.label}</div>
 				<div className="text-xs text-muted-foreground">
-					3 tracked changes from AgentPat
-				</div>
-				<div className="flex gap-1">
-					<Button size="sm" variant="ghost">
-						<X />
-						Reject all
-					</Button>
-					<Button size="sm">
-						<Check />
-						Accept all
-					</Button>
+					{doc.kind.toUpperCase()} · open in context
 				</div>
 			</div>
-			<div className="p-6">
-				<div className="mx-auto max-w-3xl space-y-4 rounded-sm bg-background p-12 text-sm leading-7 shadow-sm">
-					<p className="text-center font-semibold uppercase tracking-wide">
-						Remarks
-					</p>
-					<p>
-						Claims 1–20 are pending in the application. Claim 1 has been amended{" "}
-						<Ins>to recite that the frame includes a latch</Ins>.
-						Reconsideration and allowance are respectfully requested.
-					</p>
-					<p className="font-semibold">Claim Rejections — 35 U.S.C. § 103</p>
-					<p>
-						The Office Action rejects claims 1–20 under 35 U.S.C. § 103 as being
-						unpatentable over Smith <Del>alone</Del>
-						<Ins>in view of Jones</Ins>. Applicant respectfully traverses.
-					</p>
-					<p>
-						Smith discloses a widget comprising a frame, but{" "}
-						<Ins>
-							fails to teach or suggest a frame that includes a latch, as now
-							recited in amended claim 1.
-						</Ins>{" "}
-						<Del>does not address the limitations of the pending claims.</Del>{" "}
-						The cited combination therefore fails to establish a prima facie
-						case of obviousness.
-					</p>
-					<p>
-						For at least the foregoing reasons, Applicant submits that claim 1,
-						and the claims depending therefrom, are in condition for allowance.
-					</p>
-				</div>
-			</div>
+			<p className="max-w-xs text-xs text-muted-foreground">
+				Document viewing is the next step. For now this confirms the file is
+				open and part of AgentPat's context.
+			</p>
 		</div>
 	);
-}
-
-const pdfLines = Array.from({ length: 16 }, (_, i) => `pdf-line-${i}`);
-
-function PdfPreview({ label }: { label: string }) {
-	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-3 rounded-sm bg-background p-12 shadow-sm">
-				<div className="text-xs text-muted-foreground">{label}</div>
-				<div className="h-5 w-2/3 rounded bg-muted" />
-				<div className="space-y-2 pt-2">
-					{pdfLines.map((key, i) => (
-						<div
-							key={key}
-							className={cn(
-								"h-3 rounded bg-muted",
-								i % 5 === 4 ? "w-1/2" : "w-full",
-							)}
-						/>
-					))}
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function Ins({ children }: { children: ReactNode }) {
-	return (
-		<span className="rounded-[2px] bg-emerald-500/15 text-emerald-700 underline decoration-emerald-600/40 dark:text-emerald-400">
-			{children}
-		</span>
-	);
-}
-
-function Del({ children }: { children: ReactNode }) {
-	return <span className="text-destructive/70 line-through">{children}</span>;
 }

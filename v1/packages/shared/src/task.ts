@@ -25,12 +25,19 @@ export type Document = {
 	label?: string;
 	excluded?: boolean;
 	starred?: boolean;
+	/** True if Patrick created this file (vs an original the attorney added). */
+	createdInPatrick?: boolean;
 };
 
 /** Per-folder document awareness keyed by filename. Stored with the folder. */
 export type DocumentMeta = Record<
 	string,
-	{ label?: string; excluded?: boolean; starred?: boolean }
+	{
+		label?: string;
+		excluded?: boolean;
+		starred?: boolean;
+		createdInPatrick?: boolean;
+	}
 >;
 
 export function taskSummary(t: Task): TaskSummary {
@@ -49,6 +56,7 @@ export function toDocumentMeta(documents: Document[]): DocumentMeta {
 		if (d.label?.trim()) entry.label = d.label.trim();
 		if (d.excluded) entry.excluded = true;
 		if (d.starred) entry.starred = true;
+		if (d.createdInPatrick) entry.createdInPatrick = true;
 		if (Object.keys(entry).length > 0) meta[d.filename] = entry;
 	}
 	return meta;

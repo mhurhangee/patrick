@@ -77,7 +77,15 @@ export function useSaveDocuments(id: string) {
 	return useMutation({
 		mutationFn: (docs: Document[]) =>
 			tasksApi.saveDocuments(id, toDocumentMeta(docs)),
-		// Keep the cache in sync so navigating back shows the saved labels.
-		onSuccess: (_res, docs) => qc.setQueryData(keys.documents(id), docs),
+		// Optimistic so toggles/labels feel instant and survive navigation.
+		onMutate: async (docs) => {
+			await qc.cancelQueries({ queryKey: keys.documents(id) });
+			const prev = qc.getQueryData<Document[]>(keys.documents(id));
+			qc.setQueryData(keys.documents(id), docs);
+			return { prev };
+		},
+		onError: (_e, _docs, ctx) => {
+			if (ctx?.prev) qc.setQueryData(keys.documents(id), ctx.prev);
+		},
 	});
 }

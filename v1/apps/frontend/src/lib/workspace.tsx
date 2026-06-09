@@ -4,25 +4,19 @@ import {
 	type ReactNode,
 	type SetStateAction,
 	useContext,
+	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
-import { mockArtifacts, mockSources } from "@/lib/mock-data";
+import { useTaskDocuments } from "@/hooks/use-tasks";
+import { useActiveTask } from "@/lib/active-task";
 
-export type WorkspaceDoc = { id: string; label: string; kind: "pdf" | "docx" };
+export type DocKind = "pdf" | "docx";
+export type WorkspaceDoc = { id: string; label: string; kind: DocKind };
 
-const allDocs: WorkspaceDoc[] = [
-	...mockSources.map((s) => ({ id: s.id, label: s.filename, kind: s.kind })),
-	...mockArtifacts.map((a) => ({
-		id: a.id,
-		label: a.title,
-		kind: "docx" as const,
-	})),
-];
-const docMap = new Map(allDocs.map((d) => [d.id, d]));
-
-export function getDoc(id: string): WorkspaceDoc | undefined {
-	return docMap.get(id);
+function kindOf(filename: string): DocKind {
+	return filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
 }
 
 export type Columns = Record<string, string[]>;
@@ -32,6 +26,8 @@ type WorkspaceContextValue = {
 	columnList: WorkspaceColumn[];
 	columns: Columns;
 	focused: string | null;
+	/** Resolve an open doc id (filename) to its display shape. */
+	getDoc: (id: string) => WorkspaceDoc | undefined;
 	isOpen: (id: string) => boolean;
 	open: (id: string) => void;
 	focus: (id: string) => void;
@@ -65,11 +61,36 @@ function firstOpenDoc(columns: Columns, order: string[]): string | null {
 }
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-	const [columns, setColumns] = useState<Columns>({
-		"col-0": ["s1", "s2", "a1"],
-	});
+	const { activeTaskId } = useActiveTask();
+	const { data: documents } = useTaskDocuments(activeTaskId);
+
+	const docMap = useMemo(() => {
+		const map = new Map<string, WorkspaceDoc>();
+		for (const d of documents ?? []) {
+			map.set(d.filename, {
+				id: d.filename,
+				label: d.filename,
+				kind: kindOf(d.filename),
+			});
+		}
+		return map;
+	}, [documents]);
+
+	const [columns, setColumns] = useState<Columns>({ "col-0": [] });
 	const [order, setOrder] = useState<string[]>(["col-0"]);
-	const [focused, setFocused] = useState<string | null>("a1");
+	const [focused, setFocused] = useState<string | null>(null);
+
+	// Switching tasks closes everything (a different folder = different context),
+	// without remounting the shell (keeps panel sizes).
+	const prevTask = useRef(activeTaskId);
+	useEffect(() => {
+		if (prevTask.current !== activeTaskId) {
+			prevTask.current = activeTaskId;
+			setColumns({ "col-0": [] });
+			setOrder(["col-0"]);
+			setFocused(null);
+		}
+	}, [activeTaskId]);
 
 	const value = useMemo<WorkspaceContextValue>(() => {
 		const columnList = order
@@ -81,6 +102,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			columns,
 			focused,
 			setColumns,
+			getDoc: (id) => docMap.get(id),
 			isOpen: (id) => findColumnOf(columns, id) !== undefined,
 			open: (id) => {
 				setColumns((cols) => {
@@ -116,7 +138,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				setFocused(id);
 			},
 		};
-	}, [columns, order, focused]);
+	}, [columns, order, focused, docMap]);
 
 	return (
 		<WorkspaceContext.Provider value={value}>
