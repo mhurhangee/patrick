@@ -26,7 +26,7 @@ function ProfileSetup() {
 
 	return (
 		<div className="h-full overflow-auto">
-			<div className="mx-auto max-w-2xl space-y-6 p-8">
+			<div className="mx-auto max-w-3xl space-y-6 p-8">
 				<div className="space-y-3">
 					<Button asChild variant="ghost" size="sm" className="-ml-2">
 						<Link to="/profiles">

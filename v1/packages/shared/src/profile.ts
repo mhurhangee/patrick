@@ -1,13 +1,20 @@
-export type AiProvider = "anthropic" | "openai" | "google" | "gateway";
+import {
+	DEFAULT_DETAILED_MODEL,
+	DEFAULT_QUICK_MODEL,
+	type Provider,
+} from "./ai-models";
+
 export type AiEffort = "low" | "medium" | "high";
 export type ThemeMode = "light" | "dark" | "system";
 
 export type AiSettings = {
-	provider: AiProvider;
+	provider: Provider;
 	apiKey: string;
 	quickModel: string;
 	detailedModel: string;
 	effort: AiEffort;
+	/** Stream AgentPat's reasoning to the chat transparency UI. */
+	showThinking: boolean;
 };
 
 export type Appearance = {
@@ -68,9 +75,10 @@ export function createProfile(id: string, name: string): Profile {
 		ai: {
 			provider: "anthropic",
 			apiKey: "",
-			quickModel: "claude-haiku-4-5",
-			detailedModel: "claude-sonnet-4-5",
+			quickModel: DEFAULT_QUICK_MODEL.anthropic,
+			detailedModel: DEFAULT_DETAILED_MODEL.anthropic,
 			effort: "medium",
+			showThinking: false,
 		},
 		prompts: { agentpat: DEFAULT_AGENTPAT_PROMPT },
 		examples: [],

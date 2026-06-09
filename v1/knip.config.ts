@@ -13,7 +13,6 @@ const config: KnipConfig = {
 				"src/components/ui/**/*.{ts,tsx}",
 				"src/components/theme-provider.tsx",
 				"src/lib/utils.ts",
-				"src/lib/appearance.ts",
 			],
 			project: ["src/**/*.{ts,tsx}"],
 			// Used only via CSS `@import` / the Tailwind plugin, not TS imports.

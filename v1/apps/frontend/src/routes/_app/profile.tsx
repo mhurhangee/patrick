@@ -17,7 +17,7 @@ function Profile() {
 
 	return (
 		<div className="h-full overflow-auto">
-			<div className="mx-auto max-w-2xl space-y-6 p-8">
+			<div className="mx-auto max-w-3xl space-y-6 p-8">
 				<div className="space-y-3">
 					<div className="flex items-center justify-between">
 						<Button asChild variant="ghost" size="sm" className="-ml-2">
