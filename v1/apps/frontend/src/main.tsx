@@ -6,6 +6,7 @@ import { routeTree } from "./routeTree.gen";
 import "./index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ActiveProfileProvider } from "@/lib/active-profile";
 import { queryClient } from "@/lib/query-client";
 
 const router = createRouter({ routeTree });
@@ -22,11 +23,13 @@ if (!rootElement) throw new Error("Root element #root not found");
 createRoot(rootElement).render(
 	<StrictMode>
 		<QueryClientProvider client={queryClient}>
-			<ThemeProvider>
-				<TooltipProvider>
-					<RouterProvider router={router} />
-				</TooltipProvider>
-			</ThemeProvider>
+			<ActiveProfileProvider>
+				<ThemeProvider>
+					<TooltipProvider>
+						<RouterProvider router={router} />
+					</TooltipProvider>
+				</ThemeProvider>
+			</ActiveProfileProvider>
 		</QueryClientProvider>
 	</StrictMode>,
 );

@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import {
+	ArrowLeftRight,
 	ChevronsUpDown,
 	EyeOff,
 	FileText,
 	MessageSquare,
 	MoreHorizontal,
 	Plus,
-	Settings,
 	Star,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -18,14 +18,16 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useProfile } from "@/hooks/use-profiles";
+import { useActiveProfile } from "@/lib/active-profile";
 import {
-	activeProfile,
 	activeTask,
 	mockArtifacts,
 	mockChats,
 	mockSources,
 	mockTasks,
 } from "@/lib/mock-data";
+import { initialsOf } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
 
@@ -193,6 +195,13 @@ function TaskSwitcher() {
 }
 
 function SidebarFooter() {
+	const { activeProfileId } = useActiveProfile();
+	const { data: profile } = useProfile(activeProfileId);
+
+	const name = profile?.identity.name || "No profile";
+	const firm = profile?.identity.firm || "";
+	const connected = !!profile?.ai.apiKey;
+
 	return (
 		<div className="flex items-center gap-1 p-2">
 			<Button
@@ -202,13 +211,15 @@ function SidebarFooter() {
 			>
 				<Link to="/profile">
 					<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-						{activeProfile.initials}
+						{initialsOf(name)}
 					</span>
 					<span className="min-w-0 flex-1 text-left">
-						<span className="block truncate text-sm">{activeProfile.name}</span>
-						<span className="block truncate text-xs text-muted-foreground">
-							{activeProfile.firm}
-						</span>
+						<span className="block truncate text-sm">{name}</span>
+						{firm && (
+							<span className="block truncate text-xs text-muted-foreground">
+								{firm}
+							</span>
+						)}
 					</span>
 				</Link>
 			</Button>
@@ -216,15 +227,20 @@ function SidebarFooter() {
 				asChild
 				variant="ghost"
 				size="icon"
-				title="AI connected — Claude Sonnet 4.5"
+				title={connected ? "AI configured" : "No API key set"}
 			>
 				<Link to="/profile">
-					<span className="size-2.5 rounded-full bg-emerald-500" />
+					<span
+						className={cn(
+							"size-2.5 rounded-full",
+							connected ? "bg-emerald-500" : "bg-muted-foreground/40",
+						)}
+					/>
 				</Link>
 			</Button>
-			<Button asChild variant="ghost" size="icon" title="Settings">
-				<Link to="/settings">
-					<Settings />
+			<Button asChild variant="ghost" size="icon" title="Switch profile">
+				<Link to="/profiles">
+					<ArrowLeftRight />
 				</Link>
 			</Button>
 		</div>

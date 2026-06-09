@@ -1,41 +1,3 @@
-export type MockProfile = {
-	id: string;
-	name: string;
-	firm: string;
-	initials: string;
-	taskCount: number;
-	lastUsed: string;
-};
-
-export const activeProfile: MockProfile = {
-	id: "jane",
-	name: "Jane Smith",
-	firm: "Smith & Hale IP",
-	initials: "JS",
-	taskCount: 7,
-	lastUsed: "2 hours ago",
-};
-
-export const mockProfiles: MockProfile[] = [
-	activeProfile,
-	{
-		id: "ep",
-		name: "EP Practice",
-		firm: "European prosecution",
-		initials: "EP",
-		taskCount: 3,
-		lastUsed: "yesterday",
-	},
-	{
-		id: "acme",
-		name: "Acme Legal",
-		firm: "In-house counsel",
-		initials: "AL",
-		taskCount: 12,
-		lastUsed: "3 days ago",
-	},
-];
-
 export type MockTask = {
 	id: string;
 	title: string;
@@ -158,18 +120,4 @@ export const mockChats: MockChat[] = [
 		preview: "The combination of Smith and Jones fails to…",
 		date: "1d",
 	},
-];
-
-export type MockProvider = { id: string; label: string };
-export const mockProviders: MockProvider[] = [
-	{ id: "anthropic", label: "Anthropic" },
-	{ id: "openai", label: "OpenAI" },
-	{ id: "google", label: "Google" },
-	{ id: "gateway", label: "Vercel AI Gateway" },
-];
-
-export const mockModels = [
-	{ id: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
-	{ id: "claude-opus-4-8", label: "Claude Opus 4.8" },
-	{ id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
 ];

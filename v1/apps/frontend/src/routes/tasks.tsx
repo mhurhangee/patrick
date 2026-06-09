@@ -2,13 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { activeProfile, mockTasks } from "@/lib/mock-data";
+import { useProfile } from "@/hooks/use-profiles";
+import { useActiveProfile } from "@/lib/active-profile";
+import { mockTasks } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/tasks")({
 	component: Tasks,
 });
 
 function Tasks() {
+	const { activeProfileId } = useActiveProfile();
+	const { data: profile } = useProfile(activeProfileId);
+	const subtitle = [profile?.identity.name, profile?.identity.firm]
+		.filter(Boolean)
+		.join(" · ");
+
 	return (
 		<div className="h-full overflow-auto">
 			<div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center gap-8 p-8">
@@ -21,9 +29,9 @@ function Tasks() {
 					</Button>
 					<div>
 						<h1>Tasks</h1>
-						<p className="text-sm text-muted-foreground">
-							{activeProfile.name} · {activeProfile.firm}
-						</p>
+						{subtitle && (
+							<p className="text-sm text-muted-foreground">{subtitle}</p>
+						)}
 					</div>
 				</div>
 
