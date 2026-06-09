@@ -11,11 +11,15 @@ import {
 import { useActiveProfile } from "@/lib/active-profile";
 
 export const Route = createFileRoute("/_app/profile")({
+	validateSearch: (search): { tab?: string } => ({
+		tab: typeof search.tab === "string" ? search.tab : undefined,
+	}),
 	component: Profile,
 });
 
 function Profile() {
 	const navigate = useNavigate();
+	const { tab } = Route.useSearch();
 	const { activeProfileId, setActiveProfileId } = useActiveProfile();
 	const { data: profile, isLoading } = useProfile(activeProfileId);
 	const update = useUpdateProfile();
@@ -56,6 +60,7 @@ function Profile() {
 						key={profile.id}
 						profile={profile}
 						nav={nav}
+						initialTab={tab}
 						saving={update.isPending}
 						onSave={(next) => update.mutate(next)}
 						onDelete={() => deleteProfile(profile.id)}

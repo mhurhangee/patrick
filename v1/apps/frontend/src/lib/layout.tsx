@@ -14,6 +14,9 @@ type LayoutContextValue = {
 	chatRef: RefObject<PanelImperativeHandle | null>;
 	navCollapsed: boolean;
 	chatCollapsed: boolean;
+	/** Wired to the panels' onCollapse/onExpand so state tracks dragging too. */
+	setNavCollapsed: (v: boolean) => void;
+	setChatCollapsed: (v: boolean) => void;
 	toggleNav: () => void;
 	toggleChat: () => void;
 };
@@ -38,27 +41,20 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
 			chatRef,
 			navCollapsed,
 			chatCollapsed,
+			setNavCollapsed,
+			setChatCollapsed,
+			// Just drive the panel; onCollapse/onExpand keep the state in sync.
 			toggleNav: () => {
 				const p = navRef.current;
 				if (!p) return;
-				if (p.isCollapsed()) {
-					p.expand();
-					setNavCollapsed(false);
-				} else {
-					p.collapse();
-					setNavCollapsed(true);
-				}
+				if (p.isCollapsed()) p.expand();
+				else p.collapse();
 			},
 			toggleChat: () => {
 				const p = chatRef.current;
 				if (!p) return;
-				if (p.isCollapsed()) {
-					p.expand();
-					setChatCollapsed(false);
-				} else {
-					p.collapse();
-					setChatCollapsed(true);
-				}
+				if (p.isCollapsed()) p.expand();
+				else p.collapse();
 			},
 		}),
 		[navCollapsed, chatCollapsed],

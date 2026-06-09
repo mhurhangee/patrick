@@ -33,6 +33,14 @@ export const PROMPT_TOKENS: TokenDef[] = [
 		surfaces: ["agentpat"],
 	},
 	{
+		name: "EXAMPLES",
+		kind: "context",
+		label: "Writing examples",
+		description: "Your writing samples, so AgentPat matches your voice.",
+		placeholder: "‹ your writing samples ›",
+		surfaces: ["agentpat"],
+	},
+	{
 		name: "TASK",
 		kind: "context",
 		label: "Task",

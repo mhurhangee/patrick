@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_app/workspace")({
 });
 
 function Workspace() {
-	const { chatRef } = useLayout();
+	const { chatRef, setChatCollapsed } = useLayout();
 	return (
 		<ResizablePanelGroup orientation="horizontal" className="h-full">
 			<ResizablePanel id="viewer" defaultSize="60%" minSize="30%">
@@ -27,6 +27,9 @@ function Workspace() {
 				minSize="20%"
 				collapsible
 				collapsedSize="0%"
+				onResize={(size) =>
+					setChatCollapsed(Number.parseFloat(String(size)) === 0)
+				}
 			>
 				<AgentChat />
 			</ResizablePanel>

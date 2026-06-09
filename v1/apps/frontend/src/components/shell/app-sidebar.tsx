@@ -1,7 +1,6 @@
 import type { Document } from "@patrick/shared";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
-	ArrowLeftRight,
 	ChevronsUpDown,
 	EyeOff,
 	FileText,
@@ -9,6 +8,7 @@ import {
 	MoreHorizontal,
 	Star,
 } from "lucide-react";
+import { useState } from "react";
 import { InlineEdit } from "@/components/inline-edit";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
 	type KeyStatus,
@@ -36,6 +35,7 @@ import { mockChats } from "@/lib/mock-data";
 import { initialsOf } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { type DocKind, useWorkspace } from "@/lib/workspace";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type RowState = "closed" | "open" | "focused";
 
@@ -45,12 +45,12 @@ export function AppSidebar() {
 			<TaskSwitcher />
 			<Separator />
 
-			<ScrollArea className="min-h-0 flex-1">
+			<div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
 				<div className="space-y-5 p-2">
 					<DocumentsSection />
 					<ChatsSection />
 				</div>
-			</ScrollArea>
+			</div>
 
 			<Separator />
 			<SidebarFooter />
@@ -62,9 +62,10 @@ function TaskSwitcher() {
 	const { activeTaskId, setActiveTaskId } = useActiveTask();
 	const { data: task } = useTask(activeTaskId);
 	const { data: tasks } = useTasks();
+	const [open, setOpen] = useState(false);
 
 	return (
-		<Popover>
+		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<button
 					type="button"
@@ -86,7 +87,10 @@ function TaskSwitcher() {
 					<button
 						type="button"
 						key={t.id}
-						onClick={() => setActiveTaskId(t.id)}
+						onClick={() => {
+							setActiveTaskId(t.id);
+							setOpen(false);
+						}}
 						className={cn(
 							"flex w-full flex-col rounded-sm px-2 py-1 text-left hover:bg-accent",
 							t.id === activeTaskId && "bg-accent",
@@ -115,6 +119,7 @@ function TaskSwitcher() {
 }
 
 function DocumentsSection() {
+	const navigate = useNavigate();
 	const { activeTaskId } = useActiveTask();
 	const { data: documents } = useTaskDocuments(activeTaskId);
 	const save = useSaveDocuments(activeTaskId ?? "");
@@ -126,6 +131,12 @@ function DocumentsSection() {
 				d.filename === filename ? { ...d, ...patch } : d,
 			),
 		);
+
+	// Opening a document takes you to the workspace to see it (e.g. from /profile).
+	const openDoc = (filename: string) => {
+		open(filename);
+		navigate({ to: "/workspace" });
+	};
 
 	return (
 		<Section label="Documents">
@@ -145,7 +156,7 @@ function DocumentsSection() {
 								? "open"
 								: "closed"
 					}
-					onOpen={() => open(doc.filename)}
+					onOpen={() => openDoc(doc.filename)}
 					onUpdate={(patch) => update(doc.filename, patch)}
 				/>
 			))}
@@ -180,7 +191,7 @@ function DocumentRow({
 				doc.excluded && "opacity-55",
 			)}
 		>
-			<div className="flex items-center gap-1 pr-1">
+			<div className="flex items-center pr-1">
 				<button
 					type="button"
 					onClick={onOpen}
@@ -191,13 +202,16 @@ function DocumentRow({
 						{doc.filename}
 					</span>
 				</button>
-				{doc.starred && (
-					<Star className="size-3.5 shrink-0 fill-current text-primary group-hover:hidden" />
-				)}
-				{doc.excluded && (
-					<EyeOff className="size-3.5 shrink-0 text-muted-foreground group-hover:hidden" />
-				)}
-				<DocumentMenu doc={doc} onUpdate={onUpdate} />
+				{/* shrink-0 — the title truncates, these stay pinned right. */}
+				<div className="flex shrink-0 items-center gap-0.5 pl-1">
+					{doc.starred && (
+						<Star className="size-3.5 fill-current text-primary" />
+					)}
+					{doc.excluded && (
+						<EyeOff className="size-3.5 text-muted-foreground" />
+					)}
+					<DocumentMenu doc={doc} onUpdate={onUpdate} />
+				</div>
 			</div>
 			<div className="pr-2 pb-1 pl-8">
 				<InlineEdit
@@ -224,7 +238,7 @@ function DocumentMenu({
 				<button
 					type="button"
 					title="More"
-					className="hidden shrink-0 rounded p-1 text-muted-foreground hover:bg-accent group-hover:block data-[state=open]:block"
+					className="shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
 				>
 					<MoreHorizontal className="size-4" />
 				</button>
@@ -236,18 +250,24 @@ function DocumentMenu({
 				<MenuItem onClick={() => onUpdate({ excluded: !doc.excluded })}>
 					{doc.excluded ? "Include for AgentPat" : "Exclude from AgentPat"}
 				</MenuItem>
-				<Separator className="my-0.5" />
-				<MenuItem
-					destructive
-					disabled={!doc.createdInPatrick}
-					title={
-						doc.createdInPatrick
-							? undefined
-							: "Original file — manage it in your folder"
-					}
-				>
-					Delete
-				</MenuItem>
+				<Tooltip>
+					<TooltipTrigger>
+						<MenuItem disabled={!doc.createdInPatrick}>Rename</MenuItem>
+					</TooltipTrigger>
+					<TooltipContent side="right">
+						Original file — rename it in your folder
+					</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger>
+						<MenuItem destructive disabled={!doc.createdInPatrick}>
+							Delete
+						</MenuItem>
+					</TooltipTrigger>
+					<TooltipContent side="right">
+						Original file — delete it in your folder
+					</TooltipContent>
+				</Tooltip>
 			</PopoverContent>
 		</Popover>
 	);
@@ -370,13 +390,8 @@ function SidebarFooter() {
 				</Link>
 			</Button>
 			<Button asChild variant="ghost" size="icon" title={dotTitle}>
-				<Link to="/profile">
+				<Link to="/profile" search={{ tab: "ai" }}>
 					<span className={cn("size-2.5 rounded-full", DOT_COLOR[status])} />
-				</Link>
-			</Button>
-			<Button asChild variant="ghost" size="icon" title="Switch profile">
-				<Link to="/profiles">
-					<ArrowLeftRight />
 				</Link>
 			</Button>
 		</div>

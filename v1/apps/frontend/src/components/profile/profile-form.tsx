@@ -11,6 +11,7 @@ import { IdentitySection } from "./identity-section";
 import { PromptSection } from "./prompt-section";
 
 const AUTOSAVE_DELAY = 600;
+const TAB_ORDER = ["identity", "ai", "prompt", "examples", "appearance"];
 
 /**
  * Reusable profile editor. Mount with `key={profile.id}` so switching profiles
@@ -25,6 +26,7 @@ export function ProfileForm({
 	nav,
 	fallbackTitle = "Profile",
 	subtitle,
+	initialTab,
 	primaryAction,
 	onDelete,
 }: {
@@ -39,7 +41,10 @@ export function ProfileForm({
 	fallbackTitle?: string;
 	/** Extra muted line under the identity (e.g. an onboarding instruction). */
 	subtitle?: string;
-	/** A footer navigation action (e.g. "Continue to tasks"); flushes first. */
+	/** Tab to open on first render (e.g. deep-link to "ai"). */
+	initialTab?: string;
+	/** A footer navigation action (e.g. "Continue to tasks"); flushes first.
+	 *  When set, the button steps through the tabs, then runs on the last. */
 	primaryAction?: { label: string; onClick: () => void };
 	/** When set, a destructive delete control appears in the footer. */
 	onDelete?: () => void | Promise<void>;
@@ -47,6 +52,7 @@ export function ProfileForm({
 	const [draft, setDraft] = useState(profile);
 	const [pending, setPending] = useState(false);
 	const [hasSaved, setHasSaved] = useState(false);
+	const [tab, setTab] = useState(initialTab ?? "identity");
 
 	const draftRef = useRef(draft);
 	draftRef.current = draft;
@@ -113,7 +119,7 @@ export function ProfileForm({
 				</div>
 			</div>
 
-			<Tabs defaultValue="identity">
+			<Tabs value={tab} onValueChange={setTab}>
 				<TabsList className="w-full justify-start">
 					<TabsTrigger value="identity">Identity</TabsTrigger>
 					<TabsTrigger value="ai">AI</TabsTrigger>
@@ -135,6 +141,7 @@ export function ProfileForm({
 					<PromptSection
 						value={draft.prompts.agentpat}
 						practiceContext={draft.identity.practiceContext}
+						examples={draft.examples}
 						onChange={(agentpat) => set({ prompts: { agentpat } })}
 					/>
 				</TabsContent>
@@ -153,29 +160,36 @@ export function ProfileForm({
 			</Tabs>
 			<div className="flex justify-between">
 				{onDelete && (
-					<>
-						<ConfirmDelete
-							label="Delete profile"
-							title="Delete this profile?"
-							description="This permanently removes the profile and its settings. Your tasks and their folders are not affected."
-							onConfirm={() => {
-								cancel();
-								return onDelete();
-							}}
-						/>
-					</>
+					<ConfirmDelete
+						label="Delete profile"
+						title="Delete this profile?"
+						description="This permanently removes the profile and its settings. Your tasks and their folders are not affected."
+						onConfirm={() => {
+							cancel();
+							return onDelete();
+						}}
+					/>
 				)}
 
-				{primaryAction && (
-					<Button
-						onClick={() => {
-							commit();
-							primaryAction.onClick();
-						}}
-					>
-						{primaryAction.label}
-					</Button>
-				)}
+				{primaryAction &&
+					(() => {
+						const idx = TAB_ORDER.indexOf(tab);
+						const isLast = idx === TAB_ORDER.length - 1;
+						return (
+							<Button
+								onClick={() => {
+									if (!isLast) {
+										setTab(TAB_ORDER[idx + 1] ?? tab);
+										return;
+									}
+									commit();
+									primaryAction.onClick();
+								}}
+							>
+								{isLast ? primaryAction.label : "Next →"}
+							</Button>
+						);
+					})()}
 			</div>
 		</div>
 	);

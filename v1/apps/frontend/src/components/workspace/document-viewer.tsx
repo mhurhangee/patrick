@@ -2,15 +2,15 @@ import { SortableKeyboardPlugin } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { ChevronLeft, ChevronRight, Columns2, FileText, X } from "lucide-react";
+import { Columns2, FileText, X } from "lucide-react";
 import { Fragment } from "react";
+import { PanelToggleButton } from "@/components/shell/panel-toggle-button";
 import { Button } from "@/components/ui/button";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useLayout } from "@/lib/layout";
 import { cn } from "@/lib/utils";
 import { useWorkspace, type WorkspaceColumn } from "@/lib/workspace";
 
@@ -61,7 +61,7 @@ function Column({
 	return (
 		<div className="flex h-full flex-col">
 			<div className="flex shrink-0 items-center border-b bg-background">
-				{isFirst && <PanelToggle side="left" />}
+				{isFirst && <PanelToggleButton side="nav" className="ml-1" />}
 				<div
 					role="tablist"
 					className="flex flex-1 items-center gap-0.5 overflow-x-auto px-1.5"
@@ -89,40 +89,13 @@ function Column({
 						<Columns2 />
 					</Button>
 				)}
-				{isLast && <PanelToggle side="right" />}
+				{isLast && <PanelToggleButton side="chat" className="mr-1" />}
 			</div>
 
 			<div className="min-h-0 flex-1 overflow-auto bg-muted/30">
 				{active && <DocContent id={active} />}
 			</div>
 		</div>
-	);
-}
-
-function PanelToggle({ side }: { side: "left" | "right" }) {
-	const { toggleNav, toggleChat, navCollapsed, chatCollapsed } = useLayout();
-
-	const isLeft = side === "left";
-	const collapsed = isLeft ? navCollapsed : chatCollapsed;
-
-	const ChevronIcon = isLeft === collapsed ? ChevronRight : ChevronLeft;
-
-	const label = isLeft ? "sidebar" : "AgentPat";
-	const title = `${collapsed ? "Show" : "Hide"} ${label}`;
-
-	return (
-		<Button
-			variant="ghost"
-			size="icon"
-			className={cn(
-				"size-7 shrink-0 text-muted-foreground",
-				isLeft ? "ml-1" : "mr-1",
-			)}
-			title={title}
-			onClick={isLeft ? toggleNav : toggleChat}
-		>
-			<ChevronIcon />
-		</Button>
 	);
 }
 

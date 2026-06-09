@@ -1,4 +1,4 @@
-import { DEFAULT_AGENTPAT_PROMPT } from "@patrick/shared";
+import { DEFAULT_AGENTPAT_PROMPT, type WritingExample } from "@patrick/shared";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
@@ -8,23 +8,44 @@ import {
 } from "@/components/ui/field";
 import { PromptBuilder } from "./prompt-builder";
 
+function examplesText(examples: WritingExample[]): string {
+	return examples
+		.filter((e) => e.content.trim())
+		.map((e) => `### ${e.title || "Example"}\n${e.content.trim()}`)
+		.join("\n\n");
+}
+
 export function PromptSection({
 	value,
 	practiceContext,
+	examples,
 	onChange,
 }: {
 	value: string;
 	practiceContext: string;
+	examples: WritingExample[];
 	onChange: (value: string) => void;
 }) {
 	return (
 		<FieldGroup>
 			<Field>
-				<FieldLabel>AgentPat system prompt</FieldLabel>
+				<div className="flex justify-between">
+					<FieldLabel>AgentPat system prompt</FieldLabel>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onChange(DEFAULT_AGENTPAT_PROMPT)}
+					>
+						Reset to default
+					</Button>
+				</div>
 				<PromptBuilder
 					value={value}
 					onChange={onChange}
-					values={{ PRACTICECONTEXT: practiceContext }}
+					values={{
+						PRACTICECONTEXT: practiceContext,
+						EXAMPLES: examplesText(examples),
+					}}
 				/>
 				<FieldDescription>
 					Edit the template freely. Tokens in ‹brackets› are filled at runtime —
@@ -32,14 +53,6 @@ export function PromptSection({
 					live; task-derived tokens fill once a task is open).
 				</FieldDescription>
 			</Field>
-			<Button
-				variant="outline"
-				size="sm"
-				className="w-fit"
-				onClick={() => onChange(DEFAULT_AGENTPAT_PROMPT)}
-			>
-				Reset to default
-			</Button>
 		</FieldGroup>
 	);
 }

@@ -1,8 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, Plus } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateProfile, useProfiles } from "@/hooks/use-profiles";
+import { useActiveProfile } from "@/lib/active-profile";
 import { initialsOf } from "@/lib/text";
 
 export const Route = createFileRoute("/profiles/")({
@@ -11,6 +13,7 @@ export const Route = createFileRoute("/profiles/")({
 
 function ProfilesPicker() {
 	const navigate = useNavigate();
+	const { activeProfileId } = useActiveProfile();
 	const { data: profiles, isLoading } = useProfiles();
 	const create = useCreateProfile();
 
@@ -24,7 +27,18 @@ function ProfilesPicker() {
 
 	return (
 		<div className="h-full overflow-auto">
-			<div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center gap-8 p-8">
+			<div className="mx-auto flex max-w-2xl flex-col gap-6 p-8">
+				<div className="flex h-8 items-center justify-end">
+					{activeProfileId && (
+						<Button asChild variant="ghost" size="sm">
+							<Link to="/tasks">
+								Tasks
+								<ArrowRight />
+							</Link>
+						</Button>
+					)}
+				</div>
+
 				<div className="flex items-center gap-3">
 					<Logo size={32} />
 					<div>

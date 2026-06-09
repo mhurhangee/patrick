@@ -4,7 +4,7 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { ArrowLeft, FolderOpen, Plus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, FolderOpen, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/tasks/")({
 
 function TasksPicker() {
 	const navigate = useNavigate();
-	const { setActiveTaskId } = useActiveTask();
+	const { activeTaskId, setActiveTaskId } = useActiveTask();
 	const { data: tasks, isLoading } = useTasks();
 	const create = useCreateTask();
 	const [adding, setAdding] = useState(false);
@@ -48,13 +48,23 @@ function TasksPicker() {
 
 	return (
 		<div className="h-full overflow-auto">
-			<div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center gap-6 p-8">
-				<Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-					<Link to="/profiles">
-						<ArrowLeft />
-						Profiles
-					</Link>
-				</Button>
+			<div className="mx-auto flex max-w-2xl flex-col gap-6 p-8">
+				<div className="flex h-8 items-center justify-between">
+					<Button asChild variant="ghost" size="sm" className="-ml-2">
+						<Link to="/profiles">
+							<ArrowLeft />
+							Profiles
+						</Link>
+					</Button>
+					{activeTaskId && (
+						<Button asChild variant="ghost" size="sm">
+							<Link to="/workspace">
+								Workspace
+								<ArrowRight />
+							</Link>
+						</Button>
+					)}
+				</div>
 
 				<div className="flex items-center gap-3">
 					<Logo size={32} />

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { Button } from "@/components/ui/button";
@@ -33,12 +33,20 @@ function ProfileSetup() {
 	};
 
 	const back = (
-		<Button asChild variant="ghost" size="sm" className="-ml-2">
-			<Link to="/profiles">
-				<ArrowLeft />
-				Profiles
-			</Link>
-		</Button>
+		<div className="flex items-center justify-between">
+			<Button asChild variant="ghost" size="sm" className="-ml-2">
+				<Link to="/profiles">
+					<ArrowLeft />
+					Profiles
+				</Link>
+			</Button>
+			<Button asChild variant="ghost" size="sm" title="Skip to tasks">
+				<Link to="/tasks">
+					Tasks
+					<ArrowRight />
+				</Link>
+			</Button>
+		</div>
 	);
 
 	return (
