@@ -6,31 +6,30 @@ import {
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-import { Textarea } from "@/components/ui/textarea";
+import { PromptBuilder } from "./prompt-builder";
 
 export function PromptSection({
 	value,
+	practiceContext,
 	onChange,
 }: {
 	value: string;
+	practiceContext: string;
 	onChange: (value: string) => void;
 }) {
 	return (
 		<FieldGroup>
 			<Field>
-				<FieldLabel htmlFor="agentpat-prompt">
-					AgentPat system prompt
-				</FieldLabel>
-				<Textarea
-					id="agentpat-prompt"
-					className="min-h-80 font-mono text-xs leading-relaxed"
+				<FieldLabel>AgentPat system prompt</FieldLabel>
+				<PromptBuilder
 					value={value}
-					onChange={(e) => onChange(e.target.value)}
+					onChange={onChange}
+					values={{ PRACTICECONTEXT: practiceContext }}
 				/>
 				<FieldDescription>
-					The full instruction AgentPat runs on. Tokens like{" "}
-					{"<PRACTICECONTEXT>"}, {"<TASK>"} and {"<OPENDOCUMENTS>"} are filled
-					in at runtime from the active task.
+					Edit the template freely. Tokens in ‹brackets› are filled at runtime —
+					the preview shows where each lands (your practice context resolves
+					live; task-derived tokens fill once a task is open).
 				</FieldDescription>
 			</Field>
 			<Button

@@ -21,29 +21,21 @@ function ProfileSetup() {
 	// Picking/creating a profile here makes it the active one.
 	useEffect(() => setActiveProfileId(id), [id, setActiveProfileId]);
 
-	const proceed = (next: Parameters<typeof update.mutate>[0]) =>
-		update.mutate(next, { onSuccess: () => navigate({ to: "/tasks" }) });
+	const back = (
+		<Button asChild variant="ghost" size="sm" className="-ml-2">
+			<Link to="/profiles">
+				<ArrowLeft />
+				Profiles
+			</Link>
+		</Button>
+	);
 
 	return (
 		<div className="h-full overflow-auto">
 			<div className="mx-auto max-w-3xl space-y-6 p-8">
-				<div className="space-y-3">
-					<Button asChild variant="ghost" size="sm" className="-ml-2">
-						<Link to="/profiles">
-							<ArrowLeft />
-							Profiles
-						</Link>
-					</Button>
-					<div>
-						<h1>{profile?.identity.name || "Set up your profile"}</h1>
-						<p className="text-sm text-muted-foreground">
-							Review your details, then continue to pick a task.
-						</p>
-					</div>
-				</div>
-
 				{isLoading || !profile ? (
 					<div className="space-y-4">
+						{back}
 						<Skeleton className="h-9 w-72" />
 						<Skeleton className="h-28 w-full" />
 						<Skeleton className="h-28 w-full" />
@@ -52,10 +44,15 @@ function ProfileSetup() {
 					<ProfileForm
 						key={profile.id}
 						profile={profile}
+						nav={back}
+						fallbackTitle="Set up your profile"
+						subtitle="Review your details, then continue to pick a task."
 						saving={update.isPending}
-						saveLabel="Continue to tasks →"
-						allowClean
-						onSave={proceed}
+						onSave={(next) => update.mutate(next)}
+						primaryAction={{
+							label: "Continue to tasks →",
+							onClick: () => navigate({ to: "/tasks" }),
+						}}
 					/>
 				)}
 			</div>

@@ -15,33 +15,26 @@ function Profile() {
 	const { data: profile, isLoading } = useProfile(activeProfileId);
 	const update = useUpdateProfile();
 
+	const nav = (
+		<div className="flex items-center justify-between">
+			<Button asChild variant="ghost" size="sm" className="-ml-2">
+				<Link to="/workspace">
+					<ArrowLeft />
+					Workspace
+				</Link>
+			</Button>
+			<Button asChild variant="ghost" size="sm">
+				<Link to="/profiles">Switch profile</Link>
+			</Button>
+		</div>
+	);
+
 	return (
 		<div className="h-full overflow-auto">
 			<div className="mx-auto max-w-3xl space-y-6 p-8">
-				<div className="space-y-3">
-					<div className="flex items-center justify-between">
-						<Button asChild variant="ghost" size="sm" className="-ml-2">
-							<Link to="/workspace">
-								<ArrowLeft />
-								Workspace
-							</Link>
-						</Button>
-						<Button asChild variant="ghost" size="sm">
-							<Link to="/profiles">Switch profile</Link>
-						</Button>
-					</div>
-					<div>
-						<h1>{profile?.identity.name || "Profile"}</h1>
-						{profile?.identity.firm && (
-							<p className="text-sm text-muted-foreground">
-								{profile.identity.firm}
-							</p>
-						)}
-					</div>
-				</div>
-
 				{isLoading || !profile ? (
 					<div className="space-y-4">
+						{nav}
 						<Skeleton className="h-9 w-72" />
 						<Skeleton className="h-28 w-full" />
 						<Skeleton className="h-28 w-full" />
@@ -50,6 +43,7 @@ function Profile() {
 					<ProfileForm
 						key={profile.id}
 						profile={profile}
+						nav={nav}
 						saving={update.isPending}
 						onSave={(next) => update.mutate(next)}
 					/>

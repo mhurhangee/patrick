@@ -1,5 +1,6 @@
 import type { Profile } from "@patrick/shared";
-import { useState } from "react";
+import { Check, Loader2 } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AiSection } from "./ai-section";
@@ -8,31 +9,96 @@ import { ExamplesSection } from "./examples-section";
 import { IdentitySection } from "./identity-section";
 import { PromptSection } from "./prompt-section";
 
+const AUTOSAVE_DELAY = 600;
+
 /**
  * Reusable profile editor. Mount with `key={profile.id}` so switching profiles
- * resets the draft. Holds an editable draft; commits via onSave.
+ * resets the draft. Edits auto-save (debounced) — there's no save button; a
+ * status line reports "Saving…/Saved". `primaryAction` (the gate's Continue)
+ * flushes any pending save before running.
  */
 export function ProfileForm({
 	profile,
 	onSave,
 	saving,
-	saveLabel = "Save changes",
-	allowClean = false,
+	nav,
+	fallbackTitle = "Profile",
+	subtitle,
+	primaryAction,
 }: {
 	profile: Profile;
+	/** Persist the draft. Called debounced on edit, and flushed on leave. */
 	onSave: (profile: Profile) => void;
+	/** True while a save is in flight (drives the status line). */
 	saving?: boolean;
-	saveLabel?: string;
-	/** Enable the action even with no edits — for the onboarding gate's "Continue". */
-	allowClean?: boolean;
+	/** Route-specific navigation rendered above the title (back/switch links). */
+	nav?: ReactNode;
+	/** Shown as the title until the profile has a name. */
+	fallbackTitle?: string;
+	/** Extra muted line under the identity (e.g. an onboarding instruction). */
+	subtitle?: string;
+	/** A footer navigation action (e.g. "Continue to tasks"); flushes first. */
+	primaryAction?: { label: string; onClick: () => void };
 }) {
 	const [draft, setDraft] = useState(profile);
-	const set = (patch: Partial<Profile>) =>
+	const [pending, setPending] = useState(false);
+	const [hasSaved, setHasSaved] = useState(false);
+
+	const draftRef = useRef(draft);
+	draftRef.current = draft;
+	const onSaveRef = useRef(onSave);
+	onSaveRef.current = onSave;
+	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	function commit() {
+		if (timer.current) {
+			clearTimeout(timer.current);
+			timer.current = null;
+		}
+		setPending(false);
+		setHasSaved(true);
+		onSaveRef.current(draftRef.current);
+	}
+
+	function set(patch: Partial<Profile>) {
 		setDraft((d) => ({ ...d, ...patch }));
-	const dirty = JSON.stringify(draft) !== JSON.stringify(profile);
+		setPending(true);
+		if (timer.current) clearTimeout(timer.current);
+		timer.current = setTimeout(commit, AUTOSAVE_DELAY);
+	}
+
+	// Flush any pending save when leaving the form.
+	useEffect(() => {
+		return () => {
+			if (timer.current) {
+				clearTimeout(timer.current);
+				onSaveRef.current(draftRef.current);
+			}
+		};
+	}, []);
+
+	const status = saving || pending ? "saving" : hasSaved ? "saved" : "idle";
 
 	return (
 		<div className="space-y-6">
+			<div className="space-y-3">
+				{nav}
+				<div className="flex items-start justify-between gap-4">
+					<div>
+						<h1>{draft.identity.name || fallbackTitle}</h1>
+						{draft.identity.firm && (
+							<p className="text-sm text-muted-foreground">
+								{draft.identity.firm}
+							</p>
+						)}
+						{subtitle && (
+							<p className="text-sm text-muted-foreground">{subtitle}</p>
+						)}
+					</div>
+					<SaveStatus status={status} />
+				</div>
+			</div>
+
 			<Tabs defaultValue="identity">
 				<TabsList>
 					<TabsTrigger value="identity">Identity</TabsTrigger>
@@ -54,6 +120,7 @@ export function ProfileForm({
 				<TabsContent value="prompt" className="pt-4">
 					<PromptSection
 						value={draft.prompts.agentpat}
+						practiceContext={draft.identity.practiceContext}
 						onChange={(agentpat) => set({ prompts: { agentpat } })}
 					/>
 				</TabsContent>
@@ -71,14 +138,37 @@ export function ProfileForm({
 				</TabsContent>
 			</Tabs>
 
-			<div className="flex justify-end">
-				<Button
-					disabled={(!allowClean && !dirty) || saving}
-					onClick={() => onSave(draft)}
-				>
-					{saving ? "Saving…" : saveLabel}
-				</Button>
-			</div>
+			{primaryAction && (
+				<div className="flex justify-end">
+					<Button
+						onClick={() => {
+							commit();
+							primaryAction.onClick();
+						}}
+					>
+						{primaryAction.label}
+					</Button>
+				</div>
+			)}
 		</div>
+	);
+}
+
+function SaveStatus({ status }: { status: "idle" | "saving" | "saved" }) {
+	if (status === "idle") return null;
+	return (
+		<span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+			{status === "saving" ? (
+				<>
+					<Loader2 className="size-3.5 animate-spin" />
+					Saving…
+				</>
+			) : (
+				<>
+					<Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+					Saved
+				</>
+			)}
+		</span>
 	);
 }
