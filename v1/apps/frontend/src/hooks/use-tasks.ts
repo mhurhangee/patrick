@@ -72,6 +72,59 @@ export function useTaskDocuments(id: string | undefined) {
 	});
 }
 
+/** Re-scan the task folder (picks up files added/removed outside Patrick). */
+export function useRefreshDocuments(id: string) {
+	const qc = useQueryClient();
+	return () => {
+		void qc.invalidateQueries({ queryKey: keys.documents(id) });
+	};
+}
+
+export function useCreateDocument(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (filename?: string) => tasksApi.createDocument(id, filename),
+		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
+export function useUnlockDocument(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (filename: string) => tasksApi.unlockDocument(id, filename),
+		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
+export function useRenameDocument(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ from, to }: { from: string; to: string }) =>
+			tasksApi.renameDocument(id, from, to),
+		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
+export function useDeleteDocument(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (filename: string) => tasksApi.removeDocument(id, filename),
+		// Optimistic: drop it from the list immediately.
+		onMutate: async (filename) => {
+			await qc.cancelQueries({ queryKey: keys.documents(id) });
+			const prev = qc.getQueryData<Document[]>(keys.documents(id));
+			qc.setQueryData<Document[]>(keys.documents(id), (xs) =>
+				xs?.filter((d) => d.filename !== filename),
+			);
+			return { prev };
+		},
+		onError: (_e, _filename, ctx) => {
+			if (ctx?.prev) qc.setQueryData(keys.documents(id), ctx.prev);
+		},
+		onSettled: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
 export function useSaveDocuments(id: string) {
 	const qc = useQueryClient();
 	return useMutation({

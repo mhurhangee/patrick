@@ -176,5 +176,6 @@ function DocContent({ id }: { id: string }) {
 	const doc = getDoc(id);
 	if (!doc) return null;
 	if (doc.kind === "pdf") return <PdfViewer filename={doc.id} />;
-	return <DocxViewer filename={doc.id} />;
+	// key per file so autosave + buffer state never leak across tab switches.
+	return <DocxViewer key={doc.id} filename={doc.id} editable={doc.editable} />;
 }

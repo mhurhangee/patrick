@@ -13,7 +13,13 @@ import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
 
 export type DocKind = "pdf" | "docx";
-export type WorkspaceDoc = { id: string; label: string; kind: DocKind };
+export type WorkspaceDoc = {
+	id: string;
+	label: string;
+	kind: DocKind;
+	/** Patrick-created docs are editable; originals are read-only. */
+	editable: boolean;
+};
 
 function kindOf(filename: string): DocKind {
 	return filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
@@ -67,10 +73,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const docMap = useMemo(() => {
 		const map = new Map<string, WorkspaceDoc>();
 		for (const d of documents ?? []) {
+			const kind = kindOf(d.filename);
 			map.set(d.filename, {
 				id: d.filename,
 				label: d.filename,
-				kind: kindOf(d.filename),
+				kind,
+				editable: kind === "docx" && !!d.createdInPatrick,
 			});
 		}
 		return map;

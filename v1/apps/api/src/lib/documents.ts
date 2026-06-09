@@ -1,10 +1,22 @@
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import {
+	copyFile,
+	mkdir,
+	readdir,
+	readFile,
+	rename,
+	rm,
+	stat,
+	writeFile,
+} from "node:fs/promises";
+import { dirname, extname, join } from "node:path";
 import type { Document, DocumentMeta } from "@patrick/shared";
 import { parse, stringify } from "yaml";
 
 // What counts as a "document" in the attorney's folder.
 const DOC_EXTENSIONS = new Set([".pdf", ".docx", ".doc"]);
+
+// A real (minimal, empty) .docx minted from the editor — copied for "New document".
+const BLANK_DOCX = join(import.meta.dir, "..", "..", "assets", "blank.docx");
 
 // Document awareness (labels/exclude/star) lives with the folder, not in the
 // config home — portable and readable without Patrick.
@@ -37,6 +49,135 @@ export async function writeDocumentMeta(
 	const path = metaPath(folder);
 	await mkdir(dirname(path), { recursive: true });
 	await writeFile(path, stringify(meta), "utf8");
+}
+
+async function fileExists(folder: string, name: string): Promise<boolean> {
+	try {
+		return (await stat(join(folder, name))).isFile();
+	} catch {
+		return false;
+	}
+}
+
+/** Merge a single document's awareness entry without disturbing the others. */
+async function mergeDocumentMeta(
+	folder: string,
+	filename: string,
+	patch: DocumentMeta[string],
+): Promise<void> {
+	const meta = await readDocumentMeta(folder);
+	meta[filename] = { ...meta[filename], ...patch };
+	await writeDocumentMeta(folder, meta);
+}
+
+/** "report.docx" → "report (Patrick).docx". */
+function patrickCopyName(original: string): string {
+	const ext = extname(original);
+	return `${original.slice(0, original.length - ext.length)} (Patrick)${ext}`;
+}
+
+/** Pick a sibling name that doesn't collide: "x.docx" → "x 2.docx" → … */
+async function uniqueName(folder: string, candidate: string): Promise<string> {
+	const ext = extname(candidate);
+	const base = candidate.slice(0, candidate.length - ext.length);
+	let name = candidate;
+	let n = 2;
+	while (await fileExists(folder, name)) {
+		name = `${base} ${n}${ext}`;
+		n++;
+	}
+	return name;
+}
+
+/** Normalise user input to a safe, basename-only ".docx" name (no traversal). */
+function asDocxName(input: string | undefined): string {
+	const base = (input ?? "").trim().replaceAll(/[/\\]/g, "");
+	if (!base) return "Untitled.docx";
+	return base.toLowerCase().endsWith(".docx") ? base : `${base}.docx`;
+}
+
+/** Create a blank Patrick-owned .docx in the folder. Returns the chosen name. */
+export async function createBlankDocument(
+	folder: string,
+	candidate?: string,
+): Promise<string> {
+	const name = await uniqueName(folder, asDocxName(candidate));
+	await copyFile(BLANK_DOCX, join(folder, name));
+	await mergeDocumentMeta(folder, name, { createdInPatrick: true });
+	return name;
+}
+
+/**
+ * Unlock an original for editing: copy its bytes to a visible "(Patrick)" sibling
+ * in the same folder, carrying its label. The original is never touched.
+ * Returns the new filename, or null if the source is missing.
+ */
+export async function unlockDocumentCopy(
+	folder: string,
+	source: string,
+): Promise<string | null> {
+	if (!(await fileExists(folder, source))) return null;
+	const dest = await uniqueName(folder, patrickCopyName(source));
+	await copyFile(join(folder, source), join(folder, dest));
+	const meta = await readDocumentMeta(folder);
+	await mergeDocumentMeta(folder, dest, {
+		createdInPatrick: true,
+		label: meta[source]?.label,
+	});
+	return dest;
+}
+
+export type SaveResult = "ok" | "not-found" | "forbidden";
+
+/**
+ * Overwrite a document's bytes. Guards the attorney's originals: only files
+ * Patrick created (createdInPatrick) may be written — never an original.
+ */
+export async function saveDocumentBytes(
+	folder: string,
+	filename: string,
+	bytes: ArrayBuffer,
+): Promise<SaveResult> {
+	if (!(await fileExists(folder, filename))) return "not-found";
+	const meta = await readDocumentMeta(folder);
+	if (!meta[filename]?.createdInPatrick) return "forbidden";
+	await writeFile(join(folder, filename), Buffer.from(bytes));
+	return "ok";
+}
+
+/** Delete a Patrick-owned document (file + its meta entry). Originals refused. */
+export async function deleteDocument(
+	folder: string,
+	filename: string,
+): Promise<SaveResult> {
+	if (!(await fileExists(folder, filename))) return "not-found";
+	const meta = await readDocumentMeta(folder);
+	if (!meta[filename]?.createdInPatrick) return "forbidden";
+	await rm(join(folder, filename));
+	delete meta[filename];
+	await writeDocumentMeta(folder, meta);
+	return "ok";
+}
+
+export type RenameResult = { status: SaveResult; filename?: string };
+
+/** Rename a Patrick-owned document (file + its meta entry). Originals refused. */
+export async function renameDocument(
+	folder: string,
+	from: string,
+	to: string,
+): Promise<RenameResult> {
+	if (!(await fileExists(folder, from))) return { status: "not-found" };
+	const meta = await readDocumentMeta(folder);
+	if (!meta[from]?.createdInPatrick) return { status: "forbidden" };
+	const desired = asDocxName(to);
+	if (desired === from) return { status: "ok", filename: from };
+	const dest = await uniqueName(folder, desired);
+	await rename(join(folder, from), join(folder, dest));
+	meta[dest] = meta[from];
+	delete meta[from];
+	await writeDocumentMeta(folder, meta);
+	return { status: "ok", filename: dest };
 }
 
 export async function listDocuments(folder: string): Promise<Document[]> {
