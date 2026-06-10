@@ -9,8 +9,6 @@ export type PinnedSource = { filename: string; kind: "pdf" | "docx" };
 export type ExchangeContext = {
 	/** The detailed model id that ran this turn. */
 	model: string;
-	/** The exact system prompt sent — instructions + manifest, no doc content. */
-	system: string;
 	/** Read-only sources pinned into context (their content rides as messages). */
 	pinnedSources: PinnedSource[];
 	/** The editable draft in focus (driven by the editor tools), if any. */

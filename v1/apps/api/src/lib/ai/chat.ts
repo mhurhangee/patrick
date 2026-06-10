@@ -179,7 +179,7 @@ export async function handleChat(c: Context) {
 		messageMetadata: ({ part }): ExchangeMetadata | undefined => {
 			if (part.type === "start")
 				return {
-					context: { model: detailedModel, system, pinnedSources, activeDraft },
+					context: { model: detailedModel, pinnedSources, activeDraft },
 				};
 			if (part.type === "finish" && "totalUsage" in part)
 				return { usage: part.totalUsage };
