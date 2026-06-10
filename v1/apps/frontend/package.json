@@ -10,9 +10,11 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"@ai-sdk/react": "^3.0.200",
 		"@dnd-kit/dom": "^0.4.0",
 		"@dnd-kit/helpers": "^0.4.0",
 		"@dnd-kit/react": "^0.4.0",
+		"@eigenpal/docx-editor-agents": "^1.3.2",
 		"@eigenpal/docx-editor-react": "^1.3.2",
 		"@fontsource-variable/inter": "^5.2.8",
 		"@fontsource-variable/lora": "^5.2.8",
@@ -20,6 +22,7 @@
 		"@tailwindcss/vite": "^4",
 		"@tanstack/react-query": "^5.101.0",
 		"@tanstack/react-router": "^1.170.15",
+		"ai": "^6.0.198",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"lucide-react": "^1.17.0",

@@ -6,6 +6,7 @@ import { tasksApi } from "@/api/tasks";
 import { SaveStatus } from "@/components/save-status";
 import { Button } from "@/components/ui/button";
 import { useAutosave } from "@/hooks/use-autosave";
+import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";
 
 const MIN_ZOOM = 0.5;
@@ -42,6 +43,10 @@ export function DocxViewer({
 	}, [activeTaskId, filename]);
 
 	const { status } = useAutosave(rev, save, 1000);
+
+	// Editable docs register so AgentPat (in the chat panel) can drive tool calls
+	// against this live editor; the registry resolves the focused one.
+	useRegisterEditor(filename, editorRef, editable);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -84,6 +89,7 @@ export function DocxViewer({
 			<DocxEditor
 				ref={editorRef}
 				documentBuffer={buffer}
+				author="Attorney"
 				onChange={() => setRev((r) => r + 1)}
 				renderTitleBarRight={() => <SaveStatus status={status} />}
 			/>
