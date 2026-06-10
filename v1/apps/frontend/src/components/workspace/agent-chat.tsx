@@ -172,13 +172,21 @@ function ChatSession({
 	const [pinnedSources, setPinnedSources] = useState<PinnedSource[]>(
 		initial?.pinnedSources ?? [],
 	);
+	// When reopening a saved chat, sources already open in the viewer at mount are
+	// NOT absorbed into it (they may belong to other work) — only sources opened
+	// *during* this chat session pin. A fresh chat has no such exclusions.
+	const [ignoreAtMount] = useState(
+		() => new Set(initial ? openSources.map((s) => s.filename) : []),
+	);
 	useEffect(() => {
 		setPinnedSources((prev) => {
 			const seen = new Set(prev.map((p) => p.filename));
-			const additions = openSources.filter((s) => !seen.has(s.filename));
+			const additions = openSources.filter(
+				(s) => !seen.has(s.filename) && !ignoreAtMount.has(s.filename),
+			);
 			return additions.length ? [...prev, ...additions] : prev;
 		});
-	}, [openSources]);
+	}, [openSources, ignoreAtMount]);
 
 	// Patrick edits ONE live draft at a time (the editor tools bind to a single
 	// editor). The active draft is sticky: the focused editable doc, else the one
@@ -302,15 +310,25 @@ function ChatSession({
 					list.map((d) => (d.filename === filename ? { ...d, label } : d)),
 				);
 			},
+			// Return null on failure rather than throwing — the card awaits this and
+			// must always resolve the tool call, or the agent loop hangs forever.
 			createDraft: async (name) => {
-				const res = await createDoc.mutateAsync(name);
-				open(res.filename);
-				return res.filename;
+				try {
+					const res = await createDoc.mutateAsync(name);
+					open(res.filename);
+					return res.filename;
+				} catch {
+					return null;
+				}
 			},
 			unlockSource: async (filename) => {
-				const res = await unlockDoc.mutateAsync(filename);
-				open(res.filename);
-				return res.filename;
+				try {
+					const res = await unlockDoc.mutateAsync(filename);
+					open(res.filename);
+					return res.filename;
+				} catch {
+					return null;
+				}
 			},
 			saveNote: (note) => {
 				const t = taskRef.current;
@@ -481,6 +499,10 @@ function ChatSession({
 	function send() {
 		const text = input.trim();
 		if (!text || busy || !canSend) return;
+		// Freeze the instructions at first send — one system prompt per chat. Until
+		// now the template follows the live profile (chatTemplate null); snapshot it
+		// so later profile edits don't rewrite this chat's prompt.
+		if (chatTemplate === null) setChatTemplate(template);
 		sendStartRef.current = Date.now();
 		sendMessage({ text });
 		setInput("");
