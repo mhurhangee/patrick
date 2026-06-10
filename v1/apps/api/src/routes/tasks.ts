@@ -2,6 +2,7 @@ import { basename, extname, join } from "node:path";
 import { createTask, type DocumentMeta, type Task } from "@patrick/shared";
 import { Hono } from "hono";
 import { handleChat, handleChatPreview } from "../lib/ai/chat";
+import { deleteChat, listChats, readChat } from "../lib/chats";
 import {
 	createBlankDocument,
 	deleteDocument,
@@ -21,6 +22,25 @@ export const tasks = new Hono();
 tasks.post("/:id/chat", handleChat);
 // Preview the assembled prompt + context for the current open set (no LLM call).
 tasks.post("/:id/chat/preview", handleChatPreview);
+
+// Persisted chats (under <folder>/.patrick/chats). Saved on each turn's finish.
+tasks.get("/:id/chats", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	return c.json(await listChats(task.folder));
+});
+tasks.get("/:id/chats/:chatId", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const chat = await readChat(task.folder, c.req.param("chatId"));
+	return chat ? c.json(chat) : c.json({ error: "not found" }, 404);
+});
+tasks.delete("/:id/chats/:chatId", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	await deleteChat(task.folder, c.req.param("chatId"));
+	return c.json({ ok: true });
+});
 
 tasks.get("/", async (c) => c.json(await listTasks()));
 

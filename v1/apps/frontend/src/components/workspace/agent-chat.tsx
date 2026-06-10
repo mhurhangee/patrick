@@ -2,6 +2,7 @@ import { useChat } from "@ai-sdk/react";
 import { useDocxAgentTools } from "@eigenpal/docx-editor-agents/react";
 import type { DocxEditorRef } from "@eigenpal/docx-editor-react";
 import {
+	type Chat,
 	contextWindowFor,
 	type ExchangeContext,
 	type ExchangeMetadata,
@@ -15,7 +16,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai";
-import { ChevronDown, SendHorizontal, Square } from "lucide-react";
+import { ChevronDown, Loader2, SendHorizontal, Square } from "lucide-react";
 import {
 	type RefObject,
 	useEffect,
@@ -27,7 +28,9 @@ import {
 import { BASE_URL } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
 import { useProfile } from "@/hooks/use-profiles";
+import { useActiveChat } from "@/lib/active-chat";
 import { useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
@@ -70,23 +73,65 @@ function textOf(msg: UIMessage | null): string {
 		.join("\n");
 }
 
+// Loads the active chat's persisted state, then mounts a session keyed by its id
+// so switching chats remounts with fresh history.
 export function AgentChat() {
 	const { activeTaskId } = useActiveTask();
+	const { activeChatId } = useActiveChat();
+	const { data: stored, isLoading } = useStoredChat(activeTaskId, activeChatId);
+
+	if (isLoading) {
+		return (
+			<div className="flex h-full items-center justify-center">
+				<Loader2 className="size-4 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
+	return (
+		<ChatSession
+			key={activeChatId}
+			chatId={activeChatId}
+			initial={stored ?? null}
+		/>
+	);
+}
+
+function ChatSession({
+	chatId,
+	initial,
+}: {
+	chatId: string;
+	initial: Chat | null;
+}) {
+	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
+	const { newChat } = useActiveChat();
 	const { data: profile } = useProfile(activeProfileId);
 	const modelId = profile?.ai.detailedModel ?? null;
 	const profileTemplate = profile?.prompts.agentpat ?? "";
+	const refreshChats = useRefreshChats(activeTaskId);
 	const { columnList, focused, getDoc } = useWorkspace();
 
-	// This chat's instructions: seeded from the profile, editable until the first
-	// message, then locked (one system per chat). Ephemeral — never written back
-	// to the profile.
-	const [chatTemplate, setChatTemplate] = useState<string | null>(null);
-	useEffect(() => {
-		if (chatTemplate === null && profileTemplate)
-			setChatTemplate(profileTemplate);
-	}, [profileTemplate, chatTemplate]);
+	// This chat's instructions. null ⇒ "follow the profile" (so editing the
+	// profile prompt updates a fresh chat live); a non-null value is this chat's
+	// own edit (a loaded chat seeds from its locked template). Frozen at first
+	// send (one system per chat).
+	const [chatTemplate, setChatTemplate] = useState<string | null>(
+		initial?.systemTemplate ?? null,
+	);
 	const template = chatTemplate ?? profileTemplate;
+
+	// Seed messages from the persisted chat (empty for a new one).
+	const initialMessages = useMemo<UIMessage[]>(
+		() =>
+			(initial?.messages ?? []).map((m) => ({
+				id: m.id,
+				role: m.role,
+				parts: m.parts as UIMessage["parts"],
+				metadata: m.metadata,
+			})),
+		[initial],
+	);
 
 	// Read-only sources currently open in the viewer. Opening one pins it to the
 	// chat (OPEN = CONTEXT); see the accumulation below.
@@ -100,7 +145,10 @@ export function AgentChat() {
 
 	// Pinned sources are append-only for the chat's life: once a source is opened
 	// it stays in context even if its tab is closed (start a new chat to reset).
-	const [pinnedSources, setPinnedSources] = useState<PinnedSource[]>([]);
+	// Seeded from the persisted chat when reopening one.
+	const [pinnedSources, setPinnedSources] = useState<PinnedSource[]>(
+		initial?.pinnedSources ?? [],
+	);
 	useEffect(() => {
 		setPinnedSources((prev) => {
 			const seen = new Set(prev.map((p) => p.filename));
@@ -147,14 +195,18 @@ export function AgentChat() {
 	profileIdRef.current = activeProfileId;
 	const templateRef = useRef(template);
 	templateRef.current = template;
+	const refreshChatsRef = useRef(refreshChats);
+	refreshChatsRef.current = refreshChats;
 
 	const { messages, sendMessage, status, stop, addToolResult, regenerate } =
 		useChat({
+			messages: initialMessages,
 			transport: new DefaultChatTransport({
 				api: `${BASE_URL}/tasks/${activeTaskId}/chat`,
 				prepareSendMessagesRequest: ({ messages: msgs }) => ({
 					body: {
 						messages: msgs,
+						chatId,
 						profileId: profileIdRef.current,
 						pinnedSources: pinnedRef.current,
 						activeDraft: activeDraftRef.current,
@@ -329,15 +381,14 @@ export function AgentChat() {
 				latestExchangeId in p ? p : { ...p, [latestExchangeId]: ttft },
 			);
 		}
-		if (
-			prevBusyRef.current &&
-			!busy &&
-			sendStartRef.current &&
-			latestExchangeId
-		) {
-			const dur = Date.now() - sendStartRef.current;
-			sendStartRef.current = null;
-			setDurations((p) => ({ ...p, [latestExchangeId]: dur }));
+		if (prevBusyRef.current && !busy) {
+			// Turn finished and the chat persisted server-side — refresh the sidebar.
+			refreshChatsRef.current();
+			if (sendStartRef.current && latestExchangeId) {
+				const dur = Date.now() - sendStartRef.current;
+				sendStartRef.current = null;
+				setDurations((p) => ({ ...p, [latestExchangeId]: dur }));
+			}
 		}
 		prevStatusRef.current = status;
 		prevBusyRef.current = busy;
@@ -397,8 +448,10 @@ export function AgentChat() {
 				pinnedSources={pinnedSources}
 				activeDraft={activeDraft}
 				template={template}
+				edited={chatTemplate !== null}
 				onChangeTemplate={setChatTemplate}
-				onReset={() => setChatTemplate(profileTemplate)}
+				onReset={() => setChatTemplate(null)}
+				onNewChat={newChat}
 				locked={messages.length > 0}
 			/>
 

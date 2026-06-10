@@ -1,5 +1,5 @@
 import type { PinnedSource } from "@patrick/shared";
-import { ChevronDown, Lock, RotateCcw } from "lucide-react";
+import { ChevronDown, Lock, RotateCcw, SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,10 @@ export function SystemCard({
 	pinnedSources,
 	activeDraft,
 	template,
+	edited,
 	onChangeTemplate,
 	onReset,
+	onNewChat,
 	locked,
 }: {
 	taskId: string | undefined;
@@ -25,8 +27,11 @@ export function SystemCard({
 	pinnedSources: PinnedSource[];
 	activeDraft: string | null;
 	template: string;
+	/** True when this chat has its own edit (vs following the profile). */
+	edited: boolean;
 	onChangeTemplate: (t: string) => void;
 	onReset: () => void;
+	onNewChat: () => void;
 	locked: boolean;
 }) {
 	const [open, setOpen] = useState(false);
@@ -70,25 +75,35 @@ export function SystemCard({
 
 	return (
 		<div>
-			<button
-				type="button"
-				onClick={() => setOpen((o) => !o)}
-				className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-accent/40"
-			>
-				<Logo size={18} />
-				<span className="text-lg font-heading font-semibold tracking-tighter">
-					Patrick
-				</span>
-				<span className="ml-auto truncate text-xs text-muted-foreground">
-					{summary}
-				</span>
-				<ChevronDown
-					className={cn(
-						"size-4 shrink-0 text-muted-foreground transition-transform",
-						open && "rotate-180",
-					)}
-				/>
-			</button>
+			<div className="flex items-center gap-1 pr-2">
+				<button
+					type="button"
+					onClick={() => setOpen((o) => !o)}
+					className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2.5 text-left hover:bg-accent/40"
+				>
+					<Logo size={18} />
+					<span className="font-heading text-lg font-semibold tracking-tighter">
+						Patrick
+					</span>
+					<span className="ml-auto truncate text-xs text-muted-foreground">
+						{summary}
+					</span>
+					<ChevronDown
+						className={cn(
+							"size-4 shrink-0 text-muted-foreground transition-transform",
+							open && "rotate-180",
+						)}
+					/>
+				</button>
+				<button
+					type="button"
+					onClick={onNewChat}
+					title="New chat"
+					className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+				>
+					<SquarePen className="size-4" />
+				</button>
+			</div>
 
 			{open && (
 				<div className="space-y-3 border-t bg-muted/20 px-4 py-3">
@@ -98,7 +113,7 @@ export function SystemCard({
 								Instructions
 								{locked && <Lock className="size-2.5" />}
 							</span>
-							{!locked && template.trim() && (
+							{!locked && edited && (
 								<button
 									type="button"
 									onClick={onReset}

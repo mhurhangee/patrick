@@ -6,6 +6,7 @@ import { routeTree } from "./routeTree.gen";
 import "./index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ActiveChatProvider } from "@/lib/active-chat";
 import { ActiveProfileProvider } from "@/lib/active-profile";
 import { ActiveTaskProvider } from "@/lib/active-task";
 import { queryClient } from "@/lib/query-client";
@@ -26,11 +27,13 @@ createRoot(rootElement).render(
 		<QueryClientProvider client={queryClient}>
 			<ActiveProfileProvider>
 				<ActiveTaskProvider>
-					<ThemeProvider>
-						<TooltipProvider>
-							<RouterProvider router={router} />
-						</TooltipProvider>
-					</ThemeProvider>
+					<ActiveChatProvider>
+						<ThemeProvider>
+							<TooltipProvider>
+								<RouterProvider router={router} />
+							</TooltipProvider>
+						</ThemeProvider>
+					</ActiveChatProvider>
 				</ActiveTaskProvider>
 			</ActiveProfileProvider>
 		</QueryClientProvider>

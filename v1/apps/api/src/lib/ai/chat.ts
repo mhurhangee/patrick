@@ -11,6 +11,7 @@ import {
 	type UIMessage,
 } from "ai";
 import type { Context } from "hono";
+import { saveChat } from "../chats";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
 import { createModel, reasoningOptions } from "./model";
@@ -31,6 +32,8 @@ const TOOL_ALLOW = new Set([
 type RequestBody = {
 	messages: UIMessage[];
 	profileId: string;
+	/** The chat being written to (persisted under .patrick/chats on each turn). */
+	chatId?: string;
 	/** Read-only sources pinned into context (append-only for the chat's life). */
 	pinnedSources?: PinnedSource[];
 	/** The editable draft in focus — driven by the editor tools, not pinned. */
@@ -198,6 +201,28 @@ export async function handleChat(c: Context) {
 			if (part.type === "finish" && "totalUsage" in part)
 				return { usage: part.totalUsage };
 			return undefined;
+		},
+		// Persist on every finish (one fires per tool round-trip). onFinish's
+		// `messages` is only the response side — the user message + prior history
+		// live in body.messages (the client re-sends the full conversation each
+		// request). Merge them by id so the saved chat is the whole conversation.
+		onFinish: async ({ responseMessage }) => {
+			if (!body.chatId) return;
+			const byId = new Map<string, UIMessage>();
+			for (const m of body.messages) byId.set(m.id, m);
+			byId.set(responseMessage.id, responseMessage);
+			await saveChat(task.folder, {
+				id: body.chatId,
+				systemTemplate: body.templateOverride ?? profile.prompts.agentpat,
+				pinnedSources,
+				messages: [...byId.values()].map((m) => ({
+					id: m.id,
+					role: m.role === "assistant" ? "assistant" : "user",
+					parts: m.parts as unknown[],
+					metadata: m.metadata,
+					createdAt: new Date().toISOString(),
+				})),
+			});
 		},
 	});
 }

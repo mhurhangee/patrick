@@ -1,4 +1,6 @@
 import type {
+	Chat,
+	ChatSummary,
 	Document,
 	DocumentMeta,
 	PinnedSource,
@@ -20,6 +22,13 @@ export const tasksApi = {
 	/** Resolve the exact system prompt a turn would send, without a model call. */
 	chatPreview: (id: string, body: ChatPreviewBody) =>
 		api.post<{ system: string }>(`/tasks/${id}/chat/preview`, body),
+	/** Persisted chats for a task (sidebar list). */
+	chats: (id: string) => api.get<ChatSummary[]>(`/tasks/${id}/chats`),
+	/** Load a full persisted chat (messages + locked template + pinned set). */
+	chat: (id: string, chatId: string) =>
+		api.get<Chat>(`/tasks/${id}/chats/${chatId}`),
+	removeChat: (id: string, chatId: string) =>
+		api.del<{ ok: boolean }>(`/tasks/${id}/chats/${chatId}`),
 	/** Raw URL for a document's bytes (for the PDF/docx viewers). */
 	fileUrl: (id: string, filename: string) =>
 		`${BASE_URL}/tasks/${id}/documents/${encodeURIComponent(filename)}`,
