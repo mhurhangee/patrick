@@ -69,6 +69,31 @@ export function useRegisterEditor(
 	}, [id, ref, enabled, registry]);
 }
 
+/** Resolve once the editor for `id` is mounted AND its document agent is ready
+ *  to take tool calls. Used to gate a freshly-created/unlocked draft: opening it
+ *  mounts the editor and loads its bytes asynchronously, so the agent's first
+ *  edit would otherwise race the editor and silently fail. Resolves `false` on
+ *  timeout (the caller proceeds anyway — worst case a retry). */
+export function useEditorReadiness(): (
+	id: string,
+	timeoutMs?: number,
+) => Promise<boolean> {
+	const registry = useEditorRegistry();
+	return useCallback(
+		(id: string, timeoutMs = 5000) =>
+			new Promise<boolean>((resolve) => {
+				const start = Date.now();
+				const tick = () => {
+					if (registry.getEditor(id)?.getAgent()) return resolve(true);
+					if (Date.now() - start > timeoutMs) return resolve(false);
+					setTimeout(tick, 80);
+				};
+				tick();
+			}),
+		[registry],
+	);
+}
+
 /** A stable ref whose `.current` always resolves to the editor for `id` right
  *  now — survives editors mounting/unmounting as tabs change. */
 export function useEditorRefFor(
