@@ -1,7 +1,0 @@
-node_modules/
-dist/
-*.local
-*.tsbuildinfo
-
-# api compiled binary (bun build --compile)
-apps/api/bin/
