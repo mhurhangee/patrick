@@ -83,10 +83,12 @@ function ChatRow({
 				onClick={onOpen}
 				className="min-w-0 flex-1 text-left"
 			>
-				<span className="block truncate text-sm">{chat.title}</span>
-				{chat.preview && (
+				<span className="block truncate text-sm">
+					{chat.lastUser || "New chat"}
+				</span>
+				{chat.lastAssistant && (
 					<span className="block truncate text-xs text-muted-foreground">
-						{chat.preview}
+						{chat.lastAssistant}
 					</span>
 				)}
 			</button>

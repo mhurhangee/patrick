@@ -29,6 +29,12 @@ export const tasksApi = {
 		api.get<Chat>(`/tasks/${id}/chats/${chatId}`),
 	removeChat: (id: string, chatId: string) =>
 		api.del<{ ok: boolean }>(`/tasks/${id}/chats/${chatId}`),
+	/** Write a chat record directly (Fork: materialise a sliced copy). */
+	saveChat: (
+		id: string,
+		chatId: string,
+		body: Pick<Chat, "systemTemplate" | "pinnedSources" | "messages">,
+	) => api.put<Chat>(`/tasks/${id}/chats/${chatId}`, body),
 	/** Raw URL for a document's bytes (for the PDF/docx viewers). */
 	fileUrl: (id: string, filename: string) =>
 		`${BASE_URL}/tasks/${id}/documents/${encodeURIComponent(filename)}`,

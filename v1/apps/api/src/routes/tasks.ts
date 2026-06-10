@@ -1,8 +1,13 @@
 import { basename, extname, join } from "node:path";
-import { createTask, type DocumentMeta, type Task } from "@patrick/shared";
+import {
+	type Chat,
+	createTask,
+	type DocumentMeta,
+	type Task,
+} from "@patrick/shared";
 import { Hono } from "hono";
 import { handleChat, handleChatPreview } from "../lib/ai/chat";
-import { deleteChat, listChats, readChat } from "../lib/chats";
+import { deleteChat, listChats, readChat, saveChat } from "../lib/chats";
 import {
 	createBlankDocument,
 	deleteDocument,
@@ -34,6 +39,22 @@ tasks.get("/:id/chats/:chatId", async (c) => {
 	if (!task) return c.json({ error: "not found" }, 404);
 	const chat = await readChat(task.folder, c.req.param("chatId"));
 	return chat ? c.json(chat) : c.json({ error: "not found" }, 404);
+});
+// Write a chat record directly (used by Fork to materialise a sliced copy).
+tasks.put("/:id/chats/:chatId", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const body =
+		await c.req.json<
+			Pick<Chat, "systemTemplate" | "pinnedSources" | "messages">
+		>();
+	const chat = await saveChat(task.folder, {
+		id: c.req.param("chatId"),
+		systemTemplate: body.systemTemplate,
+		pinnedSources: body.pinnedSources,
+		messages: body.messages,
+	});
+	return c.json(chat);
 });
 tasks.delete("/:id/chats/:chatId", async (c) => {
 	const task = await readTask(c.req.param("id"));

@@ -26,6 +26,7 @@ import {
 	useState,
 } from "react";
 import { BASE_URL } from "@/api/client";
+import { tasksApi } from "@/api/tasks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
@@ -105,7 +106,7 @@ function ChatSession({
 }) {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
-	const { newChat } = useActiveChat();
+	const { newChat, selectChat } = useActiveChat();
 	const { data: profile } = useProfile(activeProfileId);
 	const modelId = profile?.ai.detailedModel ?? null;
 	const profileTemplate = profile?.prompts.agentpat ?? "";
@@ -198,44 +199,51 @@ function ChatSession({
 	const refreshChatsRef = useRef(refreshChats);
 	refreshChatsRef.current = refreshChats;
 
-	const { messages, sendMessage, status, stop, addToolResult, regenerate } =
-		useChat({
-			messages: initialMessages,
-			transport: new DefaultChatTransport({
-				api: `${BASE_URL}/tasks/${activeTaskId}/chat`,
-				prepareSendMessagesRequest: ({ messages: msgs }) => ({
-					body: {
-						messages: msgs,
-						chatId,
-						profileId: profileIdRef.current,
-						pinnedSources: pinnedRef.current,
-						activeDraft: activeDraftRef.current,
-						templateOverride: templateRef.current,
-					},
-				}),
+	const {
+		messages,
+		sendMessage,
+		status,
+		stop,
+		addToolResult,
+		regenerate,
+		setMessages,
+	} = useChat({
+		messages: initialMessages,
+		transport: new DefaultChatTransport({
+			api: `${BASE_URL}/tasks/${activeTaskId}/chat`,
+			prepareSendMessagesRequest: ({ messages: msgs }) => ({
+				body: {
+					messages: msgs,
+					chatId,
+					profileId: profileIdRef.current,
+					pinnedSources: pinnedRef.current,
+					activeDraft: activeDraftRef.current,
+					templateOverride: templateRef.current,
+				},
 			}),
-			// After a client tool resolves, resubmit so the agent loop continues.
-			sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-			async onToolCall({ toolCall }) {
-				let output: unknown;
-				try {
-					output = executeToolCall(
-						toolCall.toolName,
-						toolCall.input as Record<string, unknown>,
-					);
-				} catch (err) {
-					output = {
-						success: false,
-						error: err instanceof Error ? err.message : "tool execution failed",
-					};
-				}
-				addToolResult({
-					tool: toolCall.toolName,
-					toolCallId: toolCall.toolCallId,
-					output,
-				});
-			},
-		});
+		}),
+		// After a client tool resolves, resubmit so the agent loop continues.
+		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+		async onToolCall({ toolCall }) {
+			let output: unknown;
+			try {
+				output = executeToolCall(
+					toolCall.toolName,
+					toolCall.input as Record<string, unknown>,
+				);
+			} catch (err) {
+				output = {
+					success: false,
+					error: err instanceof Error ? err.message : "tool execution failed",
+				};
+			}
+			addToolResult({
+				tool: toolCall.toolName,
+				toolCallId: toolCall.toolCallId,
+				output,
+			});
+		},
+	});
 
 	const [input, setInput] = useState("");
 	const canSend = !!activeTaskId && !!activeProfileId;
@@ -409,6 +417,38 @@ function ChatSession({
 		});
 	}
 
+	// Edit (redo): drop this exchange and everything after, and put the prompt back
+	// in the composer to tweak and resend. Latest exchange only.
+	function editExchange(ex: Exchange) {
+		const idx = messages.findIndex((m) => m.id === ex.userMsg.id);
+		if (idx !== -1) setMessages(messages.slice(0, idx));
+		setInput(textOf(ex.userMsg));
+	}
+
+	// Fork: copy the conversation up to and including this exchange into a new
+	// chat, then switch to it. The original is untouched.
+	async function forkExchange(ex: Exchange) {
+		const exIdx = exchanges.findIndex((e) => e.id === ex.id);
+		const next = exchanges[exIdx + 1];
+		const cut = next
+			? messages.findIndex((m) => m.id === next.userMsg.id)
+			: messages.length;
+		const newId = crypto.randomUUID();
+		await tasksApi.saveChat(activeTaskId ?? "", newId, {
+			systemTemplate: template,
+			pinnedSources,
+			messages: messages.slice(0, cut).map((m) => ({
+				id: m.id,
+				role: m.role === "assistant" ? "assistant" : "user",
+				parts: m.parts as unknown[],
+				metadata: m.metadata,
+				createdAt: new Date().toISOString(),
+			})),
+		});
+		refreshChats();
+		selectChat(newId);
+	}
+
 	function togglePanel(id: string) {
 		setExpanded((prev) => {
 			const next = new Set(prev);
@@ -505,7 +545,9 @@ function ChatSession({
 												const t = textOf(ex.assistantMsg);
 												if (t) navigator.clipboard.writeText(t);
 											}}
+											onEdit={isLatest ? () => editExchange(ex) : undefined}
 											onRetry={isLatest ? () => regenerate() : undefined}
+											onFork={() => forkExchange(ex)}
 										/>
 									)}
 								</div>

@@ -5,6 +5,8 @@ import {
 	ChevronUp,
 	Copy,
 	FileText,
+	GitFork,
+	Pencil,
 	Pin,
 	RotateCcw,
 } from "lucide-react";
@@ -83,13 +85,18 @@ export function ExchangePanel({
 	isExpanded,
 	onToggle,
 	onCopy,
+	onEdit,
 	onRetry,
+	onFork,
 }: {
 	data: ExchangePanelData;
 	isExpanded: boolean;
 	onToggle: () => void;
 	onCopy: () => void;
+	/** Edit & resend — latest exchange only. */
+	onEdit?: () => void;
 	onRetry?: () => void;
+	onFork: () => void;
 }) {
 	const [copied, setCopied] = useState(false);
 
@@ -109,11 +116,19 @@ export function ExchangePanel({
 					>
 						{copied ? <Check /> : <Copy />}
 					</Action>
+					{onEdit && (
+						<Action label="Edit & resend" onClick={onEdit}>
+							<Pencil />
+						</Action>
+					)}
 					{onRetry && (
 						<Action label="Retry" onClick={onRetry}>
 							<RotateCcw />
 						</Action>
 					)}
+					<Action label="Fork to a new chat" onClick={onFork}>
+						<GitFork />
+					</Action>
 				</div>
 				<button
 					type="button"

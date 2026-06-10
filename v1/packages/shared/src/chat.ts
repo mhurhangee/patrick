@@ -52,12 +52,14 @@ export type Chat = {
 	messages: StoredChatMessage[];
 };
 
-/** Lightweight shape for the sidebar list. */
+/** Lightweight shape for the sidebar list — shows the latest exchange. */
 export type ChatSummary = {
 	id: string;
-	title: string;
 	updatedAt: string;
-	preview: string;
+	/** Latest user message (slice). */
+	lastUser: string;
+	/** Latest assistant reply (slice). */
+	lastAssistant: string;
 };
 
 /** First line of the first user message, for the title/preview. */

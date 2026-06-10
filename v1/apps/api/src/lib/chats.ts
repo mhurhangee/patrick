@@ -1,6 +1,11 @@
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { type Chat, type ChatSummary, chatTitleFrom } from "@patrick/shared";
+import {
+	type Chat,
+	type ChatSummary,
+	chatTitleFrom,
+	type StoredChatMessage,
+} from "@patrick/shared";
 
 // Chats live as JSON files in <folder>/.patrick/chats/<id>.json. No index file —
 // we derive the sidebar list by reading the chats directly (local, single-user,
@@ -12,12 +17,18 @@ function chatPath(folder: string, id: string): string {
 	return join(chatsDir(folder), `${id}.json`);
 }
 
-function previewOf(chat: Chat): string {
-	const lastAssistant = [...chat.messages]
+// Last message of a role, as a one-line slice (the most recent text part).
+function lastText(
+	messages: StoredChatMessage[],
+	role: "user" | "assistant",
+): string {
+	const msg = [...messages].reverse().find((m) => m.role === role);
+	const parts = msg?.parts as
+		| Array<{ type: string; text?: string }>
+		| undefined;
+	const text = [...(parts ?? [])]
 		.reverse()
-		.find((m) => m.role === "assistant");
-	const text = (lastAssistant?.parts as Array<{ type: string; text?: string }>)
-		?.find((p) => p.type === "text" && typeof p.text === "string")
+		.find((p) => p.type === "text" && typeof p.text === "string")
 		?.text?.trim();
 	return text ? text.replace(/\s+/g, " ").slice(0, 100) : "";
 }
@@ -36,9 +47,9 @@ export async function listChats(folder: string): Promise<ChatSummary[]> {
 		if (chat)
 			summaries.push({
 				id: chat.id,
-				title: chat.title,
 				updatedAt: chat.updatedAt,
-				preview: previewOf(chat),
+				lastUser: lastText(chat.messages, "user"),
+				lastAssistant: lastText(chat.messages, "assistant"),
 			});
 	}
 	// Most recently touched first.
