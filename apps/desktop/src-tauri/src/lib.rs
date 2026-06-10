@@ -1,5 +1,6 @@
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
@@ -47,6 +48,21 @@ pub fn run() {
           }
         }
       });
+
+      // Wait until the sidecar is actually accepting connections before opening
+      // the window, so the frontend's first requests (incl. non-retried mutations
+      // and the chat stream) don't race the API's cold start. Cap the wait so a
+      // sidecar that never comes up doesn't hang launch — open anyway and let the
+      // UI surface the failure.
+      let addr = format!("127.0.0.1:{port}");
+      let deadline = Instant::now() + Duration::from_secs(10);
+      while TcpStream::connect(&addr).is_err() {
+        if Instant::now() >= deadline {
+          log::warn!("API sidecar not reachable on {addr} after 10s; opening window anyway");
+          break;
+        }
+        std::thread::sleep(Duration::from_millis(50));
+      }
 
       WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
         .title("Patrick")
