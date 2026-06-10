@@ -3,12 +3,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatTokens } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-function formatTokens(n: number): string {
-	if (n >= 1000) return `${(n / 1000).toFixed(n >= 100_000 ? 0 : 1)}k`;
-	return `${n}`;
-}
 
 function formatUsd(n: number): string {
 	if (n < 0.01) return "<$0.01";

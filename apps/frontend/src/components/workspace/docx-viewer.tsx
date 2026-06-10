@@ -8,14 +8,11 @@ import { Button } from "@/components/ui/button";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";
+import { formatTokens } from "@/lib/format";
 
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.1;
-
-function formatTokens(n: number): string {
-	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
-}
 
 /**
  * Renders a .docx via @eigenpal/docx-editor (ProseMirror). Originals open

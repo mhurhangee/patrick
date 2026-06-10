@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profiles";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { formatTokens } from "@/lib/format";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -20,10 +21,6 @@ const MAX_SCALE = 2.5;
 const STEP = 0.2;
 // Render the current page ± this many pages; the rest stay blank placeholders.
 const OVERSCAN = 3;
-
-function formatTokens(n: number): string {
-	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
-}
 
 export function PdfViewer({ filename }: { filename: string }) {
 	const { activeTaskId } = useActiveTask();
