@@ -24,14 +24,29 @@ function NotesEditor({ task }: { task: Task }) {
 	const focused = useRef(false);
 	const taskRef = useRef(task);
 	taskRef.current = task;
+	const valueRef = useRef(value);
+	valueRef.current = value;
+	const lastSynced = useRef(task.notes ?? "");
 
 	const { status } = useAutosave(value, (notes) =>
 		update.mutate({ ...taskRef.current, notes }),
 	);
 
-	// Reflect external changes (Patrick's saveNote) when not mid-edit.
+	// Reflect external changes to notes (Patrick's saveNote). If they arrive while
+	// the attorney is typing, splice the appended tail onto the in-progress value
+	// rather than discarding either edit (last-writer-wins would lose Patrick's).
 	useEffect(() => {
-		if (!focused.current) setValue(task.notes ?? "");
+		const ext = task.notes ?? "";
+		if (ext === lastSynced.current || ext === valueRef.current) {
+			lastSynced.current = ext;
+			return; // unchanged, or our own autosave echoing back
+		}
+		if (!focused.current) {
+			setValue(ext);
+		} else if (ext.startsWith(lastSynced.current)) {
+			setValue(valueRef.current + ext.slice(lastSynced.current.length));
+		}
+		lastSynced.current = ext;
 	}, [task.notes]);
 
 	return (
