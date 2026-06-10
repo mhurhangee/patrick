@@ -110,12 +110,15 @@ export async function createBlankDocument(
 /**
  * Unlock an original for editing: copy its bytes to a visible "(Patrick)" sibling
  * in the same folder, carrying its label. The original is never touched.
- * Returns the new filename, or null if the source is missing.
+ * Returns the new filename, or null if the source is missing or not a .docx —
+ * only Word documents are editable (editable ≡ createdInPatrick && .docx), so an
+ * "editable copy" of a PDF would be an owned-but-uneditable dead end.
  */
 export async function unlockDocumentCopy(
 	folder: string,
 	source: string,
 ): Promise<string | null> {
+	if (!source.toLowerCase().endsWith(".docx")) return null;
 	if (!(await fileExists(folder, source))) return null;
 	const dest = await uniqueName(folder, patrickCopyName(source));
 	await copyFile(join(folder, source), join(folder, dest));
