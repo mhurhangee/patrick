@@ -5,7 +5,14 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai";
-import { ChevronRight, FolderOpen, Loader2, Tag } from "lucide-react";
+import {
+	ChevronRight,
+	FilePen,
+	FilePlus,
+	FolderOpen,
+	Loader2,
+	Tag,
+} from "lucide-react";
 import { type FC, type ReactNode, useState } from "react";
 import { Streamdown } from "streamdown";
 import { Button } from "@/components/ui/button";
@@ -207,6 +214,10 @@ export type ToolUiHandlers = {
 	pinSource: (filename: string) => void;
 	/** Apply a label to a document (suggestLabel acceptance). */
 	setLabel: (filename: string, label: string) => void;
+	/** Create a blank draft + open it; resolves to its filename (createDraft). */
+	createDraft: (name: string) => Promise<string | null>;
+	/** Make an editable copy of an original + open it (requestUnlock). */
+	unlockSource: (filename: string) => Promise<string | null>;
 };
 
 const HITL_CARDS: Record<
@@ -215,6 +226,8 @@ const HITL_CARDS: Record<
 > = {
 	requestOpenFile: RequestOpenFileCard,
 	suggestLabel: SuggestLabelCard,
+	createDraft: CreateDraftCard,
+	requestUnlock: RequestUnlockCard,
 };
 
 /** Tool names handled by a HITL card (so the client doesn't auto-resolve them). */
@@ -378,6 +391,152 @@ function SuggestLabelCard({
 					className="h-7"
 					onClick={() => respond(false)}
 				>
+					No
+				</Button>
+			</div>
+		</HitlCard>
+	);
+}
+
+// Patrick proposes starting a new draft; the attorney creates or declines.
+function CreateDraftCard({
+	part,
+	handlers,
+}: {
+	part: AnyToolPart;
+	handlers: ToolUiHandlers;
+}) {
+	const name = (part.input as { name?: string } | undefined)?.name ?? "a draft";
+
+	const accept = async () => {
+		const filename = await handlers.createDraft(name);
+		handlers.addToolResult({
+			tool: "createDraft",
+			toolCallId: part.toolCallId,
+			output: filename ? { created: true, filename } : { created: false },
+		});
+	};
+	const reject = () =>
+		handlers.addToolResult({
+			tool: "createDraft",
+			toolCallId: part.toolCallId,
+			output: { created: false },
+		});
+
+	if (part.state === "output-available") {
+		const out = part.output as
+			| { created?: boolean; filename?: string }
+			| undefined;
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">
+					{out?.created ? (
+						<>
+							Created <span className="font-medium">{out.filename}</span> — now
+							your active draft.
+						</>
+					) : (
+						<>No draft created.</>
+					)}
+				</span>
+			</HitlCard>
+		);
+	}
+	if (part.state === "input-streaming")
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">Preparing…</span>
+			</HitlCard>
+		);
+
+	return (
+		<HitlCard>
+			<div className="flex items-center gap-2">
+				<FilePlus size={13} className="shrink-0 text-muted-foreground" />
+				<span className="text-foreground">
+					Start a new draft: <span className="font-medium">{name}</span>?
+				</span>
+			</div>
+			<div className="mt-2 flex gap-2 pl-5">
+				<Button size="sm" className="h-7" onClick={accept}>
+					Create
+				</Button>
+				<Button size="sm" variant="ghost" className="h-7" onClick={reject}>
+					No
+				</Button>
+			</div>
+		</HitlCard>
+	);
+}
+
+// Patrick proposes making an editable copy of an original to draft amendments in.
+function RequestUnlockCard({
+	part,
+	handlers,
+}: {
+	part: AnyToolPart;
+	handlers: ToolUiHandlers;
+}) {
+	const filename =
+		(part.input as { filename?: string } | undefined)?.filename ?? "a document";
+
+	const accept = async () => {
+		const copy = await handlers.unlockSource(filename);
+		handlers.addToolResult({
+			tool: "requestUnlock",
+			toolCallId: part.toolCallId,
+			output: copy ? { unlocked: true, filename: copy } : { unlocked: false },
+		});
+	};
+	const reject = () =>
+		handlers.addToolResult({
+			tool: "requestUnlock",
+			toolCallId: part.toolCallId,
+			output: { unlocked: false },
+		});
+
+	if (part.state === "output-available") {
+		const out = part.output as
+			| { unlocked?: boolean; filename?: string }
+			| undefined;
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">
+					{out?.unlocked ? (
+						<>
+							Created editable copy{" "}
+							<span className="font-medium">{out.filename}</span>.
+						</>
+					) : (
+						<>
+							Left <span className="font-medium">{filename}</span> as-is.
+						</>
+					)}
+				</span>
+			</HitlCard>
+		);
+	}
+	if (part.state === "input-streaming")
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">Preparing…</span>
+			</HitlCard>
+		);
+
+	return (
+		<HitlCard>
+			<div className="flex items-center gap-2">
+				<FilePen size={13} className="shrink-0 text-muted-foreground" />
+				<span className="text-foreground">
+					Make an editable copy of{" "}
+					<span className="font-medium">{filename}</span> to draft in?
+				</span>
+			</div>
+			<div className="mt-2 flex gap-2 pl-5">
+				<Button size="sm" className="h-7" onClick={accept}>
+					Create copy
+				</Button>
+				<Button size="sm" variant="ghost" className="h-7" onClick={reject}>
 					No
 				</Button>
 			</div>

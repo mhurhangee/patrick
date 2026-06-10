@@ -95,6 +95,28 @@ const suggestLabel = tool({
 	}),
 });
 
+const createDraft = tool({
+	description:
+		"Propose creating a new blank Word document to draft in (e.g. an office-action response). The attorney accepts; it opens as the active draft you then edit with the document tools.",
+	inputSchema: z.object({
+		name: z
+			.string()
+			.describe(
+				"A name for the draft, e.g. 'Response to Non-Final Office Action'",
+			),
+	}),
+});
+
+const requestUnlock = tool({
+	description:
+		"Propose making an editable copy of an original document (the attorney's originals are read-only) so you can draft amendments in it. The attorney accepts; the copy opens as the active draft.",
+	inputSchema: z.object({
+		filename: z
+			.string()
+			.describe("Exact filename of the original document to copy for editing"),
+	}),
+});
+
 // Read-only docx → indexed plain text, headless from disk. Originals never
 // change, so once pinned this content is stable (and therefore cacheable).
 async function docxText(folder: string, filename: string): Promise<string> {
@@ -241,6 +263,8 @@ export async function handleChat(c: Context) {
 			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
 		),
 		suggestLabel,
+		createDraft,
+		requestUnlock,
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
