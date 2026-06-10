@@ -5,12 +5,19 @@ import {
 	TOKEN_RE,
 } from "@patrick/shared";
 
+/** A folder document not yet in context — awareness only (filename + label). */
+export type AvailableDoc = { filename: string; label?: string };
+
 // The system prompt holds INSTRUCTIONS + a MANIFEST only — never document
 // content. Read-only sources ride as cached messages (see chat.ts); the editable
 // draft is read live through the editor tools. This keeps the system prefix
 // stable and cacheable for the whole chat. See the v1-context-model.
 
-function manifest(pinned: PinnedSource[], activeDraft: string | null): string {
+function manifest(
+	pinned: PinnedSource[],
+	activeDraft: string | null,
+	available: AvailableDoc[],
+): string {
 	const lines: string[] = [];
 	if (pinned.length > 0) {
 		lines.push(
@@ -30,6 +37,17 @@ function manifest(pinned: PinnedSource[], activeDraft: string | null): string {
 	} else {
 		lines.push("No editable draft is open.");
 	}
+	// Folder awareness: other documents the attorney has, by filename + their
+	// label — never content. Patrick can propose pulling one in via requestOpenFile
+	// (the attorney accepts); it can't read them until then.
+	if (available.length > 0) {
+		lines.push("");
+		lines.push(
+			"Also in this matter, not yet in context (call requestOpenFile to ask the attorney to add one if you need it — you cannot read it until they accept):",
+		);
+		for (const d of available)
+			lines.push(`- ${d.filename}${d.label ? ` — ${d.label}` : ""}`);
+	}
 	return lines.join("\n");
 }
 
@@ -42,6 +60,7 @@ export function buildSystemPrompt(
 	task: Task,
 	pinned: PinnedSource[],
 	activeDraft: string | null,
+	available: AvailableDoc[],
 	templateOverride?: string | null,
 ): string {
 	const template = templateOverride?.trim()
@@ -50,7 +69,7 @@ export function buildSystemPrompt(
 	const fills: Record<string, string> = {
 		PRACTICECONTEXT: profile.identity.practiceContext?.trim() ?? "",
 		TASK: task.label?.trim() || "(untitled task)",
-		OPENDOCUMENTS: manifest(pinned, activeDraft),
+		OPENDOCUMENTS: manifest(pinned, activeDraft, available),
 		CLOSEDDOCUMENTS: "",
 		EXAMPLES: "",
 	};

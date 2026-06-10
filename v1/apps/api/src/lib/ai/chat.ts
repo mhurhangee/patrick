@@ -8,14 +8,17 @@ import {
 	type ModelMessage,
 	stepCountIs,
 	streamText,
+	tool,
 	type UIMessage,
 } from "ai";
 import type { Context } from "hono";
+import { z } from "zod";
 import { saveChat } from "../chats";
+import { listDocuments } from "../documents";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
 import { createModel, reasoningOptions } from "./model";
-import { buildSystemPrompt } from "./prompt";
+import { type AvailableDoc, buildSystemPrompt } from "./prompt";
 
 // The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
@@ -41,6 +44,43 @@ type RequestBody = {
 	/** Per-chat instructions edit (ephemeral); absent ⇒ the profile's template. */
 	templateOverride?: string | null;
 };
+
+// Folder awareness: the read-only sources in the task folder that AREN'T in
+// context yet — by filename + label, never content. Editable drafts (workspace)
+// and excluded docs are left out; Patrick can propose pinning one via the HITL
+// requestOpenFile tool.
+async function availableDocs(
+	folder: string,
+	pinned: PinnedSource[],
+	activeDraft: string | null,
+): Promise<AvailableDoc[]> {
+	const docs = await listDocuments(folder);
+	const pinnedNames = new Set(pinned.map((p) => p.filename));
+	return docs
+		.filter((d) => {
+			const editable =
+				d.filename.toLowerCase().endsWith(".docx") && !!d.createdInPatrick;
+			return (
+				!editable &&
+				!d.excluded &&
+				!pinnedNames.has(d.filename) &&
+				d.filename !== activeDraft
+			);
+		})
+		.map((d) => ({ filename: d.filename, label: d.label }));
+}
+
+// HITL: a no-execute tool. The model calls it to propose pinning a source; the
+// call streams to the client, which shows an accept/reject card and resolves it.
+const requestOpenFile = tool({
+	description:
+		"Propose adding one of the available (not-yet-in-context) source documents to context. The attorney must accept before you can read it. Use when you need a document that isn't in context.",
+	inputSchema: z.object({
+		filename: z
+			.string()
+			.describe("Exact filename from the 'not yet in context' list"),
+	}),
+});
 
 // Read-only docx → indexed plain text, headless from disk. Originals never
 // change, so once pinned this content is stable (and therefore cacheable).
@@ -131,11 +171,17 @@ export async function handleChatPreview(c: Context) {
 
 	const pinnedSources = body.pinnedSources ?? [];
 	const activeDraft = body.activeDraft ?? null;
+	const available = await availableDocs(
+		task.folder,
+		pinnedSources,
+		activeDraft,
+	);
 	const system = buildSystemPrompt(
 		profile,
 		task,
 		pinnedSources,
 		activeDraft,
+		available,
 		body.templateOverride,
 	);
 	return c.json({
@@ -158,6 +204,11 @@ export async function handleChat(c: Context) {
 
 	const pinnedSources = body.pinnedSources ?? [];
 	const activeDraft = body.activeDraft ?? null;
+	const available = await availableDocs(
+		task.folder,
+		pinnedSources,
+		activeDraft,
+	);
 	const { provider, apiKey, detailedModel, effort } = profile.ai;
 	const model = createModel(provider, apiKey, detailedModel);
 	const { providerOptions } = reasoningOptions(provider, detailedModel, effort);
@@ -166,14 +217,18 @@ export async function handleChat(c: Context) {
 		task,
 		pinnedSources,
 		activeDraft,
+		available,
 		body.templateOverride,
 	);
 
-	// Editor tools with no execute — the AI SDK forwards each call to the client's
-	// onToolCall, where it runs against the live editor (native tracked changes).
-	const tools = Object.fromEntries(
-		Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
-	);
+	// Editor tools (no execute — run client-side against the live editor) + our
+	// HITL requestOpenFile when there are docs to propose (resolved by a card).
+	const tools = {
+		...Object.fromEntries(
+			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
+		),
+		...(available.length > 0 ? { requestOpenFile } : {}),
+	};
 
 	// Pinned read-only sources lead the conversation as one cached block.
 	const conversation = await convertToModelMessages(body.messages);

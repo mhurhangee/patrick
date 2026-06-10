@@ -5,9 +5,10 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai";
-import { ChevronRight, Loader2 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { ChevronRight, FolderOpen, Loader2 } from "lucide-react";
+import { type FC, type ReactNode, useState } from "react";
 import { Streamdown } from "streamdown";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Part = UIMessage["parts"][number];
@@ -192,16 +193,135 @@ function ReasoningTrail({ steps }: { steps: TrailStepData[] }) {
 	);
 }
 
+// ─── Human-in-the-loop tools ────────────────────────────────────────────────────
+// HITL tools (no auto-execute) render an interactive card and resolve only when
+// the attorney accepts/rejects. Add a tool name here + a card below to extend.
+
+export type ToolUiHandlers = {
+	addToolResult: (args: {
+		tool: string;
+		toolCallId: string;
+		output: unknown;
+	}) => void;
+	/** Pin a source into the chat's context (requestOpenFile acceptance). */
+	pinSource: (filename: string) => void;
+};
+
+const HITL_CARDS: Record<
+	string,
+	FC<{ part: AnyToolPart; handlers: ToolUiHandlers }>
+> = {
+	requestOpenFile: RequestOpenFileCard,
+};
+
+/** Tool names handled by a HITL card (so the client doesn't auto-resolve them). */
+export const HITL_TOOLS = new Set(Object.keys(HITL_CARDS));
+
+function HitlCard({ children }: { children: ReactNode }) {
+	return (
+		<div className="not-prose my-2 rounded-md border bg-muted/30 px-3 py-2.5 text-xs">
+			{children}
+		</div>
+	);
+}
+
+// Patrick proposes pinning a source; the attorney decides. The agent can only
+// suggest — accepting is what puts a doc in context (OPEN = CONTEXT honesty).
+function RequestOpenFileCard({
+	part,
+	handlers,
+}: {
+	part: AnyToolPart;
+	handlers: ToolUiHandlers;
+}) {
+	const filename =
+		(part.input as { filename?: string } | undefined)?.filename ?? "a document";
+
+	const respond = (pinned: boolean) => {
+		if (pinned) handlers.pinSource(filename);
+		handlers.addToolResult({
+			tool: "requestOpenFile",
+			toolCallId: part.toolCallId,
+			output: { pinned, filename },
+		});
+	};
+
+	if (part.state === "output-available") {
+		const out = part.output as { pinned?: boolean } | undefined;
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">
+					{out?.pinned ? (
+						<>
+							Pinned <span className="font-medium">{filename}</span> — now in
+							context.
+						</>
+					) : (
+						<>
+							Left <span className="font-medium">{filename}</span> out.
+						</>
+					)}
+				</span>
+			</HitlCard>
+		);
+	}
+	if (part.state === "output-error")
+		return (
+			<HitlCard>
+				<span className="text-destructive">
+					{part.errorText ?? "Couldn't add the document."}
+				</span>
+			</HitlCard>
+		);
+	if (part.state === "input-streaming")
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">Preparing request…</span>
+			</HitlCard>
+		);
+
+	return (
+		<HitlCard>
+			<div className="flex items-center gap-2">
+				<FolderOpen size={13} className="shrink-0 text-muted-foreground" />
+				<span className="text-foreground">
+					Patrick wants to add <span className="font-medium">{filename}</span>{" "}
+					to this chat.
+				</span>
+			</div>
+			<p className="mt-1 pl-5 text-muted-foreground">
+				Its full content joins the context from the next message.
+			</p>
+			<div className="mt-2 flex gap-2 pl-5">
+				<Button size="sm" className="h-7" onClick={() => respond(true)}>
+					Pin it
+				</Button>
+				<Button
+					size="sm"
+					variant="ghost"
+					className="h-7"
+					onClick={() => respond(false)}
+				>
+					Not now
+				</Button>
+			</div>
+		</HitlCard>
+	);
+}
+
 // Renders an assistant message's parts: direct answer text (Streamdown) outside
-// the trail; reasoning + tool calls collapsed into the chain-of-thought trail.
+// the trail; reasoning + tool calls collapsed into the chain-of-thought trail;
+// HITL tools as interactive cards.
 export function AssistantParts({
 	parts,
 	isStreaming,
 	isLatest,
+	handlers,
 }: {
 	parts: Part[];
 	isStreaming: boolean;
 	isLatest: boolean;
+	handlers?: ToolUiHandlers;
 }) {
 	const blocks: ReactNode[] = [];
 	let trail: TrailStepData[] = [];
@@ -216,6 +336,13 @@ export function AssistantParts({
 	};
 
 	const pushTool = (part: AnyToolPart, name: string, i: number) => {
+		// HITL tools render an interactive card outside the trail.
+		const Card = HITL_CARDS[name];
+		if (Card && handlers) {
+			flushTrail();
+			blocks.push(<Card key={`hitl-${i}`} part={part} handlers={handlers} />);
+			return;
+		}
 		const presenter = PRESENTERS[name];
 		const running =
 			part.state === "input-streaming" || part.state === "input-available";

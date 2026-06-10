@@ -36,7 +36,11 @@ import { useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
-import { AssistantParts } from "./chat-message-parts";
+import {
+	AssistantParts,
+	HITL_TOOLS,
+	type ToolUiHandlers,
+} from "./chat-message-parts";
 import { ContextRing } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
 import { SystemCard } from "./system-card";
@@ -111,7 +115,7 @@ function ChatSession({
 	const modelId = profile?.ai.detailedModel ?? null;
 	const profileTemplate = profile?.prompts.agentpat ?? "";
 	const refreshChats = useRefreshChats(activeTaskId);
-	const { columnList, focused, getDoc } = useWorkspace();
+	const { columnList, focused, getDoc, open } = useWorkspace();
 
 	// This chat's instructions. null ⇒ "follow the profile" (so editing the
 	// profile prompt updates a fresh chat live); a non-null value is this chat's
@@ -225,6 +229,8 @@ function ChatSession({
 		// After a client tool resolves, resubmit so the agent loop continues.
 		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 		async onToolCall({ toolCall }) {
+			// HITL tools (requestOpenFile) are resolved by their card, not here.
+			if (HITL_TOOLS.has(toolCall.toolName)) return;
 			let output: unknown;
 			try {
 				output = executeToolCall(
@@ -254,6 +260,26 @@ function ChatSession({
 	const busy =
 		isStreaming || lastAssistantMessageIsCompleteWithToolCalls({ messages });
 	const pending = busy ? activityLabel(status, messages.at(-1)) : null;
+
+	// Handlers for HITL tool cards (requestOpenFile): resolve the tool call +
+	// pin the accepted source into this chat's context.
+	const toolHandlers = useMemo<ToolUiHandlers>(
+		() => ({
+			addToolResult: (args) =>
+				addToolResult(args as Parameters<typeof addToolResult>[0]),
+			pinSource: (filename) => {
+				const kind = filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
+				setPinnedSources((prev) =>
+					prev.some((p) => p.filename === filename)
+						? prev
+						: [...prev, { filename, kind }],
+				);
+				// Show what got added — open it in the viewer too.
+				open(filename);
+			},
+		}),
+		[addToolResult, open],
+	);
 
 	// Group the flat message list into exchanges, aggregating usage/tools/context.
 	const exchanges = useMemo<Exchange[]>(() => {
@@ -530,6 +556,7 @@ function ChatSession({
 												parts={ex.assistantMsg.parts}
 												isStreaming={isStreaming}
 												isLatest={isLatest}
+												handlers={toolHandlers}
 											/>
 										</div>
 									)}
