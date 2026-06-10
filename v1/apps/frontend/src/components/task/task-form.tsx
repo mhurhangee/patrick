@@ -63,8 +63,8 @@ export function TaskForm({
 						onChange={(e) => setDraft((d) => ({ ...d, label: e.target.value }))}
 					/>
 					<FieldDescription>
-						What this task is — fed to AgentPat as the {"<TASK>"} token.
-						Describe it the way you'd brief a colleague.
+						What this task is — fed to Patrick as the {"<TASK>"} token. Describe
+						it the way you'd brief a colleague.
 					</FieldDescription>
 				</Field>
 			</FieldGroup>

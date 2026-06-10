@@ -106,7 +106,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 			<div
 				ref={scrollRef}
 				onScroll={onScroll}
-				className="h-full overflow-auto bg-muted/40 p-4"
+				className="h-full overflow-auto p-4"
 			>
 				<div className="mx-auto flex w-fit flex-col items-center gap-4">
 					{pages.map((page, i) => (

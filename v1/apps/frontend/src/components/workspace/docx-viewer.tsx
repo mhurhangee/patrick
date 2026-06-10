@@ -20,7 +20,7 @@ function formatTokens(n: number): string {
 /**
  * Renders a .docx via @eigenpal/docx-editor (ProseMirror). Originals open
  * read-only; Patrick-owned docs are editable and autosave their bytes back to
- * the folder. AgentPat-driven tracked changes (the -agents package) come later.
+ * the folder. Patrick-driven tracked changes (the -agents package) come later.
  */
 export function DocxViewer({
 	filename,
@@ -44,7 +44,7 @@ export function DocxViewer({
 
 	const { status } = useAutosave(rev, save, 1000);
 
-	// Editable docs register so AgentPat (in the chat panel) can drive tool calls
+	// Editable docs register so Patrick (in the chat panel) can drive tool calls
 	// against this live editor; the registry resolves the focused one.
 	useRegisterEditor(filename, editorRef, editable);
 

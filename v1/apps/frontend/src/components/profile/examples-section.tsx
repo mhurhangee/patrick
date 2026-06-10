@@ -28,7 +28,7 @@ export function ExamplesSection({
 	return (
 		<FieldGroup>
 			<FieldDescription>
-				Writing samples AgentPat matches your voice to.
+				Writing samples Patrick matches your voice to.
 			</FieldDescription>
 
 			{value.map((example) => (

@@ -54,7 +54,7 @@ export function profileSummary(p: Profile): ProfileSummary {
 	return { id: p.id, name: p.identity.name, firm: p.identity.firm };
 }
 
-export const DEFAULT_AGENTPAT_PROMPT = `You are AgentPat, a patent attorney's drafting assistant.
+export const DEFAULT_AGENTPAT_PROMPT = `You are Patrick, a patent attorney's drafting assistant.
 
 <PRACTICECONTEXT>
 

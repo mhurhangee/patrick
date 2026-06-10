@@ -6,7 +6,7 @@ export type Task = {
 	id: string;
 	/** Absolute path to the attorney's folder. */
 	folder: string;
-	/** Free-text "what this task is" — shown in lists and fed to AgentPat. */
+	/** Free-text "what this task is" — shown in lists and fed to Patrick. */
 	label: string;
 	createdAt: string;
 	lastOpenedAt?: string;

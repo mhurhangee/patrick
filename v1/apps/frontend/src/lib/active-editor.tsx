@@ -10,7 +10,7 @@ import {
 	useRef,
 } from "react";
 
-// The editable .docx editors live in the viewer panel; AgentPat lives in the
+// The editable .docx editors live in the viewer panel; Patrick lives in the
 // chat panel. This registry bridges them: each editable DocxViewer registers its
 // ref by document id, and the chat resolves the focused editable editor to drive
 // tool calls against. Keyed by filename (a workspace doc id).

@@ -64,7 +64,7 @@ export function IdentitySection({
 					onChange={(e) => set({ practiceContext: e.target.value })}
 				/>
 				<FieldDescription>
-					House style and standing instructions sent to AgentPat on every task —
+					House style and standing instructions sent to Patrick on every task —
 					your default voice and approach.
 				</FieldDescription>
 			</Field>

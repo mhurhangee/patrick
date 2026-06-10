@@ -16,7 +16,7 @@ import { deleteTask, listTasks, readTask, writeTask } from "../lib/tasks";
 
 export const tasks = new Hono();
 
-// AgentPat chat — streams a UI message response; docx tool calls round-trip to
+// Patrick chat — streams a UI message response; docx tool calls round-trip to
 // the client to run against the live editor. See lib/ai/chat.ts.
 tasks.post("/:id/chat", handleChat);
 // Preview the assembled prompt + context for the current open set (no LLM call).

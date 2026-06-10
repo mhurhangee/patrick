@@ -331,7 +331,7 @@ function DocumentMenu({
 					{doc.starred ? "Unstar" : "Star"}
 				</MenuItem>
 				<MenuItem onClick={() => onUpdate({ excluded: !doc.excluded })}>
-					{doc.excluded ? "Include for AgentPat" : "Exclude from AgentPat"}
+					{doc.excluded ? "Include for Patrick" : "Exclude from Patrick"}
 				</MenuItem>
 				{isPatrick && (
 					<>

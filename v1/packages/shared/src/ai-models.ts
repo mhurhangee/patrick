@@ -122,7 +122,7 @@ export const DEFAULT_QUICK_MODEL: Record<Provider, string> = {
 	gateway: byTier(CURATED_MODELS.anthropic, "fast").id,
 };
 
-// Detailed model (AgentPat) → balanced tier by default; user can pick expert.
+// Detailed model (Patrick) → balanced tier by default; user can pick expert.
 export const DEFAULT_DETAILED_MODEL: Record<Provider, string> = {
 	anthropic: byTier(CURATED_MODELS.anthropic, "balanced").id,
 	openai: byTier(CURATED_MODELS.openai, "balanced").id,

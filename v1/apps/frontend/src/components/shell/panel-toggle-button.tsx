@@ -16,7 +16,7 @@ export function PanelToggleButton({
 	const isNav = side === "nav";
 	const collapsed = isNav ? navCollapsed : chatCollapsed;
 	const Icon = isNav === collapsed ? ChevronRight : ChevronLeft;
-	const label = isNav ? "sidebar" : "AgentPat";
+	const label = isNav ? "sidebar" : "Patrick";
 
 	return (
 		<Button

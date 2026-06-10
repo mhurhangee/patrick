@@ -24,12 +24,12 @@ export function DocumentViewer() {
 		// Mirror the Column's bar so the panel toggles live at the viewer's edges
 		// (not floating over the chat panel) even with nothing open.
 		return (
-			<div className="flex h-full flex-col">
-				<div className="flex shrink-0 items-center justify-between border-b bg-background">
+			<div className="flex h-full flex-col bg-muted/30">
+				<div className="flex h-9 shrink-0 items-center justify-between">
 					<PanelToggleButton side="nav" className="ml-1" />
 					<PanelToggleButton side="chat" className="mr-1" />
 				</div>
-				<div className="flex flex-1 items-center justify-center bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+				<div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
 					Open a document from the sidebar to add it to context.
 				</div>
 			</div>
@@ -70,12 +70,12 @@ function Column({
 		focused && column.tabs.includes(focused) ? focused : column.tabs[0];
 
 	return (
-		<div className="flex h-full flex-col">
-			<div className="flex shrink-0 items-center border-b bg-background">
+		<div className="flex h-full flex-col bg-muted/30">
+			<div className="flex h-9 shrink-0 items-center">
 				{isFirst && <PanelToggleButton side="nav" className="ml-1" />}
 				<div
 					role="tablist"
-					className="flex flex-1 items-center gap-0.5 overflow-x-auto px-1.5"
+					className="flex h-full flex-1 items-center gap-0.5 overflow-x-auto px-1.5"
 				>
 					{column.tabs.map((id, index) => (
 						<Tab
@@ -103,7 +103,7 @@ function Column({
 				{isLast && <PanelToggleButton side="chat" className="mr-1" />}
 			</div>
 
-			<div className="min-h-0 flex-1 overflow-auto bg-muted/30">
+			<div className="min-h-0 flex-1 overflow-auto">
 				{active && <DocContent id={active} />}
 			</div>
 		</div>
@@ -151,9 +151,9 @@ function Tab({
 				}
 			}}
 			className={cn(
-				"group flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 py-2 pr-1 pl-2.5 text-sm select-none",
+				"group flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 h-full pr-1 pl-2.5 text-sm select-none",
 				active
-					? "border-primary"
+					? "border-primary text-foreground"
 					: "border-transparent text-muted-foreground hover:text-foreground",
 				isDragging && "opacity-50",
 			)}

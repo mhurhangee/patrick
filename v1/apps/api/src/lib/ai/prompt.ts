@@ -28,20 +28,25 @@ function manifest(pinned: PinnedSource[], activeDraft: string | null): string {
 				"tracked changes. Don't reproduce it in chat; work on it through the tools.",
 		);
 	} else {
-		lines.push("No editable draft is in focus.");
+		lines.push("No editable draft is open.");
 	}
 	return lines.join("\n");
 }
 
-// Fill the profile's AgentPat template. <OPENDOCUMENTS> now resolves to the
-// manifest (what's in context), not the content. The full token/resolver engine
-// (closed docs, writing examples, task type) lands later.
+// Fill the Patrick template. <OPENDOCUMENTS> now resolves to the manifest
+// (what's in context), not the content. `templateOverride` is the per-chat
+// instructions edit (ephemeral, never written to the profile); absent ⇒ the
+// profile's saved template. The full token/resolver engine lands later.
 export function buildSystemPrompt(
 	profile: Profile,
 	task: Task,
 	pinned: PinnedSource[],
 	activeDraft: string | null,
+	templateOverride?: string | null,
 ): string {
+	const template = templateOverride?.trim()
+		? templateOverride
+		: profile.prompts.agentpat;
 	const fills: Record<string, string> = {
 		PRACTICECONTEXT: profile.identity.practiceContext?.trim() ?? "",
 		TASK: task.label?.trim() || "(untitled task)",
@@ -49,7 +54,7 @@ export function buildSystemPrompt(
 		CLOSEDDOCUMENTS: "",
 		EXAMPLES: "",
 	};
-	const filled = profile.prompts.agentpat.replace(
+	const filled = template.replace(
 		TOKEN_RE,
 		(match, name: string) => fills[name] ?? match,
 	);

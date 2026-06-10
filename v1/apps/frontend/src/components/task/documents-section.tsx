@@ -1,6 +1,7 @@
 import type { Document } from "@patrick/shared";
-import { EyeOff, FileText, Star } from "lucide-react";
+import { EyeOff, Star } from "lucide-react";
 import { useState } from "react";
+import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
 import { SaveStatus } from "@/components/save-status";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ function DocumentsEditor({
 				<div>
 					<h2 className="text-sm font-medium">Documents</h2>
 					<p className="text-xs text-muted-foreground">
-						Click a label to tell AgentPat what each document is. Exclude
+						Click a label to tell Patrick what each document is. Exclude
 						anything it shouldn't read.
 					</p>
 				</div>
@@ -66,13 +67,11 @@ function DocumentsEditor({
 								doc.excluded && "opacity-55",
 							)}
 						>
-							<FileText
-								className={cn(
-									"size-4 shrink-0",
-									doc.filename.toLowerCase().endsWith(".pdf")
-										? "text-red-500/80"
-										: "text-sky-600/80",
-								)}
+							<DocIcon
+								kind={
+									doc.filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx"
+								}
+								editable={!!doc.createdInPatrick}
 							/>
 							<div className="min-w-0 flex-1">
 								<div className="truncate text-sm font-medium">
@@ -106,9 +105,7 @@ function DocumentsEditor({
 								size="icon"
 								className="size-7 shrink-0"
 								title={
-									doc.excluded
-										? "Include for AgentPat"
-										: "Exclude from AgentPat"
+									doc.excluded ? "Include for Patrick" : "Exclude from Patrick"
 								}
 								onClick={() =>
 									update(doc.filename, { excluded: !doc.excluded })

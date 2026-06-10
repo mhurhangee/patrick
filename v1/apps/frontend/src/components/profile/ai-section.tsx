@@ -187,7 +187,7 @@ export function AiSection({
 				/>
 				<ModelSelect
 					label="Detailed model"
-					description="AgentPat — thorough, best reasoning."
+					description="Patrick — thorough, best reasoning."
 					value={value.detailedModel}
 					models={models}
 					onChange={(detailedModel) => set({ detailedModel })}
@@ -197,7 +197,7 @@ export function AiSection({
 			<FieldSeparator />
 
 			<Field>
-				<FieldLabel>AgentPat reasoning</FieldLabel>
+				<FieldLabel>Patrick reasoning</FieldLabel>
 				<Select
 					value={value.effort}
 					onValueChange={(effort) => set({ effort: effort as AiEffort })}
@@ -214,7 +214,7 @@ export function AiSection({
 					</SelectContent>
 				</Select>
 				<FieldDescription>
-					How hard AgentPat thinks before answering. Higher is more thorough but
+					How hard Patrick thinks before answering. Higher is more thorough but
 					slower and pricier. Its reasoning always streams into the chat.
 				</FieldDescription>
 			</Field>

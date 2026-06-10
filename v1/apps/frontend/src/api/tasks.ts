@@ -1,14 +1,25 @@
 import type {
 	Document,
 	DocumentMeta,
+	PinnedSource,
 	Task,
 	TaskSummary,
 } from "@patrick/shared";
 import { api, BASE_URL } from "./client";
 
+export type ChatPreviewBody = {
+	profileId: string;
+	pinnedSources: PinnedSource[];
+	activeDraft: string | null;
+	templateOverride?: string | null;
+};
+
 export const tasksApi = {
 	list: () => api.get<TaskSummary[]>("/tasks"),
 	get: (id: string) => api.get<Task>(`/tasks/${id}`),
+	/** Resolve the exact system prompt a turn would send, without a model call. */
+	chatPreview: (id: string, body: ChatPreviewBody) =>
+		api.post<{ system: string }>(`/tasks/${id}/chat/preview`, body),
 	/** Raw URL for a document's bytes (for the PDF/docx viewers). */
 	fileUrl: (id: string, filename: string) =>
 		`${BASE_URL}/tasks/${id}/documents/${encodeURIComponent(filename)}`,

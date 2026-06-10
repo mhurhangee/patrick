@@ -16,7 +16,7 @@ import { readTask } from "../tasks";
 import { createModel, reasoningOptions } from "./model";
 import { buildSystemPrompt } from "./prompt";
 
-// The drafting subset AgentPat gets: locate + mutate, plus reads (the active
+// The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
 const TOOL_ALLOW = new Set([
 	"read_document",
@@ -35,6 +35,8 @@ type RequestBody = {
 	pinnedSources?: PinnedSource[];
 	/** The editable draft in focus — driven by the editor tools, not pinned. */
 	activeDraft?: string | null;
+	/** Per-chat instructions edit (ephemeral); absent ⇒ the profile's template. */
+	templateOverride?: string | null;
 };
 
 // Read-only docx → indexed plain text, headless from disk. Originals never
@@ -46,7 +48,7 @@ async function docxText(folder: string, filename: string): Promise<string> {
 			buf.byteOffset,
 			buf.byteOffset + buf.byteLength,
 		) as ArrayBuffer;
-		const reviewer = await DocxReviewer.fromBuffer(bytes, "AgentPat");
+		const reviewer = await DocxReviewer.fromBuffer(bytes, "Patrick");
 		return reviewer.getContentAsText().trim();
 	} catch {
 		return "";
@@ -126,7 +128,13 @@ export async function handleChatPreview(c: Context) {
 
 	const pinnedSources = body.pinnedSources ?? [];
 	const activeDraft = body.activeDraft ?? null;
-	const system = buildSystemPrompt(profile, task, pinnedSources, activeDraft);
+	const system = buildSystemPrompt(
+		profile,
+		task,
+		pinnedSources,
+		activeDraft,
+		body.templateOverride,
+	);
 	return c.json({
 		model: profile.ai.detailedModel,
 		system,
@@ -150,7 +158,13 @@ export async function handleChat(c: Context) {
 	const { provider, apiKey, detailedModel, effort } = profile.ai;
 	const model = createModel(provider, apiKey, detailedModel);
 	const { providerOptions } = reasoningOptions(provider, detailedModel, effort);
-	const system = buildSystemPrompt(profile, task, pinnedSources, activeDraft);
+	const system = buildSystemPrompt(
+		profile,
+		task,
+		pinnedSources,
+		activeDraft,
+		body.templateOverride,
+	);
 
 	// Editor tools with no execute — the AI SDK forwards each call to the client's
 	// onToolCall, where it runs against the live editor (native tracked changes).

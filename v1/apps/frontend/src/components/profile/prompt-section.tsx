@@ -30,7 +30,7 @@ export function PromptSection({
 		<FieldGroup>
 			<Field>
 				<div className="flex justify-between">
-					<FieldLabel>AgentPat system prompt</FieldLabel>
+					<FieldLabel>Patrick system prompt</FieldLabel>
 					<Button
 						variant="outline"
 						size="sm"

@@ -15,7 +15,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai";
-import { ChevronDown, SendHorizontal, Sparkles, Square } from "lucide-react";
+import { ChevronDown, SendHorizontal, Square } from "lucide-react";
 import {
 	type RefObject,
 	useEffect,
@@ -35,6 +35,7 @@ import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
 import { AssistantParts } from "./chat-message-parts";
 import { ContextRing } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
+import { SystemCard } from "./system-card";
 
 // One user message + every assistant message that follows it (the loop produces
 // several — one per tool round-trip), merged for rendering with aggregated usage.
@@ -74,7 +75,18 @@ export function AgentChat() {
 	const { activeProfileId } = useActiveProfile();
 	const { data: profile } = useProfile(activeProfileId);
 	const modelId = profile?.ai.detailedModel ?? null;
+	const profileTemplate = profile?.prompts.agentpat ?? "";
 	const { columnList, focused, getDoc } = useWorkspace();
+
+	// This chat's instructions: seeded from the profile, editable until the first
+	// message, then locked (one system per chat). Ephemeral — never written back
+	// to the profile.
+	const [chatTemplate, setChatTemplate] = useState<string | null>(null);
+	useEffect(() => {
+		if (chatTemplate === null && profileTemplate)
+			setChatTemplate(profileTemplate);
+	}, [profileTemplate, chatTemplate]);
+	const template = chatTemplate ?? profileTemplate;
 
 	// Read-only sources currently open in the viewer. Opening one pins it to the
 	// chat (OPEN = CONTEXT); see the accumulation below.
@@ -97,15 +109,32 @@ export function AgentChat() {
 		});
 	}, [openSources]);
 
-	// AgentPat edits the focused editable .docx (the live workspace). It's not in
-	// the static context — the agent reads it live via the editor tools.
+	// Patrick edits ONE live draft at a time (the editor tools bind to a single
+	// editor). The active draft is sticky: the focused editable doc, else the one
+	// you were last editing, else any open editable doc — so it doesn't vanish
+	// when you focus a source to read it. It's not in the static context; the
+	// agent reads it live via the editor tools.
 	const focusedDoc = focused ? getDoc(focused) : undefined;
-	const activeDraft = focusedDoc?.editable ? focusedDoc.id : null;
+	const openEditableIds = useMemo(() => {
+		return columnList
+			.flatMap((c) => c.tabs)
+			.map((id) => getDoc(id))
+			.filter((d): d is WorkspaceDoc => !!d?.editable)
+			.map((d) => d.id);
+	}, [columnList, getDoc]);
+	const [activeDraft, setActiveDraft] = useState<string | null>(null);
+	useEffect(() => {
+		setActiveDraft((prev) => {
+			if (focusedDoc?.editable) return focusedDoc.id;
+			if (prev && openEditableIds.includes(prev)) return prev;
+			return openEditableIds[0] ?? null;
+		});
+	}, [focusedDoc, openEditableIds]);
 	const editorRef = useEditorRefFor(activeDraft);
 
 	const { executeToolCall } = useDocxAgentTools({
 		editorRef: editorRef as RefObject<DocxEditorRef | null>,
-		author: "AgentPat",
+		author: "Patrick",
 	});
 
 	// Refs so the transport/onToolCall always read the latest without re-creating
@@ -116,6 +145,8 @@ export function AgentChat() {
 	activeDraftRef.current = activeDraft;
 	const profileIdRef = useRef(activeProfileId);
 	profileIdRef.current = activeProfileId;
+	const templateRef = useRef(template);
+	templateRef.current = template;
 
 	const { messages, sendMessage, status, stop, addToolResult, regenerate } =
 		useChat({
@@ -127,6 +158,7 @@ export function AgentChat() {
 						profileId: profileIdRef.current,
 						pinnedSources: pinnedRef.current,
 						activeDraft: activeDraftRef.current,
+						templateOverride: templateRef.current,
 					},
 				}),
 			}),
@@ -359,10 +391,16 @@ export function AgentChat() {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="flex items-center gap-2 border-b px-4 py-2.5">
-				<Sparkles className="size-4 text-primary" />
-				<span className="text-sm font-medium">AgentPat</span>
-			</div>
+			<SystemCard
+				taskId={activeTaskId}
+				profileId={activeProfileId}
+				pinnedSources={pinnedSources}
+				activeDraft={activeDraft}
+				template={template}
+				onChangeTemplate={setChatTemplate}
+				onReset={() => setChatTemplate(profileTemplate)}
+				locked={messages.length > 0}
+			/>
 
 			<div className="relative min-h-0 flex-1">
 				<div
@@ -372,7 +410,7 @@ export function AgentChat() {
 				>
 					{exchanges.length === 0 ? (
 						<p className="py-12 text-center text-sm text-muted-foreground">
-							Ask AgentPat to draft or amend the open document.
+							Ask Patrick to draft or amend the open document.
 						</p>
 					) : (
 						exchanges.map((ex) => {
@@ -435,7 +473,7 @@ export function AgentChat() {
 				)}
 			</div>
 
-			<div className="border-t p-3">
+			<div className="p-2">
 				<div className="relative">
 					<Textarea
 						value={input}
@@ -446,7 +484,7 @@ export function AgentChat() {
 								send();
 							}
 						}}
-						placeholder="Ask AgentPat to draft or amend…"
+						placeholder="Ask Patrick ..."
 						className="max-h-48 min-h-20 resize-none pr-12"
 					/>
 					<div className="absolute right-2 bottom-2 flex items-center gap-1.5">
@@ -480,6 +518,9 @@ export function AgentChat() {
 						)}
 					</div>
 				</div>
+				<span className="text-[10px] text-muted-foreground/50 flex items-center justify-center">
+					AI makes mistakes. Always check.
+				</span>
 			</div>
 		</div>
 	);
