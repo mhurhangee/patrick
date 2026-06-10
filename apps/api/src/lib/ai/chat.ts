@@ -113,11 +113,13 @@ const createDraft = tool({
 
 const requestUnlock = tool({
 	description:
-		"Propose making an editable copy of an original document (the attorney's originals are read-only) so you can draft amendments in it. The attorney accepts; the copy opens as the active draft.",
+		"Propose making an editable copy of an original .docx document (the attorney's originals are read-only) so you can draft amendments in it. The attorney accepts; the copy opens as the active draft. Only works on .docx files — PDFs and other formats can't be edited, so don't propose it for them; instead explain that, or use createDraft to start a fresh document.",
 	inputSchema: z.object({
 		filename: z
 			.string()
-			.describe("Exact filename of the original document to copy for editing"),
+			.describe(
+				"Exact filename of the original .docx document to copy for editing",
+			),
 	}),
 });
 
