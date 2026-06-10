@@ -147,14 +147,9 @@ export async function handleChat(c: Context) {
 
 	const pinnedSources = body.pinnedSources ?? [];
 	const activeDraft = body.activeDraft ?? null;
-	const { provider, apiKey, detailedModel, effort, showThinking } = profile.ai;
+	const { provider, apiKey, detailedModel, effort } = profile.ai;
 	const model = createModel(provider, apiKey, detailedModel);
-	const { providerOptions } = reasoningOptions(
-		provider,
-		detailedModel,
-		effort,
-		showThinking,
-	);
+	const { providerOptions } = reasoningOptions(provider, detailedModel, effort);
 	const system = buildSystemPrompt(profile, task, pinnedSources, activeDraft);
 
 	// Editor tools with no execute — the AI SDK forwards each call to the client's

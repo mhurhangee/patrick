@@ -16,6 +16,7 @@ import { useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
+import { AssistantParts } from "./chat-message-parts";
 
 export function AgentChat() {
 	const { activeTaskId } = useActiveTask();
@@ -102,12 +103,23 @@ export function AgentChat() {
 	});
 
 	const [input, setInput] = useState("");
-	const isStreaming = status === "streaming" || status === "submitted";
 	const canSend = !!activeTaskId && !!activeProfileId;
+	// Real streaming status — drives the streaming answer + the trail's running
+	// step indicators.
+	const isStreaming = status === "streaming" || status === "submitted";
+	// The agent loop spans multiple requests (one per client tool round-trip).
+	// `status` dips to "ready" between them, so rely on the SDK's own
+	// auto-continue predicate to stay "busy" across the gaps — otherwise the UI
+	// blanks out mid-loop (the v0 "nothing after a tool call" bug).
+	const busy =
+		isStreaming || lastAssistantMessageIsCompleteWithToolCalls({ messages });
+	// The trail shows running reasoning/tools inline; this line fills the gaps it
+	// can't — waiting for the first token, and the beats between steps.
+	const pending = busy ? activityLabel(status, messages.at(-1)) : null;
 
 	function send() {
 		const text = input.trim();
-		if (!text || isStreaming || !canSend) return;
+		if (!text || busy || !canSend) return;
 		sendMessage({ text });
 		setInput("");
 	}
@@ -125,8 +137,16 @@ export function AgentChat() {
 						Ask AgentPat to draft or amend the open document.
 					</p>
 				) : (
-					messages.map((m) => <Message key={m.id} message={m} />)
+					messages.map((m, i) => (
+						<Message
+							key={m.id}
+							message={m}
+							isStreaming={isStreaming}
+							isLatest={i === messages.length - 1}
+						/>
+					))
 				)}
+				{pending && <PendingActivity label={pending} />}
 			</div>
 
 			<div className="border-t p-3">
@@ -143,7 +163,7 @@ export function AgentChat() {
 						placeholder="Ask AgentPat to draft or amend…"
 						className="max-h-48 min-h-20 resize-none pr-12"
 					/>
-					{isStreaming ? (
+					{busy ? (
 						<Button
 							size="icon"
 							variant="secondary"
@@ -170,9 +190,15 @@ export function AgentChat() {
 	);
 }
 
-// Spine-level rendering: text bubbles + a one-line marker per tool call. The rich
-// transparency UI (reasoning trail, tool cards, exchange panel) lands next.
-function Message({ message }: { message: UIMessage }) {
+function Message({
+	message,
+	isStreaming,
+	isLatest,
+}: {
+	message: UIMessage;
+	isStreaming: boolean;
+	isLatest: boolean;
+}) {
 	if (message.role === "user") {
 		const text = message.parts
 			.filter((p) => p.type === "text")
@@ -180,7 +206,7 @@ function Message({ message }: { message: UIMessage }) {
 			.join("\n");
 		return (
 			<div className="flex justify-end">
-				<div className="max-w-[85%] rounded-lg rounded-br-sm bg-primary/10 px-3 py-2 text-sm whitespace-pre-wrap">
+				<div className="max-w-[85%] whitespace-pre-wrap rounded-lg rounded-br-sm bg-primary/10 px-3 py-2 text-sm">
 					{text}
 				</div>
 			</div>
@@ -188,41 +214,45 @@ function Message({ message }: { message: UIMessage }) {
 	}
 
 	return (
-		<div className="space-y-1.5 text-sm leading-relaxed">
-			{message.parts.map((part, i) => {
-				if (part.type === "text")
-					return (
-						// biome-ignore lint/suspicious/noArrayIndexKey: stable ordered parts
-						<p key={i} className="whitespace-pre-wrap">
-							{part.text}
-						</p>
-					);
-				if (part.type === "reasoning" && part.text)
-					return (
-						// biome-ignore lint/suspicious/noArrayIndexKey: stable ordered parts
-						<p key={i} className="text-xs text-muted-foreground/70 italic">
-							{part.text}
-						</p>
-					);
-				if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
-					const name =
-						"toolName" in part
-							? (part as { toolName: string }).toolName
-							: part.type.replace(/^tool-/, "");
-					const state =
-						"state" in part ? (part as { state: string }).state : "";
-					return (
-						<div
-							// biome-ignore lint/suspicious/noArrayIndexKey: stable ordered parts
-							key={i}
-							className="rounded-md border bg-card px-2.5 py-1.5 font-mono text-xs text-muted-foreground"
-						>
-							🔧 {name} {state ? `· ${state}` : ""}
-						</div>
-					);
-				}
-				return null;
-			})}
+		<div className="max-w-none text-sm leading-relaxed [&_h1]:mt-3 [&_h1]:mb-1.5 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h3]:mt-2 [&_h3]:mb-0.5 [&_h3]:text-sm [&_h3]:font-medium [&_li]:my-0.5 [&_ol]:my-1.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1.5 [&_pre]:text-xs [&_table]:text-xs [&_ul]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5">
+			<AssistantParts
+				parts={message.parts}
+				isStreaming={isStreaming}
+				isLatest={isLatest}
+			/>
+		</div>
+	);
+}
+
+// The live "what's happening" line, shown only while the loop is busy. Returns
+// null when the trail (running reasoning/tool) or the streaming answer already
+// conveys the state — so this only fills the genuine gaps: the wait before the
+// first token, and the beats between steps (incl. the gap between a tool result
+// and the auto-resubmitted next request).
+function activityLabel(
+	status: string,
+	last: UIMessage | undefined,
+): string | null {
+	if (status === "submitted") return "Thinking…";
+	if (last?.role !== "assistant") return "Thinking…";
+	const lp = last.parts.at(-1);
+	if (!lp) return "Thinking…";
+	if (lp.type === "text") return null; // the answer is streaming / visible
+	if (lp.type === "reasoning") return null; // the trail shows "Thinking"
+	const isTool = lp.type === "dynamic-tool" || lp.type.startsWith("tool-");
+	if (isTool && "state" in lp) {
+		const running =
+			lp.state === "input-streaming" || lp.state === "input-available";
+		if (running) return null; // the trail shows the running tool
+	}
+	return "Working…";
+}
+
+function PendingActivity({ label }: { label: string }) {
+	return (
+		<div className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground/60">
+			<span className="size-1.5 animate-pulse rounded-full bg-current" />
+			{label}
 		</div>
 	);
 }

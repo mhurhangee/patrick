@@ -11,7 +11,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
-	FieldContent,
 	FieldDescription,
 	FieldError,
 	FieldGroup,
@@ -216,25 +215,8 @@ export function AiSection({
 				</Select>
 				<FieldDescription>
 					How hard AgentPat thinks before answering. Higher is more thorough but
-					slower and pricier.
+					slower and pricier. Its reasoning always streams into the chat.
 				</FieldDescription>
-			</Field>
-
-			<Field orientation="horizontal">
-				<FieldContent>
-					<FieldLabel>Show thinking</FieldLabel>
-					<FieldDescription>
-						Stream AgentPat's reasoning into the chat as it works.
-					</FieldDescription>
-				</FieldContent>
-				<Button
-					type="button"
-					variant={value.showThinking ? "default" : "outline"}
-					size="sm"
-					onClick={() => set({ showThinking: !value.showThinking })}
-				>
-					{value.showThinking ? "On" : "Off"}
-				</Button>
 			</Field>
 		</FieldGroup>
 	);

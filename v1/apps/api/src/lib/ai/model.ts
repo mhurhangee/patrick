@@ -41,44 +41,41 @@ export function createModel(
 type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 type ProviderOptions = Record<string, Record<string, Json>>;
 
-// Map a unified effort + thinking toggle onto each provider's reasoning options,
-// to spread into streamText/generateText. `effort: "off"` minimises reasoning:
-// OpenAI → none, Google → thinking disabled, Anthropic → omitted.
+// Map a unified `effort` onto each provider's reasoning options, to spread into
+// streamText/generateText. Reasoning is always *shown* when the model reasons —
+// honesty by default, no hide-the-thinking toggle; `effort` alone controls how
+// hard it thinks. `effort: "off"` minimises reasoning (OpenAI → none, Google →
+// disabled, Anthropic → omitted).
 export function reasoningOptions(
 	provider: Provider,
 	modelId: string,
 	effort: AiEffort | "off",
-	showThinking: boolean,
 ): { providerOptions: ProviderOptions } {
 	const vendor = vendorOf(provider, modelId);
-	const reason = showThinking && effort !== "off";
+	const reason = effort !== "off";
 
 	if (vendor === "openai") {
 		const openai: Record<string, Json> = {
-			reasoningEffort: effort === "off" ? "none" : effort,
+			reasoningEffort: reason ? effort : "none",
 		};
 		if (reason) openai.reasoningSummary = "auto";
 		return { providerOptions: { openai } };
 	}
 
 	if (vendor === "google") {
-		const thinkingConfig: Record<string, Json> =
-			effort === "off"
-				? { thinkingBudget: 0 }
-				: { thinkingLevel: effort, includeThoughts: showThinking };
+		const thinkingConfig: Record<string, Json> = reason
+			? { thinkingLevel: effort, includeThoughts: true }
+			: { thinkingBudget: 0 };
 		return { providerOptions: { google: { thinkingConfig } } };
 	}
 
 	// anthropic: `effort` is a frontier-model knob (Haiku rejects it), so "off"
 	// sends nothing. Otherwise pair effort with adaptive thinking (Opus 4.7+
-	// require the pairing); `display` controls visibility, not whether it thinks.
+	// require the pairing), shown as a summary.
 	const anthropic: Record<string, Json> = {};
-	if (effort !== "off") {
+	if (reason) {
 		anthropic.effort = effort;
-		anthropic.thinking = {
-			type: "adaptive",
-			display: reason ? "summarized" : "omitted",
-		};
+		anthropic.thinking = { type: "adaptive", display: "summarized" };
 	}
 	return { providerOptions: { anthropic } };
 }

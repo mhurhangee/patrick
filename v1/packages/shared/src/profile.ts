@@ -13,8 +13,6 @@ export type AiSettings = {
 	quickModel: string;
 	detailedModel: string;
 	effort: AiEffort;
-	/** Stream AgentPat's reasoning to the chat transparency UI. */
-	showThinking: boolean;
 };
 
 export type Appearance = {
@@ -78,7 +76,6 @@ export function createProfile(id: string, name: string): Profile {
 			quickModel: DEFAULT_QUICK_MODEL.anthropic,
 			detailedModel: DEFAULT_DETAILED_MODEL.anthropic,
 			effort: "medium",
-			showThinking: false,
 		},
 		prompts: { agentpat: DEFAULT_AGENTPAT_PROMPT },
 		examples: [],
