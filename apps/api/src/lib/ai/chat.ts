@@ -171,7 +171,7 @@ type Part = TextPart | FilePart;
 // PDFs as file parts, read-only docx as text. A cache breakpoint on the last part
 // means [system + this whole block] caches — the big, stable source tokens are
 // paid once, then cached every later turn. (Anthropic honours cacheControl;
-// OpenAI auto-caches the prefix; others ignore it.) See v1-context-model.
+// OpenAI auto-caches the prefix; others ignore it.)
 async function pinnedSourcesMessage(
 	folder: string,
 	pinned: PinnedSource[],

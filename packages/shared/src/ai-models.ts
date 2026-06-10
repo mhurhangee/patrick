@@ -139,7 +139,7 @@ export function modelsForProvider(provider: Provider): CuratedModel[] {
 type Vendor = "anthropic" | "openai" | "google";
 
 // Input tokens one PDF page costs per vendor (extracted text + a rendered page
-// image) — roughly constant across a vendor's models. Measured in v0.
+// image) — roughly constant across a vendor's models.
 const PDF_TOKENS_PER_PAGE: Record<Vendor, number> = {
 	anthropic: 1562,
 	openai: 944,

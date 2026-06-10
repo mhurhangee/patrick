@@ -23,7 +23,7 @@ function taskBlock(task: Task): string {
 // The system prompt holds INSTRUCTIONS + a MANIFEST only — never document
 // content. Read-only sources ride as cached messages (see chat.ts); the editable
 // draft is read live through the editor tools. This keeps the system prefix
-// stable and cacheable for the whole chat. See the v1-context-model.
+// stable and cacheable for the whole chat.
 
 function manifest(
 	pinned: PinnedSource[],

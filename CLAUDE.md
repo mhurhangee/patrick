@@ -32,11 +32,11 @@ Config home (`~/.config/patrick/` via `apps/api/src/lib/config.ts`): `profiles/<
 
 ## Domain model
 
-- **Profile** — the attorney: identity + `practiceContext` + the **AgentPat/Patrick prompt template** + AI settings (BYOK provider/keys, models, reasoning `effort`). New profiles can start from a **template** (US/EP prosecution, drafting, an example client) — `packages/shared/src/profile-templates.ts`.
+- **Profile** — the attorney: identity + `practiceContext` + the **Patrick prompt template** + AI settings (BYOK provider/keys, models, reasoning `effort`). New profiles can start from a **template** (US/EP prosecution, drafting, an example client) — `packages/shared/src/profile-templates.ts`.
 - **Task** — a folder + a short **`name`**, a **`label`** (the brief → `<TASK>`), and **`notes`** (a living record, human + Patrick). Notes are edited in the workspace sidebar; the brief in task setup.
 - **Document** — any file in the folder. `editable ≡ createdInPatrick && .docx` (Patrick-owned drafts); everything else (PDFs, the attorney's own `.docx`) is read-only. Originals are never mutated/renamed/deleted (server returns 403); to edit one, Patrick proposes an **editable `(Patrick)` copy**.
 
-## Context model — THE foundation (read `v1-context-model` memory)
+## Context model — THE foundation (read the `context-model` memory)
 
 An evolution of OPEN = CONTEXT. **One system prompt per chat**, frozen at first send (before that it follows the live profile; after, it's locked + persisted — edit → start a new chat). The system holds **instructions + a manifest only**, never document content.
 
@@ -58,8 +58,13 @@ Caching ≠ attention loss (it's bit-identical KV), so we cache without quality 
 ## Conventions
 
 - **pnpm** only (never npm/yarn). Biome for lint/format (root `biome.json`). TS strict — no `any`, no skipping types. `pnpm check` = typecheck + lint:fix + knip; run before considering work done.
-- **Comments explain the code, not history** — never "this used to…", "v0 did…", or rebuild commentary.
-- **Commits**: present tense, what + why; commit at logical checkpoints; branch for features. **Never** add a Claude co-author line. **Ask before committing.**
+- **Comments explain the code, not history** — never "this used to…", "previously…", or rebuild/migration commentary.
+- **Git hygiene — the dev wants active help here, so be proactive about it:**
+  - **Branch for every piece of work** — a feature, a fix, a refactor. Never pile changes onto `main`; `main` stays releasable.
+  - **Small, focused, atomic commits** — one logical change each (don't grab-bag unrelated edits into one commit). Stage only what belongs together; keep the working tree from drifting.
+  - **Messages:** present tense, *what + why* (the why when it's non-obvious). **Never** add a Claude co-author line.
+  - **Ask before committing** — propose a commit at a clean, green checkpoint and wait for an explicit "commit"; don't infer standing permission. But *do* proactively suggest the commit/branch at the right moment rather than waiting to be asked.
+- **Review before merging:** run **`/code-review`** on a feature branch's diff before merging it — fresh eyes catch the author's blind spots that re-reading your own code won't. Use a thorough pass (high effort) for anything substantial; `ultra` is the deep multi-agent cloud review the dev triggers. Proactively suggest it at merge points and other meaningful milestones, then triage the findings together before merging.
 - MVP/startup mode: working > perfect, simple > clever; let it crash by default (catch only at real boundaries). Ask before structural/dependency/schema changes.
 
 ## Running
@@ -70,4 +75,4 @@ pnpm dev:desktop      # tauri dev
 pnpm check            # typecheck + lint:fix + knip
 ```
 
-Project memory (`~/.claude/projects/-root-patrick/memory/`, indexed in `MEMORY.md`) holds the durable design decisions — start with `v1-context-model`. `IDEAS.md` is a scratch backlog.
+Project memory (`~/.claude/projects/-root-patrick/memory/`, indexed in `MEMORY.md`) holds the durable design rationale — start with `context-model`. `IDEAS.md` is a scratch backlog.

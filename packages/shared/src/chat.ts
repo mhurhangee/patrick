@@ -34,7 +34,7 @@ export type ExchangeMetadata = {
 // ─── Persistence ───────────────────────────────────────────────────────────────
 // A chat lives as one JSON file in <folder>/.patrick/chats/<id>.json. It carries
 // its own locked instructions + pinned context, so reopening it restores the
-// exact conversation state (see v1-context-model: one system per chat).
+// exact conversation state (one system prompt per chat).
 
 /** A stored message — UIMessage-shaped (parts/metadata kept opaque) + a time. */
 export type StoredChatMessage = {
