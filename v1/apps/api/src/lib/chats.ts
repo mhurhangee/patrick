@@ -40,21 +40,21 @@ export async function listChats(folder: string): Promise<ChatSummary[]> {
 	} catch {
 		return [];
 	}
-	const summaries: ChatSummary[] = [];
-	for (const file of files) {
-		if (!file.endsWith(".json")) continue;
-		const chat = await readChat(folder, file.replace(/\.json$/, ""));
-		if (chat)
-			summaries.push({
-				id: chat.id,
-				updatedAt: chat.updatedAt,
-				lastUser: lastText(chat.messages, "user"),
-				lastAssistant: lastText(chat.messages, "assistant"),
-			});
-	}
-	// Most recently touched first.
-	summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-	return summaries;
+	// Read the chats in parallel (the sidebar refetches this after every turn).
+	const chats = await Promise.all(
+		files
+			.filter((f) => f.endsWith(".json"))
+			.map((f) => readChat(folder, f.replace(/\.json$/, ""))),
+	);
+	return chats
+		.filter((c): c is Chat => c != null)
+		.map((chat) => ({
+			id: chat.id,
+			updatedAt: chat.updatedAt,
+			lastUser: lastText(chat.messages, "user"),
+			lastAssistant: lastText(chat.messages, "assistant"),
+		}))
+		.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function readChat(

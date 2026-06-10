@@ -1,8 +1,12 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { getAiSdkTools } from "@eigenpal/docx-editor-agents/ai-sdk/server";
 import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
-import type { ExchangeMetadata, PinnedSource } from "@patrick/shared";
+import {
+	type ExchangeMetadata,
+	type PinnedSource,
+	toStoredMessage,
+} from "@patrick/shared";
 import {
 	convertToModelMessages,
 	type ModelMessage,
@@ -125,17 +129,26 @@ const saveNote = tool({
 	}),
 });
 
-// Read-only docx → indexed plain text, headless from disk. Originals never
-// change, so once pinned this content is stable (and therefore cacheable).
+// Read-only docx → indexed plain text, headless from disk. The headless parse is
+// the pricey bit and originals don't change, so memoise by path+mtime — a
+// multi-turn chat then extracts each pinned docx once, not every turn.
+const docxTextCache = new Map<string, { mtimeMs: number; text: string }>();
+
 async function docxText(folder: string, filename: string): Promise<string> {
+	const path = join(folder, filename);
 	try {
-		const buf = await readFile(join(folder, filename));
+		const mtimeMs = (await stat(path)).mtimeMs;
+		const cached = docxTextCache.get(path);
+		if (cached && cached.mtimeMs === mtimeMs) return cached.text;
+		const buf = await readFile(path);
 		const bytes = buf.buffer.slice(
 			buf.byteOffset,
 			buf.byteOffset + buf.byteLength,
 		) as ArrayBuffer;
 		const reviewer = await DocxReviewer.fromBuffer(bytes, "Patrick");
-		return reviewer.getContentAsText().trim();
+		const text = reviewer.getContentAsText().trim();
+		docxTextCache.set(path, { mtimeMs, text });
+		return text;
 	} catch {
 		return "";
 	}
@@ -164,33 +177,37 @@ async function pinnedSourcesMessage(
 	pinned: PinnedSource[],
 ): Promise<ModelMessage | null> {
 	if (pinned.length === 0) return null;
+	// Read every source in parallel (each yields its content parts in order).
+	const perSource = await Promise.all(
+		pinned.map(async (src): Promise<Part[]> => {
+			if (src.kind === "pdf") {
+				try {
+					const data = await readFile(join(folder, src.filename));
+					return [
+						{ type: "text", text: `\n# ${src.filename}` },
+						{
+							type: "file",
+							data: new Uint8Array(data),
+							mediaType: "application/pdf",
+						},
+					];
+				} catch {
+					return []; // unreadable — skip rather than fail the turn
+				}
+			}
+			const text = await docxText(folder, src.filename);
+			return [
+				{ type: "text", text: `\n# ${src.filename}\n${text || "(empty)"}` },
+			];
+		}),
+	);
 	const content: Part[] = [
 		{
 			type: "text",
 			text: "Pinned sources for this matter (read-only references):",
 		},
+		...perSource.flat(),
 	];
-	for (const src of pinned) {
-		if (src.kind === "pdf") {
-			try {
-				const data = await readFile(join(folder, src.filename));
-				content.push({ type: "text", text: `\n# ${src.filename}` });
-				content.push({
-					type: "file",
-					data: new Uint8Array(data),
-					mediaType: "application/pdf",
-				});
-			} catch {
-				// Unreadable — skip rather than fail the turn.
-			}
-		} else {
-			const text = await docxText(folder, src.filename);
-			content.push({
-				type: "text",
-				text: `\n# ${src.filename}\n${text || "(empty)"}`,
-			});
-		}
-	}
 	// Cache breakpoint on the final block: everything up to here is the cache prefix.
 	const last = content[content.length - 1];
 	if (last)
@@ -317,13 +334,9 @@ export async function handleChat(c: Context) {
 				id: body.chatId,
 				systemTemplate: body.templateOverride ?? profile.prompts.agentpat,
 				pinnedSources,
-				messages: [...byId.values()].map((m) => ({
-					id: m.id,
-					role: m.role === "assistant" ? "assistant" : "user",
-					parts: m.parts as unknown[],
-					metadata: m.metadata,
-					createdAt: new Date().toISOString(),
-				})),
+				messages: [...byId.values()].map((m) =>
+					toStoredMessage({ ...m, parts: m.parts as unknown[] }),
+				),
 			});
 		},
 	});
