@@ -5,7 +5,7 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai";
-import { ChevronRight, FolderOpen, Loader2 } from "lucide-react";
+import { ChevronRight, FolderOpen, Loader2, Tag } from "lucide-react";
 import { type FC, type ReactNode, useState } from "react";
 import { Streamdown } from "streamdown";
 import { Button } from "@/components/ui/button";
@@ -205,6 +205,8 @@ export type ToolUiHandlers = {
 	}) => void;
 	/** Pin a source into the chat's context (requestOpenFile acceptance). */
 	pinSource: (filename: string) => void;
+	/** Apply a label to a document (suggestLabel acceptance). */
+	setLabel: (filename: string, label: string) => void;
 };
 
 const HITL_CARDS: Record<
@@ -212,6 +214,7 @@ const HITL_CARDS: Record<
 	FC<{ part: AnyToolPart; handlers: ToolUiHandlers }>
 > = {
 	requestOpenFile: RequestOpenFileCard,
+	suggestLabel: SuggestLabelCard,
 };
 
 /** Tool names handled by a HITL card (so the client doesn't auto-resolve them). */
@@ -303,6 +306,79 @@ function RequestOpenFileCard({
 					onClick={() => respond(false)}
 				>
 					Not now
+				</Button>
+			</div>
+		</HitlCard>
+	);
+}
+
+// Patrick proposes a label for a document; the attorney applies or declines.
+function SuggestLabelCard({
+	part,
+	handlers,
+}: {
+	part: AnyToolPart;
+	handlers: ToolUiHandlers;
+}) {
+	const input = part.input as { filename?: string; label?: string } | undefined;
+	const filename = input?.filename ?? "a document";
+	const label = input?.label ?? "";
+
+	const respond = (apply: boolean) => {
+		if (apply && label) handlers.setLabel(filename, label);
+		handlers.addToolResult({
+			tool: "suggestLabel",
+			toolCallId: part.toolCallId,
+			output: { applied: apply, filename, label },
+		});
+	};
+
+	if (part.state === "output-available") {
+		const out = part.output as { applied?: boolean } | undefined;
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">
+					{out?.applied ? (
+						<>
+							Labeled <span className="font-medium">{filename}</span> — “{label}
+							”.
+						</>
+					) : (
+						<>
+							Left <span className="font-medium">{filename}</span> unlabeled.
+						</>
+					)}
+				</span>
+			</HitlCard>
+		);
+	}
+	if (part.state === "input-streaming")
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">Preparing suggestion…</span>
+			</HitlCard>
+		);
+
+	return (
+		<HitlCard>
+			<div className="flex items-center gap-2">
+				<Tag size={13} className="shrink-0 text-muted-foreground" />
+				<span className="text-foreground">
+					Label <span className="font-medium">{filename}</span> as:
+				</span>
+			</div>
+			<p className="mt-1 pl-5 text-foreground italic">“{label}”</p>
+			<div className="mt-2 flex gap-2 pl-5">
+				<Button size="sm" className="h-7" onClick={() => respond(true)}>
+					Apply
+				</Button>
+				<Button
+					size="sm"
+					variant="ghost"
+					className="h-7"
+					onClick={() => respond(false)}
+				>
+					No
 				</Button>
 			</div>
 		</HitlCard>

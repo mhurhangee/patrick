@@ -70,8 +70,8 @@ async function availableDocs(
 		.map((d) => ({ filename: d.filename, label: d.label }));
 }
 
-// HITL: a no-execute tool. The model calls it to propose pinning a source; the
-// call streams to the client, which shows an accept/reject card and resolves it.
+// HITL: no-execute tools. The model calls them to propose an action; the call
+// streams to the client, which shows an accept/reject card and resolves it.
 const requestOpenFile = tool({
 	description:
 		"Propose adding one of the available (not-yet-in-context) source documents to context. The attorney must accept before you can read it. Use when you need a document that isn't in context.",
@@ -79,6 +79,19 @@ const requestOpenFile = tool({
 		filename: z
 			.string()
 			.describe("Exact filename from the 'not yet in context' list"),
+	}),
+});
+
+const suggestLabel = tool({
+	description:
+		"Propose a short one-line label for a document — what it is, in a few words. The attorney accepts to apply it. Helpful for documents that have no label yet.",
+	inputSchema: z.object({
+		filename: z.string().describe("Exact filename of the document to label"),
+		label: z
+			.string()
+			.describe(
+				"A concise label, e.g. 'specification as filed' or 'Smith reference (US7557198)'",
+			),
 	}),
 });
 
@@ -227,6 +240,7 @@ export async function handleChat(c: Context) {
 		...Object.fromEntries(
 			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
 		),
+		suggestLabel,
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 

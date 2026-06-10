@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
 import { useProfile } from "@/hooks/use-profiles";
+import { useSaveDocuments, useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveChat } from "@/lib/active-chat";
 import { useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
@@ -115,6 +116,10 @@ function ChatSession({
 	const modelId = profile?.ai.detailedModel ?? null;
 	const profileTemplate = profile?.prompts.agentpat ?? "";
 	const refreshChats = useRefreshChats(activeTaskId);
+	const { data: docs } = useTaskDocuments(activeTaskId);
+	const saveDocs = useSaveDocuments(activeTaskId ?? "");
+	const docsRef = useRef(docs);
+	docsRef.current = docs;
 	const { columnList, focused, getDoc, open } = useWorkspace();
 
 	// This chat's instructions. null ⇒ "follow the profile" (so editing the
@@ -277,8 +282,15 @@ function ChatSession({
 				// Show what got added — open it in the viewer too.
 				open(filename);
 			},
+			setLabel: (filename, label) => {
+				const list = docsRef.current;
+				if (!list) return;
+				saveDocs.mutate(
+					list.map((d) => (d.filename === filename ? { ...d, label } : d)),
+				);
+			},
 		}),
-		[addToolResult, open],
+		[addToolResult, open, saveDocs.mutate],
 	);
 
 	// Group the flat message list into exchanges, aggregating usage/tools/context.
