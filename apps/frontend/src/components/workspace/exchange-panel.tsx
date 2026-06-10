@@ -17,6 +17,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { formatTokens } from "@/lib/format";
 
 export type ExchangePanelData = {
 	model: string | null;
@@ -35,10 +36,6 @@ function formatCost(usd: number): string {
 	if (usd < 0.00005) return "<$0.0001";
 	if (usd < 0.01) return `$${usd.toFixed(4)}`;
 	return `$${usd.toFixed(3)}`;
-}
-
-function formatTokens(n: number): string {
-	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
 
 function Action({

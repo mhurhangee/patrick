@@ -42,7 +42,7 @@ import {
 	useUpdateTask,
 } from "@/hooks/use-tasks";
 import { useActiveChat } from "@/lib/active-chat";
-import { useEditorRefFor } from "@/lib/active-editor";
+import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
@@ -212,6 +212,7 @@ function ChatSession({
 		});
 	}, [focusedDoc, openEditableIds]);
 	const editorRef = useEditorRefFor(activeDraft);
+	const waitForEditor = useEditorReadiness();
 
 	const { executeToolCall } = useDocxAgentTools({
 		editorRef: editorRef as RefObject<DocxEditorRef | null>,
@@ -314,10 +315,13 @@ function ChatSession({
 			},
 			// Return null on failure rather than throwing — the card awaits this and
 			// must always resolve the tool call, or the agent loop hangs forever.
+			// Wait for the new editor to mount + its agent to be ready before
+			// resolving, so the agent's first edit doesn't race an unbound editor.
 			createDraft: async (name) => {
 				try {
 					const res = await createDoc.mutateAsync(name);
 					open(res.filename);
+					await waitForEditor(res.filename);
 					return res.filename;
 				} catch {
 					return null;
@@ -327,6 +331,7 @@ function ChatSession({
 				try {
 					const res = await unlockDoc.mutateAsync(filename);
 					open(res.filename);
+					await waitForEditor(res.filename);
 					return res.filename;
 				} catch {
 					return null;
@@ -348,6 +353,7 @@ function ChatSession({
 			createDoc.mutateAsync,
 			unlockDoc.mutateAsync,
 			updateTask.mutate,
+			waitForEditor,
 		],
 	);
 

@@ -1,4 +1,4 @@
-import type { Document } from "@patrick/shared";
+import { type Document, docKind } from "@patrick/shared";
 import { EyeOff, Star } from "lucide-react";
 import { useState } from "react";
 import { DocIcon } from "@/components/doc-icon";
@@ -68,9 +68,7 @@ function DocumentsEditor({
 							)}
 						>
 							<DocIcon
-								kind={
-									doc.filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx"
-								}
+								kind={docKind(doc.filename)}
 								editable={!!doc.createdInPatrick}
 							/>
 							<div className="min-w-0 flex-1">
