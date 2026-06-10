@@ -46,6 +46,7 @@ next-env.d.ts
 _temp/
 **/dist/
 apps/api/bin/
+apps/desktop/src-tauri/binaries/
 **/.tanstack/
 IDEAS.md
 

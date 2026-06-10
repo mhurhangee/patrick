@@ -6,19 +6,10 @@
 	"build": {
 		"frontendDist": "../frontend/dist",
 		"devUrl": "http://localhost:5173",
-		"beforeDevCommand": "pnpm --filter frontend dev",
-		"beforeBuildCommand": "pnpm --filter frontend build"
+		"beforeDevCommand": "node scripts/build-sidecar.mjs && pnpm --filter frontend dev",
+		"beforeBuildCommand": "node scripts/build-sidecar.mjs && pnpm --filter frontend build"
 	},
 	"app": {
-		"windows": [
-			{
-				"title": "Patrick",
-				"width": 800,
-				"height": 600,
-				"resizable": true,
-				"fullscreen": false
-			}
-		],
 		"security": {
 			"csp": null
 		}
@@ -26,6 +17,7 @@
 	"bundle": {
 		"active": true,
 		"targets": "all",
+		"externalBin": ["binaries/api"],
 		"icon": [
 			"icons/32x32.png",
 			"icons/128x128.png",

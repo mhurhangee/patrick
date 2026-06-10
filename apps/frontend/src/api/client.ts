@@ -1,4 +1,16 @@
-export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+declare global {
+	interface Window {
+		// Injected by the Tauri shell before page load — the sidecar API's port.
+		__API_URL__?: string;
+	}
+}
+
+// In the desktop app the Tauri host spawns the API on a private port and injects
+// its URL; in browser dev we fall back to the configured/default local server.
+export const BASE_URL =
+	(typeof window !== "undefined" && window.__API_URL__) ||
+	import.meta.env.VITE_API_URL ||
+	"http://localhost:3001";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const res = await fetch(`${BASE_URL}${path}`, {
