@@ -14,7 +14,7 @@ import {
 	StickyNote,
 	Tag,
 } from "lucide-react";
-import { type FC, type ReactNode, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Streamdown } from "streamdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -223,19 +223,124 @@ export type ToolUiHandlers = {
 	saveNote: (note: string) => void;
 };
 
-const HITL_CARDS: Record<
-	string,
-	FC<{ part: AnyToolPart; handlers: ToolUiHandlers }>
-> = {
-	requestOpenFile: RequestOpenFileCard,
-	suggestLabel: SuggestLabelCard,
-	createDraft: CreateDraftCard,
-	requestUnlock: RequestUnlockCard,
-	saveNote: SaveNoteCard,
+type HitlInput = Record<string, string | undefined>;
+type HitlOutput = Record<string, unknown>;
+
+const bold = (s: unknown) => (
+	<span className="font-medium">{String(s ?? "")}</span>
+);
+const iconCls = "shrink-0 text-muted-foreground";
+
+// One spec per HITL tool: the proposal view, what accepting does (its side-effect
+// + the tool output to record), and how the resolved state reads. The generic
+// HitlToolCard renders any of them.
+type HitlSpec = {
+	icon: ReactNode;
+	title: (i: HitlInput) => ReactNode;
+	detail?: (i: HitlInput) => ReactNode;
+	acceptLabel: string;
+	rejectLabel: string;
+	accept: (i: HitlInput, h: ToolUiHandlers) => unknown | Promise<unknown>;
+	reject: (i: HitlInput) => unknown;
+	resolved: (o: HitlOutput) => ReactNode;
+	preparing?: string;
+};
+
+const HITL_SPECS: Record<string, HitlSpec> = {
+	requestOpenFile: {
+		icon: <FolderOpen size={13} className={iconCls} />,
+		title: (i) => <>Patrick wants to add {bold(i.filename)} to this chat.</>,
+		detail: () => (
+			<span className="text-muted-foreground">
+				Its full content joins the context from the next message.
+			</span>
+		),
+		acceptLabel: "Pin it",
+		rejectLabel: "Not now",
+		accept: (i, h) => {
+			if (i.filename) h.pinSource(i.filename);
+			return { pinned: true, filename: i.filename };
+		},
+		reject: (i) => ({ pinned: false, filename: i.filename }),
+		resolved: (o) =>
+			o.pinned ? (
+				<>Pinned {bold(o.filename)} — now in context.</>
+			) : (
+				<>Left {bold(o.filename)} out.</>
+			),
+		preparing: "Preparing request…",
+	},
+	suggestLabel: {
+		icon: <Tag size={13} className={iconCls} />,
+		title: (i) => <>Label {bold(i.filename)} as:</>,
+		detail: (i) => <span className="text-foreground italic">“{i.label}”</span>,
+		acceptLabel: "Apply",
+		rejectLabel: "No",
+		accept: (i, h) => {
+			if (i.filename && i.label) h.setLabel(i.filename, i.label);
+			return { applied: true, filename: i.filename, label: i.label };
+		},
+		reject: (i) => ({ applied: false, filename: i.filename }),
+		resolved: (o) =>
+			o.applied ? (
+				<>
+					Labeled {bold(o.filename)} — “{String(o.label ?? "")}”.
+				</>
+			) : (
+				<>Left {bold(o.filename)} unlabeled.</>
+			),
+	},
+	createDraft: {
+		icon: <FilePlus size={13} className={iconCls} />,
+		title: (i) => <>Start a new draft: {bold(i.name)}?</>,
+		acceptLabel: "Create",
+		rejectLabel: "No",
+		accept: async (i, h) => {
+			const filename = await h.createDraft(i.name ?? "Draft");
+			return filename ? { created: true, filename } : { created: false };
+		},
+		reject: () => ({ created: false }),
+		resolved: (o) =>
+			o.created ? (
+				<>Created {bold(o.filename)} — now your active draft.</>
+			) : (
+				<>No draft created.</>
+			),
+	},
+	requestUnlock: {
+		icon: <FilePen size={13} className={iconCls} />,
+		title: (i) => <>Make an editable copy of {bold(i.filename)} to draft in?</>,
+		acceptLabel: "Create copy",
+		rejectLabel: "No",
+		accept: async (i, h) => {
+			const filename = i.filename ? await h.unlockSource(i.filename) : null;
+			return filename ? { unlocked: true, filename } : { unlocked: false };
+		},
+		reject: () => ({ unlocked: false }),
+		resolved: (o) =>
+			o.unlocked ? (
+				<>Created editable copy {bold(o.filename)}.</>
+			) : (
+				<>Left it as-is.</>
+			),
+	},
+	saveNote: {
+		icon: <StickyNote size={13} className={iconCls} />,
+		title: () => <>Save to task notes:</>,
+		detail: (i) => <span className="text-foreground italic">“{i.note}”</span>,
+		acceptLabel: "Save",
+		rejectLabel: "No",
+		accept: (i, h) => {
+			if (i.note) h.saveNote(i.note);
+			return { saved: true };
+		},
+		reject: () => ({ saved: false }),
+		resolved: (o) => (o.saved ? "Saved to task notes." : "Note not saved."),
+	},
 };
 
 /** Tool names handled by a HITL card (so the client doesn't auto-resolve them). */
-export const HITL_TOOLS = new Set(Object.keys(HITL_CARDS));
+export const HITL_TOOLS = new Set(Object.keys(HITL_SPECS));
 
 function HitlCard({ children }: { children: ReactNode }) {
 	return (
@@ -245,76 +350,67 @@ function HitlCard({ children }: { children: ReactNode }) {
 	);
 }
 
-// Patrick proposes pinning a source; the attorney decides. The agent can only
-// suggest — accepting is what puts a doc in context (OPEN = CONTEXT honesty).
-function RequestOpenFileCard({
+// One card for every HITL tool, driven by its spec. accept/reject ALWAYS resolve
+// the tool call (a thrown side-effect becomes an error output) so the agent loop
+// can never hang waiting on an unresolved call.
+function HitlToolCard({
+	name,
 	part,
 	handlers,
+	spec,
 }: {
+	name: string;
 	part: AnyToolPart;
 	handlers: ToolUiHandlers;
+	spec: HitlSpec;
 }) {
-	const filename =
-		(part.input as { filename?: string } | undefined)?.filename ?? "a document";
+	const input = (part.input ?? {}) as HitlInput;
 
-	const respond = (pinned: boolean) => {
-		if (pinned) handlers.pinSource(filename);
-		handlers.addToolResult({
-			tool: "requestOpenFile",
-			toolCallId: part.toolCallId,
-			output: { pinned, filename },
-		});
+	const respond = async (accept: boolean) => {
+		let output: unknown;
+		try {
+			output = accept ? await spec.accept(input, handlers) : spec.reject(input);
+		} catch (err) {
+			output = { error: err instanceof Error ? err.message : "action failed" };
+		}
+		handlers.addToolResult({ tool: name, toolCallId: part.toolCallId, output });
 	};
 
-	if (part.state === "output-available") {
-		const out = part.output as { pinned?: boolean } | undefined;
+	if (part.state === "output-available")
 		return (
 			<HitlCard>
 				<span className="text-muted-foreground">
-					{out?.pinned ? (
-						<>
-							Pinned <span className="font-medium">{filename}</span> — now in
-							context.
-						</>
-					) : (
-						<>
-							Left <span className="font-medium">{filename}</span> out.
-						</>
-					)}
+					{spec.resolved((part.output ?? {}) as HitlOutput)}
 				</span>
 			</HitlCard>
 		);
-	}
 	if (part.state === "output-error")
 		return (
 			<HitlCard>
 				<span className="text-destructive">
-					{part.errorText ?? "Couldn't add the document."}
+					{part.errorText ?? "Something went wrong."}
 				</span>
 			</HitlCard>
 		);
 	if (part.state === "input-streaming")
 		return (
 			<HitlCard>
-				<span className="text-muted-foreground">Preparing request…</span>
+				<span className="text-muted-foreground">
+					{spec.preparing ?? "Preparing…"}
+				</span>
 			</HitlCard>
 		);
 
 	return (
 		<HitlCard>
 			<div className="flex items-center gap-2">
-				<FolderOpen size={13} className="shrink-0 text-muted-foreground" />
-				<span className="text-foreground">
-					Patrick wants to add <span className="font-medium">{filename}</span>{" "}
-					to this chat.
-				</span>
+				{spec.icon}
+				<span className="text-foreground">{spec.title(input)}</span>
 			</div>
-			<p className="mt-1 pl-5 text-muted-foreground">
-				Its full content joins the context from the next message.
-			</p>
+			{spec.detail && <div className="mt-1 pl-5">{spec.detail(input)}</div>}
 			<div className="mt-2 flex gap-2 pl-5">
 				<Button size="sm" className="h-7" onClick={() => respond(true)}>
-					Pin it
+					{spec.acceptLabel}
 				</Button>
 				<Button
 					size="sm"
@@ -322,286 +418,7 @@ function RequestOpenFileCard({
 					className="h-7"
 					onClick={() => respond(false)}
 				>
-					Not now
-				</Button>
-			</div>
-		</HitlCard>
-	);
-}
-
-// Patrick proposes a label for a document; the attorney applies or declines.
-function SuggestLabelCard({
-	part,
-	handlers,
-}: {
-	part: AnyToolPart;
-	handlers: ToolUiHandlers;
-}) {
-	const input = part.input as { filename?: string; label?: string } | undefined;
-	const filename = input?.filename ?? "a document";
-	const label = input?.label ?? "";
-
-	const respond = (apply: boolean) => {
-		if (apply && label) handlers.setLabel(filename, label);
-		handlers.addToolResult({
-			tool: "suggestLabel",
-			toolCallId: part.toolCallId,
-			output: { applied: apply, filename, label },
-		});
-	};
-
-	if (part.state === "output-available") {
-		const out = part.output as { applied?: boolean } | undefined;
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">
-					{out?.applied ? (
-						<>
-							Labeled <span className="font-medium">{filename}</span> — “{label}
-							”.
-						</>
-					) : (
-						<>
-							Left <span className="font-medium">{filename}</span> unlabeled.
-						</>
-					)}
-				</span>
-			</HitlCard>
-		);
-	}
-	if (part.state === "input-streaming")
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">Preparing suggestion…</span>
-			</HitlCard>
-		);
-
-	return (
-		<HitlCard>
-			<div className="flex items-center gap-2">
-				<Tag size={13} className="shrink-0 text-muted-foreground" />
-				<span className="text-foreground">
-					Label <span className="font-medium">{filename}</span> as:
-				</span>
-			</div>
-			<p className="mt-1 pl-5 text-foreground italic">“{label}”</p>
-			<div className="mt-2 flex gap-2 pl-5">
-				<Button size="sm" className="h-7" onClick={() => respond(true)}>
-					Apply
-				</Button>
-				<Button
-					size="sm"
-					variant="ghost"
-					className="h-7"
-					onClick={() => respond(false)}
-				>
-					No
-				</Button>
-			</div>
-		</HitlCard>
-	);
-}
-
-// Patrick proposes starting a new draft; the attorney creates or declines.
-function CreateDraftCard({
-	part,
-	handlers,
-}: {
-	part: AnyToolPart;
-	handlers: ToolUiHandlers;
-}) {
-	const name = (part.input as { name?: string } | undefined)?.name ?? "a draft";
-
-	const accept = async () => {
-		const filename = await handlers.createDraft(name);
-		handlers.addToolResult({
-			tool: "createDraft",
-			toolCallId: part.toolCallId,
-			output: filename ? { created: true, filename } : { created: false },
-		});
-	};
-	const reject = () =>
-		handlers.addToolResult({
-			tool: "createDraft",
-			toolCallId: part.toolCallId,
-			output: { created: false },
-		});
-
-	if (part.state === "output-available") {
-		const out = part.output as
-			| { created?: boolean; filename?: string }
-			| undefined;
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">
-					{out?.created ? (
-						<>
-							Created <span className="font-medium">{out.filename}</span> — now
-							your active draft.
-						</>
-					) : (
-						<>No draft created.</>
-					)}
-				</span>
-			</HitlCard>
-		);
-	}
-	if (part.state === "input-streaming")
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">Preparing…</span>
-			</HitlCard>
-		);
-
-	return (
-		<HitlCard>
-			<div className="flex items-center gap-2">
-				<FilePlus size={13} className="shrink-0 text-muted-foreground" />
-				<span className="text-foreground">
-					Start a new draft: <span className="font-medium">{name}</span>?
-				</span>
-			</div>
-			<div className="mt-2 flex gap-2 pl-5">
-				<Button size="sm" className="h-7" onClick={accept}>
-					Create
-				</Button>
-				<Button size="sm" variant="ghost" className="h-7" onClick={reject}>
-					No
-				</Button>
-			</div>
-		</HitlCard>
-	);
-}
-
-// Patrick proposes making an editable copy of an original to draft amendments in.
-function RequestUnlockCard({
-	part,
-	handlers,
-}: {
-	part: AnyToolPart;
-	handlers: ToolUiHandlers;
-}) {
-	const filename =
-		(part.input as { filename?: string } | undefined)?.filename ?? "a document";
-
-	const accept = async () => {
-		const copy = await handlers.unlockSource(filename);
-		handlers.addToolResult({
-			tool: "requestUnlock",
-			toolCallId: part.toolCallId,
-			output: copy ? { unlocked: true, filename: copy } : { unlocked: false },
-		});
-	};
-	const reject = () =>
-		handlers.addToolResult({
-			tool: "requestUnlock",
-			toolCallId: part.toolCallId,
-			output: { unlocked: false },
-		});
-
-	if (part.state === "output-available") {
-		const out = part.output as
-			| { unlocked?: boolean; filename?: string }
-			| undefined;
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">
-					{out?.unlocked ? (
-						<>
-							Created editable copy{" "}
-							<span className="font-medium">{out.filename}</span>.
-						</>
-					) : (
-						<>
-							Left <span className="font-medium">{filename}</span> as-is.
-						</>
-					)}
-				</span>
-			</HitlCard>
-		);
-	}
-	if (part.state === "input-streaming")
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">Preparing…</span>
-			</HitlCard>
-		);
-
-	return (
-		<HitlCard>
-			<div className="flex items-center gap-2">
-				<FilePen size={13} className="shrink-0 text-muted-foreground" />
-				<span className="text-foreground">
-					Make an editable copy of{" "}
-					<span className="font-medium">{filename}</span> to draft in?
-				</span>
-			</div>
-			<div className="mt-2 flex gap-2 pl-5">
-				<Button size="sm" className="h-7" onClick={accept}>
-					Create copy
-				</Button>
-				<Button size="sm" variant="ghost" className="h-7" onClick={reject}>
-					No
-				</Button>
-			</div>
-		</HitlCard>
-	);
-}
-
-// Patrick proposes saving an insight to the task's notes; the attorney decides.
-function SaveNoteCard({
-	part,
-	handlers,
-}: {
-	part: AnyToolPart;
-	handlers: ToolUiHandlers;
-}) {
-	const note = (part.input as { note?: string } | undefined)?.note ?? "";
-
-	const respond = (save: boolean) => {
-		if (save && note) handlers.saveNote(note);
-		handlers.addToolResult({
-			tool: "saveNote",
-			toolCallId: part.toolCallId,
-			output: { saved: save },
-		});
-	};
-
-	if (part.state === "output-available") {
-		const out = part.output as { saved?: boolean } | undefined;
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">
-					{out?.saved ? "Saved to task notes." : "Note not saved."}
-				</span>
-			</HitlCard>
-		);
-	}
-	if (part.state === "input-streaming")
-		return (
-			<HitlCard>
-				<span className="text-muted-foreground">Preparing note…</span>
-			</HitlCard>
-		);
-
-	return (
-		<HitlCard>
-			<div className="flex items-center gap-2">
-				<StickyNote size={13} className="shrink-0 text-muted-foreground" />
-				<span className="text-foreground">Save to task notes:</span>
-			</div>
-			<p className="mt-1 pl-5 text-foreground italic">“{note}”</p>
-			<div className="mt-2 flex gap-2 pl-5">
-				<Button size="sm" className="h-7" onClick={() => respond(true)}>
-					Save
-				</Button>
-				<Button
-					size="sm"
-					variant="ghost"
-					className="h-7"
-					onClick={() => respond(false)}
-				>
-					No
+					{spec.rejectLabel}
 				</Button>
 			</div>
 		</HitlCard>
@@ -636,25 +453,43 @@ export function AssistantParts({
 
 	const pushTool = (part: AnyToolPart, name: string, i: number) => {
 		// HITL tools render an interactive card outside the trail.
-		const Card = HITL_CARDS[name];
-		if (Card && handlers) {
+		const spec = HITL_SPECS[name];
+		if (spec && handlers) {
 			flushTrail();
-			blocks.push(<Card key={`hitl-${i}`} part={part} handlers={handlers} />);
+			blocks.push(
+				<HitlToolCard
+					key={`hitl-${i}`}
+					name={name}
+					part={part}
+					handlers={handlers}
+					spec={spec}
+				/>,
+			);
 			return;
 		}
 		const presenter = PRESENTERS[name];
 		const running =
 			part.state === "input-streaming" || part.state === "input-available";
-		const error = part.state === "output-error";
+		// Editor tools report failure as a {success:false} output (not an
+		// output-error part) — treat that as an error so a failed edit shows red
+		// instead of looking complete.
+		const out = part.output as
+			| { success?: boolean; error?: string }
+			| undefined;
+		const failed = part.state === "output-error" || out?.success === false;
 		const summary =
-			part.state === "output-available" && presenter?.summary
+			part.state === "output-available" && !failed && presenter?.summary
 				? presenter.summary(part.input, part.output)
 				: null;
 		trail.push({
 			key: `t-${i}`,
 			label: presenter?.label ?? humanize(name),
-			status: error ? "error" : running ? "running" : "complete",
-			statusLabel: running ? (presenter?.runningLabel ?? "Running…") : summary,
+			status: failed ? "error" : running ? "running" : "complete",
+			statusLabel: running
+				? (presenter?.runningLabel ?? "Running…")
+				: failed
+					? (out?.error ?? "failed")
+					: summary,
 			detail: <ToolDetail part={part} />,
 		});
 	};

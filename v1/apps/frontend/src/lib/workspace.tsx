@@ -1,3 +1,4 @@
+import { docKind } from "@patrick/shared";
 import {
 	createContext,
 	type Dispatch,
@@ -20,10 +21,6 @@ export type WorkspaceDoc = {
 	/** Patrick-created docs are editable; originals are read-only. */
 	editable: boolean;
 };
-
-function kindOf(filename: string): DocKind {
-	return filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
-}
 
 export type Columns = Record<string, string[]>;
 export type WorkspaceColumn = { id: string; tabs: string[] };
@@ -73,7 +70,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const docMap = useMemo(() => {
 		const map = new Map<string, WorkspaceDoc>();
 		for (const d of documents ?? []) {
-			const kind = kindOf(d.filename);
+			const kind = docKind(d.filename);
 			map.set(d.filename, {
 				id: d.filename,
 				label: d.filename,

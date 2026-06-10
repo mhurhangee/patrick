@@ -4,10 +4,12 @@ import type { DocxEditorRef } from "@eigenpal/docx-editor-react";
 import {
 	type Chat,
 	contextWindowFor,
+	docKind,
 	type ExchangeContext,
 	type ExchangeMetadata,
 	MODELS_BY_ID,
 	type PinnedSource,
+	toStoredMessage,
 } from "@patrick/shared";
 import {
 	DefaultChatTransport,
@@ -294,7 +296,7 @@ function ChatSession({
 			addToolResult: (args) =>
 				addToolResult(args as Parameters<typeof addToolResult>[0]),
 			pinSource: (filename) => {
-				const kind = filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
+				const kind = docKind(filename);
 				setPinnedSources((prev) =>
 					prev.some((p) => p.filename === filename)
 						? prev
@@ -535,13 +537,9 @@ function ChatSession({
 		await tasksApi.saveChat(activeTaskId ?? "", newId, {
 			systemTemplate: template,
 			pinnedSources,
-			messages: messages.slice(0, cut).map((m) => ({
-				id: m.id,
-				role: m.role === "assistant" ? "assistant" : "user",
-				parts: m.parts as unknown[],
-				metadata: m.metadata,
-				createdAt: new Date().toISOString(),
-			})),
+			messages: messages
+				.slice(0, cut)
+				.map((m) => toStoredMessage({ ...m, parts: m.parts as unknown[] })),
 		});
 		refreshChats();
 		selectChat(newId);

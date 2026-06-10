@@ -6,6 +6,11 @@
  *  pinned it stays for the life of the chat — append-only, cacheable. */
 export type PinnedSource = { filename: string; kind: "pdf" | "docx" };
 
+/** A document's kind from its filename (PDF, else treated as Word). */
+export function docKind(filename: string): PinnedSource["kind"] {
+	return filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
+}
+
 export type ExchangeContext = {
 	/** The detailed model id that ran this turn. */
 	model: string;
@@ -61,6 +66,21 @@ export type ChatSummary = {
 	/** Latest assistant reply (slice). */
 	lastAssistant: string;
 };
+
+/** Normalise a UI message into the stored shape (one writer for the on-disk
+ *  schema — used by both the server's save and the client's fork). */
+export function toStoredMessage(
+	m: { id: string; role: string; parts: unknown[]; metadata?: unknown },
+	createdAt: string = new Date().toISOString(),
+): StoredChatMessage {
+	return {
+		id: m.id,
+		role: m.role === "assistant" ? "assistant" : "user",
+		parts: m.parts,
+		metadata: m.metadata,
+		createdAt,
+	};
+}
 
 /** First line of the first user message, for the title/preview. */
 export function chatTitleFrom(messages: StoredChatMessage[]): string {
