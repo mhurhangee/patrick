@@ -78,23 +78,10 @@ export function TaskForm({
 						onChange={(e) => setDraft((d) => ({ ...d, label: e.target.value }))}
 					/>
 					<FieldDescription>
-						What this task is — fed to Patrick as the {"<TASK>"} token. Describe
-						it the way you'd brief a colleague.
-					</FieldDescription>
-				</Field>
-
-				<Field>
-					<FieldLabel htmlFor="task-notes">Notes</FieldLabel>
-					<Textarea
-						id="task-notes"
-						value={draft.notes ?? ""}
-						placeholder="Running notes — strategy, decisions, things to remember. Patrick can add to these too."
-						className="min-h-20"
-						onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-					/>
-					<FieldDescription>
-						Running task memory, also fed to Patrick. You and Patrick (via
-						saveNote) both write here.
+						The objective — what this task is, the way you'd brief a colleague.
+						Set once; it frames everything Patrick does (the {"<TASK>"} token).
+						The running record (decisions, findings) lives in Notes, in the
+						workspace sidebar.
 					</FieldDescription>
 				</Field>
 			</FieldGroup>
