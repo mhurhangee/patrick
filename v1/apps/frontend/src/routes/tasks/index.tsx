@@ -1,3 +1,4 @@
+import { taskDisplayName } from "@patrick/shared";
 import {
 	createFileRoute,
 	Link,
@@ -93,7 +94,7 @@ function TasksPicker() {
 									</span>
 									<div className="min-w-0 flex-1">
 										<div className="truncate font-medium">
-											{t.label || "Untitled task"}
+											{taskDisplayName(t)}
 										</div>
 										<div className="truncate text-sm text-muted-foreground">
 											{t.folder}

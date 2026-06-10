@@ -34,8 +34,10 @@ import { useProfile } from "@/hooks/use-profiles";
 import {
 	useCreateDocument,
 	useSaveDocuments,
+	useTask,
 	useTaskDocuments,
 	useUnlockDocument,
+	useUpdateTask,
 } from "@/hooks/use-tasks";
 import { useActiveChat } from "@/lib/active-chat";
 import { useEditorRefFor } from "@/lib/active-editor";
@@ -125,8 +127,12 @@ function ChatSession({
 	const saveDocs = useSaveDocuments(activeTaskId ?? "");
 	const createDoc = useCreateDocument(activeTaskId ?? "");
 	const unlockDoc = useUnlockDocument(activeTaskId ?? "");
+	const { data: task } = useTask(activeTaskId);
+	const updateTask = useUpdateTask();
 	const docsRef = useRef(docs);
 	docsRef.current = docs;
+	const taskRef = useRef(task);
+	taskRef.current = task;
 	const { columnList, focused, getDoc, open } = useWorkspace();
 
 	// This chat's instructions. null ⇒ "follow the profile" (so editing the
@@ -306,6 +312,14 @@ function ChatSession({
 				open(res.filename);
 				return res.filename;
 			},
+			saveNote: (note) => {
+				const t = taskRef.current;
+				if (!t) return;
+				const notes = t.notes?.trim()
+					? `${t.notes.trim()}\n- ${note}`
+					: `- ${note}`;
+				updateTask.mutate({ ...t, notes });
+			},
 		}),
 		[
 			addToolResult,
@@ -313,6 +327,7 @@ function ChatSession({
 			saveDocs.mutate,
 			createDoc.mutateAsync,
 			unlockDoc.mutateAsync,
+			updateTask.mutate,
 		],
 	);
 

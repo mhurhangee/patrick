@@ -1,4 +1,4 @@
-import type { Task } from "@patrick/shared";
+import { type Task, taskDisplayName } from "@patrick/shared";
 import { type ReactNode, useState } from "react";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { SaveStatus } from "@/components/save-status";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { useAutosave } from "@/hooks/use-autosave";
 
 /**
@@ -44,7 +45,7 @@ export function TaskForm({
 				{nav}
 				<div className="flex items-start justify-between gap-4">
 					<div className="min-w-0">
-						<h1 className="truncate">{draft.label || "Untitled task"}</h1>
+						<h1 className="truncate">{taskDisplayName(draft)}</h1>
 						<p className="truncate text-sm text-muted-foreground">
 							{draft.folder}
 						</p>
@@ -55,16 +56,45 @@ export function TaskForm({
 
 			<FieldGroup>
 				<Field>
-					<FieldLabel htmlFor="task-label">Task</FieldLabel>
+					<FieldLabel htmlFor="task-name">Name</FieldLabel>
 					<Input
+						id="task-name"
+						value={draft.name ?? ""}
+						placeholder="US 17/123,456 — NFOA response"
+						onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+					/>
+					<FieldDescription>
+						A short name for this task, shown in the sidebar.
+					</FieldDescription>
+				</Field>
+
+				<Field>
+					<FieldLabel htmlFor="task-label">Brief</FieldLabel>
+					<Textarea
 						id="task-label"
 						value={draft.label}
-						placeholder="Respond to the Non-Final OA on US 17/123,456"
+						placeholder="Respond to the Non-Final OA on US 17/123,456 — claims 1–20 rejected under §103 over Smith in view of Jones."
+						className="min-h-20"
 						onChange={(e) => setDraft((d) => ({ ...d, label: e.target.value }))}
 					/>
 					<FieldDescription>
 						What this task is — fed to Patrick as the {"<TASK>"} token. Describe
 						it the way you'd brief a colleague.
+					</FieldDescription>
+				</Field>
+
+				<Field>
+					<FieldLabel htmlFor="task-notes">Notes</FieldLabel>
+					<Textarea
+						id="task-notes"
+						value={draft.notes ?? ""}
+						placeholder="Running notes — strategy, decisions, things to remember. Patrick can add to these too."
+						className="min-h-20"
+						onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+					/>
+					<FieldDescription>
+						Running task memory, also fed to Patrick. You and Patrick (via
+						saveNote) both write here.
 					</FieldDescription>
 				</Field>
 			</FieldGroup>

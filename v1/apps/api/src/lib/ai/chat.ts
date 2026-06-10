@@ -117,6 +117,14 @@ const requestUnlock = tool({
 	}),
 });
 
+const saveNote = tool({
+	description:
+		"Propose saving a durable insight to the task's running notes (strategy, a decision, a fact worth remembering across chats). The attorney accepts to add it.",
+	inputSchema: z.object({
+		note: z.string().describe("The note to save — one concise insight"),
+	}),
+});
+
 // Read-only docx → indexed plain text, headless from disk. Originals never
 // change, so once pinned this content is stable (and therefore cacheable).
 async function docxText(folder: string, filename: string): Promise<string> {
@@ -265,6 +273,7 @@ export async function handleChat(c: Context) {
 		suggestLabel,
 		createDraft,
 		requestUnlock,
+		saveNote,
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 

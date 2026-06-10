@@ -8,6 +8,18 @@ import {
 /** A folder document not yet in context — awareness only (filename + label). */
 export type AvailableDoc = { filename: string; label?: string };
 
+// The task block fed to <TASK>: short name, the brief (label), and running notes.
+function taskBlock(task: Task): string {
+	const parts: string[] = [];
+	const name = task.name?.trim();
+	const brief = task.label?.trim();
+	if (name) parts.push(name);
+	if (brief) parts.push(brief);
+	if (parts.length === 0) parts.push("(untitled task)");
+	if (task.notes?.trim()) parts.push(`\nNotes:\n${task.notes.trim()}`);
+	return parts.join("\n");
+}
+
 // The system prompt holds INSTRUCTIONS + a MANIFEST only — never document
 // content. Read-only sources ride as cached messages (see chat.ts); the editable
 // draft is read live through the editor tools. This keeps the system prefix
@@ -68,7 +80,7 @@ export function buildSystemPrompt(
 		: profile.prompts.agentpat;
 	const fills: Record<string, string> = {
 		PRACTICECONTEXT: profile.identity.practiceContext?.trim() ?? "",
-		TASK: task.label?.trim() || "(untitled task)",
+		TASK: taskBlock(task),
 		OPENDOCUMENTS: manifest(pinned, activeDraft, available),
 		CLOSEDDOCUMENTS: "",
 		EXAMPLES: "",

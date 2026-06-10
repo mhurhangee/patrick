@@ -11,6 +11,7 @@ import {
 	FilePlus,
 	FolderOpen,
 	Loader2,
+	StickyNote,
 	Tag,
 } from "lucide-react";
 import { type FC, type ReactNode, useState } from "react";
@@ -218,6 +219,8 @@ export type ToolUiHandlers = {
 	createDraft: (name: string) => Promise<string | null>;
 	/** Make an editable copy of an original + open it (requestUnlock). */
 	unlockSource: (filename: string) => Promise<string | null>;
+	/** Append an insight to the task's notes (saveNote acceptance). */
+	saveNote: (note: string) => void;
 };
 
 const HITL_CARDS: Record<
@@ -228,6 +231,7 @@ const HITL_CARDS: Record<
 	suggestLabel: SuggestLabelCard,
 	createDraft: CreateDraftCard,
 	requestUnlock: RequestUnlockCard,
+	saveNote: SaveNoteCard,
 };
 
 /** Tool names handled by a HITL card (so the client doesn't auto-resolve them). */
@@ -537,6 +541,66 @@ function RequestUnlockCard({
 					Create copy
 				</Button>
 				<Button size="sm" variant="ghost" className="h-7" onClick={reject}>
+					No
+				</Button>
+			</div>
+		</HitlCard>
+	);
+}
+
+// Patrick proposes saving an insight to the task's notes; the attorney decides.
+function SaveNoteCard({
+	part,
+	handlers,
+}: {
+	part: AnyToolPart;
+	handlers: ToolUiHandlers;
+}) {
+	const note = (part.input as { note?: string } | undefined)?.note ?? "";
+
+	const respond = (save: boolean) => {
+		if (save && note) handlers.saveNote(note);
+		handlers.addToolResult({
+			tool: "saveNote",
+			toolCallId: part.toolCallId,
+			output: { saved: save },
+		});
+	};
+
+	if (part.state === "output-available") {
+		const out = part.output as { saved?: boolean } | undefined;
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">
+					{out?.saved ? "Saved to task notes." : "Note not saved."}
+				</span>
+			</HitlCard>
+		);
+	}
+	if (part.state === "input-streaming")
+		return (
+			<HitlCard>
+				<span className="text-muted-foreground">Preparing note…</span>
+			</HitlCard>
+		);
+
+	return (
+		<HitlCard>
+			<div className="flex items-center gap-2">
+				<StickyNote size={13} className="shrink-0 text-muted-foreground" />
+				<span className="text-foreground">Save to task notes:</span>
+			</div>
+			<p className="mt-1 pl-5 text-foreground italic">“{note}”</p>
+			<div className="mt-2 flex gap-2 pl-5">
+				<Button size="sm" className="h-7" onClick={() => respond(true)}>
+					Save
+				</Button>
+				<Button
+					size="sm"
+					variant="ghost"
+					className="h-7"
+					onClick={() => respond(false)}
+				>
 					No
 				</Button>
 			</div>

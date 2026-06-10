@@ -1,3 +1,4 @@
+import { taskDisplayName } from "@patrick/shared";
 import { Link } from "@tanstack/react-router";
 import { ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
@@ -37,7 +38,7 @@ export function TaskSwitcher() {
 						) : (
 							<>
 								<div className="truncate text-sm font-medium">
-									{task?.label || "No task"}
+									{task ? taskDisplayName(task) : "No task"}
 								</div>
 								<div className="truncate text-xs text-muted-foreground">
 									{task?.folder}
@@ -69,9 +70,7 @@ export function TaskSwitcher() {
 							t.id === activeTaskId && "bg-accent",
 						)}
 					>
-						<span className="truncate text-sm">
-							{t.label || "Untitled task"}
-						</span>
+						<span className="truncate text-sm">{taskDisplayName(t)}</span>
 						<span className="truncate text-xs text-muted-foreground">
 							{t.folder}
 						</span>
