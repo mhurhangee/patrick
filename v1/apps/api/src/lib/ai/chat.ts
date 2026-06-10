@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getAiSdkTools } from "@eigenpal/docx-editor-agents/ai-sdk/server";
+import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
+import type { ExchangeMetadata, PinnedSource } from "@patrick/shared";
 import {
 	convertToModelMessages,
 	type ModelMessage,
@@ -12,12 +14,10 @@ import type { Context } from "hono";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
 import { createModel, reasoningOptions } from "./model";
-import { buildSystemPrompt, type OpenDocInput } from "./prompt";
+import { buildSystemPrompt } from "./prompt";
 
-// The drafting subset AgentPat gets: locate + mutate, plus re-reads (the open
-// doc's text is already pushed into the prompt, but the editor moves as the
-// agent edits, so read_document lets it refresh). The rest (formatting, comment
-// threads, navigation) we add as we need them.
+// The drafting subset AgentPat gets: locate + mutate, plus reads (the active
+// draft isn't in the static prompt — the agent reads it live, always current).
 const TOOL_ALLOW = new Set([
 	"read_document",
 	"read_selection",
@@ -28,65 +28,125 @@ const TOOL_ALLOW = new Set([
 	"suggest_change",
 ]);
 
-type FilePart = { type: "file"; data: Uint8Array; mediaType: string };
+type RequestBody = {
+	messages: UIMessage[];
+	profileId: string;
+	/** Read-only sources pinned into context (append-only for the chat's life). */
+	pinnedSources?: PinnedSource[];
+	/** The editable draft in focus — driven by the editor tools, not pinned. */
+	activeDraft?: string | null;
+};
 
-// Open PDFs ride as file parts on the latest user message (OPEN = CONTEXT:
-// opening a PDF means the agent gets the real bytes). docx text is pushed into
-// the system prompt instead — see buildSystemPrompt.
-async function buildPdfParts(
+// Read-only docx → indexed plain text, headless from disk. Originals never
+// change, so once pinned this content is stable (and therefore cacheable).
+async function docxText(folder: string, filename: string): Promise<string> {
+	try {
+		const buf = await readFile(join(folder, filename));
+		const bytes = buf.buffer.slice(
+			buf.byteOffset,
+			buf.byteOffset + buf.byteLength,
+		) as ArrayBuffer;
+		const reviewer = await DocxReviewer.fromBuffer(bytes, "AgentPat");
+		return reviewer.getContentAsText().trim();
+	} catch {
+		return "";
+	}
+}
+
+type TextPart = {
+	type: "text";
+	text: string;
+	providerOptions?: Record<string, unknown>;
+};
+type FilePart = {
+	type: "file";
+	data: Uint8Array;
+	mediaType: string;
+	providerOptions?: Record<string, unknown>;
+};
+type Part = TextPart | FilePart;
+
+// Pinned sources ride as ONE leading user message, append-only across the chat:
+// PDFs as file parts, read-only docx as text. A cache breakpoint on the last part
+// means [system + this whole block] caches — the big, stable source tokens are
+// paid once, then cached every later turn. (Anthropic honours cacheControl;
+// OpenAI auto-caches the prefix; others ignore it.) See v1-context-model.
+async function pinnedSourcesMessage(
 	folder: string,
-	openDocs: OpenDocInput[],
-): Promise<FilePart[]> {
-	const parts: FilePart[] = [];
-	for (const doc of openDocs) {
-		if (doc.kind !== "pdf") continue;
-		try {
-			const data = await readFile(join(folder, doc.filename));
-			parts.push({
-				type: "file",
-				data: new Uint8Array(data),
-				mediaType: "application/pdf",
+	pinned: PinnedSource[],
+): Promise<ModelMessage | null> {
+	if (pinned.length === 0) return null;
+	const content: Part[] = [
+		{
+			type: "text",
+			text: "Pinned sources for this matter (read-only references):",
+		},
+	];
+	for (const src of pinned) {
+		if (src.kind === "pdf") {
+			try {
+				const data = await readFile(join(folder, src.filename));
+				content.push({ type: "text", text: `\n# ${src.filename}` });
+				content.push({
+					type: "file",
+					data: new Uint8Array(data),
+					mediaType: "application/pdf",
+				});
+			} catch {
+				// Unreadable — skip rather than fail the turn.
+			}
+		} else {
+			const text = await docxText(folder, src.filename);
+			content.push({
+				type: "text",
+				text: `\n# ${src.filename}\n${text || "(empty)"}`,
 			});
-		} catch {
-			// Not readable — skip it rather than fail the whole turn.
 		}
 	}
-	return parts;
+	// Cache breakpoint on the final block: everything up to here is the cache prefix.
+	const last = content[content.length - 1];
+	if (last)
+		last.providerOptions = {
+			anthropic: { cacheControl: { type: "ephemeral" } },
+		};
+	return { role: "user", content } as ModelMessage;
 }
 
-// Attach the PDFs to the LATEST user message (not a synthetic preamble). Anchored
-// to the current turn so history stays stable when a doc is later closed.
-function attachToLastUser(messages: ModelMessage[], parts: FilePart[]): void {
-	for (let i = messages.length - 1; i >= 0; i--) {
-		const m = messages[i];
-		if (m?.role !== "user") continue;
-		const existing =
-			typeof m.content === "string"
-				? [{ type: "text" as const, text: m.content }]
-				: m.content;
-		messages[i] = {
-			...m,
-			content: [...existing, ...parts],
-		} as ModelMessage;
-		return;
-	}
-}
-
-export async function handleChat(c: Context) {
+// Zero-cost observability: assemble and return the exact system prompt + context
+// a turn would send, without calling the model. Drives the context inspector.
+export async function handleChatPreview(c: Context) {
 	const id = c.req.param("id");
 	if (!id) return c.json({ error: "missing task id" }, 400);
-	const body = await c.req.json<{
-		messages: UIMessage[];
-		profileId: string;
-		openDocs?: OpenDocInput[];
-	}>();
+	const body = await c.req.json<RequestBody>();
 
 	const task = await readTask(id);
 	if (!task) return c.json({ error: "task not found" }, 404);
 	const profile = await readProfile(body.profileId);
 	if (!profile) return c.json({ error: "profile not found" }, 404);
 
-	const openDocs = body.openDocs ?? [];
+	const pinnedSources = body.pinnedSources ?? [];
+	const activeDraft = body.activeDraft ?? null;
+	const system = buildSystemPrompt(profile, task, pinnedSources, activeDraft);
+	return c.json({
+		model: profile.ai.detailedModel,
+		system,
+		pinnedSources,
+		activeDraft,
+	});
+}
+
+export async function handleChat(c: Context) {
+	const id = c.req.param("id");
+	if (!id) return c.json({ error: "missing task id" }, 400);
+	const body = await c.req.json<RequestBody>();
+
+	const task = await readTask(id);
+	if (!task) return c.json({ error: "task not found" }, 404);
+	const profile = await readProfile(body.profileId);
+	if (!profile) return c.json({ error: "profile not found" }, 404);
+
+	const pinnedSources = body.pinnedSources ?? [];
+	const activeDraft = body.activeDraft ?? null;
 	const { provider, apiKey, detailedModel, effort, showThinking } = profile.ai;
 	const model = createModel(provider, apiKey, detailedModel);
 	const { providerOptions } = reasoningOptions(
@@ -95,7 +155,7 @@ export async function handleChat(c: Context) {
 		effort,
 		showThinking,
 	);
-	const system = await buildSystemPrompt(profile, task, openDocs);
+	const system = buildSystemPrompt(profile, task, pinnedSources, activeDraft);
 
 	// Editor tools with no execute — the AI SDK forwards each call to the client's
 	// onToolCall, where it runs against the live editor (native tracked changes).
@@ -103,9 +163,10 @@ export async function handleChat(c: Context) {
 		Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
 	);
 
-	const messages = await convertToModelMessages(body.messages);
-	const fileParts = await buildPdfParts(task.folder, openDocs);
-	if (fileParts.length) attachToLastUser(messages, fileParts);
+	// Pinned read-only sources lead the conversation as one cached block.
+	const conversation = await convertToModelMessages(body.messages);
+	const pinnedMsg = await pinnedSourcesMessage(task.folder, pinnedSources);
+	const messages = pinnedMsg ? [pinnedMsg, ...conversation] : conversation;
 
 	const result = streamText({
 		model,
@@ -118,9 +179,16 @@ export async function handleChat(c: Context) {
 
 	return result.toUIMessageStreamResponse({
 		sendReasoning: true,
-		messageMetadata: ({ part }) =>
-			part.type === "finish" && "totalUsage" in part
-				? { usage: part.totalUsage }
-				: undefined,
+		// Observability: context is known up front, so send it at "start" (the UI
+		// can show what was sent while it streams). Usage lands at "finish".
+		messageMetadata: ({ part }): ExchangeMetadata | undefined => {
+			if (part.type === "start")
+				return {
+					context: { model: detailedModel, system, pinnedSources, activeDraft },
+				};
+			if (part.type === "finish" && "totalUsage" in part)
+				return { usage: part.totalUsage };
+			return undefined;
+		},
 	});
 }

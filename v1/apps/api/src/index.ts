@@ -15,4 +15,7 @@ app.route("/tasks", tasks);
 export default {
 	port: Number(process.env.PORT ?? 3001),
 	fetch: app.fetch,
+	// AgentPat streams can sit silent while the model reasons / reads before the
+	// first token — past Bun's 10s default. Max it out (255s) so long turns survive.
+	idleTimeout: 255,
 };

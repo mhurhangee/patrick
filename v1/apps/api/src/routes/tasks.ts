@@ -1,7 +1,7 @@
 import { basename, extname, join } from "node:path";
 import { createTask, type DocumentMeta, type Task } from "@patrick/shared";
 import { Hono } from "hono";
-import { handleChat } from "../lib/ai/chat";
+import { handleChat, handleChatPreview } from "../lib/ai/chat";
 import {
 	createBlankDocument,
 	deleteDocument,
@@ -19,6 +19,8 @@ export const tasks = new Hono();
 // AgentPat chat — streams a UI message response; docx tool calls round-trip to
 // the client to run against the live editor. See lib/ai/chat.ts.
 tasks.post("/:id/chat", handleChat);
+// Preview the assembled prompt + context for the current open set (no LLM call).
+tasks.post("/:id/chat/preview", handleChatPreview);
 
 tasks.get("/", async (c) => c.json(await listTasks()));
 

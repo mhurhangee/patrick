@@ -51,9 +51,10 @@ export const PROMPT_TOKENS: TokenDef[] = [
 	{
 		name: "OPENDOCUMENTS",
 		kind: "scope",
-		label: "Open documents",
-		description: "Every open document in full — its source plus your notes.",
-		placeholder: "‹ open documents — full source + notes ›",
+		label: "Context manifest",
+		description:
+			"A manifest of what's in context — pinned sources (content rides as messages) + the active draft (edited via tools).",
+		placeholder: "‹ context manifest — pinned sources + active draft ›",
 		surfaces: ["agentpat"],
 	},
 	{

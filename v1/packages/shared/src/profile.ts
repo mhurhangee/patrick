@@ -63,10 +63,10 @@ export const DEFAULT_AGENTPAT_PROMPT = `You are AgentPat, a patent attorney's dr
 Current task:
 <TASK>
 
-Open documents (full context):
+Context:
 <OPENDOCUMENTS>
 
-Work from the open documents. Be surgical; ground every edit in the record.`;
+Ground every statement and edit in the pinned sources and the live draft — never invent facts about the record. Edit the active draft only through the document tools, as minimal, targeted tracked changes the attorney can accept or reject.`;
 
 export function createProfile(id: string, name: string): Profile {
 	return {

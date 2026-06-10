@@ -1,45 +1,53 @@
 import { useChat } from "@ai-sdk/react";
 import { useDocxAgentTools } from "@eigenpal/docx-editor-agents/react";
 import type { DocxEditorRef } from "@eigenpal/docx-editor-react";
+import type { PinnedSource } from "@patrick/shared";
 import {
 	DefaultChatTransport,
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai";
 import { SendHorizontal, Sparkles, Square } from "lucide-react";
-import { type RefObject, useMemo, useRef, useState } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { BASE_URL } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
-import { useWorkspace } from "@/lib/workspace";
+import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
 
 export function AgentChat() {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
 	const { columnList, focused, getDoc } = useWorkspace();
 
-	// Every open document is context (OPEN = CONTEXT). The server reads each one
-	// from disk; we just send the list of what's open.
-	const openDocs = useMemo(() => {
+	// Read-only sources currently open in the viewer. Opening one pins it to the
+	// chat (OPEN = CONTEXT); see the accumulation below.
+	const openSources = useMemo<PinnedSource[]>(() => {
 		const ids = columnList.flatMap((c) => c.tabs);
 		return ids
-			.map((id) => {
-				const doc = getDoc(id);
-				return doc ? { filename: doc.id, kind: doc.kind } : null;
-			})
-			.filter(
-				(d): d is { filename: string; kind: "pdf" | "docx" } => d !== null,
-			);
+			.map((id) => getDoc(id))
+			.filter((d): d is WorkspaceDoc => d != null && !d.editable)
+			.map((d) => ({ filename: d.id, kind: d.kind }));
 	}, [columnList, getDoc]);
 
-	// AgentPat drives the focused editable .docx. read/write tool calls run
-	// against its live editor; the registry resolves whichever is focused.
+	// Pinned sources are append-only for the chat's life: once a source is opened
+	// it stays in context even if its tab is closed (start a new chat to reset).
+	const [pinnedSources, setPinnedSources] = useState<PinnedSource[]>([]);
+	useEffect(() => {
+		setPinnedSources((prev) => {
+			const seen = new Set(prev.map((p) => p.filename));
+			const additions = openSources.filter((s) => !seen.has(s.filename));
+			return additions.length ? [...prev, ...additions] : prev;
+		});
+	}, [openSources]);
+
+	// AgentPat edits the focused editable .docx (the live workspace). It's not in
+	// the static context — the agent reads it live via the editor tools.
 	const focusedDoc = focused ? getDoc(focused) : undefined;
-	const activeEditableId = focusedDoc?.editable ? focusedDoc.id : null;
-	const editorRef = useEditorRefFor(activeEditableId);
+	const activeDraft = focusedDoc?.editable ? focusedDoc.id : null;
+	const editorRef = useEditorRefFor(activeDraft);
 
 	const { executeToolCall } = useDocxAgentTools({
 		editorRef: editorRef as RefObject<DocxEditorRef | null>,
@@ -48,8 +56,10 @@ export function AgentChat() {
 
 	// Refs so the transport/onToolCall always read the latest without re-creating
 	// the chat instance.
-	const openDocsRef = useRef(openDocs);
-	openDocsRef.current = openDocs;
+	const pinnedRef = useRef(pinnedSources);
+	pinnedRef.current = pinnedSources;
+	const activeDraftRef = useRef(activeDraft);
+	activeDraftRef.current = activeDraft;
 	const profileIdRef = useRef(activeProfileId);
 	profileIdRef.current = activeProfileId;
 
@@ -60,7 +70,8 @@ export function AgentChat() {
 				body: {
 					messages: msgs,
 					profileId: profileIdRef.current,
-					openDocs: openDocsRef.current,
+					pinnedSources: pinnedRef.current,
+					activeDraft: activeDraftRef.current,
 				},
 			}),
 		}),
