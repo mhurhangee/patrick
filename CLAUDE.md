@@ -75,4 +75,4 @@ pnpm dev:desktop      # tauri dev
 pnpm check            # typecheck + lint:fix + knip
 ```
 
-Project memory (`~/.claude/projects/-root-patrick/memory/`, indexed in `MEMORY.md`) holds the durable design rationale — start with `context-model`. `IDEAS.md` is a scratch backlog.
+Project memory (`~/.claude/projects/-root-patrick/memory/`, indexed in `MEMORY.md`) holds the durable design rationale — start with `context-model`. `IDEAS.md` is a scratch backlog. `BRAND.md` is the brand & positioning keystone (one-liner, the three pillars — Open · Transparent · Yours — voice, visual identity) — the source for the site, docs, and in-app copy.

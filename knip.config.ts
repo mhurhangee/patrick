@@ -19,7 +19,21 @@ const config: KnipConfig = {
 			ignoreDependencies: [
 				"tailwindcss",
 				"tw-animate-css",
-				"@fontsource-variable/inter",
+				"@fontsource-variable/hanken-grotesk",
+				"@fontsource-variable/lora",
+			],
+		},
+		"apps/web": {
+			entry: [
+				"src/routes/**/*.tsx",
+				"src/components/ui/**/*.{ts,tsx}",
+				"src/lib/utils.ts",
+			],
+			project: ["src/**/*.{ts,tsx}"],
+			ignoreDependencies: [
+				"tailwindcss",
+				"tw-animate-css",
+				"@fontsource-variable/hanken-grotesk",
 				"@fontsource-variable/lora",
 			],
 		},
