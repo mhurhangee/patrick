@@ -50,5 +50,7 @@ jobs:
 
             On first launch Windows SmartScreen may warn "Windows protected your
             PC" — click **More info → Run anyway**. Bring your own AI provider key.
+          # Draft so you review + publish each release; NOT a prerelease, so
+          # /releases/latest resolves once published (the site's Download link).
           releaseDraft: true
-          prerelease: true
+          prerelease: false
