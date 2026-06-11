@@ -49,11 +49,11 @@ apps/api/bin/
 apps/desktop/src-tauri/binaries/
 **/.tanstack/
 **/routeTree.gen.ts
+
+# Local dev docs
 IDEAS.md
-
-
+BRAND.md
 /screenshots
 /tests
-docx-editor.txt
 /US16186473
 .claude/settings.json

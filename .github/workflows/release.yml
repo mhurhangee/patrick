@@ -1,0 +1,54 @@
+name: Release
+
+# Builds the Windows desktop app and attaches the installer to a GitHub Release.
+# Tag a release to trigger it (e.g. `git tag v0.1.0 && git push --tags`), or run
+# it by hand from the Actions tab. Unsigned for the alpha — code signing is a
+# beta concern (see the alpha-release-plan).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      # tauri-action runs the app's beforeBuildCommand (compiles the Bun API
+      # sidecar + builds the frontend), then `tauri build`, then creates a draft
+      # GitHub Release with the .msi/.exe attached.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0-dev' }}
+          releaseName: "Patrick ${{ github.ref_type == 'tag' && github.ref_name || 'dev build' }}"
+          releaseBody: |
+            Windows desktop app (unsigned alpha). Download the installer below.
+
+            On first launch Windows SmartScreen may warn "Windows protected your
+            PC" — click **More info → Run anyway**. Bring your own AI provider key.
+          releaseDraft: true
+          prerelease: true
