@@ -159,8 +159,10 @@ function ChatSession({
 		[initial],
 	);
 
-	// Read-only sources currently open in the viewer. Opening one pins it to the
-	// chat (OPEN = CONTEXT); see the accumulation below.
+	// Read-only sources currently open in the viewer — this chat's *candidate*
+	// context (OPEN = CONTEXT). They're only committed to the chat when you send a
+	// message with them open (see send()), so opening docs to find the right one —
+	// and closing the rest — never pins them and never costs tokens.
 	const openSources = useMemo<PinnedSource[]>(() => {
 		const ids = columnList.flatMap((c) => c.tabs);
 		return ids
@@ -169,27 +171,12 @@ function ChatSession({
 			.map((d) => ({ filename: d.id, kind: d.kind }));
 	}, [columnList, getDoc]);
 
-	// Pinned sources are append-only for the chat's life: once a source is opened
-	// it stays in context even if its tab is closed (start a new chat to reset).
-	// Seeded from the persisted chat when reopening one.
+	// Pinned sources: append-only for the chat's life, seeded from a reopened chat.
+	// Grown only at send time (the open sources you sent with) and by the
+	// requestOpenFile HITL pin — never just by opening a tab. Reset = new chat.
 	const [pinnedSources, setPinnedSources] = useState<PinnedSource[]>(
 		initial?.pinnedSources ?? [],
 	);
-	// When reopening a saved chat, sources already open in the viewer at mount are
-	// NOT absorbed into it (they may belong to other work) — only sources opened
-	// *during* this chat session pin. A fresh chat has no such exclusions.
-	const [ignoreAtMount] = useState(
-		() => new Set(initial ? openSources.map((s) => s.filename) : []),
-	);
-	useEffect(() => {
-		setPinnedSources((prev) => {
-			const seen = new Set(prev.map((p) => p.filename));
-			const additions = openSources.filter(
-				(s) => !seen.has(s.filename) && !ignoreAtMount.has(s.filename),
-			);
-			return additions.length ? [...prev, ...additions] : prev;
-		});
-	}, [openSources, ignoreAtMount]);
 
 	// Patrick edits ONE live draft at a time (the editor tools bind to a single
 	// editor). The active draft is sticky: the focused editable doc, else the one
@@ -241,6 +228,7 @@ function ChatSession({
 		addToolResult,
 		regenerate,
 		setMessages,
+		error,
 	} = useChat({
 		messages: initialMessages,
 		transport: new DefaultChatTransport({
@@ -287,8 +275,12 @@ function ChatSession({
 	// The agent loop spans multiple requests (one per client tool round-trip).
 	// `status` dips to "ready" between them, so the SDK's own auto-continue
 	// predicate keeps us "busy" across the gaps (no blank UI mid-loop).
+	// An errored turn ends "busy" — otherwise a mid-loop failure (e.g. the provider
+	// rejecting the next request) leaves the last assistant message "complete with
+	// tool calls" and the UI stuck on "Working…" forever.
 	const busy =
-		isStreaming || lastAssistantMessageIsCompleteWithToolCalls({ messages });
+		status !== "error" &&
+		(isStreaming || lastAssistantMessageIsCompleteWithToolCalls({ messages }));
 	const pending = busy ? activityLabel(status, messages.at(-1)) : null;
 
 	// Handlers for HITL tool cards (requestOpenFile): resolve the tool call +
@@ -512,6 +504,18 @@ function ChatSession({
 		// now the template follows the live profile (chatTemplate null); snapshot it
 		// so later profile edits don't rewrite this chat's prompt.
 		if (chatTemplate === null) setChatTemplate(template);
+		// Commit OPEN = CONTEXT: pin whatever read-only sources are open right now
+		// (append-only). pinnedRef is updated synchronously so this very request
+		// carries them; the follow-up loop requests read the same committed set.
+		const seen = new Set(pinnedSources.map((p) => p.filename));
+		const next = [
+			...pinnedSources,
+			...openSources.filter((s) => !seen.has(s.filename)),
+		];
+		if (next.length !== pinnedSources.length) {
+			pinnedRef.current = next;
+			setPinnedSources(next);
+		}
 		sendStartRef.current = Date.now();
 		sendMessage({ text });
 		setInput("");
@@ -673,6 +677,20 @@ function ChatSession({
 			</div>
 
 			<div className="p-2">
+				{error && (
+					<div className="mb-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+						<span className="min-w-0 flex-1 break-words">
+							{errorText(error)}
+						</span>
+						<button
+							type="button"
+							onClick={() => regenerate()}
+							className="shrink-0 font-medium underline underline-offset-2 hover:no-underline"
+						>
+							Retry
+						</button>
+					</div>
+				)}
 				<div className="relative">
 					<Textarea
 						value={input}
@@ -755,4 +773,15 @@ function PendingActivity({ label }: { label: string }) {
 			{label}
 		</div>
 	);
+}
+
+// A readable line from a failed turn. Provider/gateway errors carry a useful
+// message (e.g. "A positive credit balance is required…"); opaque ones fall back
+// to something generic rather than "[object Object]".
+function errorText(error: Error): string {
+	const m = error.message?.trim();
+	if (!m || m === "[object Object]") {
+		return "Something went wrong with this request. Please try again.";
+	}
+	return m.length > 300 ? `${m.slice(0, 300)}…` : m;
 }
