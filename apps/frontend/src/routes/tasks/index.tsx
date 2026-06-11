@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, FolderOpen, Plus, X } from "lucide-react";
 import { useState } from "react";
-import { Logo } from "@/components/logo";
+import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,7 +68,7 @@ function TasksPicker() {
 				</div>
 
 				<div className="flex items-center gap-3">
-					<Logo size={32} />
+					<Patrick size={32} />
 					<div>
 						<h1>Tasks</h1>
 						<p className="text-sm text-muted-foreground">

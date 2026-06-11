@@ -3,7 +3,7 @@ import { ChevronDown, Lock, RotateCcw, SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { cn } from "@/lib/utils";
-import { Logo } from "../logo";
+import { Patrick } from "../patrick";
 
 // The chat header doubles as a window into — and editor of — Patrick's system
 // prompt for this chat. Honest by default: you see exactly what it's told. The
@@ -81,7 +81,7 @@ export function SystemCard({
 					onClick={() => setOpen((o) => !o)}
 					className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2.5 text-left hover:bg-accent/40"
 				>
-					<Logo size={18} />
+					<Patrick size={18} />
 					<span className="font-heading text-lg font-semibold tracking-tighter">
 						Patrick
 					</span>

@@ -6,8 +6,9 @@ import {
 	modelsForProvider,
 	type Provider,
 } from "@patrick/shared";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
@@ -142,7 +143,7 @@ export function AiSection({
 						onClick={() => verification.refetch()}
 					>
 						{status === "verifying" ? (
-							<Loader2 className="animate-spin" />
+							<Patrick variant="scanning" size={16} />
 						) : (
 							"Verify"
 						)}

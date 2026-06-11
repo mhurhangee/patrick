@@ -142,6 +142,11 @@
 	--patrick-coral: #e76b41;
 	--patrick-tile-green: oklch(97.9% 0.021 166.113);
 	--patrick-tile: oklch(0.508 0.118 165.612);
+
+	/* Document canvas — paper, stays light in dark mode (not overridden in .dark).
+	   PDFs are scans and docx are white paper; we show them as-is, framed by the
+	   themed chrome. Matches the docx editor's own canvas (#f8f9fa). */
+	--doc-paper: #f8f9fa;
 }
 
 .dark {

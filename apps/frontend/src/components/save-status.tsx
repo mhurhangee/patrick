@@ -1,4 +1,5 @@
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
+import { Patrick } from "@/components/patrick";
 import type { SaveState } from "@/hooks/use-autosave";
 
 export function SaveStatus({ status }: { status: SaveState }) {
@@ -7,7 +8,7 @@ export function SaveStatus({ status }: { status: SaveState }) {
 		<span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
 			{status === "saving" ? (
 				<>
-					<Loader2 className="size-3.5 animate-spin" />
+					<Patrick variant="scanning" size={14} />
 					Saving…
 				</>
 			) : (

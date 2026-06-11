@@ -18,7 +18,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai";
-import { ChevronDown, Loader2, SendHorizontal, Square } from "lucide-react";
+import { ChevronDown, SendHorizontal, Square } from "lucide-react";
 import {
 	type RefObject,
 	useEffect,
@@ -29,6 +29,7 @@ import {
 } from "react";
 import { BASE_URL } from "@/api/client";
 import { tasksApi } from "@/api/tasks";
+import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
@@ -98,7 +99,7 @@ export function AgentChat() {
 	if (isLoading) {
 		return (
 			<div className="flex h-full items-center justify-center">
-				<Loader2 className="size-4 animate-spin text-muted-foreground" />
+				<Patrick variant="scanning" size={24} />
 			</div>
 		);
 	}
@@ -750,7 +751,7 @@ function activityLabel(
 function PendingActivity({ label }: { label: string }) {
 	return (
 		<div className="flex items-center gap-1.5 px-1 py-1 text-xs text-muted-foreground/60">
-			<span className="size-1.5 animate-pulse rounded-full bg-current" />
+			<Patrick variant="scanning" size={12} />
 			{label}
 		</div>
 	);

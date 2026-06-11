@@ -10,12 +10,12 @@ import {
 	FilePen,
 	FilePlus,
 	FolderOpen,
-	Loader2,
 	StickyNote,
 	Tag,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Streamdown } from "streamdown";
+import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -134,14 +134,14 @@ function TrailStep({ step }: { step: TrailStepData }) {
 					hasDetail && "cursor-pointer hover:text-foreground",
 				)}
 			>
+				{step.status === "running" && (
+					<Patrick variant="scanning" size={12} className="shrink-0" />
+				)}
 				<span>{step.label}</span>
 				{step.statusLabel && (
 					<span className="truncate text-muted-foreground/50">
 						{step.statusLabel}
 					</span>
-				)}
-				{step.status === "running" && (
-					<Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground/60" />
 				)}
 				{hasDetail && (
 					<ChevronRight
@@ -174,14 +174,14 @@ function ReasoningTrail({ steps }: { steps: TrailStepData[] }) {
 				onClick={() => setOpen((o) => !o)}
 				className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
 			>
+				{running && (
+					<Patrick variant="scanning" size={12} className="shrink-0" />
+				)}
 				<span>{running ? running.label : count}</span>
 				{running?.statusLabel && (
 					<span className="truncate text-muted-foreground/50">
 						{running.statusLabel}
 					</span>
-				)}
-				{running && (
-					<Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground/60" />
 				)}
 				<ChevronRight
 					className={cn(
