@@ -65,7 +65,7 @@ function Column({
 	isFirst: boolean;
 	isLast: boolean;
 }) {
-	const { focused, focus, close, splitRight } = useWorkspace();
+	const { focused, focus, close, splitRight, getDoc } = useWorkspace();
 	const active =
 		focused && column.tabs.includes(focused) ? focused : column.tabs[0];
 
@@ -103,8 +103,21 @@ function Column({
 				{isLast && <PanelToggleButton side="chat" className="mr-1" />}
 			</div>
 
-			<div className="min-h-0 flex-1 overflow-auto">
-				{active && <DocContent id={active} />}
+			<div className="relative min-h-0 flex-1 overflow-auto">
+				{column.tabs.map((id) => {
+					const isActive = id === active;
+					// The active tab renders. Editable drafts also stay mounted (hidden)
+					// when inactive so the agent's editor stays registered while you read
+					// a source on top — otherwise its tool calls hit an unmounted editor.
+					// Read-only tabs unmount when inactive (cheap to re-render; PDFs are
+					// heavy to keep alive).
+					if (!isActive && !getDoc(id)?.editable) return null;
+					return (
+						<div key={id} className={cn("h-full", !isActive && "hidden")}>
+							<DocContent id={id} />
+						</div>
+					);
+				})}
 			</div>
 		</div>
 	);
