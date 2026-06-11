@@ -136,6 +136,17 @@
 	--sidebar-accent-foreground: oklch(0.216 0.006 56.043);
 	--sidebar-border: oklch(0.923 0.003 48.717);
 	--sidebar-ring: oklch(0.709 0.01 56.259);
+
+	/* Patrick branding */
+	--patrick-green: oklch(0.508 0.118 165.612);
+	--patrick-coral: #e76b41;
+	--patrick-tile-green: oklch(97.9% 0.021 166.113);
+	--patrick-tile: oklch(0.508 0.118 165.612);
+
+	/* Document canvas — paper, stays light in dark mode (not overridden in .dark).
+	   PDFs are scans and docx are white paper; we show them as-is, framed by the
+	   themed chrome. Matches the docx editor's own canvas (#f8f9fa). */
+	--doc-paper: #f8f9fa;
 }
 
 .dark {
@@ -170,6 +181,11 @@
 	--sidebar-accent-foreground: oklch(0.985 0.001 106.423);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.553 0.013 58.071);
+
+	--patrick-green: oklch(0.508 0.118 165.612);
+	--patrick-coral: #e76b41;
+	--patrick-tile-green: oklch(97.9% 0.021 166.113);
+	--patrick-tile: oklch(0.508 0.118 165.612);
 }
 
 @theme inline {
@@ -239,5 +255,66 @@
 	}
 	h3 {
 		@apply text-base font-semibold;
+	}
+}
+
+/* Scanning — the coral accent hops clockwise through the cells.
+   Delays are set inline by the component. */
+@keyframes patrick-hop {
+	0%,
+	21% {
+		fill: var(--patrick-coral);
+	}
+	29%,
+	100% {
+		fill: var(--patrick-green);
+	}
+}
+.patrick-hop {
+	fill: var(--patrick-green);
+	animation: patrick-hop 1.6s infinite;
+}
+
+/* Drawing — the fourth cell draws itself in, fills, resets.
+   Path uses pathLength="100" so these numbers are size-independent. */
+@keyframes patrick-draw {
+	0% {
+		stroke-dashoffset: 100;
+		fill-opacity: 0;
+		stroke-opacity: 1;
+	}
+	55% {
+		stroke-dashoffset: 0;
+		fill-opacity: 0;
+		stroke-opacity: 1;
+	}
+	70%,
+	86% {
+		stroke-dashoffset: 0;
+		fill-opacity: 1;
+		stroke-opacity: 1;
+	}
+	100% {
+		stroke-dashoffset: 0;
+		fill-opacity: 0;
+		stroke-opacity: 0;
+	}
+}
+.patrick-draw {
+	fill: var(--patrick-coral);
+	stroke: var(--patrick-coral);
+	stroke-dasharray: 100;
+	animation: patrick-draw 2.4s ease-in-out infinite;
+}
+
+/* Accessibility: freeze animated variants to their resolved state */
+@media (prefers-reduced-motion: reduce) {
+	.patrick-hop {
+		animation: none;
+	}
+	.patrick-draw {
+		animation: none;
+		stroke-dashoffset: 0;
+		fill-opacity: 1;
 	}
 }

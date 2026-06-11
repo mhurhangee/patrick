@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Patrick } from "@/components/patrick";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -11,7 +12,6 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 
 export function ConfirmDelete({
 	label,
@@ -60,7 +60,7 @@ export function ConfirmDelete({
 					>
 						{pending ? (
 							<>
-								<Spinner />
+								<Patrick variant="scanning" size={16} />
 								Deleting…
 							</>
 						) : (

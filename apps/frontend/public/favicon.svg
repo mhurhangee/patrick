@@ -1,14 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3d9978"/>
-      <stop offset="100%" stop-color="#2a7057"/>
-    </linearGradient>
-  </defs>
-  <rect width="24" height="24" rx="5" fill="url(#g)"/>
-  <g transform="translate(3,3) scale(0.75)" stroke="white" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <path d="M16.17 7.83 2 22"/>
-    <path d="M4.02 12a2.827 2.827 0 1 1 3.81-4.17A2.827 2.827 0 1 1 12 4.02a2.827 2.827 0 1 1 4.17 3.81A2.827 2.827 0 1 1 19.98 12a2.827 2.827 0 1 1-3.81 4.17A2.827 2.827 0 1 1 12 19.98a2.827 2.827 0 1 1-4.17-3.81A1 1 0 1 1 4 12"/>
-    <path d="m7.83 7.83 8.34 8.34"/>
-  </g>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Patrick app icon</title>
+<g transform="translate(106,106) scale(2.143)">
+<g transform="translate(-270,-80)">
+<path d="M300 80 H304 A30 30 0 0 1 334 110 V136 A8 8 0 0 1 326 144 H300 A30 30 0 0 1 270 114 V110 A30 30 0 0 1 300 80 Z" fill="#007a55"/>
+<path d="M376 80 H380 A30 30 0 0 1 410 110 V114 A30 30 0 0 1 380 144 H354 A8 8 0 0 1 346 136 V110 A30 30 0 0 1 376 80 Z" fill="#007a55"/>
+<path d="M300 156 H326 A8 8 0 0 1 334 164 V190 A30 30 0 0 1 304 220 H300 A30 30 0 0 1 270 190 V186 A30 30 0 0 1 300 156 Z" fill="#007a55"/>
+<path d="M354 156 H380 A30 30 0 0 1 410 186 V190 A30 30 0 0 1 380 220 H376 A30 30 0 0 1 346 190 V164 A8 8 0 0 1 354 156 Z" fill="#e76b41"/></g></g>
 </svg>

@@ -3,6 +3,7 @@ import "@eigenpal/docx-editor-react/styles.css";
 import { Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
+import { Patrick } from "@/components/patrick";
 import { SaveStatus } from "@/components/save-status";
 import { Button } from "@/components/ui/button";
 import { useAutosave } from "@/hooks/use-autosave";
@@ -13,6 +14,16 @@ import { formatTokens } from "@/lib/format";
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.1;
+
+// Centered drawing mark — the package's loadingIndicator slot renders its child
+// raw (top-left), so it must center itself; also used for our pre-fetch state.
+function DocxLoading() {
+	return (
+		<div className="flex h-full w-full items-center justify-center bg-[var(--doc-paper)]">
+			<Patrick variant="drawing" size={48} label="Loading document" />
+		</div>
+	);
+}
 
 /**
  * Renders a .docx via @eigenpal/docx-editor (ProseMirror). Originals open
@@ -70,11 +81,7 @@ export function DocxViewer({
 		);
 	}
 	if (!buffer) {
-		return (
-			<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-				Loading…
-			</div>
-		);
+		return <DocxLoading />;
 	}
 
 	// readOnly strips the editor chrome (incl. its zoom widget), so the viewer
@@ -89,6 +96,7 @@ export function DocxViewer({
 				author="Attorney"
 				onChange={() => setRev((r) => r + 1)}
 				renderTitleBarRight={() => <SaveStatus status={status} />}
+				loadingIndicator={<DocxLoading />}
 			/>
 		</div>
 	);
@@ -135,6 +143,7 @@ function ReadOnlyDocx({ buffer }: { buffer: ArrayBuffer }) {
 					documentBuffer={buffer}
 					readOnly
 					showZoomControl={false}
+					loadingIndicator={<DocxLoading />}
 				/>
 			</div>
 

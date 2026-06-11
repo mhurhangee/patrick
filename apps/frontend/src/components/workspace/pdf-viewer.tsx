@@ -8,6 +8,7 @@ import {
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
+import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profiles";
 import { useActiveProfile } from "@/lib/active-profile";
@@ -92,8 +93,8 @@ export function PdfViewer({ filename }: { filename: string }) {
 	}
 	if (pages.length === 0) {
 		return (
-			<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-				Loading…
+			<div className="flex h-full items-center justify-center bg-[var(--doc-paper)]">
+				<Patrick variant="drawing" size={48} label="Loading PDF" />
 			</div>
 		);
 	}
@@ -103,7 +104,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 			<div
 				ref={scrollRef}
 				onScroll={onScroll}
-				className="h-full overflow-auto p-4"
+				className="h-full overflow-auto bg-[var(--doc-paper)] p-4"
 			>
 				<div className="mx-auto flex w-fit flex-col items-center gap-4">
 					{pages.map((page, i) => (

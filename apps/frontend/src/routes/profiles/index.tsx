@@ -5,7 +5,7 @@ import {
 } from "@patrick/shared";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Plus } from "lucide-react";
-import { Logo } from "@/components/logo";
+import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
@@ -63,7 +63,7 @@ function ProfilesPicker() {
 				</div>
 
 				<div className="flex items-center gap-3">
-					<Logo size={32} />
+					<Patrick size={32} />
 					<div>
 						<h1>Patrick</h1>
 						<p className="text-sm text-muted-foreground">
