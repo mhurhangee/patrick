@@ -4,7 +4,7 @@
 	"version": "0.1.0",
 	"identifier": "com.patrick.app",
 	"build": {
-		"frontendDist": "../frontend/dist",
+		"frontendDist": "../../frontend/dist",
 		"devUrl": "http://localhost:5173",
 		"beforeDevCommand": "node scripts/build-sidecar.mjs && pnpm --filter frontend dev",
 		"beforeBuildCommand": "node scripts/build-sidecar.mjs && pnpm --filter frontend build"
