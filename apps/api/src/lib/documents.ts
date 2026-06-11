@@ -1,5 +1,4 @@
 import {
-	copyFile,
 	mkdir,
 	readdir,
 	readFile,
@@ -11,6 +10,7 @@ import {
 import { dirname, extname, join } from "node:path";
 import type { Document, DocumentMeta } from "@patrick/shared";
 import { parse, stringify } from "yaml";
+import { ensureParaIds } from "./docx";
 
 // What counts as a "document" in the attorney's folder.
 const DOC_EXTENSIONS = new Set([".pdf", ".docx", ".doc"]);
@@ -102,7 +102,11 @@ export async function createBlankDocument(
 	candidate?: string,
 ): Promise<string> {
 	const name = await uniqueName(folder, asDocxName(candidate));
-	await copyFile(BLANK_DOCX, join(folder, name));
+	// Backfill paragraph ids so the agent's anchor-by-id tools work from the start.
+	await writeFile(
+		join(folder, name),
+		await ensureParaIds(await readFile(BLANK_DOCX)),
+	);
 	await mergeDocumentMeta(folder, name, { createdInPatrick: true });
 	return name;
 }
@@ -121,7 +125,12 @@ export async function unlockDocumentCopy(
 	if (!source.toLowerCase().endsWith(".docx")) return null;
 	if (!(await fileExists(folder, source))) return null;
 	const dest = await uniqueName(folder, patrickCopyName(source));
-	await copyFile(join(folder, source), join(folder, dest));
+	// Backfill paragraph ids: real filings often have none, which breaks the
+	// agent's anchor-by-id comment/suggest tools on the editable copy.
+	await writeFile(
+		join(folder, dest),
+		await ensureParaIds(await readFile(join(folder, source))),
+	);
 	const meta = await readDocumentMeta(folder);
 	await mergeDocumentMeta(folder, dest, {
 		createdInPatrick: true,

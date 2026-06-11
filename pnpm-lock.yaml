@@ -41,6 +41,9 @@ importers:
       hono:
         specifier: ^4.12.23
         version: 4.12.23
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
