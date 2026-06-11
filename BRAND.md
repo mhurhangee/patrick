@@ -60,6 +60,9 @@ machine.
   Trust comes from candour, not polish.
 - **Praise ourselves, don't knock others.** Describe what Patrick does and why
   it's good; never disparage other tools or approaches.
+- **Show, don't sell.** We aren't pitching — we're showing. We are what we are:
+  no overselling, no investor-deck language, no obfuscation. Let the product (and
+  its screenshots) do the talking.
 
 ## Visual identity
 
@@ -70,3 +73,58 @@ machine.
 - **Colour** — emerald green (`--patrick-green`) with a coral accent
   (`--patrick-coral`, `#e76b41`); stone/emerald shadcn base, light + dark.
   Document surfaces stay paper-white in both themes (`--doc-paper`).
+
+## Website (`apps/web`) — the product tour
+
+A calm, product-led scroll: real screenshots of Patrick lead, words are captions.
+Showing, not selling. **Reference: Linear (main), Raycast.**
+
+**The hard lesson:** "minimal / lots of whitespace / no borders" describes a
+*feeling*; it doesn't produce one. Achieving it needs a **structural backbone** —
+one container, one alignment axis, a consistent spacing scale, and real anchors.
+Stripping everything and adding big gaps just makes scattered voids (a different
+slop). Work from references, not adjectives.
+
+**The backbone we built**
+- **One grid, one rhythm.** Everything in a `max-w-5xl` container; every non-hero
+  band is a `Section` with the *same* generous padding and a **hairline top rule**
+  (`border-border/60`). Subtle structure — not floating marks — is what reads as
+  composed. (Don't fear borders; fear *clunky* ones.)
+- **Framed screenshots are the anchors.** Each shot sits in an app-window frame
+  (title bar + traffic lights + hairline border + soft shadow), a **light/dark
+  pair** swapped by the theme (`<Shot light dark />`). A solid object beats text
+  on a void every time.
+- **Editorial, left-aligned.** Serif headlines (Lora), clean sans (Hanken). The
+  page shares one left axis — centring a few things while the rest is side-aligned
+  reads as broken.
+
+**Hero** (left-aligned)
+- Header: minimal, hairline rule — wordmark left · inline links (Docs · Privacy ·
+  Source) + **Download** right. (No burger; plain links.)
+- Two-column top row like the feature blocks: **headline left | one value line
+  right**, then the Download CTA below, then a full-width framed screenshot.
+- Headline: **"Your [ Free · Private · Open · Local ] AI patent agent."** — the
+  bracketed word rotates with a quiet coral crossfade (not a flip); left-aligned
+  so short words don't strand in a centred slot. "agent" = *patent agent* + *AI
+  agent*.
+- The value line carries one self-referential redline (`cloud` struck → `your own
+  computer` inserted, in red) — lands instantly for attorneys, who read redlines
+  daily. One instance only.
+
+**Feature blocks** — each its own `Section` ("a page"): `Heading | Details`
+two-column row, the **screenshot spanning full width below**. Five beats: edits in
+your Word docs · you write the instructions · nothing hidden (reasoning + cost) ·
+your choice of model · your files stay local.
+
+**Then:** the three pillars (Open · Transparent · Yours) as a 3-up, and a centred
+closing CTA (the hero's mirror).
+
+**Motion:** the rotating word's crossfade + one subtle fade-up as a section enters
+view. That's it. Honour `prefers-reduced-motion`.
+
+**Pages:** landing · download · docs · privacy; FAQ / security / releases / about
+as needed. Secondary nav in the header + footer.
+
+**Screenshots:** capture ≥ ~2000px wide (2× the framed display) at a consistent
+ratio; app content only (the frame supplies the window chrome); drop a
+`*-light.png` / `*-dark.png` pair in `apps/web/public/`.
