@@ -7,10 +7,11 @@
  * The version itself is not here — it's injected at build from tauri.conf.json.
  */
 export const LATEST_HIGHLIGHTS = {
-	headline: "Desktop polish",
+	headline: "A unified, agent-first workspace",
 	highlights: [
-		"A native folder picker when you open a task",
-		"The Patrick mark as the desktop app icon",
+		"One workspace — Patrick is beside you from the first screen, no separate setup pages",
+		"Patrick drafts the hard bits: your task brief, practice context, and prompt",
+		"Sidebar switchers, in-app settings, a native folder picker, and the Patrick app icon",
 	],
 } as const;
 
