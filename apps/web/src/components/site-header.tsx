@@ -18,7 +18,10 @@ export function SiteHeader() {
 
 				<nav className="flex items-center gap-6">
 					<div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
-						<Link to="/docs" className="transition-colors hover:text-foreground">
+						<Link
+							to="/docs"
+							className="transition-colors hover:text-foreground"
+						>
 							Docs
 						</Link>
 						<Link
