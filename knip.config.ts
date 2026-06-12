@@ -8,6 +8,8 @@ const config: KnipConfig = {
 		"apps/frontend": {
 			entry: [
 				"src/routes/**/*.tsx",
+				// Ambient declaration for the Vite-injected __APP_VERSION__ global.
+				"src/globals.d.ts",
 				// shadcn registry + foundational lib are library surfaces — treat as
 				// roots so their (as-yet-unused) exports/deps aren't false-flagged.
 				"src/components/ui/**/*.{ts,tsx}",

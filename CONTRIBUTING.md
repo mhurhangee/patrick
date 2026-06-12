@@ -36,12 +36,16 @@ no entry.
 not for every fix.
 
 1. **Bump the version** in `apps/desktop/src-tauri/tauri.conf.json` and
-   `apps/desktop/src-tauri/Cargo.toml` (keep the two in sync).
+   `apps/desktop/src-tauri/Cargo.toml` (keep the two in sync). The in-app version
+   chip reads this automatically — there's no other version to touch.
 2. **Roll the changelog**: rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`
    and open a fresh empty `[Unreleased]` above it.
-3. **Commit, tag, push the tag**:
+3. **Refresh the in-app highlights** in `packages/shared/src/releases.ts` — the
+   two or three headline features for this release (the version chip's "What's
+   new"). The changelog stays the complete record.
+4. **Commit, tag, push the tag**:
    `git tag vX.Y.Z && git push origin vX.Y.Z`.
-4. CI (`.github/workflows/release.yml`) builds the Windows app and opens a
+5. CI (`.github/workflows/release.yml`) builds the Windows app and opens a
    **draft** GitHub Release. Paste that version's changelog section as the body,
    then publish — **not** as a pre-release, so `/releases/latest` resolves (the
    site's download link points there).
