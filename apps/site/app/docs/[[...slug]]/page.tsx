@@ -75,8 +75,8 @@ export default async function DocPage({ params }: { params: Promise<Params> }) {
 	const next = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : undefined;
 
 	return (
-		<div className="flex gap-12">
-			<article className="docs-prose min-w-0 max-w-3xl flex-1">
+		<div className="mx-auto grid max-w-3xl gap-12 min-[1340px]:max-w-none min-[1340px]:grid-cols-[minmax(0,1fr)_13rem]">
+			<article className="docs-prose min-w-0 max-w-3xl">
 				<header className="mb-8 border-b border-border pb-6">
 					<div className="flex items-start justify-between gap-4">
 						<h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
