@@ -6,7 +6,6 @@
 	"scripts": {
 		"dev": "pnpm --filter frontend --filter api --parallel dev",
 		"dev:desktop": "pnpm --filter desktop dev",
-		"dev:web": "pnpm --filter web dev",
 		"dev:site": "pnpm --filter site dev",
 		"typecheck": "pnpm -r --parallel --if-present typecheck",
 		"lint": "biome check .",
