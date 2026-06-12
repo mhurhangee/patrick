@@ -20,7 +20,10 @@ export function SettingsBody({
 	return (
 		<div className="mt-10 flex gap-10">
 			{rail}
-			<div className="min-w-0 flex-1 space-y-16 pb-20">{children}</div>
+			{/* @container so section layouts respond to the panel width, not the viewport. */}
+			<div className="@container min-w-0 flex-1 space-y-16 pb-20">
+				{children}
+			</div>
 		</div>
 	);
 }

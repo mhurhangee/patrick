@@ -5,6 +5,7 @@ import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
 import {
 	type ExchangeMetadata,
 	type PinnedSource,
+	PROMPT_TOKENS,
 	toStoredMessage,
 } from "@patrick/shared";
 import {
@@ -128,6 +129,39 @@ const saveNote = tool({
 		"Propose saving a durable insight to the task's running notes (strategy, a decision, a fact worth remembering across chats). The attorney accepts to add it.",
 	inputSchema: z.object({
 		note: z.string().describe("The note to save — one concise insight"),
+	}),
+});
+
+const suggestBrief = tool({
+	description:
+		"Propose the task brief — a short, one-paragraph statement of what this matter is and the objective, which frames everything you do. Draft it from the matter's documents (pin any you need first via requestOpenFile). The attorney accepts to apply it.",
+	inputSchema: z.object({
+		brief: z.string().describe("The proposed brief — one concise paragraph"),
+	}),
+});
+
+const suggestPracticeContext = tool({
+	description:
+		"Propose a value for the attorney's profile practice context — who they are and how they practise, which steers your work across all of their tasks. Ask about their practice first if you need to. The attorney accepts to apply it.",
+	inputSchema: z.object({
+		practiceContext: z
+			.string()
+			.describe("The proposed practice context for the profile"),
+	}),
+});
+
+// The placeholder tokens a prompt template may use, listed for suggestPrompt so
+// Patrick keeps them in place when rewriting the template.
+const TOKEN_HELP = PROMPT_TOKENS.map(
+	(t) => `<${t.name}> (${t.description})`,
+).join(", ");
+
+const suggestPrompt = tool({
+	description: `Propose an improved version of the attorney's Patrick prompt — the template that instructs you across all of their tasks. Preserve the placeholder tokens, which are filled in automatically: ${TOKEN_HELP}. The attorney accepts to apply it; it takes effect in new chats.`,
+	inputSchema: z.object({
+		prompt: z
+			.string()
+			.describe("The full proposed prompt template, including the tokens"),
 	}),
 });
 
@@ -290,6 +324,9 @@ export async function handleChat(c: Context) {
 			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
 		),
 		suggestLabel,
+		suggestBrief,
+		suggestPracticeContext,
+		suggestPrompt,
 		createDraft,
 		requestUnlock,
 		saveNote,
