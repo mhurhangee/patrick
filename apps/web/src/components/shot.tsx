@@ -32,7 +32,12 @@ export function Shot({
 			{light || dark ? (
 				<>
 					{light && (
-						<img src={light} alt={alt} loading="lazy" className="w-full dark:hidden" />
+						<img
+							src={light}
+							alt={alt}
+							loading="lazy"
+							className="w-full dark:hidden"
+						/>
 					)}
 					{dark && (
 						<img
