@@ -22,6 +22,8 @@ export function SystemCard({
 	onReset,
 	onNewChat,
 	locked,
+	profileMismatch,
+	profileName,
 }: {
 	taskId: string | undefined;
 	profileId: string | undefined;
@@ -34,6 +36,9 @@ export function SystemCard({
 	onReset: () => void;
 	onNewChat: () => void;
 	locked: boolean;
+	/** This chat's locked prompt no longer matches the active profile's. */
+	profileMismatch?: boolean;
+	profileName?: string;
 }) {
 	const [open, setOpen] = useState(false);
 	const [preview, setPreview] = useState<string | null>(null);
@@ -117,6 +122,22 @@ export function SystemCard({
 					</button>
 				</div>
 			</div>
+
+			{profileMismatch && (
+				<div className="flex items-center justify-between gap-2 border-t bg-amber-500/10 px-4 py-1.5 text-[11px]">
+					<span className="min-w-0 truncate text-muted-foreground">
+						Locked instructions — no longer match{" "}
+						{profileName ? `${profileName}'s` : "your"} current prompt.
+					</span>
+					<button
+						type="button"
+						onClick={onNewChat}
+						className="shrink-0 font-medium text-foreground hover:underline"
+					>
+						New chat
+					</button>
+				</div>
+			)}
 
 			{open && (
 				<div className="space-y-3 border-t bg-muted/20 px-4 py-3">

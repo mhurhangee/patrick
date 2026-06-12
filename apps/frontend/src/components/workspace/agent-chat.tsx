@@ -96,6 +96,19 @@ export function AgentChat() {
 	const { activeChatId } = useActiveChat();
 	const { data: stored, isLoading } = useStoredChat(activeTaskId, activeChatId);
 
+	// Patrick is always mounted (every surface), but a chat is bound to a task.
+	// With no task open, stand by rather than wiring up a dead conversation.
+	if (!activeTaskId) {
+		return (
+			<div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+				<Patrick size={28} />
+				<p className="max-w-[14rem] text-sm text-muted-foreground">
+					Open a task and Patrick will help you work through it.
+				</p>
+			</div>
+		);
+	}
+
 	if (isLoading) {
 		return (
 			<div className="flex h-full items-center justify-center">
@@ -587,6 +600,16 @@ function ChatSession({
 			? (lastInputTokens / 1_000_000) * inputPrice
 			: null;
 
+	// A locked chat keeps its frozen instructions; if the active profile's prompt
+	// has since changed (edited, or a different profile selected), the chat no
+	// longer reflects it. Surface that rather than silently re-resolving.
+	const locked = messages.length > 0;
+	const profileMismatch =
+		locked &&
+		chatTemplate !== null &&
+		!!profile &&
+		chatTemplate !== profileTemplate;
+
 	return (
 		<div className="flex h-full flex-col">
 			<SystemCard
@@ -599,7 +622,9 @@ function ChatSession({
 				onChangeTemplate={setChatTemplate}
 				onReset={() => setChatTemplate(null)}
 				onNewChat={newChat}
-				locked={messages.length > 0}
+				locked={locked}
+				profileMismatch={profileMismatch}
+				profileName={profile?.identity.name}
 			/>
 
 			<div className="relative min-h-0 flex-1">
