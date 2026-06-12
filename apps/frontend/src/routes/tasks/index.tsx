@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateTask, useTasks } from "@/hooks/use-tasks";
 import { getStoredProfileId } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { isTauri, pickFolder } from "@/lib/desktop";
 
 export const Route = createFileRoute("/tasks/")({
 	beforeLoad: () => {
@@ -35,8 +36,8 @@ function TasksPicker() {
 		navigate({ to: "/tasks/$id", params: { id } });
 	};
 
-	const createFromFolder = () => {
-		const path = folder.trim();
+	const createFromFolder = (explicit?: string) => {
+		const path = (explicit ?? folder).trim();
 		if (!path) return;
 		create.mutate(path, {
 			onSuccess: (task) => {
@@ -45,6 +46,16 @@ function TasksPicker() {
 				open(task.id);
 			},
 		});
+	};
+
+	// Desktop: a native folder picker. Browser (dev/web): fall back to a typed path.
+	const newTask = async () => {
+		if (!isTauri()) {
+			setAdding(true);
+			return;
+		}
+		const path = await pickFolder();
+		if (path) createFromFolder(path);
 	};
 
 	return (
@@ -117,7 +128,7 @@ function TasksPicker() {
 									}}
 								/>
 								<Button
-									onClick={createFromFolder}
+									onClick={() => createFromFolder()}
 									disabled={!folder.trim() || create.isPending}
 								>
 									<FolderOpen />
@@ -146,7 +157,7 @@ function TasksPicker() {
 					) : (
 						<button
 							type="button"
-							onClick={() => setAdding(true)}
+							onClick={newTask}
 							className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
 						>
 							<Plus className="size-4" />
@@ -154,6 +165,11 @@ function TasksPicker() {
 						</button>
 					)}
 				</div>
+
+				{/* Desktop has no inline card, so surface create errors here. */}
+				{isTauri() && create.isError && (
+					<p className="text-xs text-destructive">Couldn't open that folder.</p>
+				)}
 			</div>
 		</div>
 	);
