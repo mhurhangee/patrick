@@ -147,14 +147,18 @@ export function extractToc(content: string): TocItem[] {
 	const toc: TocItem[] = [];
 	let inFence = false;
 	for (const line of content.split("\n")) {
-		if (/^\s*```/.test(line)) {
+		if (/^\s*(```|~~~)/.test(line)) {
 			inFence = !inFence;
 			continue;
 		}
 		if (inFence) continue;
 		const m = /^(#{2,3})\s+(.+?)\s*$/.exec(line);
 		if (!m) continue;
-		const text = (m[2] as string).replace(/[*_`]/g, "");
+		// Match what rehype-slug sees (the rendered text): unwrap links to their
+		// label and drop emphasis/code markers before slugging.
+		const text = (m[2] as string)
+			.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+			.replace(/[*_`]/g, "");
 		toc.push({
 			depth: (m[1] as string).length as 2 | 3,
 			text,
