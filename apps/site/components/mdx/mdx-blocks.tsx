@@ -88,9 +88,9 @@ export function Card({
 		<>
 			<p className="font-medium text-foreground">{title}</p>
 			{children && (
-				<p className="mt-1 text-sm text-muted-foreground [&>*]:m-0">
+				<div className="mt-1 text-sm text-muted-foreground [&>*]:m-0">
 					{children}
-				</p>
+				</div>
 			)}
 		</>
 	);
