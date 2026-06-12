@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-12
+
 ### Added
 
 - Patrick app icon on the desktop build, replacing the default Tauri icon.
