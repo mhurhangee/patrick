@@ -11,6 +11,7 @@ import {
 	type PinnedSource,
 	toStoredMessage,
 } from "@patrick/shared";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
 	DefaultChatTransport,
 	getToolName,
@@ -33,7 +34,8 @@ import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
-import { useProfile } from "@/hooks/use-profiles";
+import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
+import { useProfile, useUpdateProfile } from "@/hooks/use-profiles";
 import {
 	useCreateDocument,
 	useSaveDocuments,
@@ -47,6 +49,7 @@ import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
+import { ChatEmptyState } from "./chat-empty-state";
 import {
 	AssistantParts,
 	HITL_TOOLS,
@@ -145,11 +148,27 @@ function ChatSession({
 	const unlockDoc = useUnlockDocument(activeTaskId ?? "");
 	const { data: task } = useTask(activeTaskId);
 	const updateTask = useUpdateTask();
+	const updateProfile = useUpdateProfile();
 	const docsRef = useRef(docs);
 	docsRef.current = docs;
 	const taskRef = useRef(task);
 	taskRef.current = task;
+	const profileRef = useRef(profile);
+	profileRef.current = profile;
 	const { columnList, focused, getDoc, open } = useWorkspace();
+	const navigate = useNavigate();
+	// Tailor only the empty-state prompt to the open surface (display, not Patrick).
+	const surfacePath = useLocation({ select: (l) => l.pathname });
+	const inputRef = useRef<HTMLTextAreaElement>(null);
+
+	// Patrick can't run without a working key — gate the input and say why.
+	const keyVerification = useKeyVerification(
+		profile?.ai.provider,
+		profile?.ai.apiKey,
+		{ enabled: !!profile?.ai.apiKey },
+	);
+	const keyStatus = keyStatusOf(keyVerification);
+	const keyReady = keyStatus === "valid";
 
 	// This chat's instructions. null ⇒ "follow the profile" (so editing the
 	// profile prompt updates a fresh chat live); a non-null value is this chat's
@@ -283,7 +302,7 @@ function ChatSession({
 	});
 
 	const [input, setInput] = useState("");
-	const canSend = !!activeTaskId && !!activeProfileId;
+	const canSend = !!activeTaskId && !!activeProfileId && keyReady;
 	const isStreaming = status === "streaming" || status === "submitted";
 	// The agent loop spans multiple requests (one per client tool round-trip).
 	// `status` dips to "ready" between them, so the SDK's own auto-continue
@@ -351,14 +370,38 @@ function ChatSession({
 					: `- ${note}`;
 				updateTask.mutate({ ...t, notes });
 			},
+			suggestBrief: (brief) => {
+				const t = taskRef.current;
+				if (!t) return;
+				updateTask.mutate({ ...t, label: brief });
+				// Show the result where it lives.
+				navigate({ to: "/task" });
+			},
+			suggestPracticeContext: (practiceContext) => {
+				const p = profileRef.current;
+				if (!p) return;
+				updateProfile.mutate({
+					...p,
+					identity: { ...p.identity, practiceContext },
+				});
+				navigate({ to: "/profile" });
+			},
+			suggestPrompt: (prompt) => {
+				const p = profileRef.current;
+				if (!p) return;
+				updateProfile.mutate({ ...p, prompts: { agentpat: prompt } });
+				navigate({ to: "/profile" });
+			},
 		}),
 		[
 			addToolResult,
 			open,
+			navigate,
 			saveDocs.mutate,
 			createDoc.mutateAsync,
 			unlockDoc.mutateAsync,
 			updateTask.mutate,
+			updateProfile.mutate,
 			waitForEditor,
 		],
 	);
@@ -634,9 +677,14 @@ function ChatSession({
 					className="h-full overflow-y-auto p-4"
 				>
 					{exchanges.length === 0 ? (
-						<p className="py-12 text-center text-sm text-muted-foreground">
-							Ask Patrick to draft or amend the open document.
-						</p>
+						<ChatEmptyState
+							surfacePath={surfacePath}
+							doc={focused ? getDoc(focused) : undefined}
+							onPick={(text) => {
+								setInput(text);
+								inputRef.current?.focus();
+							}}
+						/>
 					) : (
 						exchanges.map((ex) => {
 							const isLatest = ex.id === latestExchangeId;
@@ -716,9 +764,24 @@ function ChatSession({
 						</button>
 					</div>
 				)}
+				{!keyReady && (
+					<button
+						type="button"
+						onClick={() => navigate({ to: "/profile", hash: "ai" })}
+						className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+					>
+						{keyStatus === "verifying"
+							? "Verifying your API key…"
+							: keyStatus === "invalid"
+								? "Your API key isn't verified — open your profile."
+								: "Add an API key in your profile to chat."}
+					</button>
+				)}
 				<div className="relative">
 					<Textarea
+						ref={inputRef}
 						value={input}
+						disabled={!keyReady}
 						onChange={(e) => setInput(e.target.value)}
 						onKeyDown={(e) => {
 							if (e.key === "Enter" && !e.shiftKey) {

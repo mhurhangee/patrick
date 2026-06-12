@@ -7,9 +7,12 @@ import {
 } from "ai";
 import {
 	ChevronRight,
+	ClipboardList,
+	Code,
 	FilePen,
 	FilePlus,
 	FolderOpen,
+	IdCard,
 	StickyNote,
 	Tag,
 } from "lucide-react";
@@ -221,6 +224,12 @@ export type ToolUiHandlers = {
 	unlockSource: (filename: string) => Promise<string | null>;
 	/** Append an insight to the task's notes (saveNote acceptance). */
 	saveNote: (note: string) => void;
+	/** Apply a proposed task brief (suggestBrief acceptance). */
+	suggestBrief: (brief: string) => void;
+	/** Apply a proposed profile practice context (suggestPracticeContext). */
+	suggestPracticeContext: (practiceContext: string) => void;
+	/** Apply a proposed Patrick prompt template (suggestPrompt acceptance). */
+	suggestPrompt: (prompt: string) => void;
 };
 
 type HitlInput = Record<string, string | undefined>;
@@ -336,6 +345,52 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 		},
 		reject: () => ({ saved: false }),
 		resolved: (o) => (o.saved ? "Saved to task notes." : "Note not saved."),
+	},
+	suggestBrief: {
+		icon: <ClipboardList size={13} className={iconCls} />,
+		title: () => <>Set the task brief to:</>,
+		detail: (i) => <span className="text-foreground italic">“{i.brief}”</span>,
+		acceptLabel: "Apply",
+		rejectLabel: "No",
+		accept: (i, h) => {
+			if (i.brief) h.suggestBrief(i.brief);
+			return { applied: true };
+		},
+		reject: () => ({ applied: false }),
+		resolved: (o) => (o.applied ? "Brief updated." : "Brief unchanged."),
+	},
+	suggestPracticeContext: {
+		icon: <IdCard size={13} className={iconCls} />,
+		title: () => <>Set your profile's practice context to:</>,
+		detail: (i) => (
+			<span className="text-foreground italic">“{i.practiceContext}”</span>
+		),
+		acceptLabel: "Apply",
+		rejectLabel: "No",
+		accept: (i, h) => {
+			if (i.practiceContext) h.suggestPracticeContext(i.practiceContext);
+			return { applied: true };
+		},
+		reject: () => ({ applied: false }),
+		resolved: (o) =>
+			o.applied ? "Practice context updated." : "Left unchanged.",
+	},
+	suggestPrompt: {
+		icon: <Code size={13} className={iconCls} />,
+		title: () => <>Update your Patrick prompt to:</>,
+		detail: (i) => (
+			<pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 text-[11px] not-italic text-foreground">
+				{i.prompt}
+			</pre>
+		),
+		acceptLabel: "Apply",
+		rejectLabel: "No",
+		accept: (i, h) => {
+			if (i.prompt) h.suggestPrompt(i.prompt);
+			return { applied: true };
+		},
+		reject: () => ({ applied: false }),
+		resolved: (o) => (o.applied ? "Prompt updated." : "Left unchanged."),
 	},
 };
 
