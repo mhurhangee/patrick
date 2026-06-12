@@ -1,0 +1,51 @@
+---
+title: Install
+description: Download and run the Patrick desktop app, and add your AI key.
+order: 1
+---
+
+Patrick is currently an **unsigned Windows desktop app** (the alpha).
+
+<Callout type="note" title="Windows only, for now">
+The alpha ships as a Windows installer. macOS and code signing come with the beta.
+</Callout>
+
+<Steps>
+
+<Step title="Download the installer">
+Grab the latest installer from the [releases page](https://github.com/mhurhangee/patrick/releases/latest).
+</Step>
+
+<Step title="Run it (past SmartScreen)">
+On first launch, Windows SmartScreen may warn "Windows protected your PC" — click **More info → Run anyway**.
+</Step>
+
+<Step title="Add your AI key">
+Patrick uses **your** provider key. In the app, open a profile and paste it:
+
+<Tabs>
+<Tab label="Anthropic">
+Get a key from the [Anthropic console](https://console.anthropic.com/), then **Profile → AI → Anthropic → paste your key**.
+</Tab>
+<Tab label="OpenAI">
+Get a key from the [OpenAI platform](https://platform.openai.com/), then **Profile → AI → OpenAI → paste your key**.
+</Tab>
+</Tabs>
+</Step>
+
+</Steps>
+
+<Callout type="tip">
+Your key stays on your machine and talks only to the provider you choose — you pay them directly, usually pennies per response.
+</Callout>
+
+## Next steps
+
+<CardGrid>
+	<Card title="Set up your profile" href="/docs/concepts/profiles">
+		Your identity, AI settings, and how Patrick writes.
+	</Card>
+	<Card title="Open your first task" href="/docs/concepts/tasks">
+		Point Patrick at a folder you already have.
+	</Card>
+</CardGrid>

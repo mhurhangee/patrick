@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
+import { Callout, Card, CardGrid, Step, Steps } from "./mdx-blocks";
+import { Tab, Tabs } from "./mdx-tabs";
 
 // Internal links use next/link; in-page anchors (incl. the heading anchors) stay
 // plain so they don't pick up prose-link styling; external links open in a tab.
@@ -92,4 +94,12 @@ export const mdxComponents = {
 			{...p}
 		/>
 	),
+	// Tutorial-style blocks, usable directly in any .mdx file.
+	Callout,
+	Steps,
+	Step,
+	Card,
+	CardGrid,
+	Tabs,
+	Tab,
 };

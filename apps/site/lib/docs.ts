@@ -3,18 +3,18 @@ import path from "node:path";
 import GithubSlugger from "github-slugger";
 import matter from "gray-matter";
 
-// The docs are plain .mdx files under content/docs — the source of truth. This
-// reads them, builds the sidebar nav (grouped + ordered by frontmatter), and
-// extracts an on-page TOC. No framework: just files + a few helpers we own.
+// The docs are plain .mdx files under content/docs — the source of truth. The
+// folder structure drives the sidebar: a folder is a (collapsible) section, a
+// file is a page, an index.mdx is the section's landing page. This reads them,
+// builds the nav tree + a flat reading order (for prev/next), and extracts an
+// on-page TOC. No framework: just files + a few helpers we own.
 
 const DOCS_DIR = path.join(process.cwd(), "content/docs");
 
 type DocFrontmatter = {
 	title: string;
 	description?: string;
-	/** Sidebar group heading. */
-	group?: string;
-	/** Sort order within the group (and the group's own order = its min). */
+	/** Sort order within its folder (and a section's order = its index's order). */
 	order?: number;
 };
 
@@ -26,10 +26,16 @@ export type Doc = {
 };
 
 export type TocItem = { depth: 2 | 3; text: string; id: string };
-export type NavGroup = {
-	group: string;
-	items: { title: string; url: string }[];
+export type NavNode = {
+	title: string;
+	url?: string;
+	order: number;
+	children: NavNode[];
 };
+
+function humanize(s: string): string {
+	return s.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+}
 
 async function walk(dir: string): Promise<string[]> {
 	const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -50,7 +56,6 @@ function fileToSlug(file: string): string[] {
 		.relative(DOCS_DIR, file)
 		.replace(/\.mdx$/, "")
 		.split(path.sep);
-	// index.mdx maps to its parent: content/docs/index.mdx → [], foo/index.mdx → [foo].
 	if (parts.at(-1) === "index") parts.pop();
 	return parts;
 }
@@ -80,27 +85,59 @@ export async function getAllSlugs(): Promise<string[][]> {
 	return (await getAllDocs()).map((d) => d.slug);
 }
 
-export async function getNav(): Promise<NavGroup[]> {
+// The sidebar nav tree, mirroring the folder structure. A folder's index.mdx
+// supplies its section title/url/order; folders without one fall back to a
+// humanized name and aren't clickable.
+export async function getNav(): Promise<NavNode[]> {
 	const docs = await getAllDocs();
-	const groups = new Map<string, Doc[]>();
+	const root: NavNode = { title: "", order: 0, children: [] };
+	const byPath = new Map<string, NavNode>([["", root]]);
+
+	const ensure = (segs: string[]): NavNode => {
+		const key = segs.join("/");
+		const existing = byPath.get(key);
+		if (existing) return existing;
+		const node: NavNode = {
+			title: humanize(segs.at(-1) ?? ""),
+			order: 99,
+			children: [],
+		};
+		byPath.set(key, node);
+		const parent = segs.length === 1 ? root : ensure(segs.slice(0, -1));
+		parent.children.push(node);
+		return node;
+	};
+
 	for (const d of docs) {
-		const g = d.frontmatter.group ?? "Docs";
-		groups.set(g, [...(groups.get(g) ?? []), d]);
+		const node =
+			d.slug.length === 0
+				? (() => {
+						const leaf: NavNode = { title: "", order: 99, children: [] };
+						root.children.push(leaf);
+						return leaf;
+					})()
+				: ensure(d.slug);
+		node.title = d.frontmatter.title;
+		node.url = d.url;
+		node.order = d.frontmatter.order ?? 99;
 	}
-	return [...groups.entries()]
-		.map(([group, items]) => ({
-			group,
-			min: Math.min(...items.map((d) => d.frontmatter.order ?? 99)),
-			items: items
-				.sort(
-					(a, b) =>
-						(a.frontmatter.order ?? 99) - (b.frontmatter.order ?? 99) ||
-						a.frontmatter.title.localeCompare(b.frontmatter.title),
-				)
-				.map((d) => ({ title: d.frontmatter.title, url: d.url })),
-		}))
-		.sort((a, b) => a.min - b.min)
-		.map(({ group, items }) => ({ group, items }));
+
+	const sort = (nodes: NavNode[]) => {
+		nodes.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+		for (const n of nodes) sort(n.children);
+	};
+	sort(root.children);
+	return root.children;
+}
+
+// Flat reading order (depth-first over pages) for the prev/next pager.
+export async function getDocOrder(): Promise<{ title: string; url: string }[]> {
+	const flatten = (nodes: NavNode[]): { title: string; url: string }[] =>
+		nodes.flatMap((n) => [
+			...(n.url ? [{ title: n.title, url: n.url }] : []),
+			...flatten(n.children),
+		]);
+	return flatten(await getNav());
 }
 
 // h2/h3 headings for the on-page TOC. A fresh GithubSlugger per doc matches the
