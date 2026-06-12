@@ -1,0 +1,12 @@
+# Next.js
+/.next/
+/out/
+/build
+
+# TypeScript (Next regenerates these)
+next-env.d.ts
+*.tsbuildinfo
+
+# env
+.env*
+!.env.example

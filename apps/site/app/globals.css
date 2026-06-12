@@ -1,70 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/hanken-grotesk";
-@import "@fontsource-variable/lora";
 
 @custom-variant dark (&:is(.dark *));
-
-@theme inline {
-	@keyframes accordion-down {
-		from {
-			height: 0;
-		}
-		to {
-			height: var(
-				--radix-accordion-content-height,
-				var(--accordion-panel-height, auto)
-			);
-		}
-	}
-
-	@keyframes accordion-up {
-		from {
-			height: var(
-				--radix-accordion-content-height,
-				var(--accordion-panel-height, auto)
-			);
-		}
-		to {
-			height: 0;
-		}
-	}
-}
-
-@custom-variant data-open {
-	&:where([data-state="open"]),
-	&:where([data-open]:not([data-open="false"])) {
-		@slot;
-	}
-}
-
-@custom-variant data-closed {
-	&:where([data-state="closed"]),
-	&:where([data-closed]:not([data-closed="false"])) {
-		@slot;
-	}
-}
-
-@custom-variant data-checked {
-	&:where([data-state="checked"]),
-	&:where([data-checked]:not([data-checked="false"])) {
-		@slot;
-	}
-}
-
-@custom-variant data-unchecked {
-	&:where([data-state="unchecked"]),
-	&:where([data-unchecked]:not([data-unchecked="false"])) {
-		@slot;
-	}
-}
-
-@custom-variant data-active {
-	&:where([data-state="active"]),
-	&:where([data-active]:not([data-active="false"])) {
-		@slot;
-	}
-}
 
 :root {
 	--background: oklch(1 0 0);
@@ -121,8 +58,9 @@
 }
 
 @theme inline {
-	--font-sans: "Hanken Grotesk Variable", sans-serif;
-	--font-heading: "Lora Variable", serif;
+	--font-sans: var(--font-sans);
+	--font-heading: var(--font-heading);
+	--font-mono: var(--font-mono);
 	--color-ring: var(--ring);
 	--color-input: var(--input);
 	--color-border: var(--border);
@@ -227,4 +165,55 @@
 		stroke-dashoffset: 0;
 		fill-opacity: 1;
 	}
+}
+
+/* ─── Docs content ─────────────────────────────────────────────────────────── */
+
+/* Inline code (not inside a code block). */
+.docs-prose :not(pre) > code {
+	@apply rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground;
+}
+
+/* Code blocks from rehype-pretty-code (keepBackground: false → our own frame). */
+.docs-prose [data-rehype-pretty-code-figure] pre {
+	@apply my-5 overflow-x-auto rounded-lg border border-border bg-muted/40 py-4 text-[0.8rem] leading-relaxed;
+}
+.docs-prose [data-rehype-pretty-code-figure] code {
+	@apply grid font-mono;
+}
+.docs-prose [data-rehype-pretty-code-figure] [data-line] {
+	@apply px-4;
+}
+/* Dual theme: shiki sets --shiki-light / --shiki-dark on each span. */
+.docs-prose [data-rehype-pretty-code-figure] span {
+	color: var(--shiki-light);
+}
+.dark .docs-prose [data-rehype-pretty-code-figure] span {
+	color: var(--shiki-dark);
+}
+.docs-prose [data-rehype-pretty-code-title] {
+	@apply mb-0 rounded-t-lg border border-b-0 border-border bg-muted/60 px-4 py-2 font-mono text-xs text-muted-foreground;
+}
+.docs-prose [data-rehype-pretty-code-title] + pre {
+	@apply mt-0 rounded-t-none;
+}
+
+/* Heading anchors (rehype-autolink-headings, behavior: append). */
+.docs-prose .heading-anchor {
+	@apply ml-2 text-muted-foreground/40 no-underline opacity-0 transition-opacity;
+}
+.docs-prose :is(h2, h3):hover .heading-anchor {
+	@apply opacity-100;
+}
+
+/* <Steps> — numbered circles via a counter. */
+.docs-prose .docs-steps {
+	counter-reset: step;
+}
+.docs-prose .docs-step {
+	counter-increment: step;
+}
+.docs-prose .docs-step::before {
+	content: counter(step);
+	@apply absolute top-0 left-0 flex size-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground;
 }

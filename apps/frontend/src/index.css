@@ -244,6 +244,10 @@
 		font-size: calc(15px * var(--ui-scale));
 		@apply font-sans;
 	}
+	button:not(:disabled),
+	[role="button"]:not(:disabled) {
+		cursor: pointer;
+	}
 	body {
 		@apply overflow-hidden bg-background text-foreground;
 	}

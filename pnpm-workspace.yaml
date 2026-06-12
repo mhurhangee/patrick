@@ -2,4 +2,4 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
-  msw: set this to true or false
+  sharp: true
