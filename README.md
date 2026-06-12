@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/web/public/favicon.svg" alt="Patrick" width="72" height="72" />
+  <img src="apps/site/public/favicon.svg" alt="Patrick" width="72" height="72" />
 </p>
 
 <h1 align="center">Patrick</h1>
@@ -14,8 +14,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/hero-dark.png" />
-    <img alt="The Patrick workspace — the editor with tracked changes and the chat panel" src="apps/web/public/hero-light.png" />
+    <source media="(prefers-color-scheme: dark)" srcset="apps/site/public/hero-dark.png" />
+    <img alt="The Patrick workspace — the editor with tracked changes and the chat panel" src="apps/site/public/hero-light.png" />
   </picture>
 </p>
 
@@ -44,8 +44,8 @@
   never leave your machine.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/tracked-changes-dark.png" />
-  <img alt="Tracked changes in a .docx, proposed by the agent" src="apps/web/public/tracked-changes-light.png" />
+  <source media="(prefers-color-scheme: dark)" srcset="apps/site/public/tracked-changes-dark.png" />
+  <img alt="Tracked changes in a .docx, proposed by the agent" src="apps/site/public/tracked-changes-light.png" />
 </picture>
 
 ## Download

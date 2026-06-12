@@ -25,20 +25,6 @@ const config: KnipConfig = {
 				"@fontsource-variable/lora",
 			],
 		},
-		"apps/web": {
-			entry: [
-				"src/routes/**/*.tsx",
-				"src/components/ui/**/*.{ts,tsx}",
-				"src/lib/utils.ts",
-			],
-			project: ["src/**/*.{ts,tsx}"],
-			ignoreDependencies: [
-				"tailwindcss",
-				"tw-animate-css",
-				"@fontsource-variable/hanken-grotesk",
-				"@fontsource-variable/lora",
-			],
-		},
 		"apps/site": {
 			// Next.js app router (app/ at the package root, not src/). The Next plugin
 			// adds the app/ + next.config entries; we add the shadcn library surfaces.
