@@ -1,5 +1,6 @@
 import { type Task, taskDisplayName } from "@patrick/shared";
 import { useState } from "react";
+import { Hint } from "@/components/hint";
 import { SaveStatus } from "@/components/save-status";
 import {
 	DangerZone,
@@ -41,16 +42,20 @@ export function TaskForm({
 	const status = saving ? "saving" : autoStatus;
 
 	return (
-		<div className="mx-auto max-w-3xl px-8 py-10">
+		<div className="mx-auto max-w-4xl px-8 py-10">
 			<div className="flex items-start justify-between gap-4">
 				<div className="min-w-0">
-					<h1 className="truncate">{taskDisplayName(draft)}</h1>
+					<h1>Edit task</h1>
 					<p className="truncate text-sm text-muted-foreground">
-						{draft.folder}
+						{taskDisplayName(draft)} · {draft.folder}
 					</p>
 				</div>
 				<SaveStatus status={status} />
 			</div>
+
+			<Hint className="mt-6" title="Patrick can help">
+				Ask in the chat to draft the brief or notes from the documents.
+			</Hint>
 
 			<SettingsBody
 				rail={<SettingsRail items={SECTIONS} hasDanger={!!onDelete} />}
