@@ -3,7 +3,7 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { NavNode } from "@/lib/docs";
 import { cn } from "@/lib/utils";
 
@@ -45,9 +45,14 @@ function NavItem({
 }) {
 	const hasChildren = node.children.length > 0;
 	const active = node.url === pathname;
-	const [open, setOpen] = useState(
-		() => hasChildren && containsActive(node, pathname),
-	);
+	const shouldBeOpen = hasChildren && containsActive(node, pathname);
+	const [open, setOpen] = useState(shouldBeOpen);
+
+	// Auto-expand when navigation lands on this section or one of its pages
+	// (without forcing it shut when the user has opened it manually).
+	useEffect(() => {
+		if (shouldBeOpen) setOpen(true);
+	}, [shouldBeOpen]);
 
 	if (!hasChildren) {
 		return (
@@ -73,10 +78,10 @@ function NavItem({
 					<Link
 						href={node.url}
 						className={cn(
-							"flex-1 py-1.5 text-sm transition-colors",
+							"flex-1 py-1.5 text-sm font-medium transition-colors",
 							active
-								? "font-medium text-foreground"
-								: "font-medium text-foreground/80 hover:text-foreground",
+								? "text-primary"
+								: "text-foreground/80 hover:text-foreground",
 						)}
 					>
 						{node.title}
