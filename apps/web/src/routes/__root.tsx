@@ -34,6 +34,12 @@ function RootLayout() {
 						>
 							Privacy
 						</Link>
+						<Link
+							to="/contact"
+							className="transition-colors hover:text-foreground"
+						>
+							Contact
+						</Link>
 						<a
 							href={GITHUB_URL}
 							target="_blank"
