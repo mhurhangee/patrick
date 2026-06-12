@@ -11,6 +11,15 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Patrick app icon on the desktop build, replacing the default Tauri icon.
 - Native OS folder picker when creating a task on desktop; the typed-path input
   remains the fallback in the browser.
+- A version chip in the chat header with a "what's new" popover, linking to the
+  full changelog.
+- A feedback button in the sidebar — report on GitHub or email, pre-filled with
+  your app version and OS.
+
+### Changed
+
+- Reworked the chat header: the system prompt now opens from an explicit control
+  instead of a hidden whole-bar toggle.
 
 ### Fixed
 

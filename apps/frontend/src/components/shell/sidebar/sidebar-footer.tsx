@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { FeedbackButton } from "@/components/shell/sidebar/feedback-button";
 import { Button } from "@/components/ui/button";
 import {
 	type KeyStatus,
@@ -60,6 +61,7 @@ export function SidebarFooter() {
 					</span>
 				</Link>
 			</Button>
+			<FeedbackButton />
 			<Button asChild variant="ghost" size="icon" title={dotTitle}>
 				<Link to="/profile" search={{ tab: "ai" }}>
 					<span className={cn("size-2.5 rounded-full", DOT_COLOR[status])} />
