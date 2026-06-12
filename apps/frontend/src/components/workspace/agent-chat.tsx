@@ -18,7 +18,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai";
-import { ChevronDown, SendHorizontal, Square } from "lucide-react";
+import { ArrowUp, ChevronDown, Square } from "lucide-react";
 import {
 	type RefObject,
 	useEffect,
@@ -730,7 +730,7 @@ function ChatSession({
 								className="size-8"
 								title="Send"
 							>
-								<SendHorizontal />
+								<ArrowUp />
 							</Button>
 						)}
 					</div>
