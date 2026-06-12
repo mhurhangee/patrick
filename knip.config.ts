@@ -39,6 +39,22 @@ const config: KnipConfig = {
 				"@fontsource-variable/lora",
 			],
 		},
+		"apps/site": {
+			// Next.js app router (app/ at the package root, not src/). The Next plugin
+			// adds the app/ + next.config entries; we add the shadcn library surfaces.
+			entry: [
+				"components/ui/**/*.{ts,tsx}",
+				"components/theme-provider.tsx",
+				"lib/utils.ts",
+			],
+			project: [
+				"app/**/*.{ts,tsx}",
+				"components/**/*.{ts,tsx}",
+				"lib/**/*.{ts,tsx}",
+			],
+			// Used via CSS @import / the Tailwind PostCSS plugin, not TS imports.
+			ignoreDependencies: ["tailwindcss", "tw-animate-css"],
+		},
 		"apps/api": {
 			entry: ["src/index.ts"],
 			project: ["src/**/*.ts"],
