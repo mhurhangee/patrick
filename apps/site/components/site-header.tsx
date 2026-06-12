@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { Patrick } from "@/components/patrick";
-import { SiteContainer } from "@/components/site-container";
 import { SiteMobileMenu } from "@/components/site-mobile-menu";
 import { Button } from "@/components/ui/button";
-import { getNav } from "@/lib/docs";
 import { GITHUB_URL } from "@/lib/links";
 
-// Inline links and the docs sidebar both collapse at lg, so below lg there is a
-// single hamburger (the drop panel) that covers all navigation.
-export async function SiteHeader() {
-	const docsNav = await getNav();
+// Marketing header — centered, hairline-bottom. Plain inline links + Download.
+export function SiteHeader() {
 	return (
 		<header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur">
-			<SiteContainer className="flex h-16 items-center justify-between">
+			<div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
 				<Link href="/" className="flex items-center gap-2">
 					<Patrick size={24} />
 					<span className="font-heading text-xl font-semibold tracking-tight">
@@ -21,7 +17,7 @@ export async function SiteHeader() {
 				</Link>
 
 				<nav className="flex items-center gap-6">
-					<div className="hidden items-center gap-6 text-sm text-muted-foreground lg:flex">
+					<div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
 						<Link
 							href="/docs"
 							className="transition-colors hover:text-foreground"
@@ -52,9 +48,9 @@ export async function SiteHeader() {
 					<Button asChild className="h-9 rounded-lg px-4 text-sm">
 						<Link href="/download">Download</Link>
 					</Button>
-					<SiteMobileMenu docsNav={docsNav} />
+					<SiteMobileMenu />
 				</nav>
-			</SiteContainer>
+			</div>
 		</header>
 	);
 }

@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { DocsHeader } from "@/components/docs/docs-header";
 import { DocsNav } from "@/components/docs/docs-nav";
 import { getNav } from "@/lib/docs";
 
-// The sidebar shows at lg+. Below lg, docs nav lives in the header's mobile menu.
+// Docs has its own app-like shell: a focused top bar + a full-height sidebar,
+// no marketing footer. The sidebar shows at lg+; below lg it's in the top bar.
 export default async function DocsLayout({
 	children,
 }: {
@@ -10,11 +12,14 @@ export default async function DocsLayout({
 }) {
 	const nav = await getNav();
 	return (
-		<div className="mx-auto flex max-w-[84rem] gap-8 px-6 py-10">
-			<aside className="sticky top-20 hidden h-[calc(100svh-6rem)] w-64 shrink-0 overflow-auto lg:block">
-				<DocsNav nodes={nav} />
-			</aside>
-			<div className="min-w-0 flex-1">{children}</div>
+		<div className="flex min-h-svh flex-col">
+			<DocsHeader nav={nav} />
+			<div className="mx-auto flex w-full max-w-[90rem] flex-1 gap-8 px-4 py-10 sm:px-6">
+				<aside className="sticky top-24 hidden h-[calc(100svh-7rem)] w-64 shrink-0 overflow-auto lg:block">
+					<DocsNav nodes={nav} />
+				</aside>
+				<main className="min-w-0 flex-1">{children}</main>
+			</div>
 		</div>
 	);
 }

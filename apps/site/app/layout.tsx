@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Geist_Mono, Hanken_Grotesk, Lora } from "next/font/google";
 
 import "./globals.css";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
@@ -37,12 +35,8 @@ export default function RootLayout({
 				loraHeading.variable,
 			)}
 		>
-			<body className="flex min-h-svh flex-col">
-				<ThemeProvider>
-					<SiteHeader />
-					<main className="flex-1">{children}</main>
-					<SiteFooter />
-				</ThemeProvider>
+			<body>
+				<ThemeProvider>{children}</ThemeProvider>
 			</body>
 		</html>
 	);

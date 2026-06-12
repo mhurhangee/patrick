@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { Patrick } from "@/components/patrick";
-import { SiteContainer } from "@/components/site-container";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { GITHUB_URL } from "@/lib/links";
 
 export function SiteFooter() {
 	return (
 		<footer className="border-t border-border/60">
-			<SiteContainer className="flex flex-col gap-4 py-12 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+			<div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-12 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex items-center gap-2">
 					<Patrick size={16} />
 					<span>Open-source, local-first patent prosecution.</span>
@@ -42,7 +41,7 @@ export function SiteFooter() {
 					<span className="text-muted-foreground/70">Apache-2.0</span>
 					<ThemeToggle />
 				</nav>
-			</SiteContainer>
+			</div>
 		</footer>
 	);
 }
