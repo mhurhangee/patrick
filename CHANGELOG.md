@@ -19,6 +19,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   beside them, a jump-between-sections layout, and a clearer delete.
 - Task and profile switchers in the sidebar — switch, create (from a template),
   and jump to settings.
+- Patrick can help with the hard, fiddly bits: ask him to draft your task brief,
+  your profile's practice context, or your Patrick prompt — each proposed as an
+  accept/reject card.
+- A context-aware chat start screen — Patrick suggests next steps based on what
+  you have open (a PDF, an editable draft, the profile or task), one click to ask.
 
 ### Changed
 
@@ -33,6 +38,10 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Home screen no longer shows leftover icon-variant demos.
+- The chat input is disabled with a clear prompt to add a key when no verified
+  AI key is set.
+- Profile settings now reflow to the panel width instead of the window's, so a
+  narrow chat panel no longer squashes the layout.
 
 ## [0.1.0] - 2026-06-11
 
