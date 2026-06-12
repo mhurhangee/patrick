@@ -31,7 +31,7 @@ export function DocsToc({ items }: { items: TocItem[] }) {
 	if (items.length === 0) return null;
 
 	return (
-		<nav className="sticky top-24 hidden h-fit max-h-[calc(100svh-8rem)] overflow-auto text-sm min-[1340px]:block">
+		<nav className="sticky top-24 hidden h-fit max-h-[calc(100svh-8rem)] overflow-auto text-sm min-[1380px]:block">
 			<p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
 				On this page
 			</p>
