@@ -1,9 +1,10 @@
 import type { PinnedSource } from "@patrick/shared";
-import { ChevronDown, Lock, RotateCcw, SquarePen } from "lucide-react";
+import { ChevronDown, Code, Lock, Plus, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { cn } from "@/lib/utils";
 import { Patrick } from "../patrick";
+import { VersionChip } from "./version-chip";
 
 // The chat header doubles as a window into — and editor of — Patrick's system
 // prompt for this chat. Honest by default: you see exactly what it's told. The
@@ -74,35 +75,47 @@ export function SystemCard({
 			: "no context yet";
 
 	return (
-		<div>
-			<div className="flex items-center gap-1 pr-2">
-				<button
-					type="button"
-					onClick={() => setOpen((o) => !o)}
-					className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2.5 text-left hover:bg-accent/40"
-				>
+		<div className="@container">
+			<div className="flex items-center justify-between gap-2 py-2 pr-2 pl-4">
+				{/* Left: identity. The version chip is the only control here. */}
+				<div className="flex min-w-0 items-center gap-2">
 					<Patrick size={18} />
-					<span className="font-heading text-lg font-semibold tracking-tighter">
+					<span className="@[20rem]:inline hidden font-heading text-lg font-semibold tracking-tighter">
 						Patrick
 					</span>
-					<span className="ml-auto truncate text-xs text-muted-foreground">
-						{summary}
+					<span className="@[20rem]:inline hidden">
+						<VersionChip />
 					</span>
-					<ChevronDown
-						className={cn(
-							"size-4 shrink-0 text-muted-foreground transition-transform",
-							open && "rotate-180",
-						)}
-					/>
-				</button>
-				<button
-					type="button"
-					onClick={onNewChat}
-					title="New chat"
-					className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-				>
-					<SquarePen className="size-4" />
-				</button>
+				</div>
+
+				{/* Right: explicit controls — open the system prompt, or start fresh. */}
+				<div className="flex shrink-0 items-center gap-1">
+					<button
+						type="button"
+						onClick={() => setOpen((o) => !o)}
+						title="System prompt for this chat"
+						className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+					>
+						<Code size={16} className="text-muted-foreground" />
+						<span className="max-w-[12rem] truncate text-xs text-muted-foreground">
+							{summary}
+						</span>
+						<ChevronDown
+							className={cn(
+								"size-4 text-muted-foreground transition-transform",
+								open && "rotate-180",
+							)}
+						/>
+					</button>
+					<button
+						type="button"
+						onClick={onNewChat}
+						title="New chat"
+						className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+					>
+						<Plus className="size-4" />
+					</button>
+				</div>
 			</div>
 
 			{open && (
