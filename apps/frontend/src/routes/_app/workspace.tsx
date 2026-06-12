@@ -1,41 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { AgentChat } from "@/components/workspace/agent-chat";
 import { DocumentViewer } from "@/components/workspace/document-viewer";
-import { ActiveEditorProvider } from "@/lib/active-editor";
-import { useLayout } from "@/lib/layout";
+import {
+	OpenFolderEmpty,
+	ProfileWelcome,
+} from "@/components/workspace/empty-states";
+import { useActiveProfile } from "@/lib/active-profile";
+import { useActiveTask } from "@/lib/active-task";
 
 export const Route = createFileRoute("/_app/workspace")({
-	component: Workspace,
+	component: WorkspaceCenter,
 });
 
-function Workspace() {
-	const { chatRef, setChatCollapsed } = useLayout();
-	return (
-		<ActiveEditorProvider>
-			<ResizablePanelGroup orientation="horizontal" className="h-full">
-				<ResizablePanel id="viewer" defaultSize="60%" minSize="30%">
-					<DocumentViewer />
-				</ResizablePanel>
-				<ResizableHandle />
-				<ResizablePanel
-					id="chat"
-					panelRef={chatRef}
-					defaultSize="40%"
-					minSize="20%"
-					collapsible
-					collapsedSize="0%"
-					onResize={(size) =>
-						setChatCollapsed(Number.parseFloat(String(size)) === 0)
-					}
-				>
-					<AgentChat />
-				</ResizablePanel>
-			</ResizablePanelGroup>
-		</ActiveEditorProvider>
-	);
+// The default centre. Progressive empty states stand in for the old onboarding
+// flow: no profile → welcome; no task → open a folder; otherwise the documents.
+function WorkspaceCenter() {
+	const { activeProfileId } = useActiveProfile();
+	const { activeTaskId } = useActiveTask();
+
+	if (!activeProfileId) return <ProfileWelcome />;
+	if (!activeTaskId) return <OpenFolderEmpty />;
+	return <DocumentViewer />;
 }
