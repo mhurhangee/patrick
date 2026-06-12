@@ -13,7 +13,7 @@ const prefersReducedMotion = () =>
 export function RotatingWord({
 	words,
 	className,
-	interval = 2600,
+	interval = 3800,
 }: {
 	words: string[];
 	className?: string;
