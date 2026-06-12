@@ -1,33 +1,52 @@
 import { taskDisplayName } from "@patrick/shared";
-import { Link } from "@tanstack/react-router";
-import { ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Check, ChevronsUpDown, FolderOpen, Settings2 } from "lucide-react";
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNewTask } from "@/hooks/use-create-flows";
 import { useTask, useTasks } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
+import { isTauri } from "@/lib/desktop";
 import { cn } from "@/lib/utils";
 
 export function TaskSwitcher() {
+	const navigate = useNavigate();
 	const { activeTaskId, setActiveTaskId } = useActiveTask();
 	const { data: task } = useTask(activeTaskId);
 	const { data: tasks } = useTasks();
-	const [open, setOpen] = useState(false);
+	const { pickAndCreate, newTaskFromFolder } = useNewTask();
+	const onSettings = useLocation({ select: (l) => l.pathname === "/task" });
 
 	const loadingActive = !!activeTaskId && !task;
 
+	// Desktop opens the native picker; the browser falls back to a typed path.
+	const openFolder = () => {
+		if (isTauri()) {
+			pickAndCreate();
+			return;
+		}
+		const path = window.prompt("Folder path");
+		if (path) newTaskFromFolder(path);
+	};
+
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
-					className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-sidebar-accent"
+					className={cn(
+						"flex w-full items-center gap-2 border-l-2 px-3 py-2 text-left transition-colors hover:bg-sidebar-accent",
+						onSettings
+							? "border-primary bg-sidebar-accent/50"
+							: "border-transparent",
+					)}
 				>
 					<div className="min-w-0 flex-1">
 						{loadingActive ? (
@@ -41,51 +60,55 @@ export function TaskSwitcher() {
 									{task ? taskDisplayName(task) : "No task"}
 								</div>
 								<div className="truncate text-xs text-muted-foreground">
-									{task?.folder}
+									{task?.folder ?? "Open a folder to start"}
 								</div>
 							</>
 						)}
 					</div>
 					<ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
 				</button>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-72 gap-0.5 p-1">
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-64">
+				<DropdownMenuLabel>Tasks</DropdownMenuLabel>
 				{!tasks &&
-					[0, 1, 2].map((i) => (
-						<div key={i} className="flex flex-col gap-1.5 px-2 py-1.5">
+					[0, 1].map((i) => (
+						<div key={i} className="px-2 py-1.5">
 							<Skeleton className="h-3.5 w-32" />
-							<Skeleton className="h-3 w-44" />
 						</div>
 					))}
 				{tasks?.map((t) => (
-					<button
-						type="button"
+					<DropdownMenuItem
 						key={t.id}
-						onClick={() => {
-							setActiveTaskId(t.id);
-							setOpen(false);
-						}}
-						className={cn(
-							"flex w-full flex-col rounded-sm px-2 py-1 text-left hover:bg-accent",
-							t.id === activeTaskId && "bg-accent",
-						)}
+						onSelect={() => setActiveTaskId(t.id)}
+						className="gap-2"
 					>
-						<span className="truncate text-sm">{taskDisplayName(t)}</span>
-						<span className="truncate text-xs text-muted-foreground">
-							{t.folder}
-						</span>
-					</button>
+						<Check
+							className={cn(
+								"size-3.5",
+								t.id === activeTaskId ? "opacity-100" : "opacity-0",
+							)}
+						/>
+						<div className="min-w-0 flex-1">
+							<div className="truncate">{taskDisplayName(t)}</div>
+							<div className="truncate text-[0.625rem] text-muted-foreground">
+								{t.folder}
+							</div>
+						</div>
+					</DropdownMenuItem>
 				))}
-				<Separator className="my-0.5" />
-				<Button
-					asChild
-					variant="ghost"
-					size="sm"
-					className="w-full justify-start"
+				<DropdownMenuSeparator />
+				<DropdownMenuItem onSelect={openFolder}>
+					<FolderOpen />
+					Open a folder…
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					onSelect={() => navigate({ to: "/task" })}
+					disabled={!activeTaskId}
 				>
-					<Link to="/tasks">All tasks…</Link>
-				</Button>
-			</PopoverContent>
-		</Popover>
+					<Settings2 />
+					Task settings
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
