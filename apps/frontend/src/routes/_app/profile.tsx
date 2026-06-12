@@ -1,8 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ProfileForm } from "@/components/profile/profile-form";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SurfaceScaffold } from "@/components/workspace/surface-scaffold";
 import {
 	useDeleteProfile,
 	useProfile,
@@ -11,62 +10,44 @@ import {
 import { useActiveProfile } from "@/lib/active-profile";
 
 export const Route = createFileRoute("/_app/profile")({
-	validateSearch: (search): { tab?: string } => ({
-		tab: typeof search.tab === "string" ? search.tab : undefined,
-	}),
-	component: Profile,
+	component: ProfileSurface,
 });
 
-function Profile() {
+// The profile editor as an in-panel surface — the shell (sidebar + Patrick)
+// stays put around it. Edits the active profile.
+function ProfileSurface() {
 	const navigate = useNavigate();
-	const { tab } = Route.useSearch();
 	const { activeProfileId, setActiveProfileId } = useActiveProfile();
 	const { data: profile, isLoading } = useProfile(activeProfileId);
 	const update = useUpdateProfile();
 	const del = useDeleteProfile();
 
-	const deleteProfile = async (id: string) => {
-		await del.mutateAsync(id);
+	// Delete clears to the empty state (pick/create) rather than silently
+	// switching to another profile.
+	const deleteProfile = async () => {
+		if (!activeProfileId) return;
+		await del.mutateAsync(activeProfileId);
 		setActiveProfileId(undefined);
-		navigate({ to: "/profiles" });
+		navigate({ to: "/workspace" });
 	};
 
-	const nav = (
-		<div className="flex items-center justify-between">
-			<Button asChild variant="ghost" size="sm" className="-ml-2">
-				<Link to="/workspace">
-					<ArrowLeft />
-					Workspace
-				</Link>
-			</Button>
-			<Button asChild variant="ghost" size="sm">
-				<Link to="/profiles">Switch profile</Link>
-			</Button>
-		</div>
-	);
-
 	return (
-		<div className="h-full overflow-auto">
-			<div className="mx-auto max-w-3xl space-y-6 p-8">
-				{isLoading || !profile ? (
-					<div className="space-y-4">
-						{nav}
-						<Skeleton className="h-9 w-72" />
-						<Skeleton className="h-28 w-full" />
-						<Skeleton className="h-28 w-full" />
-					</div>
-				) : (
-					<ProfileForm
-						key={profile.id}
-						profile={profile}
-						nav={nav}
-						initialTab={tab}
-						saving={update.isPending}
-						onSave={(next) => update.mutate(next)}
-						onDelete={() => deleteProfile(profile.id)}
-					/>
-				)}
-			</div>
-		</div>
+		<SurfaceScaffold>
+			{isLoading || !profile ? (
+				<div className="mx-auto max-w-4xl space-y-4 px-6 py-8">
+					<Skeleton className="h-9 w-72" />
+					<Skeleton className="h-28 w-full" />
+					<Skeleton className="h-28 w-full" />
+				</div>
+			) : (
+				<ProfileForm
+					key={profile.id}
+					profile={profile}
+					saving={update.isPending}
+					onSave={(next) => update.mutate(next)}
+					onDelete={deleteProfile}
+				/>
+			)}
+		</SurfaceScaffold>
 	);
 }

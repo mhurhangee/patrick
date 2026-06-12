@@ -15,11 +15,20 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   full changelog.
 - A feedback button in the sidebar — report on GitHub or email, pre-filled with
   your app version and OS.
+- Profile and task settings now open as panels inside the app, with Patrick
+  beside them, a jump-between-sections layout, and a clearer delete.
+- Task and profile switchers in the sidebar — switch, create (from a template),
+  and jump to settings.
 
 ### Changed
 
 - Reworked the chat header: the system prompt now opens from an explicit control
   instead of a hidden whole-bar toggle.
+- One unified workspace: no more separate setup screens. Patrick is present from
+  the first run, and creating a profile or opening a folder happens in-place
+  instead of on dedicated pages.
+- A heads-up in the system card when a chat's locked instructions no longer match
+  your current profile.
 
 ### Fixed
 

@@ -9,11 +9,6 @@ import {
 
 const STORAGE_KEY = "patrick.activeTaskId";
 
-/** Read the active task id outside React (e.g. route guards). */
-export function getStoredTaskId(): string | undefined {
-	return localStorage.getItem(STORAGE_KEY) ?? undefined;
-}
-
 type ActiveTaskState = {
 	activeTaskId: string | undefined;
 	setActiveTaskId: (id: string | undefined) => void;

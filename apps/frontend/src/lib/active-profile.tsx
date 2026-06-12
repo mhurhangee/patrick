@@ -9,11 +9,6 @@ import {
 
 const STORAGE_KEY = "patrick.activeProfileId";
 
-/** Read the active profile id outside React (e.g. route guards). */
-export function getStoredProfileId(): string | undefined {
-	return localStorage.getItem(STORAGE_KEY) ?? undefined;
-}
-
 type ActiveProfileState = {
 	activeProfileId: string | undefined;
 	setActiveProfileId: (id: string | undefined) => void;
