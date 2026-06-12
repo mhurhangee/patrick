@@ -253,8 +253,14 @@ function DocumentRow({
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction variant="destructive" onClick={onDelete}>
+						<AlertDialogCancel size="default" variant="outline">
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							size="default"
+							variant="destructive"
+							onClick={onDelete}
+						>
 							Delete
 						</AlertDialogAction>
 					</AlertDialogFooter>
