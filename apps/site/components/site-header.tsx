@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { NavLinks } from "@/components/nav-links";
 import { Patrick } from "@/components/patrick";
 import { SiteMobileMenu } from "@/components/site-mobile-menu";
 import { Button } from "@/components/ui/button";
-import { GITHUB_URL } from "@/lib/links";
 
 // Marketing header — centered, hairline-bottom. Plain inline links + Download.
 export function SiteHeader() {
@@ -18,32 +18,7 @@ export function SiteHeader() {
 
 				<nav className="flex items-center gap-6">
 					<div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
-						<Link
-							href="/docs"
-							className="transition-colors hover:text-foreground"
-						>
-							Docs
-						</Link>
-						<Link
-							href="/privacy"
-							className="transition-colors hover:text-foreground"
-						>
-							Privacy
-						</Link>
-						<Link
-							href="/contact"
-							className="transition-colors hover:text-foreground"
-						>
-							Contact
-						</Link>
-						<a
-							href={GITHUB_URL}
-							target="_blank"
-							rel="noreferrer"
-							className="transition-colors hover:text-foreground"
-						>
-							Source
-						</a>
+						<NavLinks className="transition-colors hover:text-foreground" />
 					</div>
 					<Button asChild className="h-9 rounded-lg px-4 text-sm">
 						<Link href="/download">Download</Link>

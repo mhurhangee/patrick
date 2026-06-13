@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import GithubSlugger from "github-slugger";
 import matter from "gray-matter";
+import { cache } from "react";
 
 // The docs are plain .mdx files under content/docs — the source of truth. The
 // folder structure drives the sidebar: a folder is a (collapsible) section, a
@@ -60,7 +61,10 @@ function fileToSlug(file: string): string[] {
 	return parts;
 }
 
-export async function getAllDocs(): Promise<Doc[]> {
+// cache() dedupes the fs walk + parse within a single render/build pass — it's
+// called from the header, the docs layout, the page, the sitemap, and the llms
+// routes, which would otherwise re-walk the tree each time.
+export const getAllDocs = cache(async (): Promise<Doc[]> => {
 	const files = await walk(DOCS_DIR);
 	return Promise.all(
 		files.map(async (file) => {
@@ -74,7 +78,7 @@ export async function getAllDocs(): Promise<Doc[]> {
 			};
 		}),
 	);
-}
+});
 
 export async function getDoc(slug: string[]): Promise<Doc | null> {
 	const key = slug.join("/");
@@ -88,7 +92,7 @@ export async function getAllSlugs(): Promise<string[][]> {
 // The sidebar nav tree, mirroring the folder structure. A folder's index.mdx
 // supplies its section title/url/order; folders without one fall back to a
 // humanized name and aren't clickable.
-export async function getNav(): Promise<NavNode[]> {
+export const getNav = cache(async (): Promise<NavNode[]> => {
 	const docs = await getAllDocs();
 	const root: NavNode = { title: "", order: 0, children: [] };
 	const byPath = new Map<string, NavNode>([["", root]]);
@@ -128,7 +132,7 @@ export async function getNav(): Promise<NavNode[]> {
 	};
 	sort(root.children);
 	return root.children;
-}
+});
 
 // Flat reading order (depth-first over pages) for the prev/next pager.
 export async function getDocOrder(): Promise<{ title: string; url: string }[]> {
