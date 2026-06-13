@@ -1,7 +1,6 @@
-import Link from "next/link";
+import { NavLinks } from "@/components/nav-links";
 import { Patrick } from "@/components/patrick";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { GITHUB_URL } from "@/lib/links";
 
 export function SiteFooter() {
 	return (
@@ -12,32 +11,7 @@ export function SiteFooter() {
 					<span>Open-source, local-first patent prosecution.</span>
 				</div>
 				<nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
-					<Link
-						href="/docs"
-						className="transition-colors hover:text-foreground"
-					>
-						Docs
-					</Link>
-					<Link
-						href="/privacy"
-						className="transition-colors hover:text-foreground"
-					>
-						Privacy
-					</Link>
-					<Link
-						href="/contact"
-						className="transition-colors hover:text-foreground"
-					>
-						Contact
-					</Link>
-					<a
-						href={GITHUB_URL}
-						target="_blank"
-						rel="noreferrer"
-						className="transition-colors hover:text-foreground"
-					>
-						Source
-					</a>
+					<NavLinks className="transition-colors hover:text-foreground" />
 					<span className="text-muted-foreground/70">Apache-2.0</span>
 					<ThemeToggle />
 				</nav>
