@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllDocs } from "@/lib/docs";
+import { getAllSlugs } from "@/lib/docs";
 
 const BASE = "https://usepatrick.com";
 
@@ -8,8 +8,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const marketing = ["", "/download", "/privacy", "/contact", "/docs"].map(
 		(p) => ({ url: `${BASE}${p}`, lastModified: now }),
 	);
-	const docs = (await getAllDocs())
-		.filter((d) => d.slug.length > 0) // /docs already covered above
-		.map((d) => ({ url: `${BASE}${d.url}`, lastModified: now }));
+	// getAllSlugs is pages only (section labels excluded); [] is /docs, above.
+	const docs = (await getAllSlugs())
+		.filter((s) => s.length > 0)
+		.map((s) => ({ url: `${BASE}/docs/${s.join("/")}`, lastModified: now }));
 	return [...marketing, ...docs];
 }

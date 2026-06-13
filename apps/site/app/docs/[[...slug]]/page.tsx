@@ -5,11 +5,13 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
-import { CopyPage } from "@/components/docs/copy-page";
+import { DocActions } from "@/components/docs/doc-actions";
+import { DocBreadcrumb } from "@/components/docs/doc-breadcrumb";
 import { DocsPager } from "@/components/docs/docs-pager";
 import { DocsToc } from "@/components/docs/docs-toc";
 import { mdxComponents } from "@/components/mdx/mdx";
 import { extractToc, getAllSlugs, getDoc, getDocOrder } from "@/lib/docs";
+import { GITHUB_URL } from "@/lib/links";
 
 export const dynamicParams = false;
 
@@ -74,15 +76,23 @@ export default async function DocPage({ params }: { params: Promise<Params> }) {
 	const prev = idx > 0 ? order[idx - 1] : undefined;
 	const next = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : undefined;
 
+	const rawHref = `/raw/docs${slug.length ? `/${slug.join("/")}` : ""}`;
+	const editHref = `${GITHUB_URL}/edit/main/${doc.filePath}`;
+
 	return (
 		<div className="mx-auto grid max-w-3xl gap-12 min-[1380px]:max-w-none min-[1380px]:grid-cols-[minmax(0,1fr)_13rem]">
 			<article className="docs-prose min-w-0 max-w-3xl">
 				<header className="mb-8 border-b border-border pb-6">
+					<DocBreadcrumb slug={slug} />
 					<div className="flex items-start justify-between gap-4">
 						<h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
 							{doc.frontmatter.title}
 						</h1>
-						<CopyPage markdown={doc.content} />
+						<DocActions
+							markdown={doc.content}
+							rawHref={rawHref}
+							editHref={editHref}
+						/>
 					</div>
 					{doc.frontmatter.description && (
 						<p className="mt-2 text-lg text-muted-foreground">

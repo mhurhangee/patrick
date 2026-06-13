@@ -22,6 +22,8 @@ type DocFrontmatter = {
 export type Doc = {
 	slug: string[];
 	url: string;
+	/** Path from the repo root — for the "edit on GitHub" link. */
+	filePath: string;
 	frontmatter: DocFrontmatter;
 	content: string;
 };
@@ -73,6 +75,7 @@ export const getAllDocs = cache(async (): Promise<Doc[]> => {
 			return {
 				slug,
 				url: `/docs${slug.length ? `/${slug.join("/")}` : ""}`,
+				filePath: `apps/site/${path.relative(process.cwd(), file)}`,
 				frontmatter: data as DocFrontmatter,
 				content,
 			};
@@ -85,13 +88,42 @@ export async function getDoc(slug: string[]): Promise<Doc | null> {
 	return (await getAllDocs()).find((d) => d.slug.join("/") === key) ?? null;
 }
 
-export async function getAllSlugs(): Promise<string[][]> {
-	return (await getAllDocs()).map((d) => d.slug);
+// Breadcrumb trail for a page: Docs › …sections… › Page. Only "Docs" links —
+// section ancestors have no page, and the last item is the current page.
+export async function getBreadcrumb(
+	slug: string[],
+): Promise<{ title: string; url?: string }[]> {
+	const docs = await getAllDocs();
+	const titleOf = (s: string[]) =>
+		docs.find((d) => d.slug.join("/") === s.join("/"))?.frontmatter.title ??
+		humanize(s.at(-1) ?? "");
+	const trail: { title: string; url?: string }[] = [
+		{ title: "Docs", url: "/docs" },
+	];
+	for (let i = 1; i <= slug.length; i++) {
+		trail.push({ title: titleOf(slug.slice(0, i)) });
+	}
+	return trail;
 }
 
-// The sidebar nav tree, mirroring the folder structure. A folder's index.mdx
-// supplies its section title/url/order; folders without one fall back to a
-// humanized name and aren't clickable.
+// A slug names a section (a folder with child pages) — a nav label, not a page.
+function isSection(slug: string[], allSlugs: string[][]): boolean {
+	if (slug.length === 0) return false; // the docs root (Welcome) is a real page
+	const key = slug.join("/");
+	return allSlugs.some(
+		(s) => s.length > slug.length && s.slice(0, slug.length).join("/") === key,
+	);
+}
+
+// Page slugs only — section indexes are excluded so they aren't prerendered.
+export async function getAllSlugs(): Promise<string[][]> {
+	const all = (await getAllDocs()).map((d) => d.slug);
+	return all.filter((slug) => !isSection(slug, all));
+}
+
+// The sidebar nav tree, mirroring the folder structure. A folder is a section —
+// an expander, never a page: its index.mdx supplies the label + order, and we
+// strip the url so it toggles rather than navigates. Files are pages (leaves).
 export const getNav = cache(async (): Promise<NavNode[]> => {
 	const docs = await getAllDocs();
 	const root: NavNode = { title: "", order: 0, children: [] };
@@ -125,6 +157,16 @@ export const getNav = cache(async (): Promise<NavNode[]> => {
 		node.url = d.url;
 		node.order = d.frontmatter.order ?? 99;
 	}
+
+	// Folders are sections, not pages: drop their url so the nav renders them as
+	// a toggle and the pager / SSG skip them. Leaves keep their url.
+	const stripSectionUrls = (nodes: NavNode[]) => {
+		for (const n of nodes) {
+			if (n.children.length > 0) n.url = undefined;
+			stripSectionUrls(n.children);
+		}
+	};
+	stripSectionUrls(root.children);
 
 	const sort = (nodes: NavNode[]) => {
 		nodes.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
