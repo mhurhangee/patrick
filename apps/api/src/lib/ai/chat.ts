@@ -4,6 +4,7 @@ import { getAiSdkTools } from "@eigenpal/docx-editor-agents/ai-sdk/server";
 import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
 import {
 	type ExchangeMetadata,
+	PATRICK_DOCS,
 	type PinnedSource,
 	PROMPT_TOKENS,
 	toStoredMessage,
@@ -165,6 +166,15 @@ const suggestPrompt = tool({
 	}),
 });
 
+// Server-executed (unlike the no-execute editor/HITL tools): returns the bundled
+// Patrick docs so the agent can answer how-to questions about the app itself.
+const patrickHelp = tool({
+	description:
+		"Look up how Patrick works — its features, setup, and how to use the app. Call this for a how-to or 'how does Patrick…' question about the app itself, not about the attorney's matter.",
+	inputSchema: z.object({}),
+	execute: async () => PATRICK_DOCS,
+});
+
 // Read-only docx → indexed plain text, headless from disk. The headless parse is
 // the pricey bit and originals don't change, so memoise by path+mtime — a
 // multi-turn chat then extracts each pinned docx once, not every turn.
@@ -319,6 +329,8 @@ export async function handleChat(c: Context) {
 
 	// Editor tools (no execute — run client-side against the live editor) + our
 	// HITL requestOpenFile when there are docs to propose (resolved by a card).
+	// Adding/removing a capability here? Update PATRICK_CAPABILITIES in
+	// @patrick/shared so Patrick keeps describing itself honestly.
 	const tools = {
 		...Object.fromEntries(
 			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
@@ -330,6 +342,7 @@ export async function handleChat(c: Context) {
 		createDraft,
 		requestUnlock,
 		saveNote,
+		patrick_help: patrickHelp,
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 

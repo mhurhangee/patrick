@@ -22,7 +22,35 @@ export type TokenDef = {
 /** Matches a <TOKEN> occurrence; capture group 1 is the bare name. */
 export const TOKEN_RE = /<([A-Z][A-Z0-9_]*)>/g;
 
+// What Patrick can and can't do — injected via <CAPABILITIES> so the agent can
+// answer questions about itself honestly. Shown in the template like any token,
+// so the attorney sees it and can remove it.
+//
+// KEEP IN SYNC with the agent's actual tools (apps/api/src/lib/ai/chat.ts). When
+// a capability ships (web/OPS search, claim charting), move it from "can't yet"
+// to "can do" — otherwise Patrick will confidently misdescribe itself.
+export const PATRICK_CAPABILITIES = `Your own abilities, so you can answer questions about yourself accurately:
+
+What you can do now:
+- Read the matter's pinned source documents (PDFs and Word files) that are in context.
+- Draft and amend Word documents as native tracked changes the attorney accepts or rejects — always through the document tools, never by reproducing a document in chat.
+- Propose actions the attorney approves via a card: pin a source into context, label a document, save a note, set the task brief, or refine their profile and your prompt.
+
+What you can't do yet — say so plainly if asked, and that it's planned:
+- Search the web or external databases — no prior-art search, no EPO OPS, no live legal lookup.
+- Chart claims against prior art.
+- Edit anything other than the Word draft in focus, or change the attorney's originals (they're read-only — offer an editable copy instead).`;
+
 export const PROMPT_TOKENS: TokenDef[] = [
+	{
+		name: "CAPABILITIES",
+		kind: "context",
+		label: "Capabilities",
+		description:
+			"What Patrick can and can't do, so it answers questions about itself honestly. Remove it if you'd rather Patrick not describe itself.",
+		placeholder: "‹ Patrick's abilities and current limits ›",
+		surfaces: ["agentpat"],
+	},
 	{
 		name: "PRACTICECONTEXT",
 		kind: "context",

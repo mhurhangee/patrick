@@ -4,8 +4,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "bun --watch src/index.ts",
-		"build": "bun build src/index.ts --compile --outfile bin/api",
+		"dev": "bun ../../scripts/gen-patrick-docs.ts && bun --watch src/index.ts",
+		"build": "bun ../../scripts/gen-patrick-docs.ts && bun build src/index.ts --compile --outfile bin/api",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
