@@ -21,7 +21,10 @@ export async function listTasks(): Promise<TaskSummary[]> {
 
 export async function readTask(id: string): Promise<Task | null> {
 	try {
-		return parse(await readFile(taskPath(id), "utf8")) as Task;
+		const task = parse(await readFile(taskPath(id), "utf8")) as Task;
+		// `brief` is required downstream (the editor + prompt); default it so a task
+		// file written before the field existed doesn't read back as undefined.
+		return { ...task, brief: task.brief ?? "" };
 	} catch {
 		return null;
 	}

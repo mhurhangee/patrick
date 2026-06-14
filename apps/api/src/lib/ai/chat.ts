@@ -124,19 +124,19 @@ const requestUnlock = tool({
 	}),
 });
 
-const saveNote = tool({
-	description:
-		"Propose saving a durable insight to the task's running notes (strategy, a decision, a fact worth remembering across chats). The attorney accepts to add it.",
-	inputSchema: z.object({
-		note: z.string().describe("The note to save — one concise insight"),
-	}),
-});
-
 const suggestBrief = tool({
 	description:
-		"Propose the task brief — a short, one-paragraph statement of what this matter is and the objective, which frames everything you do. Draft it from the matter's documents (pin any you need first via requestOpenFile). The attorney accepts to apply it.",
+		"Propose an edit to the task brief — the living statement of what this matter is, the objective, and the running record, injected into every chat. Markdown (headings, lists, **bold**).\n\nSet `append: true` to add a short insight (a decision, a finding worth remembering) to the end of the brief without disturbing the rest — prefer this for incremental notes. Omit `append` to propose the whole brief (e.g. drafting it from the documents — pin any you need first via requestOpenFile); then preserve anything worth keeping. The attorney accepts to apply it.",
 	inputSchema: z.object({
-		brief: z.string().describe("The proposed brief — one concise paragraph"),
+		brief: z
+			.string()
+			.describe(
+				"With append: the note to add. Without: the whole brief as markdown.",
+			),
+		append: z
+			.boolean()
+			.optional()
+			.describe("Append the text as a note instead of replacing the brief."),
 	}),
 });
 
@@ -333,7 +333,6 @@ export async function handleChat(c: Context) {
 		suggestPrompt,
 		createDraft,
 		requestUnlock,
-		saveNote,
 		patrick_help: patrickHelp,
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};

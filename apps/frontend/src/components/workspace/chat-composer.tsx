@@ -1,8 +1,5 @@
 import { Mention } from "@tiptap/extension-mention";
-import { Placeholder } from "@tiptap/extensions";
-import { Markdown } from "@tiptap/markdown";
 import { EditorContent, type JSONContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import {
 	forwardRef,
 	useEffect,
@@ -11,6 +8,7 @@ import {
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { richExtensions } from "@/components/rich-editor/extensions";
 import { cn } from "@/lib/utils";
 
 // label = what the chip/@text becomes (the filename — a real handle for the
@@ -91,9 +89,7 @@ export const ChatComposer = forwardRef<
 
 	const editor = useEditor({
 		extensions: [
-			StarterKit.configure({ horizontalRule: false }),
-			Placeholder.configure({ placeholder }),
-			Markdown,
+			...richExtensions({ headings: true, lists: true }, placeholder),
 			FileMention.configure({
 				HTMLAttributes: { class: "mention" },
 				renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id}`,
@@ -159,7 +155,7 @@ export const ChatComposer = forwardRef<
 			}),
 		],
 		editorProps: {
-			attributes: { class: "tiptap-composer focus:outline-none" },
+			attributes: { class: "tiptap-prose focus:outline-none" },
 			// Enter sends; Shift+Enter is a newline. The editor's own handler runs
 			// before the mention plugin, so while the @ popup is open we bow out and
 			// let it own the keys (Enter selects the highlighted doc).

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type SaveState = "idle" | "saving" | "saved";
 
@@ -73,4 +73,35 @@ export function useAutosave<T>(
 
 	const status: SaveState = pending ? "saving" : hasSaved ? "saved" : "idle";
 	return { status, flush, cancel };
+}
+
+/**
+ * A local editable draft of a server value that auto-saves (debounced) and adopts
+ * genuine external changes — e.g. Patrick editing the same record from the chat —
+ * without clobbering in-flight typing. The echo of our own save comes back equal
+ * to what we last wrote (compared by value), so it's ignored; anything else is an
+ * external change and replaces the draft. Mount the host with `key=` so switching
+ * subject starts fresh.
+ */
+export function useAutosavedDraft<T>(external: T, onSave: (value: T) => void) {
+	const [draft, setDraft] = useState(external);
+	const lastSaved = useRef(JSON.stringify(external));
+	const save = useCallback(
+		(value: T) => {
+			lastSaved.current = JSON.stringify(value);
+			onSave(value);
+		},
+		[onSave],
+	);
+	const { status, cancel } = useAutosave(draft, save);
+
+	useEffect(() => {
+		const incoming = JSON.stringify(external);
+		if (incoming !== lastSaved.current) {
+			lastSaved.current = incoming;
+			setDraft(external);
+		}
+	}, [external]);
+
+	return { draft, setDraft, status, cancel };
 }

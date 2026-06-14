@@ -323,57 +323,57 @@
 	}
 }
 
-/* Tiptap chat composer — live markdown + @-mention chips */
-.tiptap-composer {
+/* Tiptap rich-text surfaces — chat composer, prompt blocks, task brief */
+.tiptap-prose {
 	@apply outline-none;
 }
 /* docx-editor's CSS ships a global `[contenteditable=true]{caret-color:#000}`
    (same specificity as a class, wins by load order). Out-specify it so our
    caret follows the theme and stays visible in dark mode. */
-.tiptap-composer[contenteditable="true"] {
+.tiptap-prose[contenteditable="true"] {
 	caret-color: var(--foreground);
 }
-.tiptap-composer p {
+.tiptap-prose p {
 	@apply my-0;
 }
-.tiptap-composer p + p {
+.tiptap-prose p + p {
 	@apply mt-2;
 }
-.tiptap-composer h1 {
+.tiptap-prose h1 {
 	@apply mt-2 mb-1 text-base font-semibold;
 }
-.tiptap-composer h2 {
+.tiptap-prose h2 {
 	@apply mt-2 mb-1 text-sm font-semibold;
 }
-.tiptap-composer h3 {
+.tiptap-prose h3 {
 	@apply mt-1.5 mb-0.5 text-sm font-medium;
 }
-.tiptap-composer ul {
+.tiptap-prose ul {
 	@apply my-1 list-disc pl-5;
 }
-.tiptap-composer ol {
+.tiptap-prose ol {
 	@apply my-1 list-decimal pl-5;
 }
-.tiptap-composer li {
+.tiptap-prose li {
 	@apply my-0.5;
 }
-.tiptap-composer code {
+.tiptap-prose code {
 	@apply rounded bg-muted px-1 py-0.5 text-[0.85em];
 }
-.tiptap-composer pre {
+.tiptap-prose pre {
 	@apply my-1 overflow-x-auto rounded bg-muted p-2 text-xs;
 }
-.tiptap-composer pre code {
+.tiptap-prose pre code {
 	@apply bg-transparent p-0;
 }
-.tiptap-composer blockquote {
+.tiptap-prose blockquote {
 	@apply border-l-2 border-border pl-3 text-muted-foreground;
 }
-.tiptap-composer .mention {
+.tiptap-prose .mention {
 	@apply rounded bg-primary/10 px-1 font-medium text-primary;
 }
 /* Placeholder hint (from @tiptap/extensions Placeholder) */
-.tiptap-composer p.is-editor-empty:first-child::before {
+.tiptap-prose p.is-editor-empty:first-child::before {
 	content: attr(data-placeholder);
 	@apply pointer-events-none float-left h-0 text-muted-foreground;
 }

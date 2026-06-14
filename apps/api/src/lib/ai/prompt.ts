@@ -8,15 +8,15 @@ import {
 /** A folder document not yet in context — awareness only (filename + label). */
 export type AvailableDoc = { filename: string; label?: string };
 
-// The task block fed to <TASK>: short name, the brief (label), and running notes.
+// The task block injected into every chat: the short name + the living brief
+// (what the matter is, the objective, the running record).
 function taskBlock(task: Task): string {
 	const parts: string[] = [];
 	const name = task.name?.trim();
-	const brief = task.label?.trim();
+	const brief = task.brief?.trim();
 	if (name) parts.push(name);
 	if (brief) parts.push(brief);
 	if (parts.length === 0) parts.push("(untitled task)");
-	if (task.notes?.trim()) parts.push(`\nNotes:\n${task.notes.trim()}`);
 	return parts.join("\n");
 }
 

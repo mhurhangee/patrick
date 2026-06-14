@@ -1,5 +1,5 @@
 import type { Profile } from "@patrick/shared";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { Hint } from "@/components/hint";
 import { SaveStatus } from "@/components/save-status";
 import {
@@ -11,7 +11,7 @@ import {
 	SettingsSection,
 	type SettingsSectionDef,
 } from "@/components/settings/settings";
-import { useAutosave } from "@/hooks/use-autosave";
+import { useAutosavedDraft } from "@/hooks/use-autosave";
 import { useActiveTask } from "@/lib/active-task";
 import { AiSection } from "./ai-section";
 import { AppearanceSection } from "./appearance-section";
@@ -41,32 +41,17 @@ export function ProfileForm({
 	saving?: boolean;
 	onDelete?: () => void | Promise<void>;
 }) {
-	const [draft, setDraft] = useState(profile);
-	// Remember what we last wrote, so the echo of our own autosave is ignored but a
-	// genuinely external change is adopted (below).
-	const lastSavedRef = useRef(JSON.stringify(profile));
-	const handleSave = useCallback(
-		(p: Profile) => {
-			lastSavedRef.current = JSON.stringify(p);
-			onSave(p);
-		},
-		[onSave],
-	);
-	const { status: autoStatus, cancel } = useAutosave(draft, handleSave);
+	// A draft that auto-saves and adopts Patrick's external edits (e.g. a prompt
+	// suggestion accepted from the chat) without clobbering in-flight typing.
+	const {
+		draft,
+		setDraft,
+		status: autoStatus,
+		cancel,
+	} = useAutosavedDraft(profile, onSave);
 	const status = saving ? "saving" : autoStatus;
 	// Patrick can only help through the chat, which needs an open task.
 	const { activeTaskId } = useActiveTask();
-
-	// Adopt an external edit to this profile — e.g. Patrick applying a prompt
-	// suggestion from the chat — without clobbering in-flight typing: our own saved
-	// value echoes back equal to lastSaved and is skipped.
-	useEffect(() => {
-		const incoming = JSON.stringify(profile);
-		if (incoming !== lastSavedRef.current) {
-			lastSavedRef.current = incoming;
-			setDraft(profile);
-		}
-	}, [profile]);
 
 	const set = (patch: Partial<Profile>) =>
 		setDraft((d) => ({ ...d, ...patch }));
