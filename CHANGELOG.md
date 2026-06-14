@@ -6,6 +6,26 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A guided prompt builder in your profile: write Patrick's instructions as
+  labelled blocks — practice context, do's, don'ts, response style, and more —
+  that you can add, reorder, and edit, with Raw and live Preview tabs.
+- A richer chat composer: format your messages with markdown, and @-mention your
+  pinned sources to point Patrick straight at them.
+- Patrick can answer questions about itself — what it can and can't do, and how
+  to use the app — from its built-in documentation.
+
+### Changed
+
+- Patrick edits your prompt a section at a time: ask him to draft or refine a
+  single block (like your practice context) and accept it without disturbing the
+  rest of your instructions.
+- Profile and task settings keep the title and save status in view as you
+  scroll, and the layout now adapts to the panel's width rather than the window.
+- A profile's identity is now a profile name plus an author name, which Patrick
+  uses as the author on the tracked changes he makes.
+
 ## [0.2.0] - 2026-06-12
 
 ### Added

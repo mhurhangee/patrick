@@ -6,7 +6,6 @@ import {
 	type ExchangeMetadata,
 	PATRICK_DOCS,
 	type PinnedSource,
-	PROMPT_TOKENS,
 	toStoredMessage,
 } from "@patrick/shared";
 import {
@@ -141,28 +140,22 @@ const suggestBrief = tool({
 	}),
 });
 
-const suggestPracticeContext = tool({
-	description:
-		"Propose a value for the attorney's profile practice context — who they are and how they practise, which steers your work across all of their tasks. Ask about their practice first if you need to. The attorney accepts to apply it.",
-	inputSchema: z.object({
-		practiceContext: z
-			.string()
-			.describe("The proposed practice context for the profile"),
-	}),
-});
-
-// The placeholder tokens a prompt template may use, listed for suggestPrompt so
-// Patrick keeps them in place when rewriting the template.
-const TOKEN_HELP = PROMPT_TOKENS.map(
-	(t) => `<${t.name}> (${t.description})`,
-).join(", ");
-
 const suggestPrompt = tool({
-	description: `Propose an improved version of the attorney's Patrick prompt — the template that instructs you across all of their tasks. Preserve the placeholder tokens, which are filled in automatically: ${TOKEN_HELP}. The attorney accepts to apply it; it takes effect in new chats.`,
+	description:
+		"Propose a change to the attorney's prompt — the instructions that steer you across all of their tasks, written as `## Header` markdown sections (e.g. practice context, do's, don'ts, response style). Your capabilities and the current task/documents are added automatically, so never include them.\n\nUsually pass `heading` to add or rewrite a SINGLE section, leaving everything else they've written untouched — prefer this. Omit `heading` only to rewrite the whole prompt, and then preserve every section they already have. The attorney accepts to apply it; it takes effect in new chats.",
 	inputSchema: z.object({
-		prompt: z
+		heading: z
 			.string()
-			.describe("The full proposed prompt template, including the tokens"),
+			.min(1)
+			.optional()
+			.describe(
+				"The section to add or replace, e.g. 'Practice context'. Omit only to replace the entire prompt.",
+			),
+		content: z
+			.string()
+			.describe(
+				"With a heading: that section's body text. Without: the whole prompt as ## Header sections.",
+			),
 	}),
 });
 
@@ -337,7 +330,6 @@ export async function handleChat(c: Context) {
 		),
 		suggestLabel,
 		suggestBrief,
-		suggestPracticeContext,
 		suggestPrompt,
 		createDraft,
 		requestUnlock,

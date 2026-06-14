@@ -5,7 +5,9 @@ import { SaveStatus } from "@/components/save-status";
 import {
 	DangerZone,
 	SettingsBody,
+	SettingsFallbackHeading,
 	SettingsRail,
+	SettingsRailHeading,
 	SettingsSection,
 	type SettingsSectionDef,
 } from "@/components/settings/settings";
@@ -42,25 +44,34 @@ export function TaskForm({
 	const status = saving ? "saving" : autoStatus;
 
 	return (
-		<div className="mx-auto max-w-4xl px-8 py-10">
-			<div className="flex items-start justify-between gap-4">
-				<div className="min-w-0">
-					<h1>Edit task</h1>
-					<p className="truncate text-sm text-muted-foreground">
-						{taskDisplayName(draft)} · {draft.folder}
-					</p>
-				</div>
-				<SaveStatus status={status} />
-			</div>
-
-			<Hint className="mt-6" title="Patrick can help">
-				Ask in the chat to draft the brief or notes from the documents.
-			</Hint>
+		<div className="@container mx-auto max-w-4xl px-8 py-10">
+			<SettingsFallbackHeading
+				title="Edit task"
+				subtitle={`${taskDisplayName(draft)} · ${draft.folder}`}
+				status={status}
+			/>
 
 			<SettingsBody
-				rail={<SettingsRail items={SECTIONS} hasDanger={!!onDelete} />}
+				rail={
+					<SettingsRail
+						items={SECTIONS}
+						hasDanger={!!onDelete}
+						header={
+							<SettingsRailHeading
+								title="Edit task"
+								name={taskDisplayName(draft)}
+								detail={draft.folder}
+							/>
+						}
+						footer={<SaveStatus status={status} />}
+					/>
+				}
 			>
 				<SettingsSection id="details" title="Details">
+					<Hint className="mb-6" title="Patrick can help">
+						Ask in the chat — Patrick can draft the brief, label the documents,
+						or add to your notes.
+					</Hint>
 					<div className="space-y-6">
 						<Field>
 							<FieldLabel htmlFor="task-name">Name</FieldLabel>

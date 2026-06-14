@@ -1,9 +1,8 @@
 import {
-	PATRICK_CAPABILITIES,
+	assembleSystemPrompt,
 	type PinnedSource,
 	type Profile,
 	type Task,
-	TOKEN_RE,
 } from "@patrick/shared";
 
 /** A folder document not yet in context — awareness only (filename + label). */
@@ -64,10 +63,10 @@ function manifest(
 	return lines.join("\n");
 }
 
-// Fill the Patrick template. <OPENDOCUMENTS> now resolves to the manifest
-// (what's in context), not the content. `templateOverride` is the per-chat
-// instructions edit (ephemeral, never written to the profile); absent ⇒ the
-// profile's saved template. The full token/resolver engine lands later.
+// Assemble the system prompt: Patrick's capabilities/primer, then the attorney's
+// block "middle" (their `## Header` sections), then the runtime task + the
+// context manifest. `templateOverride` is the per-chat instructions edit
+// (ephemeral, never written to the profile); absent ⇒ the profile's saved middle.
 export function buildSystemPrompt(
 	profile: Profile,
 	task: Task,
@@ -76,21 +75,12 @@ export function buildSystemPrompt(
 	available: AvailableDoc[],
 	templateOverride?: string | null,
 ): string {
-	const template = templateOverride?.trim()
-		? templateOverride
-		: profile.prompts.agentpat;
-	const fills: Record<string, string> = {
-		CAPABILITIES: PATRICK_CAPABILITIES,
-		PRACTICECONTEXT: profile.identity.practiceContext?.trim() ?? "",
-		TASK: taskBlock(task),
-		OPENDOCUMENTS: manifest(pinned, activeDraft, available),
-		CLOSEDDOCUMENTS: "",
-		EXAMPLES: "",
-	};
-	const filled = template.replace(
-		TOKEN_RE,
-		(match, name: string) => fills[name] ?? match,
+	const middle = (
+		templateOverride?.trim() ? templateOverride : profile.prompts.agentpat
+	).trim();
+	return assembleSystemPrompt(
+		middle,
+		taskBlock(task),
+		manifest(pinned, activeDraft, available),
 	);
-	// Collapse the blank lines empty tokens leave behind.
-	return filled.replace(/\n{3,}/g, "\n\n").trim();
 }

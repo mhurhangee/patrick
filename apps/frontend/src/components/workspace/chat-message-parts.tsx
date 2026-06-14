@@ -12,7 +12,6 @@ import {
 	FilePen,
 	FilePlus,
 	FolderOpen,
-	IdCard,
 	StickyNote,
 	Tag,
 } from "lucide-react";
@@ -226,10 +225,8 @@ export type ToolUiHandlers = {
 	saveNote: (note: string) => void;
 	/** Apply a proposed task brief (suggestBrief acceptance). */
 	suggestBrief: (brief: string) => void;
-	/** Apply a proposed profile practice context (suggestPracticeContext). */
-	suggestPracticeContext: (practiceContext: string) => void;
-	/** Apply a proposed Patrick prompt template (suggestPrompt acceptance). */
-	suggestPrompt: (prompt: string) => void;
+	/** Apply a proposed Patrick prompt — one section if `heading` is set, else the whole prompt (suggestPrompt acceptance). */
+	suggestPrompt: (heading: string | undefined, content: string) => void;
 };
 
 type HitlInput = Record<string, string | undefined>;
@@ -359,35 +356,25 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 		reject: () => ({ applied: false }),
 		resolved: (o) => (o.applied ? "Brief updated." : "Brief unchanged."),
 	},
-	suggestPracticeContext: {
-		icon: <IdCard size={13} className={iconCls} />,
-		title: () => <>Set your profile's practice context to:</>,
-		detail: (i) => (
-			<span className="text-foreground italic">“{i.practiceContext}”</span>
-		),
-		acceptLabel: "Apply",
-		rejectLabel: "No",
-		accept: (i, h) => {
-			if (i.practiceContext) h.suggestPracticeContext(i.practiceContext);
-			return { applied: true };
-		},
-		reject: () => ({ applied: false }),
-		resolved: (o) =>
-			o.applied ? "Practice context updated." : "Left unchanged.",
-	},
 	suggestPrompt: {
 		icon: <Code size={13} className={iconCls} />,
-		title: () => <>Update your Patrick prompt to:</>,
+		title: (i) =>
+			i.heading ? (
+				<>Set your “{i.heading}” section to:</>
+			) : (
+				<>Rewrite your whole Patrick prompt to:</>
+			),
 		detail: (i) => (
 			<pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 text-[11px] not-italic text-foreground">
-				{i.prompt}
+				{i.content ?? i.prompt}
 			</pre>
 		),
 		acceptLabel: "Apply",
 		rejectLabel: "No",
 		accept: (i, h) => {
-			if (i.prompt) h.suggestPrompt(i.prompt);
-			return { applied: true };
+			const content = i.content ?? i.prompt;
+			if (content) h.suggestPrompt(i.heading, content);
+			return { applied: !!content };
 		},
 		reject: () => ({ applied: false }),
 		resolved: (o) => (o.applied ? "Prompt updated." : "Left unchanged."),

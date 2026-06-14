@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { SaveStatus } from "@/components/save-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { SaveState } from "@/hooks/use-autosave";
 import { cn } from "@/lib/utils";
 
 // Shared building blocks for the in-panel settings surfaces (profile, task) so
@@ -18,10 +20,10 @@ export function SettingsBody({
 	children: ReactNode;
 }) {
 	return (
-		<div className="mt-10 flex gap-10">
+		<div className="flex gap-10">
 			{rail}
 			{/* @container so section layouts respond to the panel width, not the viewport. */}
-			<div className="@container min-w-0 flex-1 space-y-16 pb-20">
+			<div className="@container min-w-0 flex-1 space-y-24 pb-20">
 				{children}
 			</div>
 		</div>
@@ -31,17 +33,71 @@ export function SettingsBody({
 export function SettingsRail({
 	items,
 	hasDanger,
+	header,
+	footer,
 }: {
 	items: readonly SettingsSectionDef[];
 	hasDanger?: boolean;
+	header?: ReactNode;
+	footer?: ReactNode;
 }) {
 	return (
-		<nav className="sticky top-2 hidden h-fit w-28 shrink-0 flex-col gap-0.5 text-sm sm:flex">
-			{items.map((i) => (
-				<JumpLink key={i.id} id={i.id} label={i.label} />
-			))}
-			{hasDanger && <JumpLink id="danger" label="Delete" destructive />}
+		<nav className="sticky top-2 hidden h-fit w-44 shrink-0 flex-col text-sm @2xl:flex">
+			{header && <div className="mb-4 min-w-0">{header}</div>}
+			<div className="flex flex-col gap-0.5">
+				{items.map((i) => (
+					<JumpLink key={i.id} id={i.id} label={i.label} />
+				))}
+				{hasDanger && <JumpLink id="danger" label="Delete" destructive />}
+			</div>
+			{footer && <div className="mt-4">{footer}</div>}
 		</nav>
+	);
+}
+
+// The rail's title block (title + name + optional detail line), shown sticky
+// above the section links.
+export function SettingsRailHeading({
+	title,
+	name,
+	detail,
+}: {
+	title: string;
+	name: string;
+	detail?: string;
+}) {
+	return (
+		<div className="min-w-0">
+			<p className="font-heading text-xl font-semibold tracking-tight">
+				{title}
+			</p>
+			<p className="truncate text-md text-muted-foreground">{name}</p>
+			{detail && (
+				<p className="truncate text-xs text-muted-foreground/70">{detail}</p>
+			)}
+		</div>
+	);
+}
+
+// Shown above the body only when the rail (which normally carries the title and
+// save status) is collapsed at narrow panel widths.
+export function SettingsFallbackHeading({
+	title,
+	subtitle,
+	status,
+}: {
+	title: string;
+	subtitle: string;
+	status: SaveState;
+}) {
+	return (
+		<div className="mb-6 flex items-start justify-between gap-4 @2xl:hidden">
+			<div className="min-w-0">
+				<h1>{title}</h1>
+				<p className="truncate text-sm text-muted-foreground">{subtitle}</p>
+			</div>
+			<SaveStatus status={status} />
+		</div>
 	);
 }
 

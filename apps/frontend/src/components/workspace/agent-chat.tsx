@@ -10,6 +10,7 @@ import {
 	MODELS_BY_ID,
 	type PinnedSource,
 	toStoredMessage,
+	upsertBlock,
 } from "@patrick/shared";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -241,7 +242,7 @@ function ChatSession({
 
 	const { executeToolCall } = useDocxAgentTools({
 		editorRef: editorRef as RefObject<DocxEditorRef | null>,
-		author: "Patrick",
+		author: profile?.identity.author?.trim() || "Patrick",
 	});
 
 	// Refs so the transport/onToolCall always read the latest without re-creating
@@ -408,19 +409,15 @@ function ChatSession({
 				// Show the result where it lives.
 				navigate({ to: "/task" });
 			},
-			suggestPracticeContext: (practiceContext) => {
+			suggestPrompt: (heading, content) => {
 				const p = profileRef.current;
 				if (!p) return;
-				updateProfile.mutate({
-					...p,
-					identity: { ...p.identity, practiceContext },
-				});
-				navigate({ to: "/profile" });
-			},
-			suggestPrompt: (prompt) => {
-				const p = profileRef.current;
-				if (!p) return;
-				updateProfile.mutate({ ...p, prompts: { agentpat: prompt } });
+				// A heading upserts that one section into the live prompt; no heading
+				// replaces the whole thing.
+				const agentpat = heading
+					? upsertBlock(p.prompts.agentpat, heading, content)
+					: content;
+				updateProfile.mutate({ ...p, prompts: { agentpat } });
 				navigate({ to: "/profile" });
 			},
 		}),

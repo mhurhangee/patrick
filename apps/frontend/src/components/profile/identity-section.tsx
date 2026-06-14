@@ -6,10 +6,10 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 type Identity = Profile["identity"];
 
+// Just who the profile is — how Patrick works for you lives in the Prompt section.
 export function IdentitySection({
 	value,
 	onChange,
@@ -23,51 +23,28 @@ export function IdentitySection({
 		<FieldGroup>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<Field>
-					<FieldLabel htmlFor="identity-name">Name</FieldLabel>
+					<FieldLabel htmlFor="identity-name">Profile name</FieldLabel>
 					<Input
 						id="identity-name"
 						value={value.name}
+						placeholder="EP prosecution"
 						onChange={(e) => set({ name: e.target.value })}
 					/>
-					<FieldDescription>
-						Author on tracked-change comments.
-					</FieldDescription>
+					<FieldDescription>What you pick in the switcher.</FieldDescription>
 				</Field>
 				<Field>
-					<FieldLabel htmlFor="identity-firm">Firm</FieldLabel>
+					<FieldLabel htmlFor="identity-author">Author name</FieldLabel>
 					<Input
-						id="identity-firm"
-						value={value.firm}
-						placeholder="Smith & Hale IP"
-						onChange={(e) => set({ firm: e.target.value })}
+						id="identity-author"
+						value={value.author}
+						placeholder="Patrick"
+						onChange={(e) => set({ author: e.target.value })}
 					/>
+					<FieldDescription>
+						The author on tracked changes — leave blank for "Patrick".
+					</FieldDescription>
 				</Field>
 			</div>
-
-			<Field>
-				<FieldLabel htmlFor="identity-role">Role</FieldLabel>
-				<Input
-					id="identity-role"
-					value={value.role}
-					placeholder="Patent Attorney · USPTO Reg. No. …"
-					onChange={(e) => set({ role: e.target.value })}
-				/>
-			</Field>
-
-			<Field>
-				<FieldLabel htmlFor="identity-context">Practice context</FieldLabel>
-				<Textarea
-					id="identity-context"
-					className="min-h-40"
-					value={value.practiceContext}
-					placeholder="Prefer narrow, defensible amendments. Argue the art first; amend only when necessary. Formal USPTO register, present tense, no hedging."
-					onChange={(e) => set({ practiceContext: e.target.value })}
-				/>
-				<FieldDescription>
-					House style and standing instructions sent to Patrick on every task —
-					your default voice and approach.
-				</FieldDescription>
-			</Field>
 		</FieldGroup>
 	);
 }

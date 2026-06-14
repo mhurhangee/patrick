@@ -22,7 +22,8 @@ function emptyStateFor(
 			title: "Ask me to help shape your profile.",
 			suggestions: [
 				"Help me write my practice context",
-				"Improve my Patrick prompt",
+				"Suggest some do's and don'ts",
+				"Review and improve my whole prompt",
 			],
 		};
 	if (path === "/task")

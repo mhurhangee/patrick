@@ -71,9 +71,9 @@ export function ProfileWelcome() {
 									<span className="block truncate text-sm font-medium">
 										{p.name || "Untitled profile"}
 									</span>
-									{p.firm && (
+									{p.author && (
 										<span className="block truncate text-xs text-muted-foreground">
-											{p.firm}
+											{p.author}
 										</span>
 									)}
 								</span>

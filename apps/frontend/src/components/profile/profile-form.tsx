@@ -1,11 +1,13 @@
 import type { Profile } from "@patrick/shared";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Hint } from "@/components/hint";
 import { SaveStatus } from "@/components/save-status";
 import {
 	DangerZone,
 	SettingsBody,
+	SettingsFallbackHeading,
 	SettingsRail,
+	SettingsRailHeading,
 	SettingsSection,
 	type SettingsSectionDef,
 } from "@/components/settings/settings";
@@ -13,7 +15,6 @@ import { useAutosave } from "@/hooks/use-autosave";
 import { useActiveTask } from "@/lib/active-task";
 import { AiSection } from "./ai-section";
 import { AppearanceSection } from "./appearance-section";
-import { ExamplesSection } from "./examples-section";
 import { IdentitySection } from "./identity-section";
 import { PromptSection } from "./prompt-section";
 
@@ -21,7 +22,6 @@ const SECTIONS: readonly SettingsSectionDef[] = [
 	{ id: "identity", label: "Identity" },
 	{ id: "ai", label: "AI" },
 	{ id: "prompt", label: "Prompt" },
-	{ id: "examples", label: "Examples" },
 	{ id: "appearance", label: "Appearance" },
 ];
 
@@ -42,10 +42,31 @@ export function ProfileForm({
 	onDelete?: () => void | Promise<void>;
 }) {
 	const [draft, setDraft] = useState(profile);
-	const { status: autoStatus, cancel } = useAutosave(draft, onSave);
+	// Remember what we last wrote, so the echo of our own autosave is ignored but a
+	// genuinely external change is adopted (below).
+	const lastSavedRef = useRef(JSON.stringify(profile));
+	const handleSave = useCallback(
+		(p: Profile) => {
+			lastSavedRef.current = JSON.stringify(p);
+			onSave(p);
+		},
+		[onSave],
+	);
+	const { status: autoStatus, cancel } = useAutosave(draft, handleSave);
 	const status = saving ? "saving" : autoStatus;
 	// Patrick can only help through the chat, which needs an open task.
 	const { activeTaskId } = useActiveTask();
+
+	// Adopt an external edit to this profile — e.g. Patrick applying a prompt
+	// suggestion from the chat — without clobbering in-flight typing: our own saved
+	// value echoes back equal to lastSaved and is skipped.
+	useEffect(() => {
+		const incoming = JSON.stringify(profile);
+		if (incoming !== lastSavedRef.current) {
+			lastSavedRef.current = incoming;
+			setDraft(profile);
+		}
+	}, [profile]);
 
 	const set = (patch: Partial<Profile>) =>
 		setDraft((d) => ({ ...d, ...patch }));
@@ -60,26 +81,30 @@ export function ProfileForm({
 	}, []);
 
 	return (
-		<div className="mx-auto max-w-4xl px-8 py-10">
-			<div className="flex items-start justify-between gap-4">
-				<div className="min-w-0">
-					<h1>Edit profile</h1>
-					<p className="truncate text-sm text-muted-foreground">
-						{draft.identity.name || "Untitled profile"}
-						{draft.identity.firm ? ` · ${draft.identity.firm}` : ""}
-					</p>
-				</div>
-				<SaveStatus status={status} />
-			</div>
-
-			{activeTaskId && (
-				<Hint className="mt-6" title="Patrick can help">
-					Ask in the chat to draft your practice context or examples.
-				</Hint>
-			)}
+		<div className="@container mx-auto max-w-4xl px-8 py-10">
+			<SettingsFallbackHeading
+				title="Edit profile"
+				subtitle={`${draft.identity.name || "Untitled profile"}${
+					draft.identity.author ? ` · ${draft.identity.author}` : ""
+				}`}
+				status={status}
+			/>
 
 			<SettingsBody
-				rail={<SettingsRail items={SECTIONS} hasDanger={!!onDelete} />}
+				rail={
+					<SettingsRail
+						items={SECTIONS}
+						hasDanger={!!onDelete}
+						header={
+							<SettingsRailHeading
+								title="Edit profile"
+								name={draft.identity.name || "Untitled profile"}
+								detail={draft.identity.author || undefined}
+							/>
+						}
+						footer={<SaveStatus status={status} />}
+					/>
+				}
 			>
 				<SettingsSection id="identity" title="Identity">
 					<IdentitySection
@@ -91,17 +116,15 @@ export function ProfileForm({
 					<AiSection value={draft.ai} onChange={(ai) => set({ ai })} />
 				</SettingsSection>
 				<SettingsSection id="prompt" title="Prompt">
+					{activeTaskId && (
+						<Hint className="mb-4" title="Patrick can help">
+							Ask in the chat and Patrick will draft or refine any section —
+							practice context, do's and don'ts, response style.
+						</Hint>
+					)}
 					<PromptSection
 						value={draft.prompts.agentpat}
-						practiceContext={draft.identity.practiceContext}
-						examples={draft.examples}
 						onChange={(agentpat) => set({ prompts: { agentpat } })}
-					/>
-				</SettingsSection>
-				<SettingsSection id="examples" title="Examples">
-					<ExamplesSection
-						value={draft.examples}
-						onChange={(examples) => set({ examples })}
 					/>
 				</SettingsSection>
 				<SettingsSection id="appearance" title="Appearance">
