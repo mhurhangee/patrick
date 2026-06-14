@@ -1,35 +1,15 @@
-// The prompt token catalog — static data the prompt builder runs on. Tokens are
-// written <LIKE_THIS> in a template and filled at runtime from the active task.
-// Live resolution (real values) comes later with the context engine; for now the
-// `placeholder` stands in so the builder's preview can show where each token lands.
+// The system prompt is composed of labelled blocks. The attorney edits only the
+// "middle" — markdown `## Header` + content sections, stored as one string in
+// profile.prompts.agentpat. The system wraps it with Capabilities (front) and
+// the task + documents manifest (back); see buildSystemPrompt in apps/api.
 
-export type SurfaceId = "agentpat";
-export type TokenKind = "context" | "scope" | "tool";
-
-export type TokenDef = {
-	/** Bare name, no brackets — e.g. "OPENDOCUMENTS". */
-	name: string;
-	kind: TokenKind;
-	/** Short human label for the shelf. */
-	label: string;
-	/** What this token injects into the prompt. */
-	description: string;
-	/** Preview stand-in until live resolution exists. */
-	placeholder: string;
-	surfaces: SurfaceId[];
-};
-
-/** Matches a <TOKEN> occurrence; capture group 1 is the bare name. */
-export const TOKEN_RE = /<([A-Z][A-Z0-9_]*)>/g;
-
-// What Patrick can and can't do — injected via <CAPABILITIES> so the agent can
-// answer questions about itself honestly. Shown in the template like any token,
-// so the attorney sees it and can remove it.
-//
-// KEEP IN SYNC with the agent's actual tools (apps/api/src/lib/ai/chat.ts). When
+// Patrick's primer + abilities — the leading (ghosted) block, always included.
+// KEEP IN SYNC with the agent's actual tools (apps/api/src/lib/ai/chat.ts): when
 // a capability ships (web/OPS search, claim charting), move it from "can't yet"
-// to "can do" — otherwise Patrick will confidently misdescribe itself.
-export const PATRICK_CAPABILITIES = `Your own abilities, so you can answer questions about yourself accurately:
+// to "can do", or Patrick will confidently misdescribe itself.
+export const PATRICK_CAPABILITIES = `You are Patrick, an AI agent assisting a patent attorney.
+
+Your own abilities, so you can answer questions about yourself accurately:
 
 What you can do now:
 - Read the matter's pinned source documents (PDFs and Word files) that are in context.
@@ -41,70 +21,148 @@ What you can't do yet — say so plainly if asked, and that it's planned:
 - Chart claims against prior art.
 - Edit anything other than the Word draft in focus, or change the attorney's originals (they're read-only — offer an editable copy instead).`;
 
-export const PROMPT_TOKENS: TokenDef[] = [
+export type PromptBlock = { label: string; content: string };
+
+const BLOCK_RE = /^##\s+(.+?)\s*$/;
+
+// Parse the middle into blocks: leading text before the first `## ` is a
+// label-less intro block; each `## Label` starts a new block.
+// Known limitation (accepted): `## ` is the block delimiter, so a `## ` line
+// *inside* a block's content (e.g. pasted markdown, a code fence) is read as a
+// new heading and splits the block. The Raw tab warns about this; the round-trip
+// is not loss-free for such content.
+export function parseBlocks(middle: string): PromptBlock[] {
+	const blocks: PromptBlock[] = [];
+	let label = "";
+	let buf: string[] = [];
+	const flush = () => {
+		const content = buf.join("\n").trim();
+		if (label || content) blocks.push({ label, content });
+		buf = [];
+	};
+	for (const line of middle.split("\n")) {
+		const m = BLOCK_RE.exec(line);
+		if (m) {
+			flush();
+			label = m[1] as string;
+		} else {
+			buf.push(line);
+		}
+	}
+	flush();
+	return blocks;
+}
+
+export function serializeBlocks(blocks: PromptBlock[]): string {
+	return blocks
+		.map((b) => {
+			const content = b.content.trim();
+			return b.label ? `## ${b.label}\n\n${content}`.trim() : content;
+		})
+		.filter(Boolean)
+		.join("\n\n");
+}
+
+// Assemble the full system prompt from its three parts: capabilities, the
+// attorney's block "middle", and the runtime task + context sections. The server
+// fills task/context from disk (apps/api buildSystemPrompt); the profile builder's
+// Preview passes placeholders. Shared so the framing can't drift between them.
+export function assembleSystemPrompt(
+	middle: string,
+	taskSection: string,
+	contextSection: string,
+): string {
+	return [
+		PATRICK_CAPABILITIES,
+		middle.trim(),
+		`Current task:\n${taskSection}`,
+		`Context:\n${contextSection}`,
+	]
+		.filter((s) => s.trim())
+		.join("\n\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
+}
+
+// Add or replace one `## heading` block, matching the heading case-insensitively
+// (so the rest of the attorney's prompt is left untouched). Appends if absent.
+export function upsertBlock(
+	middle: string,
+	heading: string,
+	content: string,
+): string {
+	const label = heading.trim();
+	const key = label.toLowerCase();
+	const blocks = parseBlocks(middle);
+	const i = blocks.findIndex((b) => b.label.trim().toLowerCase() === key);
+	if (i >= 0) blocks[i] = { label, content };
+	else blocks.push({ label, content });
+	return serializeBlocks(blocks);
+}
+
+// Suggested blocks for the "+ Add" menu — guidance, not rigid types. The label
+// is freeform; these just help the attorney know what to write.
+export type BlockSuggestion = {
+	label: string;
+	category: string;
+	description: string;
+};
+
+export const BLOCK_CATALOG: BlockSuggestion[] = [
 	{
-		name: "CAPABILITIES",
-		kind: "context",
-		label: "Capabilities",
-		description:
-			"What Patrick can and can't do, so it answers questions about itself honestly. Remove it if you'd rather Patrick not describe itself.",
-		placeholder: "‹ Patrick's abilities and current limits ›",
-		surfaces: ["agentpat"],
-	},
-	{
-		name: "PRACTICECONTEXT",
-		kind: "context",
 		label: "Practice context",
+		category: "Background",
 		description:
-			"Your standing instructions and house style, from this profile.",
-		placeholder: "‹ your practice context ›",
-		surfaces: ["agentpat"],
+			"Who you are and how you practise — steers everything Patrick does.",
 	},
 	{
-		name: "EXAMPLES",
-		kind: "context",
+		label: "Jurisdiction",
+		category: "Background",
+		description: "The offices and law you work under.",
+	},
+	{
+		label: "Client",
+		category: "Background",
+		description: "Preferences or constraints for a specific client.",
+	},
+	{
+		label: "Do's",
+		category: "Instructions",
+		description: "Things Patrick should always do.",
+	},
+	{
+		label: "Don'ts",
+		category: "Instructions",
+		description: "Things Patrick should avoid.",
+	},
+	{
+		label: "Goals",
+		category: "Instructions",
+		description: "What you're trying to achieve on these matters.",
+	},
+	{
+		label: "Response style",
+		category: "Style",
+		description: "Tone, format, and length of Patrick's replies.",
+	},
+	{
+		label: "Terminology",
+		category: "Style",
+		description: "Preferred terms and phrasing to use (or avoid).",
+	},
+	{
+		label: "Formatting",
+		category: "Style",
+		description: "How amendments and replies should be formatted.",
+	},
+	{
 		label: "Writing examples",
-		description: "Your writing samples, so Patrick matches your voice.",
-		placeholder: "‹ your writing samples ›",
-		surfaces: ["agentpat"],
+		category: "Style",
+		description: "Samples of your writing, so Patrick matches your voice.",
 	},
 	{
-		name: "TASK",
-		kind: "context",
-		label: "Task",
-		description: "The active task — its type, reference, and title.",
-		placeholder: "‹ the active task: type · reference · title ›",
-		surfaces: ["agentpat"],
-	},
-	{
-		name: "OPENDOCUMENTS",
-		kind: "scope",
-		label: "Context manifest",
-		description:
-			"A manifest of what's in context — pinned sources (content rides as messages) + the active draft (edited via tools).",
-		placeholder: "‹ context manifest — pinned sources + active draft ›",
-		surfaces: ["agentpat"],
-	},
-	{
-		name: "CLOSEDDOCUMENTS",
-		kind: "scope",
-		label: "Closed documents",
-		description:
-			"A one-line signpost for each closed document (filename, tags) — never its content.",
-		placeholder: "‹ closed-document signposts — filenames + tags ›",
-		surfaces: ["agentpat"],
+		label: "Notes",
+		category: "Notes",
+		description: "Anything else worth telling Patrick.",
 	},
 ];
-
-export const TOKENS_BY_NAME: Record<string, TokenDef> = Object.fromEntries(
-	PROMPT_TOKENS.map((t) => [t.name, t]),
-);
-
-export function tokensForSurface(surface: SurfaceId): TokenDef[] {
-	return PROMPT_TOKENS.filter((t) => t.surfaces.includes(surface));
-}
-
-/** Names of every <TOKEN> used in a template, in order (may repeat). */
-export function tokensInTemplate(template: string): string[] {
-	return [...template.matchAll(TOKEN_RE)].map((m) => m[1] as string);
-}

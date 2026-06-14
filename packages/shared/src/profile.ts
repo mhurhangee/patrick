@@ -21,25 +21,19 @@ export type Appearance = {
 	scale: number;
 };
 
-export type WritingExample = {
-	id: string;
-	title: string;
-	content: string;
-};
-
 export type Profile = {
 	id: string;
 	identity: {
+		/** The profile's name (what you pick in the switcher). */
 		name: string;
-		firm: string;
-		role: string;
-		practiceContext: string;
+		/** The author on tracked-change comments (empty ⇒ "Patrick"). */
+		author: string;
 	};
 	ai: AiSettings;
 	prompts: {
+		/** The prompt "middle" — markdown `## Header` blocks (see packages/shared/prompt). */
 		agentpat: string;
 	};
-	examples: WritingExample[];
 	appearance: Appearance;
 };
 
@@ -47,31 +41,21 @@ export type Profile = {
 export type ProfileSummary = {
 	id: string;
 	name: string;
-	firm: string;
+	author: string;
 };
 
 export function profileSummary(p: Profile): ProfileSummary {
-	return { id: p.id, name: p.identity.name, firm: p.identity.firm };
+	return { id: p.id, name: p.identity.name, author: p.identity.author };
 }
 
-export const DEFAULT_AGENTPAT_PROMPT = `You are Patrick, a patent attorney's drafting assistant.
-
-<CAPABILITIES>
-
-<PRACTICECONTEXT>
-
-Current task:
-<TASK>
-
-Context:
-<OPENDOCUMENTS>
+export const DEFAULT_AGENTPAT_PROMPT = `## Instructions
 
 Ground every statement and edit in the pinned sources and the live draft — never invent facts about the record. Edit the active draft only through the document tools, as minimal, targeted tracked changes the attorney can accept or reject.`;
 
 export function createProfile(id: string, name: string): Profile {
 	return {
 		id,
-		identity: { name, firm: "", role: "", practiceContext: "" },
+		identity: { name, author: "" },
 		ai: {
 			provider: "anthropic",
 			apiKey: "",
@@ -80,7 +64,6 @@ export function createProfile(id: string, name: string): Profile {
 			effort: "medium",
 		},
 		prompts: { agentpat: DEFAULT_AGENTPAT_PROMPT },
-		examples: [],
 		appearance: { theme: "emerald", mode: "system", scale: 1 },
 	};
 }

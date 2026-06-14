@@ -40,7 +40,7 @@ export function SidebarFooter() {
 	const onSettings = useLocation({ select: (l) => l.pathname === "/profile" });
 
 	const name = profile?.identity.name || "No profile";
-	const firm = profile?.identity.firm || "";
+	const author = profile?.identity.author || "";
 
 	const hasKey = !!profile?.ai.apiKey;
 	const verification = useKeyVerification(
@@ -75,9 +75,9 @@ export function SidebarFooter() {
 						</span>
 						<span className="min-w-0 flex-1">
 							<span className="block truncate text-sm">{name}</span>
-							{firm && (
+							{author && (
 								<span className="block truncate text-xs text-muted-foreground">
-									{firm}
+									{author}
 								</span>
 							)}
 						</span>
@@ -107,9 +107,9 @@ export function SidebarFooter() {
 							/>
 							<div className="min-w-0 flex-1">
 								<div className="truncate">{p.name || "Untitled profile"}</div>
-								{p.firm && (
+								{p.author && (
 									<div className="truncate text-[0.625rem] text-muted-foreground">
-										{p.firm}
+										{p.author}
 									</div>
 								)}
 							</div>
