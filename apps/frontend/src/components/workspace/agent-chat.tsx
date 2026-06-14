@@ -22,6 +22,7 @@ import {
 import { ArrowUp, ChevronDown, Square } from "lucide-react";
 import {
 	type RefObject,
+	useCallback,
 	useEffect,
 	useLayoutEffect,
 	useMemo,
@@ -32,7 +33,6 @@ import { BASE_URL } from "@/api/client";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
 import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { useProfile, useUpdateProfile } from "@/hooks/use-profiles";
@@ -49,6 +49,11 @@ import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
+import {
+	ChatComposer,
+	type ChatComposerHandle,
+	type MentionItem,
+} from "./chat-composer";
 import { ChatEmptyState } from "./chat-empty-state";
 import {
 	AssistantParts,
@@ -159,7 +164,7 @@ function ChatSession({
 	const navigate = useNavigate();
 	// Tailor only the empty-state prompt to the open surface (display, not Patrick).
 	const surfacePath = useLocation({ select: (l) => l.pathname });
-	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const composerRef = useRef<ChatComposerHandle>(null);
 
 	// Patrick can't run without a working key — gate the input and say why.
 	const keyVerification = useKeyVerification(
@@ -301,8 +306,34 @@ function ChatSession({
 		},
 	});
 
-	const [input, setInput] = useState("");
+	const [composerEmpty, setComposerEmpty] = useState(true);
 	const canSend = !!activeTaskId && !!activeProfileId && keyReady;
+
+	// @-mention picker: the task's read-only sources (PDFs + original docx — the
+	// things that can be pinned), matched against the typed query. Choosing one
+	// opens it (OPEN = CONTEXT — it pins at send like any open source).
+	const mentionItems = useCallback((query: string): MentionItem[] => {
+		const q = query.toLowerCase();
+		return (
+			(docsRef.current ?? [])
+				// read-only sources only — exclude editable Patrick drafts, using the
+				// same predicate as the workspace (docKind, not a literal .docx suffix).
+				.filter(
+					(d) =>
+						!d.excluded &&
+						!(docKind(d.filename) === "docx" && d.createdInPatrick),
+				)
+				.filter((d) =>
+					`${d.label ?? ""} ${d.filename}`.toLowerCase().includes(q),
+				)
+				.slice(0, 8)
+				.map((d) => ({
+					id: d.filename,
+					label: d.filename,
+					description: d.label && d.label !== d.filename ? d.label : undefined,
+				}))
+		);
+	}, []);
 	const isStreaming = status === "streaming" || status === "submitted";
 	// The agent loop spans multiple requests (one per client tool round-trip).
 	// `status` dips to "ready" between them, so the SDK's own auto-continue
@@ -554,7 +585,7 @@ function ChatSession({
 	}, [status, busy, latestExchangeId]);
 
 	function send() {
-		const text = input.trim();
+		const text = composerRef.current?.getMarkdown() ?? "";
 		if (!text || busy || !canSend) return;
 		// Freeze the instructions at first send — one system prompt per chat. Until
 		// now the template follows the live profile (chatTemplate null); snapshot it
@@ -574,7 +605,7 @@ function ChatSession({
 		}
 		sendStartRef.current = Date.now();
 		sendMessage({ text });
-		setInput("");
+		composerRef.current?.clear();
 	}
 
 	function scrollToBottom() {
@@ -589,7 +620,8 @@ function ChatSession({
 	function editExchange(ex: Exchange) {
 		const idx = messages.findIndex((m) => m.id === ex.userMsg.id);
 		if (idx !== -1) setMessages(messages.slice(0, idx));
-		setInput(textOf(ex.userMsg));
+		composerRef.current?.setMarkdown(textOf(ex.userMsg));
+		composerRef.current?.focus();
 	}
 
 	// Fork: copy the conversation up to and including this exchange into a new
@@ -681,8 +713,8 @@ function ChatSession({
 							surfacePath={surfacePath}
 							doc={focused ? getDoc(focused) : undefined}
 							onPick={(text) => {
-								setInput(text);
-								inputRef.current?.focus();
+								composerRef.current?.setMarkdown(text);
+								composerRef.current?.focus();
 							}}
 						/>
 					) : (
@@ -777,22 +809,17 @@ function ChatSession({
 								: "Add an API key in your profile to chat."}
 					</button>
 				)}
-				<div className="relative">
-					<Textarea
-						ref={inputRef}
-						value={input}
+				<div className="rounded-lg border bg-background focus-within:border-ring">
+					<ChatComposer
+						ref={composerRef}
 						disabled={!keyReady}
-						onChange={(e) => setInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && !e.shiftKey) {
-								e.preventDefault();
-								send();
-							}
-						}}
-						placeholder="Ask Patrick ..."
-						className="max-h-48 min-h-20 resize-none pr-12"
+						onSubmit={send}
+						mentionItems={mentionItems}
+						onMention={(id) => open(id)}
+						onEmptyChange={setComposerEmpty}
 					/>
-					<div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+					{/* Toolbar BELOW the editor — no overlap with the text (was bug #5). */}
+					<div className="flex items-center justify-end gap-1.5 px-2 pb-2">
 						{modelId && lastInputTokens != null && (
 							<ContextRing
 								used={lastInputTokens}
@@ -814,7 +841,7 @@ function ChatSession({
 							<Button
 								size="icon"
 								onClick={send}
-								disabled={!input.trim() || !canSend}
+								disabled={composerEmpty || !canSend}
 								className="size-8"
 								title="Send"
 							>
