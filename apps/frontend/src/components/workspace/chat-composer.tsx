@@ -107,25 +107,22 @@ export const ChatComposer = forwardRef<
 							items: MentionItem[];
 							command: (item: MentionItem) => void;
 						} = { items: [], command: () => {} };
+						// open/update share this: the popup counts as "open" (Enter selects)
+						// only when it has items, and the highlight resets to the top on
+						// each query change so it never points past a narrowed list.
+						const show = (props: SuggestionProps) => {
+							active = { items: props.items, command: props.command };
+							popupOpenRef.current = props.items.length > 0;
+							setSelected(0);
+							setPopup({
+								items: props.items,
+								command: props.command,
+								rect: props.clientRect?.() ?? null,
+							});
+						};
 						return {
-							onStart: (props: SuggestionProps) => {
-								active = { items: props.items, command: props.command };
-								popupOpenRef.current = true;
-								setSelected(0);
-								setPopup({
-									items: props.items,
-									command: props.command,
-									rect: props.clientRect?.() ?? null,
-								});
-							},
-							onUpdate: (props: SuggestionProps) => {
-								active = { items: props.items, command: props.command };
-								setPopup({
-									items: props.items,
-									command: props.command,
-									rect: props.clientRect?.() ?? null,
-								});
-							},
+							onStart: show,
+							onUpdate: show,
 							onKeyDown: ({ event }: { event: KeyboardEvent }) => {
 								const items = active.items;
 								if (items.length === 0) return false;
@@ -234,7 +231,8 @@ function MentionPopup({
 		<div
 			style={{
 				position: "fixed",
-				left: rect.left,
+				// clamp so the w-72 (288px) popup can't run off the right edge
+				left: Math.max(8, Math.min(rect.left, window.innerWidth - 296)),
 				bottom: window.innerHeight - rect.top + 4,
 			}}
 			className="z-50 max-h-56 w-72 overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md"

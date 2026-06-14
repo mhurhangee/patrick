@@ -314,19 +314,25 @@ function ChatSession({
 	// opens it (OPEN = CONTEXT — it pins at send like any open source).
 	const mentionItems = useCallback((query: string): MentionItem[] => {
 		const q = query.toLowerCase();
-		return (docsRef.current ?? [])
-			.filter(
-				(d) =>
-					!d.excluded &&
-					!(d.filename.toLowerCase().endsWith(".docx") && d.createdInPatrick),
-			)
-			.filter((d) => `${d.label ?? ""} ${d.filename}`.toLowerCase().includes(q))
-			.slice(0, 8)
-			.map((d) => ({
-				id: d.filename,
-				label: d.filename,
-				description: d.label && d.label !== d.filename ? d.label : undefined,
-			}));
+		return (
+			(docsRef.current ?? [])
+				// read-only sources only — exclude editable Patrick drafts, using the
+				// same predicate as the workspace (docKind, not a literal .docx suffix).
+				.filter(
+					(d) =>
+						!d.excluded &&
+						!(docKind(d.filename) === "docx" && d.createdInPatrick),
+				)
+				.filter((d) =>
+					`${d.label ?? ""} ${d.filename}`.toLowerCase().includes(q),
+				)
+				.slice(0, 8)
+				.map((d) => ({
+					id: d.filename,
+					label: d.filename,
+					description: d.label && d.label !== d.filename ? d.label : undefined,
+				}))
+		);
 	}, []);
 	const isStreaming = status === "streaming" || status === "submitted";
 	// The agent loop spans multiple requests (one per client tool round-trip).
