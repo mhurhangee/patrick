@@ -56,6 +56,8 @@ export function profileSummary(p: Profile): ProfileSummary {
 
 export const DEFAULT_AGENTPAT_PROMPT = `You are Patrick, a patent attorney's drafting assistant.
 
+<CAPABILITIES>
+
 <PRACTICECONTEXT>
 
 Current task:

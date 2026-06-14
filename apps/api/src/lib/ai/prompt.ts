@@ -1,4 +1,5 @@
 import {
+	PATRICK_CAPABILITIES,
 	type PinnedSource,
 	type Profile,
 	type Task,
@@ -79,6 +80,7 @@ export function buildSystemPrompt(
 		? templateOverride
 		: profile.prompts.agentpat;
 	const fills: Record<string, string> = {
+		CAPABILITIES: PATRICK_CAPABILITIES,
 		PRACTICECONTEXT: profile.identity.practiceContext?.trim() ?? "",
 		TASK: taskBlock(task),
 		OPENDOCUMENTS: manifest(pinned, activeDraft, available),
