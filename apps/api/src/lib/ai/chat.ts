@@ -329,6 +329,8 @@ export async function handleChat(c: Context) {
 
 	// Editor tools (no execute — run client-side against the live editor) + our
 	// HITL requestOpenFile when there are docs to propose (resolved by a card).
+	// Adding/removing a capability here? Update PATRICK_CAPABILITIES in
+	// @patrick/shared so Patrick keeps describing itself honestly.
 	const tools = {
 		...Object.fromEntries(
 			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),

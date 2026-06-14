@@ -25,6 +25,10 @@ export const TOKEN_RE = /<([A-Z][A-Z0-9_]*)>/g;
 // What Patrick can and can't do — injected via <CAPABILITIES> so the agent can
 // answer questions about itself honestly. Shown in the template like any token,
 // so the attorney sees it and can remove it.
+//
+// KEEP IN SYNC with the agent's actual tools (apps/api/src/lib/ai/chat.ts). When
+// a capability ships (web/OPS search, claim charting), move it from "can't yet"
+// to "can do" — otherwise Patrick will confidently misdescribe itself.
 export const PATRICK_CAPABILITIES = `Your own abilities, so you can answer questions about yourself accurately:
 
 What you can do now:

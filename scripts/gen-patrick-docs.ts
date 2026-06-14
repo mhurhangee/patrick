@@ -5,12 +5,13 @@
 
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const DOCS_DIR = path.join(process.cwd(), "apps/site/content/docs");
-const OUT = path.join(
-	process.cwd(),
-	"packages/shared/src/patrick-docs.generated.ts",
-);
+// Resolve from the script's own location so it runs from any cwd (the apps/api
+// build, not just the repo root).
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const DOCS_DIR = path.join(ROOT, "apps/site/content/docs");
+const OUT = path.join(ROOT, "packages/shared/src/patrick-docs.generated.ts");
 
 async function walk(dir: string): Promise<string[]> {
 	const out: string[] = [];
@@ -22,7 +23,8 @@ async function walk(dir: string): Promise<string[]> {
 	return out;
 }
 
-function parse(raw: string): { title: string; order: number; body: string } {
+function parse(input: string): { title: string; order: number; body: string } {
+	const raw = input.replace(/\r\n/g, "\n"); // tolerate CRLF checkouts
 	const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
 	const front = m?.[1] ?? "";
 	const body = (m?.[2] ?? raw).trim();
