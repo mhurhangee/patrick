@@ -20,7 +20,7 @@ export function AppSidebar() {
 					</div>
 				) : (
 					<p className="px-3 py-4 text-xs text-muted-foreground/50">
-						Open a folder to see its documents, notes, and chats.
+						Open a folder to see its documents, brief, and chats.
 					</p>
 				)}
 			</div>

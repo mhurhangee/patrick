@@ -1,9 +1,9 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import { GripVertical, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { RichEditor } from "@/components/rich-editor/rich-editor";
 
-// One editable block: a freeform label (the `## Header`) + auto-growing content.
-// Draggable via the grip handle.
+// One editable block: a freeform label (the `## Header`) + rich content (marks +
+// lists, no headings — `##` is the block delimiter). Draggable via the grip.
 export function BlockCard({
 	id,
 	index,
@@ -22,17 +22,6 @@ export function BlockCard({
 	onRemove: () => void;
 }) {
 	const { ref, handleRef, isDragSource } = useSortable({ id, index });
-	const taRef = useRef<HTMLTextAreaElement>(null);
-
-	// Grow the textarea to fit its content so long blocks aren't trapped in a
-	// 2-line box — re-measured on every content change.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when content changes
-	useEffect(() => {
-		const el = taRef.current;
-		if (!el) return;
-		el.style.height = "auto";
-		el.style.height = `${el.scrollHeight}px`;
-	}, [content]);
 
 	return (
 		<div
@@ -63,12 +52,12 @@ export function BlockCard({
 					<X className="size-3.5" />
 				</button>
 			</div>
-			<textarea
-				ref={taRef}
+			<RichEditor
 				value={content}
-				onChange={(e) => onContent(e.target.value)}
+				onChange={onContent}
+				features={{ lists: true }}
 				placeholder="…"
-				className="min-h-14 w-full resize-none overflow-hidden bg-transparent p-2 text-xs leading-relaxed outline-none"
+				className="min-h-14 p-2 text-xs leading-relaxed"
 			/>
 		</div>
 	);

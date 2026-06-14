@@ -1,53 +1,31 @@
 import type { Task } from "@patrick/shared";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { RichEditor } from "@/components/rich-editor/rich-editor";
 import { SaveStatus } from "@/components/save-status";
-import { Textarea } from "@/components/ui/textarea";
-import { useAutosave } from "@/hooks/use-autosave";
+import { useAutosavedDraft } from "@/hooks/use-autosave";
 import { useTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
 
-// The task's running record — decisions, findings, strategy. You edit it here;
-// Patrick appends via saveNote. Collapsed shows a glance; expanded edits inline.
+// The task's living brief — what the matter is, the objective, and the running
+// record. You edit it here; Patrick proposes edits via suggestBrief (replace or
+// append). Collapsed shows a glance; expanded edits inline.
 export function NotesNav() {
 	const { activeTaskId } = useActiveTask();
 	const { data: task } = useTask(activeTaskId);
 	if (!task) return null;
-	return <NotesEditor key={task.id} task={task} />;
+	return <BriefEditor key={task.id} task={task} />;
 }
 
-function NotesEditor({ task }: { task: Task }) {
+function BriefEditor({ task }: { task: Task }) {
 	const update = useUpdateTask();
 	const [open, setOpen] = useState(false);
-	const [value, setValue] = useState(task.notes ?? "");
-	const focused = useRef(false);
-	const taskRef = useRef(task);
-	taskRef.current = task;
-	const valueRef = useRef(value);
-	valueRef.current = value;
-	const lastSynced = useRef(task.notes ?? "");
-
-	const { status } = useAutosave(value, (notes) =>
-		update.mutate({ ...taskRef.current, notes }),
+	// Edits the whole task (brief field); auto-saves and adopts Patrick's external
+	// brief edits without clobbering in-flight typing.
+	const { draft, setDraft, status } = useAutosavedDraft(task, (t) =>
+		update.mutate(t),
 	);
-
-	// Reflect external changes to notes (Patrick's saveNote). If they arrive while
-	// the attorney is typing, splice the appended tail onto the in-progress value
-	// rather than discarding either edit (last-writer-wins would lose Patrick's).
-	useEffect(() => {
-		const ext = task.notes ?? "";
-		if (ext === lastSynced.current || ext === valueRef.current) {
-			lastSynced.current = ext;
-			return; // unchanged, or our own autosave echoing back
-		}
-		if (!focused.current) {
-			setValue(ext);
-		} else if (ext.startsWith(lastSynced.current)) {
-			setValue(valueRef.current + ext.slice(lastSynced.current.length));
-		}
-		lastSynced.current = ext;
-	}, [task.notes]);
 
 	return (
 		<div>
@@ -56,7 +34,7 @@ function NotesEditor({ task }: { task: Task }) {
 				onClick={() => setOpen((o) => !o)}
 				className="flex w-full items-center gap-1 px-2 pb-1"
 			>
-				<span className="text-xs font-medium text-muted-foreground">Notes</span>
+				<span className="text-xs font-medium text-muted-foreground">Brief</span>
 				{open && <SaveStatus status={status} />}
 				<ChevronDown
 					className={cn(
@@ -68,17 +46,12 @@ function NotesEditor({ task }: { task: Task }) {
 
 			{open ? (
 				<div className="px-1">
-					<Textarea
-						value={value}
-						onChange={(e) => setValue(e.target.value)}
-						onFocus={() => {
-							focused.current = true;
-						}}
-						onBlur={() => {
-							focused.current = false;
-						}}
-						placeholder="Running record — decisions, findings, strategy. You and Patrick both add here."
-						className="max-h-72 min-h-28 resize-y text-xs leading-relaxed"
+					<RichEditor
+						value={draft.brief}
+						onChange={(brief) => setDraft((d) => ({ ...d, brief }))}
+						features={{ headings: true, lists: true }}
+						placeholder="What this matter is and what you're trying to achieve — kept current as it develops. You and Patrick both add here."
+						className="max-h-72 min-h-28 overflow-y-auto rounded-md border p-2 text-xs leading-relaxed"
 					/>
 				</div>
 			) : (
@@ -87,13 +60,13 @@ function NotesEditor({ task }: { task: Task }) {
 					onClick={() => setOpen(true)}
 					className="block w-full px-2 text-left"
 				>
-					{task.notes?.trim() ? (
+					{draft.brief?.trim() ? (
 						<span className="line-clamp-2 text-xs whitespace-pre-wrap text-muted-foreground/70">
-							{task.notes}
+							{draft.brief}
 						</span>
 					) : (
 						<span className="text-xs text-muted-foreground/40">
-							No notes yet.
+							No brief yet.
 						</span>
 					)}
 				</button>

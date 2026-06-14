@@ -394,18 +394,14 @@ function ChatSession({
 					return null;
 				}
 			},
-			saveNote: (note) => {
+			suggestBrief: (brief, append) => {
 				const t = taskRef.current;
 				if (!t) return;
-				const notes = t.notes?.trim()
-					? `${t.notes.trim()}\n- ${note}`
-					: `- ${note}`;
-				updateTask.mutate({ ...t, notes });
-			},
-			suggestBrief: (brief) => {
-				const t = taskRef.current;
-				if (!t) return;
-				updateTask.mutate({ ...t, label: brief });
+				// Append adds the note as a new entry (blank-line separated so its own
+				// markdown stays intact); otherwise replace the brief whole.
+				const existing = t.brief?.trim();
+				const next = append && existing ? `${existing}\n\n${brief}` : brief;
+				updateTask.mutate({ ...t, brief: next });
 				// Show the result where it lives.
 				navigate({ to: "/task" });
 			},

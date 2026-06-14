@@ -15,9 +15,15 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pinned sources to point Patrick straight at them.
 - Patrick can answer questions about itself — what it can and can't do, and how
   to use the app — from its built-in documentation.
+- Light rich-text formatting in the prompt-builder blocks and the task brief —
+  bold, italic, lists, and (in the brief) headings, via the usual keyboard
+  shortcuts and markdown shortcuts.
 
 ### Changed
 
+- A task now has a single living **Brief** — what the matter is, the objective,
+  and the running record in one place (replacing the separate brief and notes) —
+  which Patrick is given on every chat and can draft, refine, or add to.
 - Patrick edits your prompt a section at a time: ask him to draft or refine a
   single block (like your practice context) and accept it without disturbing the
   rest of your instructions.

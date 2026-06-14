@@ -1,6 +1,6 @@
 import { type Task, taskDisplayName } from "@patrick/shared";
-import { useState } from "react";
 import { Hint } from "@/components/hint";
+import { RichEditor } from "@/components/rich-editor/rich-editor";
 import { SaveStatus } from "@/components/save-status";
 import {
 	DangerZone,
@@ -14,18 +14,17 @@ import {
 import { DocumentsSection } from "@/components/task/documents-section";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useAutosave } from "@/hooks/use-autosave";
+import { useAutosavedDraft } from "@/hooks/use-autosave";
 
 const SECTIONS: readonly SettingsSectionDef[] = [
 	{ id: "details", label: "Details" },
+	{ id: "brief", label: "Brief" },
 	{ id: "documents", label: "Documents" },
-	{ id: "notes", label: "Notes" },
 ];
 
 /**
  * Task settings as a settings surface, mirroring the profile editor: details
- * (name + brief), documents, notes, and a danger zone. Mount with `key={task.id}`
+ * (name), the living brief, documents, and a danger zone. Mount with `key={task.id}`
  * so switching tasks resets the draft; everything auto-saves (debounced).
  */
 export function TaskForm({
@@ -39,8 +38,14 @@ export function TaskForm({
 	saving?: boolean;
 	onDelete?: () => void | Promise<void>;
 }) {
-	const [draft, setDraft] = useState(task);
-	const { status: autoStatus, cancel } = useAutosave(draft, onSave);
+	// A draft that auto-saves and adopts Patrick's external edits (e.g. a brief
+	// suggestion accepted from the chat) without clobbering in-flight typing.
+	const {
+		draft,
+		setDraft,
+		status: autoStatus,
+		cancel,
+	} = useAutosavedDraft(task, onSave);
 	const status = saving ? "saving" : autoStatus;
 
 	return (
@@ -70,59 +75,40 @@ export function TaskForm({
 				<SettingsSection id="details" title="Details">
 					<Hint className="mb-6" title="Patrick can help">
 						Ask in the chat — Patrick can draft the brief, label the documents,
-						or add to your notes.
+						or keep the brief current.
 					</Hint>
-					<div className="space-y-6">
-						<Field>
-							<FieldLabel htmlFor="task-name">Name</FieldLabel>
-							<Input
-								id="task-name"
-								value={draft.name ?? ""}
-								placeholder="US 17/123,456 — NFOA response"
-								onChange={(e) =>
-									setDraft((d) => ({ ...d, name: e.target.value }))
-								}
-							/>
-							<FieldDescription>
-								A short name for this task, shown in the sidebar.
-							</FieldDescription>
-						</Field>
+					<Field>
+						<FieldLabel htmlFor="task-name">Name</FieldLabel>
+						<Input
+							id="task-name"
+							value={draft.name ?? ""}
+							placeholder="US 17/123,456 — NFOA response"
+							onChange={(e) =>
+								setDraft((d) => ({ ...d, name: e.target.value }))
+							}
+						/>
+						<FieldDescription>
+							A short name for this task, shown in the sidebar.
+						</FieldDescription>
+					</Field>
+				</SettingsSection>
 
-						<Field>
-							<FieldLabel htmlFor="task-label">Brief</FieldLabel>
-							<Textarea
-								id="task-label"
-								value={draft.label}
-								placeholder="Respond to the Non-Final OA on US 17/123,456 — claims 1–20 rejected under §103 over Smith in view of Jones."
-								className="min-h-20"
-								onChange={(e) =>
-									setDraft((d) => ({ ...d, label: e.target.value }))
-								}
-							/>
-							<FieldDescription>
-								The objective — what this task is, the way you'd brief a
-								colleague. It frames everything Patrick does (the {"<TASK>"}{" "}
-								token).
-							</FieldDescription>
-						</Field>
-					</div>
+				<SettingsSection
+					id="brief"
+					title="Brief"
+					description="What this matter is and what you're trying to achieve — a living record you and Patrick both keep current. Injected into every chat."
+				>
+					<RichEditor
+						value={draft.brief}
+						onChange={(brief) => setDraft((d) => ({ ...d, brief }))}
+						features={{ headings: true, lists: true }}
+						placeholder="Respond to the Non-Final OA on US 17/123,456 — claims 1–20 rejected under §103 over Smith in view of Jones. Capture key dates, strategy, and decisions as they come up."
+						className="min-h-40 rounded-md border p-3 leading-relaxed"
+					/>
 				</SettingsSection>
 
 				<SettingsSection id="documents" title="Documents">
 					<DocumentsSection taskId={draft.id} />
-				</SettingsSection>
-
-				<SettingsSection
-					id="notes"
-					title="Notes"
-					description="A running record of decisions, findings, and strategy — you and Patrick both add here. Fed to Patrick as part of the task."
-				>
-					<Textarea
-						value={draft.notes ?? ""}
-						placeholder="Running record — decisions, findings, strategy."
-						className="min-h-32"
-						onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-					/>
 				</SettingsSection>
 
 				{onDelete && (

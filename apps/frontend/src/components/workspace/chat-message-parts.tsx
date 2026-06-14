@@ -12,7 +12,6 @@ import {
 	FilePen,
 	FilePlus,
 	FolderOpen,
-	StickyNote,
 	Tag,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -221,10 +220,8 @@ export type ToolUiHandlers = {
 	createDraft: (name: string) => Promise<string | null>;
 	/** Make an editable copy of an original + open it (requestUnlock). */
 	unlockSource: (filename: string) => Promise<string | null>;
-	/** Append an insight to the task's notes (saveNote acceptance). */
-	saveNote: (note: string) => void;
-	/** Apply a proposed task brief (suggestBrief acceptance). */
-	suggestBrief: (brief: string) => void;
+	/** Apply a proposed task brief — replace it, or append a note (suggestBrief acceptance). */
+	suggestBrief: (brief: string, append?: boolean) => void;
 	/** Apply a proposed Patrick prompt — one section if `heading` is set, else the whole prompt (suggestPrompt acceptance). */
 	suggestPrompt: (heading: string | undefined, content: string) => void;
 };
@@ -330,28 +327,20 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 				<>Left it as-is.</>
 			),
 	},
-	saveNote: {
-		icon: <StickyNote size={13} className={iconCls} />,
-		title: () => <>Save to task notes:</>,
-		detail: (i) => <span className="text-foreground italic">“{i.note}”</span>,
-		acceptLabel: "Save",
-		rejectLabel: "No",
-		accept: (i, h) => {
-			if (i.note) h.saveNote(i.note);
-			return { saved: true };
-		},
-		reject: () => ({ saved: false }),
-		resolved: (o) => (o.saved ? "Saved to task notes." : "Note not saved."),
-	},
 	suggestBrief: {
 		icon: <ClipboardList size={13} className={iconCls} />,
-		title: () => <>Set the task brief to:</>,
-		detail: (i) => <span className="text-foreground italic">“{i.brief}”</span>,
+		title: (i) =>
+			i.append ? <>Add to the task brief:</> : <>Set the task brief to:</>,
+		detail: (i) => (
+			<pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 text-[11px] not-italic text-foreground">
+				{i.brief}
+			</pre>
+		),
 		acceptLabel: "Apply",
 		rejectLabel: "No",
 		accept: (i, h) => {
-			if (i.brief) h.suggestBrief(i.brief);
-			return { applied: true };
+			if (i.brief) h.suggestBrief(i.brief, !!i.append);
+			return { applied: !!i.brief };
 		},
 		reject: () => ({ applied: false }),
 		resolved: (o) => (o.applied ? "Brief updated." : "Brief unchanged."),
