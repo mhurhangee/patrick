@@ -39,6 +39,7 @@ import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { useProfile, useUpdateProfile } from "@/hooks/use-profiles";
 import {
 	useCreateDocument,
+	useFetchPublication,
 	useSaveDocuments,
 	useTask,
 	useTaskDocuments,
@@ -152,6 +153,7 @@ function ChatSession({
 	const saveDocs = useSaveDocuments(activeTaskId ?? "");
 	const createDoc = useCreateDocument(activeTaskId ?? "");
 	const unlockDoc = useUnlockDocument(activeTaskId ?? "");
+	const fetchPub = useFetchPublication(activeTaskId ?? "");
 	const { data: task } = useTask(activeTaskId);
 	const updateTask = useUpdateTask();
 	const updateProfile = useUpdateProfile();
@@ -394,6 +396,29 @@ function ChatSession({
 					return null;
 				}
 			},
+			fetchPublication: async (number) => {
+				try {
+					const res = await fetchPub.mutateAsync({
+						number,
+						profileId: profileIdRef.current ?? "",
+					});
+					// Retrieving a document is an intent to use it — pin it into context
+					// (and show it), rather than leaving it fetched-but-invisible.
+					const filename = res.filename;
+					setPinnedSources((prev) =>
+						prev.some((p) => p.filename === filename)
+							? prev
+							: [...prev, { filename, kind: docKind(filename) }],
+					);
+					open(filename);
+					return { saved: true, filename, summary: res.summary };
+				} catch (e) {
+					return {
+						saved: false,
+						error: e instanceof Error ? e.message : "Publication fetch failed.",
+					};
+				}
+			},
 			suggestBrief: (brief, append) => {
 				const t = taskRef.current;
 				if (!t) return;
@@ -424,6 +449,7 @@ function ChatSession({
 			saveDocs.mutate,
 			createDoc.mutateAsync,
 			unlockDoc.mutateAsync,
+			fetchPub.mutateAsync,
 			updateTask.mutate,
 			updateProfile.mutate,
 			waitForEditor,

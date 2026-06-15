@@ -16,11 +16,13 @@ import { useActiveTask } from "@/lib/active-task";
 import { AiSection } from "./ai-section";
 import { AppearanceSection } from "./appearance-section";
 import { IdentitySection } from "./identity-section";
+import { OpsSection } from "./ops-section";
 import { PromptSection } from "./prompt-section";
 
 const SECTIONS: readonly SettingsSectionDef[] = [
 	{ id: "identity", label: "Identity" },
 	{ id: "ai", label: "AI" },
+	{ id: "ops", label: "Patent data" },
 	{ id: "prompt", label: "Prompt" },
 	{ id: "appearance", label: "Appearance" },
 ];
@@ -99,6 +101,9 @@ export function ProfileForm({
 				</SettingsSection>
 				<SettingsSection id="ai" title="AI">
 					<AiSection value={draft.ai} onChange={(ai) => set({ ai })} />
+				</SettingsSection>
+				<SettingsSection id="ops" title="Patent data">
+					<OpsSection value={draft.ops} onChange={(ops) => set({ ops })} />
 				</SettingsSection>
 				<SettingsSection id="prompt" title="Prompt">
 					{activeTaskId && (

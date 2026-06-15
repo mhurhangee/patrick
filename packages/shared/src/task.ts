@@ -39,6 +39,8 @@ export type Document = {
 	starred?: boolean;
 	/** True if Patrick created this file (vs an original the attorney added). */
 	createdInPatrick?: boolean;
+	/** True if Patrick fetched this from a data service (e.g. prior art via OPS). */
+	retrieved?: boolean;
 };
 
 /** Per-folder document awareness keyed by filename. Stored with the folder. */
@@ -49,6 +51,7 @@ export type DocumentMeta = Record<
 		excluded?: boolean;
 		starred?: boolean;
 		createdInPatrick?: boolean;
+		retrieved?: boolean;
 	}
 >;
 
@@ -71,6 +74,7 @@ export function toDocumentMeta(documents: Document[]): DocumentMeta {
 		if (d.excluded) entry.excluded = true;
 		if (d.starred) entry.starred = true;
 		if (d.createdInPatrick) entry.createdInPatrick = true;
+		if (d.retrieved) entry.retrieved = true;
 		if (Object.keys(entry).length > 0) meta[d.filename] = entry;
 	}
 	return meta;

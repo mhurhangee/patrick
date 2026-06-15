@@ -47,6 +47,24 @@ export const tasksApi = {
 	/** Create a new blank Patrick-owned .docx; returns its filename. */
 	createDocument: (id: string, filename?: string) =>
 		api.post<{ filename: string }>(`/tasks/${id}/documents`, { filename }),
+	/** Fetch an EP/WO publication's full text from EPO OPS → saved document.
+	 *  Surfaces the server's error message (bad number, US unsupported, missing
+	 *  key) so Patrick can relay it. */
+	fetchPublication: async (id: string, number: string, profileId: string) => {
+		const res = await fetch(`${BASE_URL}/tasks/${id}/publication`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ number, profileId }),
+		});
+		const data = (await res.json().catch(() => ({}))) as {
+			filename?: string;
+			summary?: string;
+			error?: string;
+		};
+		if (!res.ok)
+			throw new Error(data.error ?? `publication fetch failed: ${res.status}`);
+		return data as { filename: string; summary: string };
+	},
 	/** Unlock an original → working copy; returns the copy's filename. */
 	unlockDocument: (id: string, filename: string) =>
 		api.post<{ filename: string }>(

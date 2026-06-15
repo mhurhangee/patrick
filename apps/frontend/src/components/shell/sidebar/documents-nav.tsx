@@ -1,4 +1,4 @@
-import type { Document } from "@patrick/shared";
+import { type Document, docKind, hasOpsCreds } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { EyeOff, MoreHorizontal, Plus, Star } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -20,6 +20,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProfile } from "@/hooks/use-profiles";
 import {
 	useCreateDocument,
 	useDeleteDocument,
@@ -29,9 +30,11 @@ import {
 	useTaskDocuments,
 	useUnlockDocument,
 } from "@/hooks/use-tasks";
+import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
 import { type DocKind, useWorkspace } from "@/lib/workspace";
+import { RetrievePublication } from "./retrieve-publication";
 import { Section } from "./section";
 
 type RowState = "closed" | "open" | "focused";
@@ -43,6 +46,9 @@ export function DocumentsNav() {
 	const navigate = useNavigate();
 	const { activeTaskId } = useActiveTask();
 	const taskId = activeTaskId ?? "";
+	const { activeProfileId } = useActiveProfile();
+	const { data: profile } = useProfile(activeProfileId);
+	const hasOpsKey = hasOpsCreds(profile);
 	const { data: documents } = useTaskDocuments(activeTaskId);
 	const save = useSaveDocuments(taskId);
 	const create = useCreateDocument(taskId);
@@ -97,37 +103,58 @@ export function DocumentsNav() {
 	// Starred float to the top, excluded sink to the bottom; otherwise keep the
 	// backend's alphabetical order (Array.sort is stable).
 	const ordered = [...(documents ?? [])].sort((a, b) => rank(a) - rank(b));
+	// Patrick-retrieved publications (full text via OPS) group on their own.
+	const retrieved = ordered.filter((d) => d.retrieved);
+	const ownFiles = ordered.filter((d) => !d.retrieved);
+
+	const row = (doc: Document) => (
+		<DocumentRow
+			key={doc.filename}
+			doc={doc}
+			state={
+				focused === doc.filename
+					? "focused"
+					: isOpen(doc.filename)
+						? "open"
+						: "closed"
+			}
+			onOpen={() => openDoc(doc.filename)}
+			onUpdate={(patch) => update(doc.filename, patch)}
+			onEditCopy={() => editCopy(doc.filename)}
+			onRename={(to) => renameDoc(doc.filename, to)}
+			onDelete={() => deleteDoc(doc.filename)}
+		/>
+	);
 
 	return (
-		<Section
-			label="Documents"
-			action={<DocumentsActions onNew={newDocument} onRefresh={refresh} />}
-		>
-			{!documents && [0, 1, 2].map((i) => <DocumentRowSkeleton key={i} />)}
-			{documents?.length === 0 && (
-				<p className="px-2 py-1 text-xs text-muted-foreground">
-					No documents in this task's folder.
-				</p>
-			)}
-			{ordered.map((doc) => (
-				<DocumentRow
-					key={doc.filename}
-					doc={doc}
-					state={
-						focused === doc.filename
-							? "focused"
-							: isOpen(doc.filename)
-								? "open"
-								: "closed"
-					}
-					onOpen={() => openDoc(doc.filename)}
-					onUpdate={(patch) => update(doc.filename, patch)}
-					onEditCopy={() => editCopy(doc.filename)}
-					onRename={(to) => renameDoc(doc.filename, to)}
-					onDelete={() => deleteDoc(doc.filename)}
-				/>
-			))}
-		</Section>
+		<div className="space-y-3">
+			<Section
+				label="Documents"
+				action={<DocumentsActions onNew={newDocument} onRefresh={refresh} />}
+			>
+				{!documents && [0, 1, 2].map((i) => <DocumentRowSkeleton key={i} />)}
+				{documents?.length === 0 && (
+					<p className="px-2 py-1 text-xs text-muted-foreground">
+						No documents in this task's folder.
+					</p>
+				)}
+				{ownFiles.map(row)}
+			</Section>
+			<Section
+				label="Retrieved documents"
+				action={<RetrievePublication taskId={taskId} onRetrieved={openDoc} />}
+			>
+				{retrieved.length === 0 ? (
+					<p className="px-2 py-1 text-xs text-muted-foreground">
+						{hasOpsKey
+							? "Pull a published EP or WO patent by number."
+							: "Add an EPO OPS key in your profile to retrieve publications."}
+					</p>
+				) : (
+					retrieved.map(row)
+				)}
+			</Section>
+		</div>
 	);
 }
 
@@ -174,9 +201,7 @@ function DocumentRow({
 	onRename: (to: string) => void;
 	onDelete: () => void;
 }) {
-	const kind: DocKind = doc.filename.toLowerCase().endsWith(".pdf")
-		? "pdf"
-		: "docx";
+	const kind: DocKind = docKind(doc.filename);
 	const [renaming, setRenaming] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -195,7 +220,7 @@ function DocumentRow({
 			<div className="flex items-start gap-2 py-1 pr-1 pl-2">
 				<DocIcon
 					kind={kind}
-					editable={!!doc.createdInPatrick}
+					editable={kind === "docx" && !!doc.createdInPatrick}
 					className="mt-0.5"
 				/>
 				<div className="min-w-0 flex-1">

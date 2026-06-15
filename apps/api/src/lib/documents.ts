@@ -12,8 +12,9 @@ import type { Document, DocumentMeta } from "@patrick/shared";
 import { parse, stringify } from "yaml";
 import { ensureParaIds } from "./docx";
 
-// What counts as a "document" in the attorney's folder.
-const DOC_EXTENSIONS = new Set([".pdf", ".docx", ".doc"]);
+// What counts as a "document" in the attorney's folder. Plain-text (.md/.txt)
+// covers Patrick-retrieved references like prior art fetched from EPO OPS.
+const DOC_EXTENSIONS = new Set([".pdf", ".docx", ".doc", ".md", ".txt"]);
 
 // A real (minimal, empty) .docx minted from the editor — copied for "New document".
 const BLANK_DOCX = join(import.meta.dir, "..", "..", "assets", "blank.docx");
@@ -108,6 +109,34 @@ export async function createBlankDocument(
 		await ensureParaIds(await readFile(BLANK_DOCX)),
 	);
 	await mergeDocumentMeta(folder, name, { createdInPatrick: true });
+	return name;
+}
+
+/**
+ * Save a Patrick-retrieved reference (e.g. prior art fetched from EPO OPS) as a
+ * plain-text file in the folder, tagged `retrieved` so the UI can group it. It's
+ * Patrick-owned (so it's deletable) but not editable (not a .docx). Refreshes in
+ * place if we already own that name; otherwise picks a non-colliding one so an
+ * attorney's own file is never overwritten.
+ */
+export async function saveRetrievedDocument(
+	folder: string,
+	filename: string,
+	content: string,
+	label?: string,
+): Promise<string> {
+	const meta = await readDocumentMeta(folder);
+	const exists = await fileExists(folder, filename);
+	const name =
+		exists && !meta[filename]?.createdInPatrick
+			? await uniqueName(folder, filename)
+			: filename;
+	await writeFile(join(folder, name), content, "utf8");
+	await mergeDocumentMeta(folder, name, {
+		createdInPatrick: true,
+		retrieved: true,
+		...(label ? { label } : {}),
+	});
 	return name;
 }
 
@@ -212,6 +241,7 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 			excluded: m.excluded,
 			starred: m.starred,
 			createdInPatrick: m.createdInPatrick,
+			retrieved: m.retrieved,
 		});
 	}
 	return docs.sort((a, b) => a.filename.localeCompare(b.filename));

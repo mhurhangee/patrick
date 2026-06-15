@@ -6,6 +6,7 @@ import {
 	type Task,
 } from "@patrick/shared";
 import { Hono } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { handleChat, handleChatPreview } from "../lib/ai/chat";
 import { deleteChat, listChats, readChat, saveChat } from "../lib/chats";
 import {
@@ -15,9 +16,12 @@ import {
 	listDocuments,
 	renameDocument,
 	saveDocumentBytes,
+	saveRetrievedDocument,
 	unlockDocumentCopy,
 	writeDocumentMeta,
 } from "../lib/documents";
+import { fetchPublication } from "../lib/ops";
+import { readProfile } from "../lib/profiles";
 import { deleteTask, listTasks, readTask, writeTask } from "../lib/tasks";
 
 export const tasks = new Hono();
@@ -120,6 +124,42 @@ tasks.post("/:id/documents", async (c) => {
 	return c.json({ filename: name }, 201);
 });
 
+// Fetch a published EP/WO document's full text from EPO OPS (BYOK) and save it
+// as a retrieved reference in the folder, ready to pin. Driven by the
+// fetchPublication HITL tool after the attorney confirms.
+tasks.post("/:id/publication", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const { number, profileId } = await c.req.json<{
+		number?: string;
+		profileId?: string;
+	}>();
+	if (!number) return c.json({ error: "missing publication number" }, 400);
+	const profile = profileId ? await readProfile(profileId) : null;
+	const creds = profile?.ops;
+	if (!creds?.consumerKey || !creds?.consumerSecret) {
+		return c.json(
+			{
+				error:
+					"Add your EPO OPS key and secret in your profile to fetch publications.",
+			},
+			400,
+		);
+	}
+	const result = await fetchPublication(creds, number);
+	if (!result.ok)
+		return c.json(
+			{ error: result.message },
+			result.status as ContentfulStatusCode,
+		);
+	const filename = await saveRetrievedDocument(
+		task.folder,
+		result.filename,
+		result.markdown,
+	);
+	return c.json({ filename, summary: result.summary }, 201);
+});
+
 // Unlock an original for editing → visible "(Patrick)" working copy in the folder.
 tasks.post("/:id/documents/:filename/copy", async (c) => {
 	const task = await readTask(c.req.param("id"));
@@ -185,6 +225,8 @@ const MIME: Record<string, string> = {
 	".docx":
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 	".doc": "application/msword",
+	".md": "text/markdown; charset=utf-8",
+	".txt": "text/plain; charset=utf-8",
 };
 
 // Stream a document's raw bytes for the viewer. basename() blocks path traversal.

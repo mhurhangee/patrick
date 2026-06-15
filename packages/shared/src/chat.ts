@@ -2,13 +2,17 @@
 // chat UI can show what was actually sent (observability) plus usage/cost. Kept
 // in shared so the API and frontend agree on the shape.
 
-/** A read-only source pinned into a chat's context (PDF or original docx). Once
- *  pinned it stays for the life of the chat — append-only, cacheable. */
-export type PinnedSource = { filename: string; kind: "pdf" | "docx" };
+/** A read-only source pinned into a chat's context (PDF, original docx, or plain
+ *  text like retrieved prior art). Once pinned it stays for the life of the chat
+ *  — append-only, cacheable. */
+export type PinnedSource = { filename: string; kind: "pdf" | "docx" | "text" };
 
-/** A document's kind from its filename (PDF, else treated as Word). */
+/** A document's kind from its filename: PDF, plain text (.md/.txt), else Word. */
 export function docKind(filename: string): PinnedSource["kind"] {
-	return filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
+	const lower = filename.toLowerCase();
+	if (lower.endsWith(".pdf")) return "pdf";
+	if (lower.endsWith(".md") || lower.endsWith(".txt")) return "text";
+	return "docx";
 }
 
 export type ExchangeContext = {

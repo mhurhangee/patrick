@@ -69,7 +69,9 @@ function DocumentsEditor({
 						>
 							<DocIcon
 								kind={docKind(doc.filename)}
-								editable={!!doc.createdInPatrick}
+								editable={
+									docKind(doc.filename) === "docx" && !!doc.createdInPatrick
+								}
 							/>
 							<div className="min-w-0 flex-1">
 								<div className="truncate text-sm font-medium">
