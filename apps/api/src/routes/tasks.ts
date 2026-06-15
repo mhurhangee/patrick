@@ -20,7 +20,7 @@ import {
 	unlockDocumentCopy,
 	writeDocumentMeta,
 } from "../lib/documents";
-import { fetchPublication } from "../lib/ops";
+import { fetchPublication } from "../lib/patents";
 import { readProfile } from "../lib/profiles";
 import { deleteTask, listTasks, readTask, writeTask } from "../lib/tasks";
 
@@ -135,18 +135,10 @@ tasks.post("/:id/publication", async (c) => {
 		profileId?: string;
 	}>();
 	if (!number) return c.json({ error: "missing publication number" }, 400);
+	// No key needed — the router uses EPO OPS for EP/WO when a key is set, else
+	// Google Patents (which also covers US and backstops everything).
 	const profile = profileId ? await readProfile(profileId) : null;
-	const creds = profile?.ops;
-	if (!creds?.consumerKey || !creds?.consumerSecret) {
-		return c.json(
-			{
-				error:
-					"Add your EPO OPS key and secret in your profile to fetch publications.",
-			},
-			400,
-		);
-	}
-	const result = await fetchPublication(creds, number);
+	const result = await fetchPublication(number, profile);
 	if (!result.ok)
 		return c.json(
 			{ error: result.message },
@@ -156,6 +148,8 @@ tasks.post("/:id/publication", async (c) => {
 		task.folder,
 		result.filename,
 		result.markdown,
+		undefined,
+		result.source,
 	);
 	return c.json({ filename, summary: result.summary }, 201);
 });
