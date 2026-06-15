@@ -13,7 +13,7 @@ import {
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
 
-export type DocKind = "pdf" | "docx";
+export type DocKind = "pdf" | "docx" | "text";
 export type WorkspaceDoc = {
 	id: string;
 	label: string;

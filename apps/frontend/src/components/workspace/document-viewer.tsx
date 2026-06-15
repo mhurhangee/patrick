@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/resizable";
 import { DocxViewer } from "@/components/workspace/docx-viewer";
 import { PdfViewer } from "@/components/workspace/pdf-viewer";
+import { TextViewer } from "@/components/workspace/text-viewer";
 import { cn } from "@/lib/utils";
 import { useWorkspace, type WorkspaceColumn } from "@/lib/workspace";
 
@@ -193,6 +194,7 @@ function DocContent({ id }: { id: string }) {
 	const doc = getDoc(id);
 	if (!doc) return null;
 	if (doc.kind === "pdf") return <PdfViewer filename={doc.id} />;
+	if (doc.kind === "text") return <TextViewer key={doc.id} filename={doc.id} />;
 	// key per file so autosave + buffer state never leak across tab switches.
 	return <DocxViewer key={doc.id} filename={doc.id} editable={doc.editable} />;
 }

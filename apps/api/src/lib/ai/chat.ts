@@ -140,6 +140,18 @@ const suggestBrief = tool({
 	}),
 });
 
+const fetchPublication = tool({
+	description:
+		"Propose fetching the full text (claims + description) of a published EP or WO patent from EPO Open Patent Services, by publication number. The attorney confirms; it's saved into the matter folder as a document you can then offer to pin and read. Useful for any published document — a cited reference or X/Y document in a search report, or a clean text version of a publication the attorney is prosecuting (e.g. when they only have the PDF). Only EP and WO are supported — for US or other numbers, say it's not available yet (planned via the USPTO).",
+	inputSchema: z.object({
+		number: z
+			.string()
+			.describe(
+				"The publication number, e.g. 'EP3707572' or 'EP3707572B1' (a kind code is optional).",
+			),
+	}),
+});
+
 const suggestPrompt = tool({
 	description:
 		"Propose a change to the attorney's prompt — the instructions that steer you across all of their tasks, written as `## Header` markdown sections (e.g. practice context, do's, don'ts, response style). Your capabilities and the current task/documents are added automatically, so never include them.\n\nUsually pass `heading` to add or rewrite a SINGLE section, leaving everything else they've written untouched — prefer this. Omit `heading` only to rewrite the whole prompt, and then preserve every section they already have. The attorney accepts to apply it; it takes effect in new chats.",
@@ -232,6 +244,23 @@ async function pinnedSourcesMessage(
 					];
 				} catch {
 					return []; // unreadable — skip rather than fail the turn
+				}
+			}
+			if (src.kind === "text") {
+				// Plain-text sources (retrieved prior art) are already text — inject
+				// directly, no docx extraction.
+				try {
+					const raw = (
+						await readFile(join(folder, src.filename), "utf8")
+					).trim();
+					return [
+						{
+							type: "text",
+							text: `\n# ${src.filename}\n${raw || "(empty)"}`,
+						},
+					];
+				} catch {
+					return [];
 				}
 			}
 			const text = await docxText(folder, src.filename);
@@ -333,6 +362,7 @@ export async function handleChat(c: Context) {
 		suggestPrompt,
 		createDraft,
 		requestUnlock,
+		fetchPublication,
 		patrick_help: patrickHelp,
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};

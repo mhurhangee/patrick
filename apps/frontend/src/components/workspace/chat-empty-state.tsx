@@ -40,6 +40,11 @@ function emptyStateFor(
 			title: `Ask me about ${doc.label}.`,
 			suggestions: ["Summarise this document", "Suggest a label for it"],
 		};
+	if (doc?.kind === "text")
+		return {
+			title: `Ask me about ${doc.label}.`,
+			suggestions: ["Summarise the claims", "Compare this with my draft"],
+		};
 	if (doc?.editable)
 		return {
 			title: `I can draft and amend ${doc.label}.`,

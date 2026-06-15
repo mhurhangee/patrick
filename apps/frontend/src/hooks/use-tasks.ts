@@ -96,6 +96,20 @@ export function useUnlockDocument(id: string) {
 	});
 }
 
+export function useFetchPublication(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			number,
+			profileId,
+		}: {
+			number: string;
+			profileId: string;
+		}) => tasksApi.fetchPublication(id, number, profileId),
+		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
 export function useRenameDocument(id: string) {
 	const qc = useQueryClient();
 	return useMutation({

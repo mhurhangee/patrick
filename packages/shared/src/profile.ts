@@ -15,6 +15,19 @@ export type AiSettings = {
 	effort: AiEffort;
 };
 
+/** EPO Open Patent Services credentials (BYOK) — used to fetch EP/WO publications. */
+export type OpsSettings = {
+	consumerKey: string;
+	consumerSecret: string;
+};
+
+/** True when the profile has both OPS credentials — auth needs the pair. */
+export function hasOpsCreds(profile?: Pick<Profile, "ops">): boolean {
+	return !!(
+		profile?.ops?.consumerKey?.trim() && profile?.ops?.consumerSecret?.trim()
+	);
+}
+
 export type Appearance = {
 	theme: string;
 	mode: ThemeMode;
@@ -30,6 +43,8 @@ export type Profile = {
 		author: string;
 	};
 	ai: AiSettings;
+	/** EPO OPS credentials (BYOK). Absent/empty ⇒ publication fetch is unavailable. */
+	ops?: OpsSettings;
 	prompts: {
 		/** The prompt "middle" — markdown `## Header` blocks (see packages/shared/prompt). */
 		agentpat: string;
@@ -63,6 +78,7 @@ export function createProfile(id: string, name: string): Profile {
 			detailedModel: DEFAULT_DETAILED_MODEL.anthropic,
 			effort: "medium",
 		},
+		ops: { consumerKey: "", consumerSecret: "" },
 		prompts: { agentpat: DEFAULT_AGENTPAT_PROMPT },
 		appearance: { theme: "emerald", mode: "system", scale: 1 },
 	};

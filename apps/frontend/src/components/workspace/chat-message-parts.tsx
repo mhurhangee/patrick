@@ -11,6 +11,7 @@ import {
 	Code,
 	FilePen,
 	FilePlus,
+	FileSearch,
 	FolderOpen,
 	Tag,
 } from "lucide-react";
@@ -224,6 +225,13 @@ export type ToolUiHandlers = {
 	suggestBrief: (brief: string, append?: boolean) => void;
 	/** Apply a proposed Patrick prompt — one section if `heading` is set, else the whole prompt (suggestPrompt acceptance). */
 	suggestPrompt: (heading: string | undefined, content: string) => void;
+	/** Fetch an EP/WO publication's full text from EPO OPS → saved document (fetchPublication acceptance). */
+	fetchPublication: (number: string) => Promise<{
+		saved: boolean;
+		filename?: string;
+		summary?: string;
+		error?: string;
+	}>;
 };
 
 type HitlInput = Record<string, string | undefined>;
@@ -326,6 +334,30 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 			) : (
 				<>Left it as-is.</>
 			),
+	},
+	fetchPublication: {
+		icon: <FileSearch size={13} className={iconCls} />,
+		title: (i) => <>Request {bold(i.number)} from EPO OPS?</>,
+		detail: () => (
+			<span className="text-muted-foreground">
+				Fetches the full text (claims + description) and saves it to this
+				matter.
+			</span>
+		),
+		acceptLabel: "Request",
+		rejectLabel: "No",
+		accept: async (i, h) =>
+			i.number ? h.fetchPublication(i.number) : { saved: false },
+		reject: () => ({ saved: false }),
+		resolved: (o) =>
+			o.saved ? (
+				<>Saved {bold(o.filename)} — pinned, now in context.</>
+			) : o.error ? (
+				<>Couldn’t fetch it: {String(o.error)}</>
+			) : (
+				<>No document fetched.</>
+			),
+		preparing: "Requesting from EPO OPS…",
 	},
 	suggestBrief: {
 		icon: <ClipboardList size={13} className={iconCls} />,
