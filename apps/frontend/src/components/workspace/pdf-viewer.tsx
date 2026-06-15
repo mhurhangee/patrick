@@ -4,9 +4,16 @@ import {
 	GlobalWorkerOptions,
 	getDocument,
 	type PDFPageProxy,
+	TextLayer,
 } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	type CSSProperties,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
@@ -177,6 +184,7 @@ function PdfPage({
 	active: boolean;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const textRef = useRef<HTMLDivElement>(null);
 	// Logical viewport drives CSS size (always reserved); we paint the backing
 	// store at ×dpr only while `active`, and free it when scrolled away.
 	const viewport = useMemo(() => page.getViewport({ scale }), [page, scale]);
@@ -198,6 +206,28 @@ function PdfPage({
 		return () => task.cancel();
 	}, [page, scale, active]);
 
+	// Selectable text overlay, built from the PDF's own text content and aligned
+	// over the canvas. Empty for scanned pages (no text layer) — OCR fills that
+	// gap later. Only while active, to match the canvas's lifecycle.
+	useEffect(() => {
+		const container = textRef.current;
+		if (!container) return;
+		if (!active) {
+			container.replaceChildren();
+			return;
+		}
+		const layer = new TextLayer({
+			textContentSource: page.streamTextContent(),
+			container,
+			viewport,
+		});
+		layer.render().catch(() => {}); // ignore cancellation
+		return () => {
+			layer.cancel();
+			container.replaceChildren();
+		};
+	}, [page, active, viewport]);
+
 	return (
 		<div
 			data-page={pageNumber}
@@ -209,8 +239,17 @@ function PdfPage({
 				className="block"
 				style={{ width: viewport.width, height: viewport.height }}
 			/>
-			{/* Annotation overlay — empty for now, ready for highlights/comments. */}
-			<div className="absolute inset-0" />
+			{/* Selectable text overlay (pdfjs positions spans off the scale factor). */}
+			<div
+				ref={textRef}
+				className="textLayer"
+				style={
+					{
+						"--scale-factor": scale,
+						"--total-scale-factor": scale,
+					} as CSSProperties
+				}
+			/>
 		</div>
 	);
 }
