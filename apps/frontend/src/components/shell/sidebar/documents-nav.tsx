@@ -1,6 +1,6 @@
 import { type Document, docKind } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
-import { EyeOff, MoreHorizontal, Plus, Star } from "lucide-react";
+import { EyeOff, MoreHorizontal, Plus, Star, Type } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
 	useCreateDocument,
 	useDeleteDocument,
+	useExtractText,
 	useRefreshDocuments,
 	useRenameDocument,
 	useSaveDocuments,
@@ -51,7 +52,27 @@ export function DocumentsNav() {
 	const rename = useRenameDocument(taskId);
 	const del = useDeleteDocument(taskId);
 	const refresh = useRefreshDocuments(taskId);
+	const extract = useExtractText(taskId);
+	const [extracting, setExtracting] = useState<{
+		file: string;
+		done: number;
+		total: number;
+	} | null>(null);
 	const { isOpen, focused, open, close } = useWorkspace();
+
+	// Extract a PDF's text (one at a time); progress drives the menu label.
+	const extractText = (filename: string) => {
+		if (extracting) return;
+		setExtracting({ file: filename, done: 0, total: 0 });
+		extract.mutate(
+			{
+				filename,
+				onProgress: (done, total) =>
+					setExtracting({ file: filename, done, total }),
+			},
+			{ onSettled: () => setExtracting(null) },
+		);
+	};
 
 	const update = (filename: string, patch: Partial<Document>) =>
 		save.mutate(
@@ -118,6 +139,12 @@ export function DocumentsNav() {
 			onEditCopy={() => editCopy(doc.filename)}
 			onRename={(to) => renameDoc(doc.filename, to)}
 			onDelete={() => deleteDoc(doc.filename)}
+			onExtract={() => extractText(doc.filename)}
+			extracting={
+				extracting?.file === doc.filename
+					? { done: extracting.done, total: extracting.total }
+					: null
+			}
 		/>
 	);
 
@@ -185,6 +212,8 @@ function DocumentRow({
 	onEditCopy,
 	onRename,
 	onDelete,
+	onExtract,
+	extracting,
 }: {
 	doc: Document;
 	state: RowState;
@@ -193,6 +222,8 @@ function DocumentRow({
 	onEditCopy: () => void;
 	onRename: (to: string) => void;
 	onDelete: () => void;
+	onExtract: () => void;
+	extracting: { done: number; total: number } | null;
 }) {
 	const kind: DocKind = docKind(doc.filename);
 	const [renaming, setRenaming] = useState(false);
@@ -245,6 +276,11 @@ function DocumentRow({
 				</div>
 				{/* shrink-0 — the title truncates, these stay pinned right. */}
 				<div className="flex shrink-0 items-center gap-0.5">
+					{doc.contextMode === "text" && (
+						<span title="Sent to Patrick as extracted text, not the PDF image">
+							<Type className="size-3.5 text-emerald-600/80" />
+						</span>
+					)}
 					{doc.starred && (
 						<Star className="size-3.5 fill-current text-primary" />
 					)}
@@ -258,6 +294,8 @@ function DocumentRow({
 						onEditCopy={onEditCopy}
 						onStartRename={() => setRenaming(true)}
 						onAskDelete={() => setConfirmDelete(true)}
+						onExtract={onExtract}
+						extracting={extracting}
 					/>
 				</div>
 			</div>
@@ -325,6 +363,8 @@ function DocumentMenu({
 	onEditCopy,
 	onStartRename,
 	onAskDelete,
+	onExtract,
+	extracting,
 }: {
 	doc: Document;
 	kind: DocKind;
@@ -332,11 +372,14 @@ function DocumentMenu({
 	onEditCopy: () => void;
 	onStartRename: () => void;
 	onAskDelete: () => void;
+	onExtract: () => void;
+	extracting: { done: number; total: number } | null;
 }) {
 	// Originals are the attorney's files — Patrick never renames/deletes them;
 	// instead it offers an editable working copy.
 	const isPatrick = !!doc.createdInPatrick;
 	const canEditCopy = kind === "docx" && !isPatrick;
+	const mode = doc.contextMode ?? "image";
 
 	return (
 		<Popover>
@@ -351,6 +394,37 @@ function DocumentMenu({
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-52 gap-0.5 p-1">
 				{canEditCopy && <MenuItem onClick={onEditCopy}>Edit a copy</MenuItem>}
+				{kind === "pdf" && (
+					<>
+						<MenuItem
+							onClick={onExtract}
+							disabled={!!extracting}
+							title="Pull selectable text out of this PDF (OCR for scans)"
+						>
+							{extracting
+								? `Extracting… ${extracting.done}/${extracting.total || "…"}`
+								: doc.extracted
+									? "Re-extract text"
+									: "Extract text"}
+						</MenuItem>
+						{doc.extracted && (
+							<>
+								<MenuItem
+									onClick={() => onUpdate({ contextMode: "image" })}
+									title="Send Patrick the original PDF (figures + layout, pricier)"
+								>
+									{mode === "image" ? "✓ " : ""}Context: original PDF
+								</MenuItem>
+								<MenuItem
+									onClick={() => onUpdate({ contextMode: "text" })}
+									title="Send Patrick the extracted text (cheaper, may have OCR errors)"
+								>
+									{mode === "text" ? "✓ " : ""}Context: extracted text
+								</MenuItem>
+							</>
+						)}
+					</>
+				)}
 				<MenuItem onClick={() => onUpdate({ starred: !doc.starred })}>
 					{doc.starred ? "Unstar" : "Star"}
 				</MenuItem>

@@ -43,6 +43,12 @@ export type Document = {
 	retrieved?: boolean;
 	/** Where a retrieved publication came from (e.g. "EPO OPS", "Google Patents"). */
 	source?: string;
+	/** True if text has been extracted from this PDF (text layer or OCR). Derived
+	 *  from the extracted-text sidecar's existence, not stored in meta. */
+	extracted?: boolean;
+	/** How a PDF enters Patrick's context: the original image, or the extracted
+	 *  text (cheaper). Absent ⇒ image (the default). */
+	contextMode?: "image" | "text";
 };
 
 /** Per-folder document awareness keyed by filename. Stored with the folder. */
@@ -55,8 +61,25 @@ export type DocumentMeta = Record<
 		createdInPatrick?: boolean;
 		retrieved?: boolean;
 		source?: string;
+		contextMode?: "image" | "text";
 	}
 >;
+
+/** A word with its box, normalized to page fraction (0–1) so it scales to any
+ *  zoom; from OCR (positions the selectable overlay over a scan). */
+export type ExtractedWord = {
+	t: string;
+	x0: number;
+	y0: number;
+	x1: number;
+	y1: number;
+};
+export type ExtractedPage = { text: string; words?: ExtractedWord[] };
+/** The extracted-text sidecar for a PDF (stored under .patrick/extracted/). */
+export type ExtractedDoc = {
+	source: "pdf" | "ocr";
+	pages: ExtractedPage[];
+};
 
 export function taskSummary(t: Task): TaskSummary {
 	return { id: t.id, name: t.name, folder: t.folder };
@@ -79,6 +102,7 @@ export function toDocumentMeta(documents: Document[]): DocumentMeta {
 		if (d.createdInPatrick) entry.createdInPatrick = true;
 		if (d.retrieved) entry.retrieved = true;
 		if (d.source) entry.source = d.source;
+		if (d.contextMode) entry.contextMode = d.contextMode;
 		if (Object.keys(entry).length > 0) meta[d.filename] = entry;
 	}
 	return meta;

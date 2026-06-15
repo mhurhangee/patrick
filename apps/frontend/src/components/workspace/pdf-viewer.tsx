@@ -1,4 +1,4 @@
-import { estimatePdfTokens } from "@patrick/shared";
+import { type ExtractedWord, estimatePdfTokens } from "@patrick/shared";
 import { Minus, Plus } from "lucide-react";
 import {
 	GlobalWorkerOptions,
@@ -18,6 +18,7 @@ import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profiles";
+import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { formatTokens } from "@/lib/format";
@@ -75,6 +76,31 @@ export function PdfViewer({ filename }: { filename: string }) {
 		};
 	}, [activeTaskId, filename]);
 
+	// For scanned PDFs that have been OCR'd, load the per-page word boxes that
+	// drive the selectable overlay. Native text PDFs use pdfjs's live text layer.
+	const { data: documents } = useTaskDocuments(activeTaskId);
+	const isExtracted =
+		documents?.find((d) => d.filename === filename)?.extracted ?? false;
+	const [ocrPages, setOcrPages] = useState<(ExtractedWord[] | undefined)[]>([]);
+	useEffect(() => {
+		if (!isExtracted) {
+			setOcrPages([]);
+			return;
+		}
+		let cancelled = false;
+		(async () => {
+			try {
+				const ext = await tasksApi.extractedText(activeTaskId ?? "", filename);
+				if (!cancelled) setOcrPages(ext.pages.map((p) => p.words));
+			} catch {
+				if (!cancelled) setOcrPages([]);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [activeTaskId, filename, isExtracted]);
+
 	const tokens =
 		pages.length && profile
 			? estimatePdfTokens(pages.length, profile.ai.detailedModel)
@@ -121,6 +147,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 							scale={scale}
 							pageNumber={i + 1}
 							active={Math.abs(i + 1 - current) <= OVERSCAN}
+							ocrWords={ocrPages[i]}
 						/>
 					))}
 				</div>
@@ -177,11 +204,13 @@ function PdfPage({
 	scale,
 	pageNumber,
 	active,
+	ocrWords,
 }: {
 	page: PDFPageProxy;
 	scale: number;
 	pageNumber: number;
 	active: boolean;
+	ocrWords?: ExtractedWord[];
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const textRef = useRef<HTMLDivElement>(null);
@@ -206,15 +235,39 @@ function PdfPage({
 		return () => task.cancel();
 	}, [page, scale, active]);
 
-	// Selectable text overlay, built from the PDF's own text content and aligned
-	// over the canvas. Empty for scanned pages (no text layer) — OCR fills that
-	// gap later. Only while active, to match the canvas's lifecycle.
+	// Selectable text overlay aligned over the canvas. Native text PDFs use
+	// pdfjs's live text layer; OCR'd scans get a hand-built overlay positioned
+	// from the stored word boxes. Only while active, matching the canvas.
 	useEffect(() => {
 		const container = textRef.current;
 		if (!container) return;
 		if (!active) {
 			container.replaceChildren();
 			return;
+		}
+		if (ocrWords) {
+			// Place each word's transparent span at its box (page fraction → px),
+			// then scaleX to the box width so the selection tracks the scan glyphs.
+			const frag = document.createDocumentFragment();
+			const fit: { el: HTMLSpanElement; w: number }[] = [];
+			for (const word of ocrWords) {
+				const el = document.createElement("span");
+				el.textContent = word.t;
+				el.style.left = `${word.x0 * viewport.width}px`;
+				el.style.top = `${word.y0 * viewport.height}px`;
+				el.style.fontSize = `${Math.max(1, (word.y1 - word.y0) * viewport.height)}px`;
+				frag.appendChild(el);
+				fit.push({ el, w: (word.x1 - word.x0) * viewport.width });
+			}
+			container.replaceChildren(frag);
+			for (const { el, w } of fit) {
+				const natural = el.offsetWidth;
+				if (natural > 0) el.style.transform = `scaleX(${w / natural})`;
+				// Trailing space so copying across words yields spaces (appended after
+				// measuring, so the width-fit tracks the word, not the space).
+				el.append(" ");
+			}
+			return () => container.replaceChildren();
 		}
 		const layer = new TextLayer({
 			textContentSource: page.streamTextContent(),
@@ -226,7 +279,7 @@ function PdfPage({
 			layer.cancel();
 			container.replaceChildren();
 		};
-	}, [page, active, viewport]);
+	}, [page, active, viewport, ocrWords]);
 
 	return (
 		<div
@@ -239,10 +292,10 @@ function PdfPage({
 				className="block"
 				style={{ width: viewport.width, height: viewport.height }}
 			/>
-			{/* Selectable text overlay (pdfjs positions spans off the scale factor). */}
+			{/* Selectable text overlay — pdfjs text layer, or an OCR-box overlay. */}
 			<div
 				ref={textRef}
-				className="textLayer"
+				className={ocrWords ? "ocrLayer" : "textLayer"}
 				style={
 					{
 						"--scale-factor": scale,

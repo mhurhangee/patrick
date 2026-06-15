@@ -3,6 +3,7 @@ import {
 	type Chat,
 	createTask,
 	type DocumentMeta,
+	type ExtractedDoc,
 	type Task,
 } from "@patrick/shared";
 import { Hono } from "hono";
@@ -14,8 +15,10 @@ import {
 	deleteDocument,
 	folderExists,
 	listDocuments,
+	readExtractedText,
 	renameDocument,
 	saveDocumentBytes,
+	saveExtractedText,
 	saveRetrievedDocument,
 	unlockDocumentCopy,
 	writeDocumentMeta,
@@ -236,4 +239,25 @@ tasks.get("/:id/documents/:filename", async (c) => {
 				MIME[extname(name).toLowerCase()] ?? "application/octet-stream",
 		},
 	});
+});
+
+// Store the extracted text (text layer or OCR) for a PDF — the frontend does the
+// extraction (it has pdfjs + tesseract), the server just persists it + marks the
+// doc. Drives the selectable overlay and the agent's text context mode.
+tasks.put("/:id/documents/:filename/text", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const doc = await c.req.json<ExtractedDoc>();
+	await saveExtractedText(task.folder, basename(c.req.param("filename")), doc);
+	return c.json({ ok: true });
+});
+
+tasks.get("/:id/documents/:filename/text", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const doc = await readExtractedText(
+		task.folder,
+		basename(c.req.param("filename")),
+	);
+	return doc ? c.json(doc) : c.json({ error: "not found" }, 404);
 });

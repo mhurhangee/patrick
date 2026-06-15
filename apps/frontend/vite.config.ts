@@ -44,6 +44,24 @@ export default defineConfig({
 					dest: "pdfjs/standard_fonts",
 					rename: { stripBase: true },
 				},
+				// tesseract.js runtime assets self-hosted at /tesseract/* so OCR works
+				// fully offline (no CDN): the worker, the wasm core variants (runtime
+				// picks one by SIMD support), and the English model (best, quantized).
+				{
+					src: "node_modules/tesseract.js/dist/worker.min.js",
+					dest: "tesseract",
+					rename: { stripBase: true },
+				},
+				{
+					src: "node_modules/tesseract.js-core/*",
+					dest: "tesseract",
+					rename: { stripBase: true },
+				},
+				{
+					src: "node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
+					dest: "tesseract",
+					rename: { stripBase: true },
+				},
 			],
 		}),
 	],
