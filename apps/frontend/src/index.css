@@ -377,3 +377,43 @@
 	content: attr(data-placeholder);
 	@apply pointer-events-none float-left h-0 text-muted-foreground;
 }
+
+/* pdfjs text layer — transparent, selectable text positioned over the page
+   canvas (native text PDFs; scanned pages stay empty until OCR). Faithful to
+   pdfjs v6's span positioning; selection is made visible (the bundled viewer
+   hides it for its own find-highlighting, which we don't use). */
+.textLayer {
+	position: absolute;
+	inset: 0;
+	text-align: initial;
+	overflow: clip;
+	line-height: 1;
+	forced-color-adjust: none;
+	transform-origin: 0 0;
+	z-index: 1;
+	--min-font-size: 1;
+	--text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+	--min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.textLayer :is(span, br) {
+	position: absolute;
+	color: transparent;
+	white-space: pre;
+	cursor: text;
+	transform-origin: 0% 0%;
+	user-select: text;
+}
+.textLayer > :not(.markedContent) {
+	--font-height: 0;
+	--scale-x: 1;
+	--rotate: 0deg;
+	font-size: calc(var(--text-scale-factor) * var(--font-height));
+	transform: rotate(var(--rotate)) scaleX(var(--scale-x))
+		scale(var(--min-font-size-inv));
+}
+.textLayer .markedContent {
+	display: contents;
+}
+.textLayer ::selection {
+	background: color-mix(in srgb, var(--primary) 30%, transparent);
+}
