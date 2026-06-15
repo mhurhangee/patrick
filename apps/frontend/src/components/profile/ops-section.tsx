@@ -26,8 +26,10 @@ export function OpsSection({
 	return (
 		<FieldGroup>
 			<p className="text-sm text-muted-foreground">
-				EPO Open Patent Services lets Patrick fetch the full text of published
-				EP and WO patents. Register a free OPS app at{" "}
+				<span className="font-medium text-foreground">Optional.</span> Patrick
+				fetches published patents (EP, WO, US) without any key, from Google
+				Patents. Adding an EPO Open Patent Services key makes EP and WO come
+				from the official EPO source instead. Register a free OPS app at{" "}
 				<a
 					href="https://developers.epo.org/"
 					target="_blank"

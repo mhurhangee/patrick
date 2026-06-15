@@ -142,7 +142,7 @@ const suggestBrief = tool({
 
 const fetchPublication = tool({
 	description:
-		"Propose fetching the full text (claims + description) of a published EP or WO patent from EPO Open Patent Services, by publication number. The attorney confirms; it's saved into the matter folder as a document you can then offer to pin and read. Useful for any published document — a cited reference or X/Y document in a search report, or a clean text version of a publication the attorney is prosecuting (e.g. when they only have the PDF). Only EP and WO are supported — for US or other numbers, say it's not available yet (planned via the USPTO).",
+		"Propose fetching the full text (claims + description) of a published patent by publication number — EP, WO, US, and other English-language offices (GB, AU, CA…). The attorney confirms; it's saved into the matter folder and pinned, ready to read. EP/WO come from EPO Open Patent Services when the attorney has a key, otherwise (and for everything else) from Google Patents. Non-English publications (JP, KR, CN, DE…) aren't supported yet. Useful for any published document — a cited reference or X/Y document in a search report, or a clean text version of a publication the attorney is prosecuting. A country prefix is required (EP…, US…).",
 	inputSchema: z.object({
 		number: z
 			.string()

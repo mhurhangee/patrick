@@ -113,17 +113,19 @@ export async function createBlankDocument(
 }
 
 /**
- * Save a Patrick-retrieved reference (e.g. prior art fetched from EPO OPS) as a
- * plain-text file in the folder, tagged `retrieved` so the UI can group it. It's
- * Patrick-owned (so it's deletable) but not editable (not a .docx). Refreshes in
- * place if we already own that name; otherwise picks a non-colliding one so an
- * attorney's own file is never overwritten.
+ * Save a Patrick-retrieved publication (full text fetched from EPO OPS or Google
+ * Patents) as a plain-text file in the folder, tagged `retrieved` + its `source`
+ * so the UI can group and attribute it. It's Patrick-owned (so it's deletable)
+ * but not editable (not a .docx). Refreshes in place if we already own that name;
+ * otherwise picks a non-colliding one so an attorney's own file is never
+ * overwritten.
  */
 export async function saveRetrievedDocument(
 	folder: string,
 	filename: string,
 	content: string,
 	label?: string,
+	source?: string,
 ): Promise<string> {
 	const meta = await readDocumentMeta(folder);
 	const exists = await fileExists(folder, filename);
@@ -136,6 +138,7 @@ export async function saveRetrievedDocument(
 		createdInPatrick: true,
 		retrieved: true,
 		...(label ? { label } : {}),
+		...(source ? { source } : {}),
 	});
 	return name;
 }
@@ -242,6 +245,7 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 			starred: m.starred,
 			createdInPatrick: m.createdInPatrick,
 			retrieved: m.retrieved,
+			source: m.source,
 		});
 	}
 	return docs.sort((a, b) => a.filename.localeCompare(b.filename));

@@ -1,6 +1,8 @@
+import { Info } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
+import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
 
 // Read-only viewer for the plain-text/markdown documents Patrick saves (retrieved
@@ -8,9 +10,9 @@ import { useActiveTask } from "@/lib/active-task";
 // claims, and paragraphs — so we parse it ourselves rather than pull in a
 // markdown engine: a streaming renderer froze the tab on long specifications.
 //
-// Conventions written by apps/api/src/lib/ops/markdown.ts: `# ` / `## ` headings,
-// `**N.**` claim openers with tab-indented sub-paragraph lines, blank lines
-// between sub-paragraphs, and `**bold**` / `*italic*` inline.
+// Conventions written by apps/api/src/lib/patents/markdown.ts: `# ` / `## `
+// headings, `**N.**` claim openers with tab-indented sub-paragraph lines, blank
+// lines between sub-paragraphs, and `**bold**` / `*italic*` inline.
 
 type Block =
 	| { kind: "h1"; text: string }
@@ -182,6 +184,10 @@ export function TextViewer({ filename }: { filename: string }) {
 	}, [activeTaskId, filename]);
 
 	const blocks = useMemo(() => (text ? parseDoc(text) : []), [text]);
+	// Provenance: read the retrieved doc's persisted source (set when fetched),
+	// rather than re-parsing it out of the rendered markdown.
+	const { data: documents } = useTaskDocuments(activeTaskId);
+	const source = documents?.find((d) => d.filename === filename)?.source;
 
 	if (error) {
 		return (
@@ -204,6 +210,16 @@ export function TextViewer({ filename }: { filename: string }) {
 	return (
 		<div className="h-full overflow-auto bg-background px-6 py-8 text-foreground">
 			<div className="mx-auto max-w-3xl text-sm">
+				{source && (
+					<div className="mb-4 flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
+						<Info className="mt-0.5 size-3.5 shrink-0" />
+						<span>
+							Retrieved from{" "}
+							<span className="font-medium text-foreground">{source}</span> —
+							verify against the original publication.
+						</span>
+					</div>
+				)}
 				{blocks.map((block, i) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: stable parsed order
 					<DocBlock key={i} block={block} k={`b${i}`} />

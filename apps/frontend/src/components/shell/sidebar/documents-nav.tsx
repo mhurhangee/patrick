@@ -1,4 +1,4 @@
-import { type Document, docKind, hasOpsCreds } from "@patrick/shared";
+import { type Document, docKind } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { EyeOff, MoreHorizontal, Plus, Star } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -20,7 +20,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/hooks/use-profiles";
 import {
 	useCreateDocument,
 	useDeleteDocument,
@@ -30,7 +29,6 @@ import {
 	useTaskDocuments,
 	useUnlockDocument,
 } from "@/hooks/use-tasks";
-import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
 import { type DocKind, useWorkspace } from "@/lib/workspace";
@@ -46,9 +44,6 @@ export function DocumentsNav() {
 	const navigate = useNavigate();
 	const { activeTaskId } = useActiveTask();
 	const taskId = activeTaskId ?? "";
-	const { activeProfileId } = useActiveProfile();
-	const { data: profile } = useProfile(activeProfileId);
-	const hasOpsKey = hasOpsCreds(profile);
 	const { data: documents } = useTaskDocuments(activeTaskId);
 	const save = useSaveDocuments(taskId);
 	const create = useCreateDocument(taskId);
@@ -146,9 +141,7 @@ export function DocumentsNav() {
 			>
 				{retrieved.length === 0 ? (
 					<p className="px-2 py-1 text-xs text-muted-foreground">
-						{hasOpsKey
-							? "Pull a published EP or WO patent by number."
-							: "Add an EPO OPS key in your profile to retrieve publications."}
+						Pull a published patent (EP, WO, or US) by number.
 					</p>
 				) : (
 					retrieved.map(row)

@@ -1,4 +1,3 @@
-import { hasOpsCreds } from "@patrick/shared";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Patrick } from "@/components/patrick";
@@ -9,13 +8,13 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { useProfile } from "@/hooks/use-profiles";
 import { useFetchPublication } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 
 // Deterministic publication fetch straight from the sidebar — no chat, no model
-// tokens. The number's country picks the provider server-side (EP/WO via OPS);
-// the result is saved as a retrieved document and opened. Lives next to the
+// tokens. The number's country picks the provider server-side (EP/WO via OPS if
+// a key is set, else Google Patents; US via Google). Keyless, so no gating. The
+// result is saved as a retrieved document and opened. Lives next to the
 // "Retrieved documents" section it heads (DocumentsNav).
 export function RetrievePublication({
 	taskId,
@@ -25,8 +24,6 @@ export function RetrievePublication({
 	onRetrieved: (filename: string) => void;
 }) {
 	const { activeProfileId } = useActiveProfile();
-	const { data: profile } = useProfile(activeProfileId);
-	const hasKey = hasOpsCreds(profile);
 	const fetchPub = useFetchPublication(taskId);
 	const [open, setOpen] = useState(false);
 	const [number, setNumber] = useState("");
@@ -61,12 +58,8 @@ export function RetrievePublication({
 			<PopoverTrigger asChild>
 				<button
 					type="button"
-					title={
-						hasKey
-							? "Retrieve a publication by number"
-							: "Add an EPO OPS key in your profile to retrieve publications"
-					}
-					disabled={!taskId || !hasKey}
+					title="Retrieve a publication by number"
+					disabled={!taskId}
 					className="rounded p-0.5 text-muted-foreground/70 hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40 data-[state=open]:bg-accent data-[state=open]:text-foreground"
 				>
 					<Plus className="size-4" />
@@ -74,14 +67,13 @@ export function RetrievePublication({
 			</PopoverTrigger>
 			<PopoverContent align="end" className="w-72 space-y-2 p-2.5">
 				<p className="text-muted-foreground text-xs">
-					Fetch a published patent's full text from EPO OPS. EP and WO
-					supported.
+					Fetch a published patent's full text by number — EP, WO, or US.
 				</p>
 				<div className="flex gap-1.5">
 					<Input
 						autoFocus
 						value={number}
-						placeholder="e.g. EP3707572"
+						placeholder="e.g. EP3707572 or US11644834"
 						disabled={fetchPub.isPending}
 						onChange={(e) => setNumber(e.target.value)}
 						onKeyDown={(e) => {
