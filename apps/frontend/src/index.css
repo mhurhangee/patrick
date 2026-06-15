@@ -417,3 +417,25 @@
 .textLayer ::selection {
 	background: color-mix(in srgb, var(--primary) 30%, transparent);
 }
+
+/* OCR overlay — selectable transparent words positioned over a scanned page from
+   their stored boxes (page fraction → px), width-fitted with scaleX. Distinct
+   from .textLayer (whose pdfjs font-size machinery would zero these spans). */
+.ocrLayer {
+	position: absolute;
+	inset: 0;
+	overflow: clip;
+	line-height: 1;
+	z-index: 1;
+}
+.ocrLayer span {
+	position: absolute;
+	color: transparent;
+	white-space: pre;
+	cursor: text;
+	transform-origin: 0 0;
+	user-select: text;
+}
+.ocrLayer ::selection {
+	background: color-mix(in srgb, var(--primary) 30%, transparent);
+}

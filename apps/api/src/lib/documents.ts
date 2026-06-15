@@ -8,7 +8,7 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
-import type { Document, DocumentMeta } from "@patrick/shared";
+import type { Document, DocumentMeta, ExtractedDoc } from "@patrick/shared";
 import { parse, stringify } from "yaml";
 import { ensureParaIds } from "./docx";
 
@@ -33,7 +33,7 @@ export async function folderExists(folder: string): Promise<boolean> {
 	}
 }
 
-async function readDocumentMeta(folder: string): Promise<DocumentMeta> {
+export async function readDocumentMeta(folder: string): Promise<DocumentMeta> {
 	try {
 		return (
 			(parse(await readFile(metaPath(folder), "utf8")) as DocumentMeta) ?? {}
@@ -232,6 +232,7 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 		return [];
 	}
 	const meta = await readDocumentMeta(folder);
+	const extracted = await extractedSet(folder);
 	const docs: Document[] = [];
 	for (const name of names) {
 		if (name.startsWith(".")) continue;
@@ -246,7 +247,59 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 			createdInPatrick: m.createdInPatrick,
 			retrieved: m.retrieved,
 			source: m.source,
+			// Derived from the sidecar's existence, not stored in the writable meta.
+			extracted: extracted.has(name) || undefined,
+			contextMode: m.contextMode,
 		});
 	}
 	return docs.sort((a, b) => a.filename.localeCompare(b.filename));
+}
+
+// Extracted text (text layer or OCR) for a PDF lives hidden under
+// .patrick/extracted/, keyed by the PDF's filename — not a visible document. The
+// sidecar's existence IS the `extracted` flag (derived in listDocuments), so a
+// full-overwrite meta save from the client can't clobber it. Drives the
+// selectable overlay and the agent's text context mode.
+function extractedDir(folder: string): string {
+	return join(folder, ".patrick", "extracted");
+}
+function extractedPath(folder: string, filename: string): string {
+	return join(extractedDir(folder), `${filename}.json`);
+}
+
+export async function saveExtractedText(
+	folder: string,
+	filename: string,
+	doc: ExtractedDoc,
+): Promise<void> {
+	if (!filename.toLowerCase().endsWith(".pdf")) return;
+	if (!(await fileExists(folder, filename))) return;
+	const path = extractedPath(folder, filename);
+	await mkdir(dirname(path), { recursive: true });
+	await writeFile(path, JSON.stringify(doc), "utf8");
+}
+
+/** Filenames that have an extracted-text sidecar (the source of truth for `extracted`). */
+async function extractedSet(folder: string): Promise<Set<string>> {
+	try {
+		const files = await readdir(extractedDir(folder));
+		return new Set(
+			files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5)),
+		);
+	} catch {
+		return new Set();
+	}
+}
+
+export async function readExtractedText(
+	folder: string,
+	filename: string,
+): Promise<ExtractedDoc | null> {
+	try {
+		return JSON.parse(
+			await readFile(extractedPath(folder, filename), "utf8"),
+		) as ExtractedDoc;
+	} catch {
+		return null;
+	}
 }

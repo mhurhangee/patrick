@@ -6,6 +6,7 @@ import {
 } from "@patrick/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tasksApi } from "@/api/tasks";
+import { extractText } from "@/lib/extract-text";
 
 const keys = {
 	list: ["tasks"] as const,
@@ -106,6 +107,26 @@ export function useFetchPublication(id: string) {
 			number: string;
 			profileId: string;
 		}) => tasksApi.fetchPublication(id, number, profileId),
+		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
+// Extract a PDF's text (text layer or OCR) in the browser, then persist it.
+// Progress (page x/n) is reported via the caller's onProgress.
+export function useExtractText(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: async ({
+			filename,
+			onProgress,
+		}: {
+			filename: string;
+			onProgress?: (done: number, total: number) => void;
+		}) => {
+			const doc = await extractText(id, filename, onProgress);
+			await tasksApi.saveExtractedText(id, filename, doc);
+			return doc;
+		},
 		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
 	});
 }

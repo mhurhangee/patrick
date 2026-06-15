@@ -19,7 +19,11 @@ import {
 import type { Context } from "hono";
 import { z } from "zod";
 import { saveChat } from "../chats";
-import { listDocuments } from "../documents";
+import {
+	listDocuments,
+	readDocumentMeta,
+	readExtractedText,
+} from "../documents";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
 import { createModel, reasoningOptions } from "./model";
@@ -228,12 +232,41 @@ async function pinnedSourcesMessage(
 	pinned: PinnedSource[],
 ): Promise<ModelMessage | null> {
 	if (pinned.length === 0) return null;
+	const meta = await readDocumentMeta(folder);
 	// Read every source in parallel (each yields its content parts in order).
 	const perSource = await Promise.all(
 		pinned.map(async (src): Promise<Part[]> => {
 			if (src.kind === "pdf") {
+				// Context mode: send the extracted text (cheap) instead of the image
+				// when the attorney chose it and text exists; otherwise the PDF itself.
+				if (meta[src.filename]?.contextMode === "text") {
+					const ext = await readExtractedText(folder, src.filename);
+					const body = ext
+						? ext.pages
+								.map((p) => p.text.trim())
+								.filter(Boolean)
+								.join("\n\n")
+						: "";
+					// Only use text mode when there's actual text; otherwise fall
+					// through to the PDF image (don't pin an empty source).
+					if (ext && body) {
+						const note =
+							ext.source === "ocr"
+								? " (extracted text — OCR, verify against the original)"
+								: " (extracted text)";
+						console.log(
+							`[context] ${src.filename} → extracted text (${ext.source}), ${body.length} chars`,
+						);
+						return [
+							{ type: "text", text: `\n# ${src.filename}${note}\n${body}` },
+						];
+					}
+				}
 				try {
 					const data = await readFile(join(folder, src.filename));
+					console.log(
+						`[context] ${src.filename} → PDF image, ${data.length} bytes`,
+					);
 					return [
 						{ type: "text", text: `\n# ${src.filename}` },
 						{
@@ -253,6 +286,9 @@ async function pinnedSourcesMessage(
 					const raw = (
 						await readFile(join(folder, src.filename), "utf8")
 					).trim();
+					console.log(
+						`[context] ${src.filename} → text source, ${raw.length} chars`,
+					);
 					return [
 						{
 							type: "text",
@@ -264,6 +300,9 @@ async function pinnedSourcesMessage(
 				}
 			}
 			const text = await docxText(folder, src.filename);
+			console.log(
+				`[context] ${src.filename} → docx text, ${text.length} chars`,
+			);
 			return [
 				{ type: "text", text: `\n# ${src.filename}\n${text || "(empty)"}` },
 			];

@@ -3,6 +3,7 @@ import type {
 	ChatSummary,
 	Document,
 	DocumentMeta,
+	ExtractedDoc,
 	PinnedSource,
 	Task,
 	TaskSummary,
@@ -47,6 +48,17 @@ export const tasksApi = {
 	/** Create a new blank Patrick-owned .docx; returns its filename. */
 	createDocument: (id: string, filename?: string) =>
 		api.post<{ filename: string }>(`/tasks/${id}/documents`, { filename }),
+	/** The extracted text (text layer / OCR) for a PDF, for the selectable overlay. */
+	extractedText: (id: string, filename: string) =>
+		api.get<ExtractedDoc>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/text`,
+		),
+	/** Persist a PDF's extracted text (the frontend does the extraction). */
+	saveExtractedText: (id: string, filename: string, doc: ExtractedDoc) =>
+		api.put<{ ok: boolean }>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/text`,
+			doc,
+		),
 	/** Fetch an EP/WO publication's full text from EPO OPS → saved document.
 	 *  Surfaces the server's error message (bad number, US unsupported, missing
 	 *  key) so Patrick can relay it. */

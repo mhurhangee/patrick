@@ -23,6 +23,10 @@ const config: KnipConfig = {
 				"tw-animate-css",
 				"@fontsource-variable/hanken-grotesk",
 				"@fontsource-variable/lora",
+				// Self-hosted OCR assets — copied into the build by vite.config's
+				// viteStaticCopy (referenced by path, not imported).
+				"tesseract.js-core",
+				"@tesseract.js-data/eng",
 			],
 		},
 		"apps/site": {
