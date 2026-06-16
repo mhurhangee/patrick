@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"build:map": "bun scripts/build-epc-map.ts",
+		"try:lookup": "bun scripts/try-lookup.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
