@@ -1,7 +1,7 @@
+import type { LookupResult } from "@patrick/shared";
 import { extractProvision } from "./extract";
 import type { PageFetcher } from "./fetch-page";
 import { resolveCitation } from "./resolve";
-import type { LookupResult } from "./types";
 
 /**
  * Resolve a batch of citation keys / concept keywords to verbatim provisions.

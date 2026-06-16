@@ -1,5 +1,6 @@
 export * from "./ai-models";
 export * from "./chat";
+export * from "./law";
 export * from "./patrick-docs.generated";
 export * from "./profile";
 export * from "./profile-templates";

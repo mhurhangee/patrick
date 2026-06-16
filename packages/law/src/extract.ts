@@ -1,5 +1,6 @@
+import type { Provision, ProvisionBlock } from "@patrick/shared";
 import { type HTMLElement, parse } from "node-html-parser";
-import type { EpcMapEntry, Provision, ProvisionBlock } from "./types";
+import type { EpcMapEntry } from "./types";
 
 // EPO consolidates amendments inline: superseded text in `.Del`, current text in
 // `.New`. We drop `.Del` and keep `.New` so only the in-force text survives —

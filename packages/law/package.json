@@ -12,6 +12,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@patrick/shared": "workspace:*",
 		"node-html-parser": "^7.1.0"
 	},
 	"devDependencies": {

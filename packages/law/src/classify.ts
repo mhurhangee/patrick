@@ -1,4 +1,4 @@
-import type { EpcKind } from "./types";
+import type { EpcKind } from "@patrick/shared";
 
 export interface SlugClassification {
 	kind: EpcKind;

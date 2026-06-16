@@ -1,5 +1,6 @@
+import type { ProvisionRef } from "@patrick/shared";
 import mapData from "../data/epc-map.json" with { type: "json" };
-import type { EpcMap, EpcMapEntry, ProvisionRef } from "./types";
+import type { EpcMap, EpcMapEntry } from "./types";
 
 const MAP = mapData as EpcMap;
 
@@ -92,18 +93,22 @@ export interface Resolution {
 export function resolveCitation(input: string): Resolution | null {
 	const raw = input.trim();
 
-	// Keyword/concept match (e.g. "inventive step") — may itself carry a focus.
-	const aliasKey = raw.toLowerCase().replace(/\s+/g, " ");
-	const alias = ALIASES[aliasKey];
+	// Pull paragraph references out wherever they sit, not just at the end — so a
+	// trailing instrument suffix doesn't hide them: "Article 123(2) EPC" → focus
+	// "(2)", key "Article 123 EPC"; "A54(2)" → focus "(2)", key "A54".
+	const focusParts = raw.match(/\([^()]+\)/g);
+	const focus = focusParts ? focusParts.join("") : null;
+	const keyPart = (focusParts ? raw.replace(/\([^()]+\)/g, " ") : raw).trim();
+
+	// Concept/keyword match on the paragraph-stripped phrase (e.g. "inventive step",
+	// "added matter (3)"). An explicit focus on the input wins over the alias's own.
+	const alias = ALIASES[keyPart.toLowerCase().replace(/\s+/g, " ")];
 	if (alias) {
 		const hit = resolveCitation(alias);
-		return hit ? { ...hit, resolvedFrom: raw } : null;
+		return hit
+			? { entry: hit.entry, focus: focus ?? hit.focus, resolvedFrom: raw }
+			: null;
 	}
-
-	// Pull a trailing paragraph reference off the key: "A54(2)" → focus "(2)".
-	const focusMatch = raw.match(/(\([^()]+\)(?:\([^()]+\))*)\s*$/);
-	const focus = focusMatch?.[1] ?? null;
-	const keyPart = focus ? raw.slice(0, raw.length - focus.length) : raw;
 
 	const entry = INDEX.get(canonical(keyPart));
 	return entry ? { entry, focus } : null;

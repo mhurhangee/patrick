@@ -278,6 +278,9 @@ importers:
 
   packages/law:
     dependencies:
+      '@patrick/shared':
+        specifier: workspace:*
+        version: link:../shared
       node-html-parser:
         specifier: ^7.1.0
         version: 7.1.0

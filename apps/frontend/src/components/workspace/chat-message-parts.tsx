@@ -1,3 +1,4 @@
+import type { LookupResult } from "@patrick/shared";
 import {
 	type DynamicToolUIPart,
 	getToolName,
@@ -92,30 +93,9 @@ function JsonView({ value }: { value: unknown }) {
 	);
 }
 
-// The ep_law_lookup result shape (mirrors @patrick/law's LookupResult/Provision),
-// kept local so the frontend doesn't import the node-side package.
-type LawBlock = { kind: string; text: string; notes?: string[] };
-type LawProvision = {
-	citationKey: string | null;
-	title: string | null;
-	instrument: string | null;
-	chapter: string | null;
-	version: string;
-	titleNotes: string[];
-	blocks: LawBlock[];
-	notes: Record<string, string>;
-};
-type LawResult = {
-	ref: string;
-	status: "ok" | "not_found";
-	focus?: string | null;
-	resolvedFrom?: string;
-	provision?: LawProvision;
-};
-
 // A verbatim provision, displayed proudly: title + in-force stamp, the current
 // text (the focused paragraph accented), and its footnotes / decision pointers.
-function ProvisionCard({ result }: { result: LawResult }) {
+function ProvisionCard({ result }: { result: LookupResult }) {
 	if (result.status !== "ok" || !result.provision)
 		return (
 			<p className="text-xs text-muted-foreground">
@@ -129,6 +109,11 @@ function ProvisionCard({ result }: { result: LawResult }) {
 			<div className="flex items-baseline justify-between gap-3">
 				<h4 className="font-heading text-sm font-semibold text-foreground">
 					{p.title ?? p.citationKey}
+					{p.titleNotes.length > 0 && (
+						<sup className="ml-0.5 text-[9px] font-normal text-muted-foreground">
+							{p.titleNotes.join(",")}
+						</sup>
+					)}
 				</h4>
 				<span className="shrink-0 text-[10px] text-muted-foreground">
 					{p.version}
@@ -151,6 +136,11 @@ function ProvisionCard({ result }: { result: LawResult }) {
 							}
 						>
 							{b.text}
+							{b.notes && b.notes.length > 0 && (
+								<sup className="ml-0.5 text-[9px] text-muted-foreground">
+									{b.notes.join(",")}
+								</sup>
+							)}
 						</p>
 					);
 				})}
@@ -169,7 +159,7 @@ function ProvisionCard({ result }: { result: LawResult }) {
 }
 
 function LawResults({ output }: { output: unknown }) {
-	const results = (output as { results?: LawResult[] })?.results;
+	const results = (output as { results?: LookupResult[] })?.results;
 	if (!Array.isArray(results)) return <JsonView value={output} />;
 	return (
 		<div className="space-y-3">
