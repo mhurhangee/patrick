@@ -1,4 +1,5 @@
 import { Mention } from "@tiptap/extension-mention";
+import { PluginKey } from "@tiptap/pm/state";
 import { EditorContent, type JSONContent, useEditor } from "@tiptap/react";
 import {
 	forwardRef,
@@ -30,13 +31,28 @@ type SuggestionProps = {
 
 // A mention is an atom node (no text content), so @tiptap/markdown's default
 // (textContent) drops it on serialize. `renderMarkdown` is its per-node hook —
-// emit "@filename" so the mention survives into the sent message.
+// emit a token so the mention survives into the sent message.
+//
+// `@filename` pins a source (handled by onMention). `[A54]` tags an EPC provision
+// — a canonical citation the agent must retrieve via ep_law_lookup; no side-effect,
+// the tool fetches it. Two extensions ⇒ distinct node names + suggestion keys.
 const FileMention = Mention.extend({
 	renderMarkdown(node: JSONContent) {
 		const attrs = node.attrs ?? {};
 		return `@${attrs.label ?? attrs.id ?? ""}`;
 	},
 });
+
+const LawMention = Mention.extend({
+	name: "lawMention",
+	renderMarkdown(node: JSONContent) {
+		const attrs = node.attrs ?? {};
+		return `[${attrs.label ?? attrs.id ?? ""}]`;
+	},
+});
+
+const filePluginKey = new PluginKey("fileMention");
+const lawPluginKey = new PluginKey("lawMention");
 
 // A Tiptap composer for the chat input: live markdown (StarterKit input rules)
 // and @-mentions that pin a source. The message is serialized to markdown on
@@ -49,8 +65,10 @@ export const ChatComposer = forwardRef<
 		onSubmit: () => void;
 		/** Read-only sources matching the typed query, for the @ picker. */
 		mentionItems: (query: string) => MentionItem[];
-		/** Side-effect when a mention is chosen — pin/open the source. */
+		/** Side-effect when a source mention is chosen — pin/open the source. */
 		onMention?: (id: string) => void;
+		/** EPC provisions matching the typed query, for the / picker (no side-effect). */
+		lawItems?: (query: string) => MentionItem[];
 		/** Fires as content changes, so the parent can gate the send button. */
 		onEmptyChange?: (empty: boolean) => void;
 	}
@@ -61,6 +79,7 @@ export const ChatComposer = forwardRef<
 		onSubmit,
 		mentionItems,
 		onMention,
+		lawItems,
 		onEmptyChange,
 	},
 	ref,
@@ -72,20 +91,82 @@ export const ChatComposer = forwardRef<
 	mentionItemsRef.current = mentionItems;
 	const onMentionRef = useRef(onMention);
 	onMentionRef.current = onMention;
+	const lawItemsRef = useRef(lawItems);
+	lawItemsRef.current = lawItems;
 	const onEmptyChangeRef = useRef(onEmptyChange);
 	onEmptyChangeRef.current = onEmptyChange;
 
-	// Mention popup, driven by the suggestion plugin.
+	// Mention popup, driven by the suggestion plugin. `onSelect` is the active
+	// mention's side-effect (pin a source; laws have none).
 	const [popup, setPopup] = useState<{
 		items: MentionItem[];
 		command: (item: MentionItem) => void;
 		rect: DOMRect | null;
+		onSelect?: (id: string) => void;
 	} | null>(null);
 	const [selected, setSelected] = useState(0);
 	const selectedRef = useRef(0);
 	selectedRef.current = selected;
 	// True while the @ popup is open — Enter then selects instead of sending.
 	const popupOpenRef = useRef(false);
+
+	// One render factory for both pickers; `onSelect` is the per-mention side-effect
+	// (file → pin; law → none). onKeyDown only receives the event, so the latest
+	// items/command live in a closure for it to act on.
+	const makeRender = (onSelect?: (id: string) => void) => () => {
+		let active: {
+			items: MentionItem[];
+			command: (item: MentionItem) => void;
+		} = { items: [], command: () => {} };
+		// open/update share this: the popup counts as "open" (Enter selects) only
+		// when it has items, and the highlight resets to the top on each query
+		// change so it never points past a narrowed list.
+		const show = (props: SuggestionProps) => {
+			active = { items: props.items, command: props.command };
+			popupOpenRef.current = props.items.length > 0;
+			setSelected(0);
+			setPopup({
+				items: props.items,
+				command: props.command,
+				rect: props.clientRect?.() ?? null,
+				onSelect,
+			});
+		};
+		return {
+			onStart: show,
+			onUpdate: show,
+			onKeyDown: ({ event }: { event: KeyboardEvent }) => {
+				const items = active.items;
+				if (items.length === 0) return false;
+				if (event.key === "ArrowDown") {
+					setSelected((s) => (s + 1) % items.length);
+					return true;
+				}
+				if (event.key === "ArrowUp") {
+					setSelected((s) => (s - 1 + items.length) % items.length);
+					return true;
+				}
+				if (event.key === "Enter") {
+					const item = items[selectedRef.current];
+					if (item) {
+						active.command(item);
+						onSelect?.(item.id);
+					}
+					return true;
+				}
+				if (event.key === "Escape") {
+					popupOpenRef.current = false;
+					setPopup(null);
+					return true;
+				}
+				return false;
+			},
+			onExit: () => {
+				popupOpenRef.current = false;
+				setPopup(null);
+			},
+		};
+	};
 
 	const editor = useEditor({
 		extensions: [
@@ -95,62 +176,31 @@ export const ChatComposer = forwardRef<
 				renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id}`,
 				suggestion: {
 					char: "@",
+					pluginKey: filePluginKey,
 					items: ({ query }) => mentionItemsRef.current(query),
-					// onKeyDown only receives the event, so keep the latest items/command
-					// in a closure for it to act on.
-					render: () => {
-						let active: {
-							items: MentionItem[];
-							command: (item: MentionItem) => void;
-						} = { items: [], command: () => {} };
-						// open/update share this: the popup counts as "open" (Enter selects)
-						// only when it has items, and the highlight resets to the top on
-						// each query change so it never points past a narrowed list.
-						const show = (props: SuggestionProps) => {
-							active = { items: props.items, command: props.command };
-							popupOpenRef.current = props.items.length > 0;
-							setSelected(0);
-							setPopup({
-								items: props.items,
-								command: props.command,
-								rect: props.clientRect?.() ?? null,
-							});
-						};
-						return {
-							onStart: show,
-							onUpdate: show,
-							onKeyDown: ({ event }: { event: KeyboardEvent }) => {
-								const items = active.items;
-								if (items.length === 0) return false;
-								if (event.key === "ArrowDown") {
-									setSelected((s) => (s + 1) % items.length);
-									return true;
-								}
-								if (event.key === "ArrowUp") {
-									setSelected((s) => (s - 1 + items.length) % items.length);
-									return true;
-								}
-								if (event.key === "Enter") {
-									const item = items[selectedRef.current];
-									if (item) {
-										active.command(item);
-										onMentionRef.current?.(item.id);
-									}
-									return true;
-								}
-								if (event.key === "Escape") {
-									popupOpenRef.current = false;
-									setPopup(null);
-									return true;
-								}
-								return false;
-							},
-							onExit: () => {
-								popupOpenRef.current = false;
-								setPopup(null);
-							},
-						};
-					},
+					render: makeRender((id) => onMentionRef.current?.(id)),
+				},
+			}),
+			LawMention.configure({
+				HTMLAttributes: { class: "mention mention-law" },
+				// The chip drives off renderHTML (renderText is just for getText). Show
+				// `[Article 54 EPC]` in both — the same string the message serialises to,
+				// not the default trigger-prefixed `/Article 54 EPC`. options.HTMLAttributes
+				// is already merged (data-type + class) by the node's renderHTML.
+				renderHTML: ({ options, node }) => [
+					"span",
+					options.HTMLAttributes,
+					`[${node.attrs.label ?? node.attrs.id}]`,
+				],
+				renderText: ({ node }) => `[${node.attrs.label ?? node.attrs.id}]`,
+				suggestion: {
+					char: "/",
+					pluginKey: lawPluginKey,
+					// Provisions read as "Article 54" / "inventive step" — let the query
+					// span spaces so the natural search works, not just "/a54".
+					allowSpaces: true,
+					items: ({ query }) => lawItemsRef.current?.(query) ?? [],
+					render: makeRender(),
 				},
 			}),
 		],
@@ -202,7 +252,7 @@ export const ChatComposer = forwardRef<
 					rect={popup.rect}
 					onPick={(item) => {
 						popup.command(item);
-						onMentionRef.current?.(item.id);
+						popup.onSelect?.(item.id);
 					}}
 				/>
 			)}

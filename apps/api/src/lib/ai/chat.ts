@@ -2,6 +2,7 @@ import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { getAiSdkTools } from "@eigenpal/docx-editor-agents/ai-sdk/server";
 import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
+import { fileCachedFetcher, lookupProvisions } from "@patrick/law";
 import {
 	type ExchangeMetadata,
 	PATRICK_DOCS,
@@ -19,6 +20,7 @@ import {
 import type { Context } from "hono";
 import { z } from "zod";
 import { saveChat } from "../chats";
+import { lawCacheDir } from "../config";
 import {
 	listDocuments,
 	readDocumentMeta,
@@ -182,6 +184,28 @@ const patrickHelp = tool({
 		"Look up how Patrick works — its features, setup, and how to use the app. Call this for a how-to or 'how does Patrick…' question about the app itself, not about the attorney's matter.",
 	inputSchema: z.object({}),
 	execute: async () => PATRICK_DOCS,
+});
+
+// Verbatim EPC law recall. Server-executed: resolves each ref against the bundled
+// provision map, fetches the page on demand (cached in the config home, so it's
+// offline after first use), and returns the current text. The agent must quote
+// only from this output — it's the guard against hallucinated legal text.
+const lawFetcher = fileCachedFetcher(lawCacheDir());
+
+const epcLookup = tool({
+	description:
+		"Look up European Patent Convention provisions and get their VERBATIM current text from epo.org — Articles, Rules, and Rules relating to Fees. Call this WHENEVER a specific provision is cited (by an examiner, by the attorney, or one you are about to rely on), and quote the law ONLY from what this returns — never recite a provision from memory, as getting it slightly wrong is unacceptable. Pass canonical keys ('A54', 'A123(2)', 'R137(3)', 'RFees A2') or a concept ('inventive step'); a paragraph in parentheses is noted as the focus. EP only for now. Each result carries the title, the in-force version/date, and footnotes (including Enlarged Board of Appeal decision pointers); unresolved refs come back as not_found.",
+	inputSchema: z.object({
+		refs: z
+			.array(z.string())
+			.min(1)
+			.describe(
+				"Citation keys or concepts, e.g. ['A54(2)', 'R137', 'inventive step'].",
+			),
+	}),
+	execute: async ({ refs }) => ({
+		results: await lookupProvisions(refs, lawFetcher),
+	}),
 });
 
 // Read-only docx → indexed plain text, headless from disk. The headless parse is
@@ -403,6 +427,7 @@ export async function handleChat(c: Context) {
 		requestUnlock,
 		fetchPublication,
 		patrick_help: patrickHelp,
+		ep_law_lookup: epcLookup,
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 

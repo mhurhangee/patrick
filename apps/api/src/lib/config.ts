@@ -19,3 +19,10 @@ export function tasksDir(): string {
 export function taskPath(id: string): string {
 	return join(tasksDir(), id, "task.yaml");
 }
+
+// Cached EPC provision HTML (one file per provision). Jurisdiction-global, not
+// per-task — immutable consolidated law, so once fetched it serves every task
+// offline. See @patrick/law's fileCachedFetcher.
+export function lawCacheDir(): string {
+	return join(CONFIG_DIR, "law", "epc");
+}

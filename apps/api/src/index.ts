@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { ai } from "./routes/ai";
+import { law } from "./routes/law";
 import { profiles } from "./routes/profiles";
 import { tasks } from "./routes/tasks";
 
@@ -11,6 +12,7 @@ app.get("/health", (c) => c.json({ ok: true }));
 app.route("/profiles", profiles);
 app.route("/ai", ai);
 app.route("/tasks", tasks);
+app.route("/law", law);
 
 export default {
 	port: Number(process.env.PORT ?? 3001),

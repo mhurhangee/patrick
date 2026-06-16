@@ -1,3 +1,4 @@
+import type { LookupResult } from "@patrick/shared";
 import {
 	type DynamicToolUIPart,
 	getToolName,
@@ -65,6 +66,12 @@ const PRESENTERS: Record<string, Presenter> = {
 		summary: (input) =>
 			input?.replaceWith ?? input?.replacement ?? input?.search ?? null,
 	},
+	ep_law_lookup: {
+		label: "Recall EPC law",
+		runningLabel: "Looking up EPC law…",
+		summary: (input) =>
+			Array.isArray(input?.refs) ? input.refs.join(", ") : null,
+	},
 };
 
 function humanize(name: string): string {
@@ -86,10 +93,89 @@ function JsonView({ value }: { value: unknown }) {
 	);
 }
 
+// A verbatim provision, displayed proudly: title + in-force stamp, the current
+// text (the focused paragraph accented), and its footnotes / decision pointers.
+function ProvisionCard({ result }: { result: LookupResult }) {
+	if (result.status !== "ok" || !result.provision)
+		return (
+			<p className="text-xs text-muted-foreground">
+				No EPC provision found for “{result.ref}”.
+			</p>
+		);
+	const p = result.provision;
+	const notes = Object.entries(p.notes);
+	return (
+		<div className="space-y-1.5">
+			<div className="flex items-baseline justify-between gap-3">
+				<h4 className="font-heading text-sm font-semibold text-foreground">
+					{p.title ?? p.citationKey}
+					{p.titleNotes.length > 0 && (
+						<sup className="ml-0.5 text-[9px] font-normal text-muted-foreground">
+							{p.titleNotes.join(",")}
+						</sup>
+					)}
+				</h4>
+				<span className="shrink-0 text-[10px] text-muted-foreground">
+					{p.version}
+				</span>
+			</div>
+			{result.resolvedFrom && (
+				<p className="text-[11px] text-muted-foreground">
+					“{result.resolvedFrom}” → {p.citationKey}
+				</p>
+			)}
+			<div className="space-y-1 text-xs leading-relaxed text-foreground/90">
+				{p.blocks.map((b, i) => {
+					const focused = !!result.focus && b.text.startsWith(result.focus);
+					return (
+						<p
+							// biome-ignore lint/suspicious/noArrayIndexKey: stable ordered blocks
+							key={i}
+							className={
+								focused ? "border-l-2 border-emerald-500/60 pl-2" : undefined
+							}
+						>
+							{b.text}
+							{b.notes && b.notes.length > 0 && (
+								<sup className="ml-0.5 text-[9px] text-muted-foreground">
+									{b.notes.join(",")}
+								</sup>
+							)}
+						</p>
+					);
+				})}
+			</div>
+			{notes.length > 0 && (
+				<div className="space-y-0.5 border-t pt-1.5">
+					{notes.map(([n, text]) => (
+						<p key={n} className="text-[10px] text-muted-foreground">
+							<sup>{n}</sup> {text}
+						</p>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function LawResults({ output }: { output: unknown }) {
+	const results = (output as { results?: LookupResult[] })?.results;
+	if (!Array.isArray(results)) return <JsonView value={output} />;
+	return (
+		<div className="space-y-3">
+			{results.map((r, i) => (
+				// biome-ignore lint/suspicious/noArrayIndexKey: stable ordered results
+				<ProvisionCard key={i} result={r} />
+			))}
+		</div>
+	);
+}
+
 function ToolDetail({ part }: { part: AnyToolPart }) {
+	const isLaw = getToolName(part) === "ep_law_lookup";
 	return (
 		<div className="space-y-2">
-			{part.input != null && (
+			{part.input != null && !isLaw && (
 				<div>
 					<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
 						Input
@@ -100,12 +186,16 @@ function ToolDetail({ part }: { part: AnyToolPart }) {
 			{part.state === "output-error" ? (
 				<p className="text-destructive">{part.errorText}</p>
 			) : part.output != null ? (
-				<div>
-					<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
-						Result
-					</p>
-					<JsonView value={part.output} />
-				</div>
+				isLaw ? (
+					<LawResults output={part.output} />
+				) : (
+					<div>
+						<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
+							Result
+						</p>
+						<JsonView value={part.output} />
+					</div>
+				)
 			) : null}
 		</div>
 	);

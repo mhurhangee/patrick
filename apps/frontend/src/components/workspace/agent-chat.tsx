@@ -36,6 +36,7 @@ import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
 import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
+import { useLawProvisions } from "@/hooks/use-law";
 import { useProfile, useUpdateProfile } from "@/hooks/use-profiles";
 import {
 	useCreateDocument,
@@ -336,6 +337,39 @@ function ChatSession({
 					description: d.label && d.label !== d.filename ? d.label : undefined,
 				}))
 		);
+	}, []);
+
+	// /-mention picker: EPC provisions to tag. Matches every typed word against the
+	// citation and name ("article 54", "inventive step", "novelty" all work), and
+	// the chip serialises to `[Article 54 EPC]` — a citation the agent must retrieve
+	// via ep_law_lookup. No side-effect: unlike a source, the law isn't pinned.
+	const { data: lawData } = useLawProvisions();
+	const provisionsRef = useRef(lawData?.provisions);
+	provisionsRef.current = lawData?.provisions;
+	const lawItems = useCallback((query: string): MentionItem[] => {
+		const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+		const all = provisionsRef.current ?? [];
+		// Fall back to the key if an entry predates the `cite` field (stale cache).
+		const cite = (p: { cite?: string; key: string }) => p.cite ?? p.key;
+		const matches =
+			tokens.length === 0
+				? [...all]
+				: all.filter((p) => {
+						const hay = `${cite(p)} ${p.name ?? ""}`.toLowerCase();
+						return tokens.every((t) => hay.includes(t));
+					});
+		// Shorter citations first ("Article 54" before "Article 154"), then alpha.
+		return matches
+			.sort(
+				(a, b) =>
+					cite(a).length - cite(b).length || cite(a).localeCompare(cite(b)),
+			)
+			.slice(0, 8)
+			.map((p) => ({
+				id: p.key,
+				label: cite(p),
+				description: p.name ?? undefined,
+			}));
 	}, []);
 	const isStreaming = status === "streaming" || status === "submitted";
 	// The agent loop spans multiple requests (one per client tool round-trip).
@@ -835,6 +869,7 @@ function ChatSession({
 						onSubmit={send}
 						mentionItems={mentionItems}
 						onMention={(id) => open(id)}
+						lawItems={lawItems}
 						onEmptyChange={setComposerEmpty}
 					/>
 					{/* Toolbar BELOW the editor — no overlap with the text (was bug #5). */}
