@@ -1,0 +1,19 @@
+{
+	"name": "@patrick/law",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"build:map": "bun scripts/build-epc-map.ts",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"node-html-parser": "^7.1.0"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.14"
+	}
+}
