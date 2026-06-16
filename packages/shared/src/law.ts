@@ -4,7 +4,13 @@
 // than in @patrick/law because that package is node-side (node-html-parser,
 // node:fs), while these are pure data the browser needs too.
 
-export type EpcKind = "article" | "rule" | "fee" | "other";
+export type EpcKind =
+	| "article"
+	| "rule"
+	| "fee"
+	| "guideline"
+	| "caselaw"
+	| "other";
 
 /** One top-level block of a provision: a numbered paragraph, a fee item, etc. */
 export interface ProvisionBlock {

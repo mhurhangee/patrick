@@ -2,6 +2,14 @@ import type { Provision, ProvisionBlock } from "@patrick/shared";
 import { type HTMLElement, parse } from "node-html-parser";
 import type { EpcMapEntry } from "./types";
 
+// Display label for the in-force stamp, by source.
+const SOURCE_LABEL: Record<string, string> = {
+	epc: "EPC 2020",
+	"guidelines-epc": "EPC Guidelines",
+	"guidelines-pct": "PCT-EPO Guidelines",
+	caselaw: "Case Law of the Boards of Appeal",
+};
+
 // EPO consolidates amendments inline: superseded text in `.Del`, current text in
 // `.New`. We drop `.Del` and keep `.New` so only the in-force text survives —
 // critical for fee amounts, which otherwise read as "530725" (old+new mashed).
@@ -39,7 +47,7 @@ export function extractProvision(html: string, entry: EpcMapEntry): Provision {
 		instrument: meta("booktitle"),
 		part: meta("parttitle"),
 		chapter: meta("chaptertitle"),
-		version: updated ? `EPC 2020 (consolidated ${updated})` : "EPC 2020",
+		version: `${SOURCE_LABEL[entry.source] ?? "EPC"}${updated ? ` (consolidated ${updated})` : ""}`,
 		titleNotes: [],
 		blocks: [],
 		notes: {},
@@ -66,9 +74,10 @@ export function extractProvision(html: string, entry: EpcMapEntry): Provision {
 		}
 	}
 
-	// 2. Drop the notes block + separator, and all superseded text, from the body.
+	// 2. Drop the notes block + separator, superseded text, and the case-law
+	//    "updated to …" disclaimer banner, from the body.
 	for (const n of body.querySelectorAll(
-		".DOC4NET2-notes, .DOC4NET2-noteseparator, .Del",
+		".DOC4NET2-notes, .DOC4NET2-noteseparator, .Del, .views-field-field-disclaimer",
 	))
 		n.remove();
 

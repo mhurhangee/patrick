@@ -1,18 +1,38 @@
 import type { ProvisionRef } from "@patrick/shared";
-import mapData from "../data/epc-map.json" with { type: "json" };
+import caselawData from "../data/caselaw-map.json" with { type: "json" };
+import epcData from "../data/epc-map.json" with { type: "json" };
+import guidelinesEpcData from "../data/guidelines-epc-map.json" with {
+	type: "json",
+};
+import guidelinesPctData from "../data/guidelines-pct-map.json" with {
+	type: "json",
+};
 import type { EpcMap, EpcMapEntry } from "./types";
 
-const MAP = mapData as EpcMap;
+const ENTRIES: EpcMapEntry[] = [
+	epcData,
+	guidelinesEpcData,
+	guidelinesPctData,
+	caselawData,
+].flatMap((m) => (m as EpcMap).entries);
 
-// A readable, jurisdiction-tagged citation for a numbered provision —
-// "Article 54 EPC", "Rule 137 EPC", "Article 2 RFees". This is what a tag shows
-// and serialises to; the "EPC" suffix future-proofs US/PCT. Null for named pages.
+// A readable, source-tagged citation — what a tag shows and serialises to.
+// EPC provisions get a numbered form; Guidelines/case-law keys are already
+// readable ("G-VII 5.3", "II.E.1.3.1") and just get a source word.
 function citeOf(e: EpcMapEntry): string | null {
-	if (!e.citationKey || e.number === null) return null;
-	const n = `${e.number}${e.suffix ?? ""}`;
-	if (e.kind === "article") return `Article ${n} EPC`;
-	if (e.kind === "rule") return `Rule ${n} EPC`;
-	if (e.kind === "fee") return `Article ${n} RFees`;
+	if (!e.citationKey) return null;
+	if (e.kind === "article" || e.kind === "rule" || e.kind === "fee") {
+		if (e.number === null) return e.citationKey;
+		const n = `${e.number}${e.suffix ?? ""}`;
+		if (e.kind === "article") return `Article ${n} EPC`;
+		if (e.kind === "rule") return `Rule ${n} EPC`;
+		return `Article ${n} RFees`;
+	}
+	if (e.kind === "guideline")
+		return e.citationKey.startsWith("PCT ")
+			? `PCT Guidelines ${e.citationKey.slice(4)}`
+			: `Guidelines ${e.citationKey}`;
+	if (e.kind === "caselaw") return `CLBA ${e.citationKey}`;
 	return e.citationKey;
 }
 
@@ -25,16 +45,14 @@ function shortName(title: string | null): string | null {
 
 /** The taggable provisions (those with a citation key), for the chat `/` picker. */
 export function provisionList(): ProvisionRef[] {
-	return MAP.entries
-		.filter(
-			(e): e is EpcMapEntry & { citationKey: string } => e.citationKey !== null,
-		)
-		.map((e) => ({
-			key: e.citationKey,
-			cite: citeOf(e) ?? e.citationKey,
-			name: shortName(e.title),
-			kind: e.kind,
-		}));
+	return ENTRIES.filter(
+		(e): e is EpcMapEntry & { citationKey: string } => e.citationKey !== null,
+	).map((e) => ({
+		key: e.citationKey,
+		cite: citeOf(e) ?? e.citationKey,
+		name: shortName(e.title),
+		kind: e.kind,
+	}));
 }
 
 // Concept → citation key. A small curated set so the agent can resolve the common
@@ -57,23 +75,32 @@ const ALIASES: Record<string, string> = {
 	exclusions: "A53",
 };
 
-/** Fold a citation/key down to a comparison token: "[Art. 54 EPC]" → "A54". */
+// Fold a citation down to a comparison token: "[Art. 54 EPC]" → "A54",
+// "Guidelines G-VII, 5.3" → "GVII53", "CLBA II.E.1.3.1" → "IIE131". Source words
+// (Guidelines / Case Law / CLBA / EPC) are dropped; "PCT" is KEPT — it's the
+// disambiguator between the EPC and PCT Guidelines (same section numbers).
 function canonical(input: string): string {
 	return input
 		.toUpperCase()
+		.replace(/\bCASE ?LAW\b/g, "")
+		.replace(/\bBOARDS? OF APPEAL\b/g, "")
+		.replace(/\bGUIDELINES?\b/g, "")
+		.replace(/\b(?:CLBA|CLR|BOA)\b/g, "")
 		.replace(/\bEPC\b/g, "")
 		.replace(/\bARTICLES?\b|\bART\b/g, "A")
 		.replace(/\bRULES?\b/g, "R")
-		.replace(/[\s.\-–—[\]]/g, "");
+		.replace(/[\s.,;:\-–—[\]]/g, "");
 }
 
-// Index every entry by its slug, citation key, and readable cite, so "a54",
-// "A54", and "Article 54 EPC" all resolve — and named pages resolve by slug
-// ("prorecog"). Later indexers win on collision (cite/key over slug).
+// Index every entry by its citation key and readable cite. Slugs are indexed only
+// for EPC (where they're unique and resolve named pages like "prorecog"); the
+// Guidelines trees share slugs (g_vii_5 in both EPC and PCT), so they resolve by
+// their source-qualified key, never the bare slug.
 const INDEX: Map<string, EpcMapEntry> = (() => {
 	const idx = new Map<string, EpcMapEntry>();
-	for (const e of MAP.entries) idx.set(canonical(e.slug), e);
-	for (const e of MAP.entries) {
+	for (const e of ENTRIES)
+		if (e.source === "epc") idx.set(canonical(e.slug), e);
+	for (const e of ENTRIES) {
 		const cite = citeOf(e);
 		if (cite) idx.set(canonical(cite), e);
 		if (e.citationKey) idx.set(canonical(e.citationKey), e);
