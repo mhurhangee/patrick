@@ -183,7 +183,16 @@ export const ChatComposer = forwardRef<
 			}),
 			LawMention.configure({
 				HTMLAttributes: { class: "mention mention-law" },
-				renderText: ({ node }) => node.attrs.label ?? node.attrs.id,
+				// The chip drives off renderHTML (renderText is just for getText). Show
+				// `[Article 54 EPC]` in both — the same string the message serialises to,
+				// not the default trigger-prefixed `/Article 54 EPC`. options.HTMLAttributes
+				// is already merged (data-type + class) by the node's renderHTML.
+				renderHTML: ({ options, node }) => [
+					"span",
+					options.HTMLAttributes,
+					`[${node.attrs.label ?? node.attrs.id}]`,
+				],
+				renderText: ({ node }) => `[${node.attrs.label ?? node.attrs.id}]`,
 				suggestion: {
 					char: "/",
 					pluginKey: lawPluginKey,
