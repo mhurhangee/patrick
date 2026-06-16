@@ -20,7 +20,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai";
-import { ArrowUp, ChevronDown, Square } from "lucide-react";
+import { ArrowUp, ChevronDown, Globe, Square } from "lucide-react";
 import {
 	type RefObject,
 	useCallback,
@@ -258,8 +258,15 @@ function ChatSession({
 		author: profile?.identity.author?.trim() || "Patrick",
 	});
 
+	// Web search: a per-chat toolbar toggle (default on). Patrick can search the
+	// web; off removes the tool for the turn (also the escape hatch if a model
+	// doesn't support it). Sent with each request.
+	const [webSearch, setWebSearch] = useState(true);
+
 	// Refs so the transport/onToolCall always read the latest without re-creating
 	// the chat instance.
+	const webSearchRef = useRef(webSearch);
+	webSearchRef.current = webSearch;
 	const pinnedRef = useRef(pinnedSources);
 	pinnedRef.current = pinnedSources;
 	const activeDraftRef = useRef(activeDraft);
@@ -292,6 +299,7 @@ function ChatSession({
 					pinnedSources: pinnedRef.current,
 					activeDraft: activeDraftRef.current,
 					templateOverride: templateRef.current,
+					webSearch: webSearchRef.current,
 				},
 			}),
 		}),
@@ -889,6 +897,20 @@ function ChatSession({
 					/>
 					{/* Toolbar BELOW the editor — no overlap with the text (was bug #5). */}
 					<div className="flex items-center justify-end gap-1.5 px-2 pb-2">
+						<Button
+							size="icon"
+							variant="ghost"
+							onClick={() => setWebSearch((v) => !v)}
+							aria-pressed={webSearch}
+							title={
+								webSearch
+									? "Web search on — Patrick can search the web"
+									: "Web search off"
+							}
+							className={`mr-auto size-8 ${webSearch ? "text-emerald-600" : "text-muted-foreground/50"}`}
+						>
+							<Globe />
+						</Button>
 						{modelId && lastInputTokens != null && (
 							<ContextRing
 								used={lastInputTokens}

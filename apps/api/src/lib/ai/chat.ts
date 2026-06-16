@@ -55,6 +55,8 @@ type RequestBody = {
 	activeDraft?: string | null;
 	/** Per-chat instructions edit (ephemeral); absent ⇒ the profile's template. */
 	templateOverride?: string | null;
+	/** Whether web search is available this turn (toolbar toggle). Default on. */
+	webSearch?: boolean;
 };
 
 // Folder awareness: the read-only sources in the task folder that AREN'T in
@@ -429,9 +431,11 @@ export async function handleChat(c: Context) {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
-		// Web search runs on the attorney's own model (provider-executed); the agent
-		// grounds whatever it surfaces verbatim via ep_law_lookup.
-		...webSearchTool(vendorOf(provider, detailedModel)),
+		// Web search runs on the attorney's own model (provider-executed) unless the
+		// toolbar toggle is off; the agent grounds what it surfaces via ep_law_lookup.
+		...(body.webSearch === false
+			? {}
+			: webSearchTool(vendorOf(provider, detailedModel))),
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
