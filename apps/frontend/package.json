@@ -27,6 +27,7 @@
 		"@tiptap/extension-mention": "^3.26.1",
 		"@tiptap/extensions": "^3.26.1",
 		"@tiptap/markdown": "^3.26.1",
+		"@tiptap/pm": "^3.26.1",
 		"@tiptap/react": "^3.26.1",
 		"@tiptap/starter-kit": "^3.26.1",
 		"ai": "^6.0.204",

@@ -64,6 +64,17 @@ export interface Provision {
 	notes: Record<string, string>;
 }
 
+/** A taggable provision for the chat `/` picker — no body. */
+export interface ProvisionRef {
+	/** Stable handle / citation key, e.g. "A54". */
+	key: string;
+	/** Readable, resolvable citation the tag shows and serialises: "Article 54 EPC". */
+	cite: string;
+	/** Descriptive part of the title: "Novelty". */
+	name: string | null;
+	kind: EpcKind;
+}
+
 export interface LookupResult {
 	/** The caller's original reference, echoed back. */
 	ref: string;

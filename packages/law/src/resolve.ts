@@ -1,7 +1,40 @@
 import mapData from "../data/epc-map.json" with { type: "json" };
-import type { EpcMap, EpcMapEntry } from "./types";
+import type { EpcMap, EpcMapEntry, ProvisionRef } from "./types";
 
 const MAP = mapData as EpcMap;
+
+// A readable, jurisdiction-tagged citation for a numbered provision —
+// "Article 54 EPC", "Rule 137 EPC", "Article 2 RFees". This is what a tag shows
+// and serialises to; the "EPC" suffix future-proofs US/PCT. Null for named pages.
+function citeOf(e: EpcMapEntry): string | null {
+	if (!e.citationKey || e.number === null) return null;
+	const n = `${e.number}${e.suffix ?? ""}`;
+	if (e.kind === "article") return `Article ${n} EPC`;
+	if (e.kind === "rule") return `Rule ${n} EPC`;
+	if (e.kind === "fee") return `Article ${n} RFees`;
+	return e.citationKey;
+}
+
+/** The descriptive part of a title: "Article 54 – Novelty" → "Novelty". */
+function shortName(title: string | null): string | null {
+	if (!title) return null;
+	const parts = title.split(/\s[–-]\s/);
+	return parts.length > 1 ? parts.slice(1).join(" – ").trim() : title;
+}
+
+/** The taggable provisions (those with a citation key), for the chat `/` picker. */
+export function provisionList(): ProvisionRef[] {
+	return MAP.entries
+		.filter(
+			(e): e is EpcMapEntry & { citationKey: string } => e.citationKey !== null,
+		)
+		.map((e) => ({
+			key: e.citationKey,
+			cite: citeOf(e) ?? e.citationKey,
+			name: shortName(e.title),
+			kind: e.kind,
+		}));
+}
 
 // Concept → citation key. A small curated set so the agent can resolve the common
 // objections by name, not just by number. Deliberately conservative — only
@@ -23,23 +56,27 @@ const ALIASES: Record<string, string> = {
 	exclusions: "A53",
 };
 
-/** Fold a citation/key down to a comparison token: "Art. 54 EPC" → "A54". */
+/** Fold a citation/key down to a comparison token: "[Art. 54 EPC]" → "A54". */
 function canonical(input: string): string {
 	return input
 		.toUpperCase()
 		.replace(/\bEPC\b/g, "")
 		.replace(/\bARTICLES?\b|\bART\b/g, "A")
 		.replace(/\bRULES?\b/g, "R")
-		.replace(/[\s.\-–—]/g, "");
+		.replace(/[\s.\-–—[\]]/g, "");
 }
 
-// Index every entry by its key and its slug, so both "A54" and "a54" resolve, and
-// named pages resolve by slug ("prorecog"). Keys win over slugs on any collision.
+// Index every entry by its slug, citation key, and readable cite, so "a54",
+// "A54", and "Article 54 EPC" all resolve — and named pages resolve by slug
+// ("prorecog"). Later indexers win on collision (cite/key over slug).
 const INDEX: Map<string, EpcMapEntry> = (() => {
 	const idx = new Map<string, EpcMapEntry>();
 	for (const e of MAP.entries) idx.set(canonical(e.slug), e);
-	for (const e of MAP.entries)
+	for (const e of MAP.entries) {
+		const cite = citeOf(e);
+		if (cite) idx.set(canonical(cite), e);
 		if (e.citationKey) idx.set(canonical(e.citationKey), e);
+	}
 	return idx;
 })();
 
