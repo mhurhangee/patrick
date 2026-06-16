@@ -80,7 +80,7 @@ const ALIASES: Record<string, string> = {
 // (Guidelines / Case Law / CLBA / EPC) are dropped; "PCT" is KEPT — it's the
 // disambiguator between the EPC and PCT Guidelines (same section numbers).
 function canonical(input: string): string {
-	return input
+	const stripped = input
 		.toUpperCase()
 		.replace(/\bCASE ?LAW\b/g, "")
 		.replace(/\bBOARDS? OF APPEAL\b/g, "")
@@ -88,8 +88,14 @@ function canonical(input: string): string {
 		.replace(/\b(?:CLBA|CLR|BOA)\b/g, "")
 		.replace(/\bEPC\b/g, "")
 		.replace(/\bARTICLES?\b|\bART\b/g, "A")
-		.replace(/\bRULES?\b/g, "R")
-		.replace(/[\s.,;:\-–—[\]]/g, "");
+		.replace(/\bRULES?\b/g, "R");
+	// Drop separators, but keep a "." between adjacent digit groups so multi-level
+	// Guidelines/case-law keys don’t collide ("5.3" ≠ "53").
+	return stripped.replace(/[\s.,;:\-–—[\]()]+/g, (sep, i, str) =>
+		/\d/.test(str[i - 1] ?? "") && /\d/.test(str[i + sep.length] ?? "")
+			? "."
+			: "",
+	);
 }
 
 // Index every entry by its citation key and readable cite. Slugs are indexed only

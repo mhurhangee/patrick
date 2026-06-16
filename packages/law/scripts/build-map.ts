@@ -123,8 +123,17 @@ async function buildSource(source: Source, xml: string): Promise<void> {
 			entries.push(await buildEntry(source, slug, url));
 	}
 
+	const rank: Record<string, number> = {
+		article: 0,
+		rule: 1,
+		fee: 2,
+		guideline: 3,
+		caselaw: 4,
+		other: 5,
+	};
 	entries.sort(
 		(a, b) =>
+			(rank[a.kind] ?? 9) - (rank[b.kind] ?? 9) ||
 			(a.number ?? 0) - (b.number ?? 0) ||
 			(a.citationKey ?? a.slug).localeCompare(b.citationKey ?? b.slug),
 	);

@@ -1,14 +1,12 @@
 import type { Provision, ProvisionBlock } from "@patrick/shared";
 import { type HTMLElement, parse } from "node-html-parser";
+import { SOURCES } from "./sources";
 import type { EpcMapEntry } from "./types";
 
-// Display label for the in-force stamp, by source.
-const SOURCE_LABEL: Record<string, string> = {
-	epc: "EPC 2020",
-	"guidelines-epc": "EPC Guidelines",
-	"guidelines-pct": "PCT-EPO Guidelines",
-	caselaw: "Case Law of the Boards of Appeal",
-};
+// In-force-stamp label by source id (single source of truth: sources.ts).
+const SOURCE_LABEL: Record<string, string> = Object.fromEntries(
+	SOURCES.map((s) => [s.id, s.stamp]),
+);
 
 // EPO consolidates amendments inline: superseded text in `.Del`, current text in
 // `.New`. We drop `.Del` and keep `.New` so only the in-force text survives —
