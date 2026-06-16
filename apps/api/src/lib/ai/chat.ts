@@ -28,8 +28,9 @@ import {
 } from "../documents";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
-import { createModel, reasoningOptions } from "./model";
+import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
+import { webSearchTool } from "./web-search";
 
 // The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
@@ -54,6 +55,8 @@ type RequestBody = {
 	activeDraft?: string | null;
 	/** Per-chat instructions edit (ephemeral); absent ⇒ the profile's template. */
 	templateOverride?: string | null;
+	/** Whether web search is available this turn (toolbar toggle). Default on. */
+	webSearch?: boolean;
 };
 
 // Folder awareness: the read-only sources in the task folder that AREN'T in
@@ -428,6 +431,11 @@ export async function handleChat(c: Context) {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
+		// Web search runs on the attorney's own model (provider-executed) unless the
+		// toolbar toggle is off; the agent grounds what it surfaces via ep_law_lookup.
+		...(body.webSearch === false
+			? {}
+			: webSearchTool(vendorOf(provider, detailedModel))),
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
@@ -447,6 +455,8 @@ export async function handleChat(c: Context) {
 
 	return result.toUIMessageStreamResponse({
 		sendReasoning: true,
+		// Web-search results stream as source-url parts → the answer's citations block.
+		sendSources: true,
 		// Observability: context is known up front, so send it at "start" (the UI
 		// can show what was sent while it streams). Usage lands at "finish".
 		messageMetadata: ({ part }): ExchangeMetadata | undefined => {

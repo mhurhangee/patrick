@@ -13,7 +13,7 @@ function stripVendor(modelId: string): string {
 
 // The vendor behind a model — `provider` for direct, parsed from the ID for the
 // gateway (which forwards providerOptions by vendor key).
-function vendorOf(
+export function vendorOf(
 	provider: Provider,
 	modelId: string,
 ): "anthropic" | "openai" | "google" {

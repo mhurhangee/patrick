@@ -20,7 +20,7 @@ import {
 	lastAssistantMessageIsCompleteWithToolCalls,
 	type UIMessage,
 } from "ai";
-import { ArrowUp, ChevronDown, Square } from "lucide-react";
+import { ArrowUp, ChevronDown, Globe, Square } from "lucide-react";
 import {
 	type RefObject,
 	useCallback,
@@ -66,6 +66,16 @@ import {
 import { ContextRing } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
 import { SystemCard } from "./system-card";
+
+// Tools that execute on the server (their results stream back) — the client must
+// not route them to the docx editor, which would error "Editor not ready". Like
+// HITL tools, they're skipped in onToolCall.
+const SERVER_TOOLS = new Set([
+	"patrick_help",
+	"ep_law_lookup",
+	"web_search",
+	"google_search",
+]);
 
 // One user message + every assistant message that follows it (the loop produces
 // several — one per tool round-trip), merged for rendering with aggregated usage.
@@ -248,8 +258,15 @@ function ChatSession({
 		author: profile?.identity.author?.trim() || "Patrick",
 	});
 
+	// Web search: a per-chat toolbar toggle (default on). Patrick can search the
+	// web; off removes the tool for the turn (also the escape hatch if a model
+	// doesn't support it). Sent with each request.
+	const [webSearch, setWebSearch] = useState(true);
+
 	// Refs so the transport/onToolCall always read the latest without re-creating
 	// the chat instance.
+	const webSearchRef = useRef(webSearch);
+	webSearchRef.current = webSearch;
 	const pinnedRef = useRef(pinnedSources);
 	pinnedRef.current = pinnedSources;
 	const activeDraftRef = useRef(activeDraft);
@@ -282,14 +299,20 @@ function ChatSession({
 					pinnedSources: pinnedRef.current,
 					activeDraft: activeDraftRef.current,
 					templateOverride: templateRef.current,
+					webSearch: webSearchRef.current,
 				},
 			}),
 		}),
 		// After a client tool resolves, resubmit so the agent loop continues.
 		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 		async onToolCall({ toolCall }) {
-			// HITL tools (requestOpenFile) are resolved by their card, not here.
-			if (HITL_TOOLS.has(toolCall.toolName)) return;
+			// HITL tools resolve via their card; server-executed tools resolve on the
+			// server. Neither runs in the editor — skip both.
+			if (
+				HITL_TOOLS.has(toolCall.toolName) ||
+				SERVER_TOOLS.has(toolCall.toolName)
+			)
+				return;
 			let output: unknown;
 			try {
 				output = executeToolCall(
@@ -874,6 +897,20 @@ function ChatSession({
 					/>
 					{/* Toolbar BELOW the editor — no overlap with the text (was bug #5). */}
 					<div className="flex items-center justify-end gap-1.5 px-2 pb-2">
+						<Button
+							size="icon"
+							variant="ghost"
+							onClick={() => setWebSearch((v) => !v)}
+							aria-pressed={webSearch}
+							title={
+								webSearch
+									? "Web search on — Patrick can search the web"
+									: "Web search off"
+							}
+							className={`mr-auto size-8 ${webSearch ? "text-emerald-600" : "text-muted-foreground/50"}`}
+						>
+							<Globe />
+						</Button>
 						{modelId && lastInputTokens != null && (
 							<ContextRing
 								used={lastInputTokens}
