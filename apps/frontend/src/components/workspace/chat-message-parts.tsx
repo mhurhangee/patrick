@@ -211,21 +211,25 @@ function SourcesBlock({ sources }: { sources: SourceUrlPart[] }) {
 			<p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
 				Sources — web, verify against the original
 			</p>
-			{rows.map((s) => (
-				<a
-					key={s.url}
-					href={s.url}
-					target="_blank"
-					rel="noreferrer"
-					title={s.url}
-					className="block truncate text-emerald-700 hover:underline dark:text-emerald-400"
-				>
-					<span className="text-muted-foreground">
-						{domainOf(s.url, s.title)}
-					</span>{" "}
-					{s.title ?? s.url}
-				</a>
-			))}
+			{rows.map((s) => {
+				const domain = domainOf(s.url, s.title);
+				// Google's source title IS the domain (no page title) — don't repeat it.
+				const label =
+					s.title && s.title.toLowerCase() !== domain ? s.title : null;
+				return (
+					<a
+						key={s.url}
+						href={s.url}
+						target="_blank"
+						rel="noreferrer"
+						title={s.url}
+						className="block truncate text-emerald-700 hover:underline dark:text-emerald-400"
+					>
+						<span className="text-muted-foreground">{domain}</span>
+						{label && ` ${label}`}
+					</a>
+				);
+			})}
 		</div>
 	);
 }
