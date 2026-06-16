@@ -70,7 +70,12 @@ import { SystemCard } from "./system-card";
 // Tools that execute on the server (their results stream back) — the client must
 // not route them to the docx editor, which would error "Editor not ready". Like
 // HITL tools, they're skipped in onToolCall.
-const SERVER_TOOLS = new Set(["patrick_help", "ep_law_lookup", "law_research"]);
+const SERVER_TOOLS = new Set([
+	"patrick_help",
+	"ep_law_lookup",
+	"web_search",
+	"google_search",
+]);
 
 // One user message + every assistant message that follows it (the loop produces
 // several — one per tool round-trip), merged for rendering with aggregated usage.

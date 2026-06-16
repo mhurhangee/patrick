@@ -28,9 +28,9 @@ import {
 } from "../documents";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
-import { createModel, reasoningOptions } from "./model";
+import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
-import { createLawResearch } from "./research";
+import { webSearchTool } from "./web-search";
 
 // The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
@@ -429,11 +429,9 @@ export async function handleChat(c: Context) {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
-		law_research: createLawResearch({
-			provider,
-			apiKey,
-			modelId: detailedModel,
-		}),
+		// Web search runs on the attorney's own model (provider-executed); the agent
+		// grounds whatever it surfaces verbatim via ep_law_lookup.
+		...webSearchTool(vendorOf(provider, detailedModel)),
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
@@ -453,6 +451,8 @@ export async function handleChat(c: Context) {
 
 	return result.toUIMessageStreamResponse({
 		sendReasoning: true,
+		// Web-search results stream as source-url parts → the answer's citations block.
+		sendSources: true,
 		// Observability: context is known up front, so send it at "start" (the UI
 		// can show what was sent while it streams). Usage lands at "finish".
 		messageMetadata: ({ part }): ExchangeMetadata | undefined => {

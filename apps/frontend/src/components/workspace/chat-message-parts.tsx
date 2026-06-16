@@ -1,4 +1,4 @@
-import type { LookupResult, ResearchResult } from "@patrick/shared";
+import type { LookupResult } from "@patrick/shared";
 import {
 	type DynamicToolUIPart,
 	getToolName,
@@ -72,9 +72,14 @@ const PRESENTERS: Record<string, Presenter> = {
 		summary: (input) =>
 			Array.isArray(input?.refs) ? input.refs.join(", ") : null,
 	},
-	law_research: {
-		label: "Research the law",
-		runningLabel: "Researching on the web…",
+	web_search: {
+		label: "Search the web",
+		runningLabel: "Searching the web…",
+		summary: (input) => input?.query ?? null,
+	},
+	google_search: {
+		label: "Search the web",
+		runningLabel: "Searching the web…",
 		summary: (input) => input?.query ?? null,
 	},
 };
@@ -176,46 +181,51 @@ function LawResults({ output }: { output: unknown }) {
 	);
 }
 
-// Web research, shown as DISCOVERY: the digest + every source as-is (no filtering),
-// flagged as web content to verify — visually distinct from authoritative recall.
-function ResearchCard({ output }: { output: unknown }) {
-	const r = output as Partial<ResearchResult> | null;
-	if (!r || (r.summary == null && r.error == null && r.sources == null))
-		return <JsonView value={output} />;
-	if (r.error)
-		return (
-			<p className="text-xs text-muted-foreground">
-				Web research unavailable: {r.error}
-			</p>
-		);
+// Web sources the agent's search used — shown as-is (no filtering would be
+// deceptive), flagged "web, verify", as a citations block on the answer. Google
+// returns opaque redirect URLs with the real domain in the title.
+type SourceUrlPart = { type: "source-url"; url: string; title?: string };
+
+function domainOf(url: string, title?: string): string {
+	try {
+		const host = new URL(url).hostname.replace(/^www\./, "");
+		if (host === "vertexaisearch.cloud.google.com")
+			return (title ?? "?").toLowerCase();
+		return host;
+	} catch {
+		return (title ?? url).toLowerCase();
+	}
+}
+
+function SourcesBlock({ sources }: { sources: SourceUrlPart[] }) {
+	const seen = new Set<string>();
+	const rows: SourceUrlPart[] = [];
+	for (const s of sources)
+		if (s.url && !seen.has(s.url)) {
+			seen.add(s.url);
+			rows.push(s);
+		}
+	if (rows.length === 0) return null;
 	return (
-		<div className="space-y-2 text-xs">
-			{r.summary && <Streamdown>{r.summary}</Streamdown>}
-			{r.queries && r.queries.length > 0 && (
-				<p className="text-[10px] text-muted-foreground">
-					searched: {r.queries.join(" · ")}
-				</p>
-			)}
-			{r.sources && r.sources.length > 0 && (
-				<div className="space-y-0.5 border-t pt-1.5">
-					<p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
-						Sources — web, verify against the original
-					</p>
-					{r.sources.map((s) => (
-						<a
-							key={s.url}
-							href={s.url}
-							target="_blank"
-							rel="noreferrer"
-							title={s.url}
-							className="block truncate text-emerald-700 hover:underline dark:text-emerald-400"
-						>
-							<span className="text-muted-foreground">{s.domain}</span>{" "}
-							{s.title ?? s.url}
-						</a>
-					))}
-				</div>
-			)}
+		<div className="space-y-0.5 rounded-md border bg-muted/30 p-2 text-xs">
+			<p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
+				Sources — web, verify against the original
+			</p>
+			{rows.map((s) => (
+				<a
+					key={s.url}
+					href={s.url}
+					target="_blank"
+					rel="noreferrer"
+					title={s.url}
+					className="block truncate text-emerald-700 hover:underline dark:text-emerald-400"
+				>
+					<span className="text-muted-foreground">
+						{domainOf(s.url, s.title)}
+					</span>{" "}
+					{s.title ?? s.url}
+				</a>
+			))}
 		</div>
 	);
 }
@@ -224,7 +234,6 @@ function ResearchCard({ output }: { output: unknown }) {
 // next rich tool here rather than growing a chain of conditionals in ToolDetail.
 const OUTPUT_RENDERERS: Record<string, (output: unknown) => ReactNode> = {
 	ep_law_lookup: (output) => <LawResults output={output} />,
-	law_research: (output) => <ResearchCard output={output} />,
 };
 
 function ToolDetail({ part }: { part: AnyToolPart }) {
@@ -650,6 +659,7 @@ export function AssistantParts({
 }) {
 	const blocks: ReactNode[] = [];
 	let trail: TrailStepData[] = [];
+	const sources: SourceUrlPart[] = [];
 
 	const flushTrail = () => {
 		if (trail.length) {
@@ -733,6 +743,10 @@ export function AssistantParts({
 			});
 			return;
 		}
+		if (part.type === "source-url") {
+			sources.push(part);
+			return;
+		}
 		if (part.type === "dynamic-tool") {
 			pushTool(part, part.toolName, i);
 			return;
@@ -743,5 +757,7 @@ export function AssistantParts({
 	});
 
 	flushTrail();
+	if (sources.length > 0)
+		blocks.push(<SourcesBlock key="sources" sources={sources} />);
 	return <>{blocks}</>;
 }

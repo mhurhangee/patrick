@@ -45,22 +45,6 @@ export interface ProvisionRef {
 	kind: EpcKind;
 }
 
-/** One web source a research call used — shown as-is (no filtering). */
-export interface ResearchSource {
-	url: string;
-	title: string | null;
-	domain: string;
-}
-
-/** Result of law_research: a discovery digest + the sources behind it. The
- * summary points at provisions/decisions; the agent grounds them via recall. */
-export interface ResearchResult {
-	summary: string;
-	queries: string[];
-	sources: ResearchSource[];
-	error?: string;
-}
-
 export interface LookupResult {
 	/** The caller's original reference, echoed back. */
 	ref: string;
