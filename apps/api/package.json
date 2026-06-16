@@ -13,6 +13,7 @@
 		"@ai-sdk/google": "^3.0.82",
 		"@ai-sdk/openai": "^3.0.71",
 		"@eigenpal/docx-editor-agents": "^1.5.0",
+		"@patrick/law": "workspace:*",
 		"@patrick/shared": "workspace:*",
 		"ai": "^6.0.204",
 		"hono": "^4.12.25",
