@@ -1,4 +1,4 @@
-import type { LookupResult } from "@patrick/shared";
+import type { LookupResult, ResearchResult } from "@patrick/shared";
 import {
 	type DynamicToolUIPart,
 	getToolName,
@@ -71,6 +71,11 @@ const PRESENTERS: Record<string, Presenter> = {
 		runningLabel: "Looking up EPC law…",
 		summary: (input) =>
 			Array.isArray(input?.refs) ? input.refs.join(", ") : null,
+	},
+	law_research: {
+		label: "Research the law",
+		runningLabel: "Researching on the web…",
+		summary: (input) => input?.query ?? null,
 	},
 };
 
@@ -171,11 +176,62 @@ function LawResults({ output }: { output: unknown }) {
 	);
 }
 
+// Web research, shown as DISCOVERY: the digest + every source as-is (no filtering),
+// flagged as web content to verify — visually distinct from authoritative recall.
+function ResearchCard({ output }: { output: unknown }) {
+	const r = output as Partial<ResearchResult> | null;
+	if (!r || (r.summary == null && r.error == null && r.sources == null))
+		return <JsonView value={output} />;
+	if (r.error)
+		return (
+			<p className="text-xs text-muted-foreground">
+				Web research unavailable: {r.error}
+			</p>
+		);
+	return (
+		<div className="space-y-2 text-xs">
+			{r.summary && <Streamdown>{r.summary}</Streamdown>}
+			{r.queries && r.queries.length > 0 && (
+				<p className="text-[10px] text-muted-foreground">
+					searched: {r.queries.join(" · ")}
+				</p>
+			)}
+			{r.sources && r.sources.length > 0 && (
+				<div className="space-y-0.5 border-t pt-1.5">
+					<p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
+						Sources — web, verify against the original
+					</p>
+					{r.sources.map((s) => (
+						<a
+							key={s.url}
+							href={s.url}
+							target="_blank"
+							rel="noreferrer"
+							title={s.url}
+							className="block truncate text-emerald-700 hover:underline dark:text-emerald-400"
+						>
+							<span className="text-muted-foreground">{s.domain}</span>{" "}
+							{s.title ?? s.url}
+						</a>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+// Tools whose output gets a bespoke renderer instead of the raw JSON view. Add the
+// next rich tool here rather than growing a chain of conditionals in ToolDetail.
+const OUTPUT_RENDERERS: Record<string, (output: unknown) => ReactNode> = {
+	ep_law_lookup: (output) => <LawResults output={output} />,
+	law_research: (output) => <ResearchCard output={output} />,
+};
+
 function ToolDetail({ part }: { part: AnyToolPart }) {
-	const isLaw = getToolName(part) === "ep_law_lookup";
+	const renderer = OUTPUT_RENDERERS[getToolName(part)];
 	return (
 		<div className="space-y-2">
-			{part.input != null && !isLaw && (
+			{part.input != null && !renderer && (
 				<div>
 					<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
 						Input
@@ -186,8 +242,8 @@ function ToolDetail({ part }: { part: AnyToolPart }) {
 			{part.state === "output-error" ? (
 				<p className="text-destructive">{part.errorText}</p>
 			) : part.output != null ? (
-				isLaw ? (
-					<LawResults output={part.output} />
+				renderer ? (
+					renderer(part.output)
 				) : (
 					<div>
 						<p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">

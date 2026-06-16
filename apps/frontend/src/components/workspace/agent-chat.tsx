@@ -67,6 +67,11 @@ import { ContextRing } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
 import { SystemCard } from "./system-card";
 
+// Tools that execute on the server (their results stream back) — the client must
+// not route them to the docx editor, which would error "Editor not ready". Like
+// HITL tools, they're skipped in onToolCall.
+const SERVER_TOOLS = new Set(["patrick_help", "ep_law_lookup", "law_research"]);
+
 // One user message + every assistant message that follows it (the loop produces
 // several — one per tool round-trip), merged for rendering with aggregated usage.
 type Exchange = {
@@ -288,8 +293,13 @@ function ChatSession({
 		// After a client tool resolves, resubmit so the agent loop continues.
 		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 		async onToolCall({ toolCall }) {
-			// HITL tools (requestOpenFile) are resolved by their card, not here.
-			if (HITL_TOOLS.has(toolCall.toolName)) return;
+			// HITL tools resolve via their card; server-executed tools resolve on the
+			// server. Neither runs in the editor — skip both.
+			if (
+				HITL_TOOLS.has(toolCall.toolName) ||
+				SERVER_TOOLS.has(toolCall.toolName)
+			)
+				return;
 			let output: unknown;
 			try {
 				output = executeToolCall(

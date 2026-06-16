@@ -30,6 +30,7 @@ import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
 import { createModel, reasoningOptions } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
+import { createLawResearch } from "./research";
 
 // The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
@@ -428,6 +429,11 @@ export async function handleChat(c: Context) {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
+		law_research: createLawResearch({
+			provider,
+			apiKey,
+			modelId: detailedModel,
+		}),
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
