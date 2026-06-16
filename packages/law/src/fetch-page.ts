@@ -17,8 +17,13 @@ export function fileCachedFetcher(
 	ua = DEFAULT_UA,
 ): PageFetcher {
 	return async (url) => {
-		const slug = url.split("/").pop() || "page.html";
-		const file = join(cacheDir, slug);
+		// Key by the path after /en/legal/ — the slug alone collides across sources
+		// (g_vii_5.html exists in both the EPC and PCT Guidelines trees).
+		const key =
+			url
+				.replace(/^https?:\/\/[^/]+\/en\/legal\//, "")
+				.replace(/[^\w.-]+/g, "_") || "page.html";
+		const file = join(cacheDir, key);
 		try {
 			return await readFile(file, "utf8");
 		} catch {

@@ -197,7 +197,7 @@ const lawFetcher = fileCachedFetcher(lawCacheDir());
 
 const epcLookup = tool({
 	description:
-		"Look up European Patent Convention provisions and get their VERBATIM current text from epo.org — Articles, Rules, and Rules relating to Fees. Call this WHENEVER a specific provision is cited (by an examiner, by the attorney, or one you are about to rely on), and quote the law ONLY from what this returns — never recite a provision from memory, as getting it slightly wrong is unacceptable. Pass canonical keys ('A54', 'A123(2)', 'R137(3)', 'RFees A2') or a concept ('inventive step'); a paragraph in parentheses is noted as the focus. EP only for now. Each result carries the title, the in-force version/date, and footnotes (including Enlarged Board of Appeal decision pointers); unresolved refs come back as not_found.",
+		"Look up European patent law and get its VERBATIM current text from epo.org: EPC Articles, Rules, and Rules relating to Fees; EPO Guidelines for Examination (EPC and PCT-EPO); and Case Law of the Boards of Appeal (the 'white book' sections). Call this WHENEVER a specific provision/section is cited (by an examiner, by the attorney, or one you are about to rely on), and quote the law ONLY from what this returns — never recite from memory, as getting it slightly wrong is unacceptable. Pass canonical keys: EPC 'A54' / 'A123(2)' / 'R137(3)' / 'RFees A2'; Guidelines 'G-VII 5.3' (EPC) or 'PCT G-VII 5' (PCT-EPO); case law 'II.E.1.3.1'; or a concept ('inventive step'). A paragraph in parentheses is noted as the focus. Each result carries the title, the in-force version/date, and (for EPC provisions) footnotes; unresolved refs come back as not_found.",
 	inputSchema: z.object({
 		refs: z
 			.array(z.string())

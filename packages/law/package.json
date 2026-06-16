@@ -7,7 +7,7 @@
 		".": "./src/index.ts"
 	},
 	"scripts": {
-		"build:map": "bun scripts/build-epc-map.ts",
+		"build:map": "bun scripts/build-map.ts",
 		"try:lookup": "bun scripts/try-lookup.ts",
 		"typecheck": "tsc --noEmit"
 	},

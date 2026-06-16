@@ -9,7 +9,9 @@ import type { EpcKind } from "@patrick/shared";
  * is a lightweight index of those pages (keys + URLs + head metadata) — the
  * provision *text* is never stored here; it's fetched on demand and cached. */
 export interface EpcMapEntry {
-	/** Page slug, e.g. "a54", "r41", "f2", "prorecog". */
+	/** Which source map this belongs to: "epc", "guidelines-epc", "caselaw", … */
+	source: string;
+	/** Page slug, e.g. "a54", "r41", "g_vii_5_3", "clr_ii_e_1_3_1". */
 	slug: string;
 	/** Canonical page URL on epo.org. */
 	url: string;

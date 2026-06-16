@@ -374,25 +374,28 @@ function ChatSession({
 		const all = provisionsRef.current ?? [];
 		// Fall back to the key if an entry predates the `cite` field (stale cache).
 		const cite = (p: { cite?: string; key: string }) => p.cite ?? p.key;
-		const matches =
-			tokens.length === 0
-				? [...all]
-				: all.filter((p) => {
-						const hay = `${cite(p)} ${p.name ?? ""}`.toLowerCase();
-						return tokens.every((t) => hay.includes(t));
-					});
-		// Shorter citations first ("Article 54" before "Article 154"), then alpha.
-		return matches
-			.sort(
-				(a, b) =>
-					cite(a).length - cite(b).length || cite(a).localeCompare(cite(b)),
-			)
-			.slice(0, 8)
-			.map((p) => ({
-				id: p.key,
-				label: cite(p),
-				description: p.name ?? undefined,
-			}));
+		const toItem = (p: (typeof all)[number]): MentionItem => ({
+			id: p.key,
+			label: cite(p),
+			description: p.name ?? undefined,
+		});
+		// Empty query: just show the first few (order is arbitrary) — don't clone +
+		// sort the whole ~6k-entry index on every open.
+		if (tokens.length === 0) return all.slice(0, 8).map(toItem);
+		return (
+			all
+				.filter((p) => {
+					const hay = `${cite(p)} ${p.name ?? ""}`.toLowerCase();
+					return tokens.every((t) => hay.includes(t));
+				})
+				// Shorter citations first ("Article 54" before "Article 154"), then alpha.
+				.sort(
+					(a, b) =>
+						cite(a).length - cite(b).length || cite(a).localeCompare(cite(b)),
+				)
+				.slice(0, 8)
+				.map(toItem)
+		);
 	}, []);
 	const isStreaming = status === "streaming" || status === "submitted";
 	// The agent loop spans multiple requests (one per client tool round-trip).

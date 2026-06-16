@@ -1,10 +1,11 @@
 {
 	"generatedAt": "2026-06-16",
-	"source": "European Patent Convention, EPO — https://www.epo.org/en/legal/epc/2020/",
-	"version": "EPC 2020 (consolidated)",
+	"source": "EPC, EPO — https://www.epo.org/en/legal/epc/2020/",
+	"version": "epc/2020",
 	"count": 462,
 	"entries": [
 		{
+			"source": "epc",
 			"slug": "a1",
 			"url": "https://www.epo.org/en/legal/epc/2020/a1.html",
 			"kind": "article",
@@ -18,6 +19,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a2",
 			"url": "https://www.epo.org/en/legal/epc/2020/a2.html",
 			"kind": "article",
@@ -31,6 +33,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a3",
 			"url": "https://www.epo.org/en/legal/epc/2020/a3.html",
 			"kind": "article",
@@ -44,6 +47,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a4",
 			"url": "https://www.epo.org/en/legal/epc/2020/a4.html",
 			"kind": "article",
@@ -57,6 +61,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a4a",
 			"url": "https://www.epo.org/en/legal/epc/2020/a4a.html",
 			"kind": "article",
@@ -70,6 +75,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a5",
 			"url": "https://www.epo.org/en/legal/epc/2020/a5.html",
 			"kind": "article",
@@ -83,6 +89,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a6",
 			"url": "https://www.epo.org/en/legal/epc/2020/a6.html",
 			"kind": "article",
@@ -96,6 +103,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a7",
 			"url": "https://www.epo.org/en/legal/epc/2020/a7.html",
 			"kind": "article",
@@ -109,6 +117,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a8",
 			"url": "https://www.epo.org/en/legal/epc/2020/a8.html",
 			"kind": "article",
@@ -122,6 +131,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a9",
 			"url": "https://www.epo.org/en/legal/epc/2020/a9.html",
 			"kind": "article",
@@ -135,6 +145,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a10",
 			"url": "https://www.epo.org/en/legal/epc/2020/a10.html",
 			"kind": "article",
@@ -148,6 +159,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a11",
 			"url": "https://www.epo.org/en/legal/epc/2020/a11.html",
 			"kind": "article",
@@ -161,6 +173,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a12",
 			"url": "https://www.epo.org/en/legal/epc/2020/a12.html",
 			"kind": "article",
@@ -174,6 +187,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a13",
 			"url": "https://www.epo.org/en/legal/epc/2020/a13.html",
 			"kind": "article",
@@ -187,6 +201,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a14",
 			"url": "https://www.epo.org/en/legal/epc/2020/a14.html",
 			"kind": "article",
@@ -200,6 +215,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a15",
 			"url": "https://www.epo.org/en/legal/epc/2020/a15.html",
 			"kind": "article",
@@ -213,6 +229,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a16",
 			"url": "https://www.epo.org/en/legal/epc/2020/a16.html",
 			"kind": "article",
@@ -226,6 +243,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a17",
 			"url": "https://www.epo.org/en/legal/epc/2020/a17.html",
 			"kind": "article",
@@ -239,6 +257,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a18",
 			"url": "https://www.epo.org/en/legal/epc/2020/a18.html",
 			"kind": "article",
@@ -252,6 +271,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a19",
 			"url": "https://www.epo.org/en/legal/epc/2020/a19.html",
 			"kind": "article",
@@ -265,6 +285,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a20",
 			"url": "https://www.epo.org/en/legal/epc/2020/a20.html",
 			"kind": "article",
@@ -278,6 +299,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a21",
 			"url": "https://www.epo.org/en/legal/epc/2020/a21.html",
 			"kind": "article",
@@ -291,6 +313,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a22",
 			"url": "https://www.epo.org/en/legal/epc/2020/a22.html",
 			"kind": "article",
@@ -304,6 +327,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a23",
 			"url": "https://www.epo.org/en/legal/epc/2020/a23.html",
 			"kind": "article",
@@ -317,6 +341,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a24",
 			"url": "https://www.epo.org/en/legal/epc/2020/a24.html",
 			"kind": "article",
@@ -330,6 +355,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a25",
 			"url": "https://www.epo.org/en/legal/epc/2020/a25.html",
 			"kind": "article",
@@ -343,6 +369,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a26",
 			"url": "https://www.epo.org/en/legal/epc/2020/a26.html",
 			"kind": "article",
@@ -356,6 +383,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a27",
 			"url": "https://www.epo.org/en/legal/epc/2020/a27.html",
 			"kind": "article",
@@ -369,6 +397,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a28",
 			"url": "https://www.epo.org/en/legal/epc/2020/a28.html",
 			"kind": "article",
@@ -382,6 +411,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a29",
 			"url": "https://www.epo.org/en/legal/epc/2020/a29.html",
 			"kind": "article",
@@ -395,6 +425,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a30",
 			"url": "https://www.epo.org/en/legal/epc/2020/a30.html",
 			"kind": "article",
@@ -408,6 +439,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a31",
 			"url": "https://www.epo.org/en/legal/epc/2020/a31.html",
 			"kind": "article",
@@ -421,6 +453,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a32",
 			"url": "https://www.epo.org/en/legal/epc/2020/a32.html",
 			"kind": "article",
@@ -434,6 +467,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a33",
 			"url": "https://www.epo.org/en/legal/epc/2020/a33.html",
 			"kind": "article",
@@ -447,6 +481,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a34",
 			"url": "https://www.epo.org/en/legal/epc/2020/a34.html",
 			"kind": "article",
@@ -460,6 +495,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a35",
 			"url": "https://www.epo.org/en/legal/epc/2020/a35.html",
 			"kind": "article",
@@ -473,6 +509,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a36",
 			"url": "https://www.epo.org/en/legal/epc/2020/a36.html",
 			"kind": "article",
@@ -486,6 +523,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a37",
 			"url": "https://www.epo.org/en/legal/epc/2020/a37.html",
 			"kind": "article",
@@ -499,6 +537,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a38",
 			"url": "https://www.epo.org/en/legal/epc/2020/a38.html",
 			"kind": "article",
@@ -512,6 +551,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a39",
 			"url": "https://www.epo.org/en/legal/epc/2020/a39.html",
 			"kind": "article",
@@ -525,6 +565,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a40",
 			"url": "https://www.epo.org/en/legal/epc/2020/a40.html",
 			"kind": "article",
@@ -538,6 +579,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a41",
 			"url": "https://www.epo.org/en/legal/epc/2020/a41.html",
 			"kind": "article",
@@ -551,6 +593,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a42",
 			"url": "https://www.epo.org/en/legal/epc/2020/a42.html",
 			"kind": "article",
@@ -564,6 +607,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a43",
 			"url": "https://www.epo.org/en/legal/epc/2020/a43.html",
 			"kind": "article",
@@ -577,6 +621,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a44",
 			"url": "https://www.epo.org/en/legal/epc/2020/a44.html",
 			"kind": "article",
@@ -590,6 +635,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a45",
 			"url": "https://www.epo.org/en/legal/epc/2020/a45.html",
 			"kind": "article",
@@ -603,6 +649,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a46",
 			"url": "https://www.epo.org/en/legal/epc/2020/a46.html",
 			"kind": "article",
@@ -616,6 +663,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a47",
 			"url": "https://www.epo.org/en/legal/epc/2020/a47.html",
 			"kind": "article",
@@ -629,6 +677,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a48",
 			"url": "https://www.epo.org/en/legal/epc/2020/a48.html",
 			"kind": "article",
@@ -642,6 +691,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a49",
 			"url": "https://www.epo.org/en/legal/epc/2020/a49.html",
 			"kind": "article",
@@ -655,6 +705,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a50",
 			"url": "https://www.epo.org/en/legal/epc/2020/a50.html",
 			"kind": "article",
@@ -668,6 +719,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a51",
 			"url": "https://www.epo.org/en/legal/epc/2020/a51.html",
 			"kind": "article",
@@ -681,6 +733,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a52",
 			"url": "https://www.epo.org/en/legal/epc/2020/a52.html",
 			"kind": "article",
@@ -694,6 +747,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a53",
 			"url": "https://www.epo.org/en/legal/epc/2020/a53.html",
 			"kind": "article",
@@ -707,6 +761,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a54",
 			"url": "https://www.epo.org/en/legal/epc/2020/a54.html",
 			"kind": "article",
@@ -720,6 +775,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a55",
 			"url": "https://www.epo.org/en/legal/epc/2020/a55.html",
 			"kind": "article",
@@ -733,6 +789,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a56",
 			"url": "https://www.epo.org/en/legal/epc/2020/a56.html",
 			"kind": "article",
@@ -746,6 +803,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a57",
 			"url": "https://www.epo.org/en/legal/epc/2020/a57.html",
 			"kind": "article",
@@ -759,6 +817,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a58",
 			"url": "https://www.epo.org/en/legal/epc/2020/a58.html",
 			"kind": "article",
@@ -772,6 +831,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a59",
 			"url": "https://www.epo.org/en/legal/epc/2020/a59.html",
 			"kind": "article",
@@ -785,6 +845,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a60",
 			"url": "https://www.epo.org/en/legal/epc/2020/a60.html",
 			"kind": "article",
@@ -798,6 +859,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a61",
 			"url": "https://www.epo.org/en/legal/epc/2020/a61.html",
 			"kind": "article",
@@ -811,6 +873,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a62",
 			"url": "https://www.epo.org/en/legal/epc/2020/a62.html",
 			"kind": "article",
@@ -824,6 +887,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a63",
 			"url": "https://www.epo.org/en/legal/epc/2020/a63.html",
 			"kind": "article",
@@ -837,6 +901,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a64",
 			"url": "https://www.epo.org/en/legal/epc/2020/a64.html",
 			"kind": "article",
@@ -850,6 +915,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a65",
 			"url": "https://www.epo.org/en/legal/epc/2020/a65.html",
 			"kind": "article",
@@ -863,6 +929,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a66",
 			"url": "https://www.epo.org/en/legal/epc/2020/a66.html",
 			"kind": "article",
@@ -876,6 +943,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a67",
 			"url": "https://www.epo.org/en/legal/epc/2020/a67.html",
 			"kind": "article",
@@ -889,6 +957,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a68",
 			"url": "https://www.epo.org/en/legal/epc/2020/a68.html",
 			"kind": "article",
@@ -902,6 +971,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a69",
 			"url": "https://www.epo.org/en/legal/epc/2020/a69.html",
 			"kind": "article",
@@ -915,6 +985,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a70",
 			"url": "https://www.epo.org/en/legal/epc/2020/a70.html",
 			"kind": "article",
@@ -928,6 +999,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a71",
 			"url": "https://www.epo.org/en/legal/epc/2020/a71.html",
 			"kind": "article",
@@ -941,6 +1013,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a72",
 			"url": "https://www.epo.org/en/legal/epc/2020/a72.html",
 			"kind": "article",
@@ -954,6 +1027,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a73",
 			"url": "https://www.epo.org/en/legal/epc/2020/a73.html",
 			"kind": "article",
@@ -967,6 +1041,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a74",
 			"url": "https://www.epo.org/en/legal/epc/2020/a74.html",
 			"kind": "article",
@@ -980,6 +1055,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a75",
 			"url": "https://www.epo.org/en/legal/epc/2020/a75.html",
 			"kind": "article",
@@ -993,6 +1069,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a76",
 			"url": "https://www.epo.org/en/legal/epc/2020/a76.html",
 			"kind": "article",
@@ -1006,6 +1083,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a77",
 			"url": "https://www.epo.org/en/legal/epc/2020/a77.html",
 			"kind": "article",
@@ -1019,6 +1097,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a78",
 			"url": "https://www.epo.org/en/legal/epc/2020/a78.html",
 			"kind": "article",
@@ -1032,6 +1111,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a79",
 			"url": "https://www.epo.org/en/legal/epc/2020/a79.html",
 			"kind": "article",
@@ -1045,6 +1125,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a80",
 			"url": "https://www.epo.org/en/legal/epc/2020/a80.html",
 			"kind": "article",
@@ -1058,6 +1139,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a81",
 			"url": "https://www.epo.org/en/legal/epc/2020/a81.html",
 			"kind": "article",
@@ -1071,6 +1153,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a82",
 			"url": "https://www.epo.org/en/legal/epc/2020/a82.html",
 			"kind": "article",
@@ -1084,6 +1167,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a83",
 			"url": "https://www.epo.org/en/legal/epc/2020/a83.html",
 			"kind": "article",
@@ -1097,6 +1181,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a84",
 			"url": "https://www.epo.org/en/legal/epc/2020/a84.html",
 			"kind": "article",
@@ -1110,6 +1195,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a85",
 			"url": "https://www.epo.org/en/legal/epc/2020/a85.html",
 			"kind": "article",
@@ -1123,6 +1209,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a86",
 			"url": "https://www.epo.org/en/legal/epc/2020/a86.html",
 			"kind": "article",
@@ -1136,6 +1223,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a87",
 			"url": "https://www.epo.org/en/legal/epc/2020/a87.html",
 			"kind": "article",
@@ -1149,6 +1237,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a88",
 			"url": "https://www.epo.org/en/legal/epc/2020/a88.html",
 			"kind": "article",
@@ -1162,6 +1251,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a89",
 			"url": "https://www.epo.org/en/legal/epc/2020/a89.html",
 			"kind": "article",
@@ -1175,6 +1265,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a90",
 			"url": "https://www.epo.org/en/legal/epc/2020/a90.html",
 			"kind": "article",
@@ -1188,6 +1279,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a91",
 			"url": "https://www.epo.org/en/legal/epc/2020/a91.html",
 			"kind": "article",
@@ -1201,6 +1293,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a92",
 			"url": "https://www.epo.org/en/legal/epc/2020/a92.html",
 			"kind": "article",
@@ -1214,6 +1307,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a93",
 			"url": "https://www.epo.org/en/legal/epc/2020/a93.html",
 			"kind": "article",
@@ -1227,6 +1321,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a94",
 			"url": "https://www.epo.org/en/legal/epc/2020/a94.html",
 			"kind": "article",
@@ -1240,6 +1335,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a95",
 			"url": "https://www.epo.org/en/legal/epc/2020/a95.html",
 			"kind": "article",
@@ -1253,6 +1349,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a96",
 			"url": "https://www.epo.org/en/legal/epc/2020/a96.html",
 			"kind": "article",
@@ -1266,6 +1363,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a97",
 			"url": "https://www.epo.org/en/legal/epc/2020/a97.html",
 			"kind": "article",
@@ -1279,6 +1377,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a98",
 			"url": "https://www.epo.org/en/legal/epc/2020/a98.html",
 			"kind": "article",
@@ -1292,6 +1391,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a99",
 			"url": "https://www.epo.org/en/legal/epc/2020/a99.html",
 			"kind": "article",
@@ -1305,6 +1405,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a100",
 			"url": "https://www.epo.org/en/legal/epc/2020/a100.html",
 			"kind": "article",
@@ -1318,6 +1419,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a101",
 			"url": "https://www.epo.org/en/legal/epc/2020/a101.html",
 			"kind": "article",
@@ -1331,6 +1433,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a102",
 			"url": "https://www.epo.org/en/legal/epc/2020/a102.html",
 			"kind": "article",
@@ -1344,6 +1447,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a103",
 			"url": "https://www.epo.org/en/legal/epc/2020/a103.html",
 			"kind": "article",
@@ -1357,6 +1461,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a104",
 			"url": "https://www.epo.org/en/legal/epc/2020/a104.html",
 			"kind": "article",
@@ -1370,6 +1475,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a105",
 			"url": "https://www.epo.org/en/legal/epc/2020/a105.html",
 			"kind": "article",
@@ -1383,6 +1489,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a105a",
 			"url": "https://www.epo.org/en/legal/epc/2020/a105a.html",
 			"kind": "article",
@@ -1396,6 +1503,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a105b",
 			"url": "https://www.epo.org/en/legal/epc/2020/a105b.html",
 			"kind": "article",
@@ -1409,6 +1517,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a105c",
 			"url": "https://www.epo.org/en/legal/epc/2020/a105c.html",
 			"kind": "article",
@@ -1422,6 +1531,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a106",
 			"url": "https://www.epo.org/en/legal/epc/2020/a106.html",
 			"kind": "article",
@@ -1435,6 +1545,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a107",
 			"url": "https://www.epo.org/en/legal/epc/2020/a107.html",
 			"kind": "article",
@@ -1448,6 +1559,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a108",
 			"url": "https://www.epo.org/en/legal/epc/2020/a108.html",
 			"kind": "article",
@@ -1461,6 +1573,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a109",
 			"url": "https://www.epo.org/en/legal/epc/2020/a109.html",
 			"kind": "article",
@@ -1474,6 +1587,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a110",
 			"url": "https://www.epo.org/en/legal/epc/2020/a110.html",
 			"kind": "article",
@@ -1487,6 +1601,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a111",
 			"url": "https://www.epo.org/en/legal/epc/2020/a111.html",
 			"kind": "article",
@@ -1500,6 +1615,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a112",
 			"url": "https://www.epo.org/en/legal/epc/2020/a112.html",
 			"kind": "article",
@@ -1513,6 +1629,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a112a",
 			"url": "https://www.epo.org/en/legal/epc/2020/a112a.html",
 			"kind": "article",
@@ -1526,6 +1643,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a113",
 			"url": "https://www.epo.org/en/legal/epc/2020/a113.html",
 			"kind": "article",
@@ -1539,6 +1657,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a114",
 			"url": "https://www.epo.org/en/legal/epc/2020/a114.html",
 			"kind": "article",
@@ -1552,6 +1671,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a115",
 			"url": "https://www.epo.org/en/legal/epc/2020/a115.html",
 			"kind": "article",
@@ -1565,6 +1685,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a116",
 			"url": "https://www.epo.org/en/legal/epc/2020/a116.html",
 			"kind": "article",
@@ -1578,6 +1699,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a117",
 			"url": "https://www.epo.org/en/legal/epc/2020/a117.html",
 			"kind": "article",
@@ -1591,6 +1713,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a118",
 			"url": "https://www.epo.org/en/legal/epc/2020/a118.html",
 			"kind": "article",
@@ -1604,6 +1727,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a119",
 			"url": "https://www.epo.org/en/legal/epc/2020/a119.html",
 			"kind": "article",
@@ -1617,6 +1741,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a120",
 			"url": "https://www.epo.org/en/legal/epc/2020/a120.html",
 			"kind": "article",
@@ -1630,6 +1755,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a121",
 			"url": "https://www.epo.org/en/legal/epc/2020/a121.html",
 			"kind": "article",
@@ -1643,6 +1769,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a122",
 			"url": "https://www.epo.org/en/legal/epc/2020/a122.html",
 			"kind": "article",
@@ -1656,6 +1783,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a123",
 			"url": "https://www.epo.org/en/legal/epc/2020/a123.html",
 			"kind": "article",
@@ -1669,6 +1797,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a124",
 			"url": "https://www.epo.org/en/legal/epc/2020/a124.html",
 			"kind": "article",
@@ -1682,6 +1811,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a125",
 			"url": "https://www.epo.org/en/legal/epc/2020/a125.html",
 			"kind": "article",
@@ -1695,6 +1825,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a126",
 			"url": "https://www.epo.org/en/legal/epc/2020/a126.html",
 			"kind": "article",
@@ -1708,6 +1839,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a127",
 			"url": "https://www.epo.org/en/legal/epc/2020/a127.html",
 			"kind": "article",
@@ -1721,6 +1853,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a128",
 			"url": "https://www.epo.org/en/legal/epc/2020/a128.html",
 			"kind": "article",
@@ -1734,6 +1867,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a129",
 			"url": "https://www.epo.org/en/legal/epc/2020/a129.html",
 			"kind": "article",
@@ -1747,6 +1881,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a130",
 			"url": "https://www.epo.org/en/legal/epc/2020/a130.html",
 			"kind": "article",
@@ -1760,6 +1895,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a131",
 			"url": "https://www.epo.org/en/legal/epc/2020/a131.html",
 			"kind": "article",
@@ -1773,6 +1909,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a132",
 			"url": "https://www.epo.org/en/legal/epc/2020/a132.html",
 			"kind": "article",
@@ -1786,6 +1923,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a133",
 			"url": "https://www.epo.org/en/legal/epc/2020/a133.html",
 			"kind": "article",
@@ -1799,6 +1937,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a134",
 			"url": "https://www.epo.org/en/legal/epc/2020/a134.html",
 			"kind": "article",
@@ -1812,6 +1951,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a134a",
 			"url": "https://www.epo.org/en/legal/epc/2020/a134a.html",
 			"kind": "article",
@@ -1825,6 +1965,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a135",
 			"url": "https://www.epo.org/en/legal/epc/2020/a135.html",
 			"kind": "article",
@@ -1838,6 +1979,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a136",
 			"url": "https://www.epo.org/en/legal/epc/2020/a136.html",
 			"kind": "article",
@@ -1851,6 +1993,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a137",
 			"url": "https://www.epo.org/en/legal/epc/2020/a137.html",
 			"kind": "article",
@@ -1864,6 +2007,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a138",
 			"url": "https://www.epo.org/en/legal/epc/2020/a138.html",
 			"kind": "article",
@@ -1877,6 +2021,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a139",
 			"url": "https://www.epo.org/en/legal/epc/2020/a139.html",
 			"kind": "article",
@@ -1890,6 +2035,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a140",
 			"url": "https://www.epo.org/en/legal/epc/2020/a140.html",
 			"kind": "article",
@@ -1903,6 +2049,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a141",
 			"url": "https://www.epo.org/en/legal/epc/2020/a141.html",
 			"kind": "article",
@@ -1916,6 +2063,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a142",
 			"url": "https://www.epo.org/en/legal/epc/2020/a142.html",
 			"kind": "article",
@@ -1929,6 +2077,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a143",
 			"url": "https://www.epo.org/en/legal/epc/2020/a143.html",
 			"kind": "article",
@@ -1942,6 +2091,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a144",
 			"url": "https://www.epo.org/en/legal/epc/2020/a144.html",
 			"kind": "article",
@@ -1955,6 +2105,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a145",
 			"url": "https://www.epo.org/en/legal/epc/2020/a145.html",
 			"kind": "article",
@@ -1968,6 +2119,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a146",
 			"url": "https://www.epo.org/en/legal/epc/2020/a146.html",
 			"kind": "article",
@@ -1981,6 +2133,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a147",
 			"url": "https://www.epo.org/en/legal/epc/2020/a147.html",
 			"kind": "article",
@@ -1994,6 +2147,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a148",
 			"url": "https://www.epo.org/en/legal/epc/2020/a148.html",
 			"kind": "article",
@@ -2007,6 +2161,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a149",
 			"url": "https://www.epo.org/en/legal/epc/2020/a149.html",
 			"kind": "article",
@@ -2020,6 +2175,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a149a",
 			"url": "https://www.epo.org/en/legal/epc/2020/a149a.html",
 			"kind": "article",
@@ -2033,6 +2189,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a150",
 			"url": "https://www.epo.org/en/legal/epc/2020/a150.html",
 			"kind": "article",
@@ -2046,6 +2203,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a151",
 			"url": "https://www.epo.org/en/legal/epc/2020/a151.html",
 			"kind": "article",
@@ -2059,6 +2217,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a152",
 			"url": "https://www.epo.org/en/legal/epc/2020/a152.html",
 			"kind": "article",
@@ -2072,6 +2231,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a153",
 			"url": "https://www.epo.org/en/legal/epc/2020/a153.html",
 			"kind": "article",
@@ -2085,6 +2245,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a154",
 			"url": "https://www.epo.org/en/legal/epc/2020/a154.html",
 			"kind": "article",
@@ -2098,6 +2259,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a155",
 			"url": "https://www.epo.org/en/legal/epc/2020/a155.html",
 			"kind": "article",
@@ -2111,6 +2273,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a156",
 			"url": "https://www.epo.org/en/legal/epc/2020/a156.html",
 			"kind": "article",
@@ -2124,6 +2287,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a157",
 			"url": "https://www.epo.org/en/legal/epc/2020/a157.html",
 			"kind": "article",
@@ -2137,6 +2301,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a158",
 			"url": "https://www.epo.org/en/legal/epc/2020/a158.html",
 			"kind": "article",
@@ -2150,6 +2315,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a164",
 			"url": "https://www.epo.org/en/legal/epc/2020/a164.html",
 			"kind": "article",
@@ -2163,6 +2329,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a165",
 			"url": "https://www.epo.org/en/legal/epc/2020/a165.html",
 			"kind": "article",
@@ -2176,6 +2343,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a166",
 			"url": "https://www.epo.org/en/legal/epc/2020/a166.html",
 			"kind": "article",
@@ -2189,6 +2357,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a167",
 			"url": "https://www.epo.org/en/legal/epc/2020/a167.html",
 			"kind": "article",
@@ -2202,6 +2371,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a168",
 			"url": "https://www.epo.org/en/legal/epc/2020/a168.html",
 			"kind": "article",
@@ -2215,6 +2385,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a169",
 			"url": "https://www.epo.org/en/legal/epc/2020/a169.html",
 			"kind": "article",
@@ -2228,6 +2399,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a170",
 			"url": "https://www.epo.org/en/legal/epc/2020/a170.html",
 			"kind": "article",
@@ -2241,6 +2413,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a171",
 			"url": "https://www.epo.org/en/legal/epc/2020/a171.html",
 			"kind": "article",
@@ -2254,6 +2427,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a172",
 			"url": "https://www.epo.org/en/legal/epc/2020/a172.html",
 			"kind": "article",
@@ -2267,6 +2441,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a173",
 			"url": "https://www.epo.org/en/legal/epc/2020/a173.html",
 			"kind": "article",
@@ -2280,6 +2455,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a174",
 			"url": "https://www.epo.org/en/legal/epc/2020/a174.html",
 			"kind": "article",
@@ -2293,6 +2469,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a175",
 			"url": "https://www.epo.org/en/legal/epc/2020/a175.html",
 			"kind": "article",
@@ -2306,6 +2483,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a176",
 			"url": "https://www.epo.org/en/legal/epc/2020/a176.html",
 			"kind": "article",
@@ -2319,6 +2497,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a177",
 			"url": "https://www.epo.org/en/legal/epc/2020/a177.html",
 			"kind": "article",
@@ -2332,6 +2511,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "a178",
 			"url": "https://www.epo.org/en/legal/epc/2020/a178.html",
 			"kind": "article",
@@ -2345,6 +2525,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r1",
 			"url": "https://www.epo.org/en/legal/epc/2020/r1.html",
 			"kind": "rule",
@@ -2358,6 +2539,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r2",
 			"url": "https://www.epo.org/en/legal/epc/2020/r2.html",
 			"kind": "rule",
@@ -2371,6 +2553,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r3",
 			"url": "https://www.epo.org/en/legal/epc/2020/r3.html",
 			"kind": "rule",
@@ -2384,6 +2567,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r4",
 			"url": "https://www.epo.org/en/legal/epc/2020/r4.html",
 			"kind": "rule",
@@ -2397,6 +2581,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r5",
 			"url": "https://www.epo.org/en/legal/epc/2020/r5.html",
 			"kind": "rule",
@@ -2410,6 +2595,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r6",
 			"url": "https://www.epo.org/en/legal/epc/2020/r6.html",
 			"kind": "rule",
@@ -2423,6 +2609,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r7",
 			"url": "https://www.epo.org/en/legal/epc/2020/r7.html",
 			"kind": "rule",
@@ -2436,6 +2623,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r7a",
 			"url": "https://www.epo.org/en/legal/epc/2020/r7a.html",
 			"kind": "rule",
@@ -2449,6 +2637,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r7b",
 			"url": "https://www.epo.org/en/legal/epc/2020/r7b.html",
 			"kind": "rule",
@@ -2462,6 +2651,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r8",
 			"url": "https://www.epo.org/en/legal/epc/2020/r8.html",
 			"kind": "rule",
@@ -2475,6 +2665,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r9",
 			"url": "https://www.epo.org/en/legal/epc/2020/r9.html",
 			"kind": "rule",
@@ -2488,6 +2679,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r10",
 			"url": "https://www.epo.org/en/legal/epc/2020/r10.html",
 			"kind": "rule",
@@ -2501,6 +2693,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r11",
 			"url": "https://www.epo.org/en/legal/epc/2020/r11.html",
 			"kind": "rule",
@@ -2514,6 +2707,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r12",
 			"url": "https://www.epo.org/en/legal/epc/2020/r12.html",
 			"kind": "rule",
@@ -2527,6 +2721,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r12a",
 			"url": "https://www.epo.org/en/legal/epc/2020/r12a.html",
 			"kind": "rule",
@@ -2540,6 +2735,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r12b",
 			"url": "https://www.epo.org/en/legal/epc/2020/r12b.html",
 			"kind": "rule",
@@ -2553,6 +2749,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r12c",
 			"url": "https://www.epo.org/en/legal/epc/2020/r12c.html",
 			"kind": "rule",
@@ -2566,6 +2763,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r12d",
 			"url": "https://www.epo.org/en/legal/epc/2020/r12d.html",
 			"kind": "rule",
@@ -2579,6 +2777,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r13",
 			"url": "https://www.epo.org/en/legal/epc/2020/r13.html",
 			"kind": "rule",
@@ -2592,6 +2791,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r14",
 			"url": "https://www.epo.org/en/legal/epc/2020/r14.html",
 			"kind": "rule",
@@ -2605,6 +2805,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r15",
 			"url": "https://www.epo.org/en/legal/epc/2020/r15.html",
 			"kind": "rule",
@@ -2618,6 +2819,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r16",
 			"url": "https://www.epo.org/en/legal/epc/2020/r16.html",
 			"kind": "rule",
@@ -2631,6 +2833,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r17",
 			"url": "https://www.epo.org/en/legal/epc/2020/r17.html",
 			"kind": "rule",
@@ -2644,6 +2847,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r18",
 			"url": "https://www.epo.org/en/legal/epc/2020/r18.html",
 			"kind": "rule",
@@ -2657,6 +2861,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r19",
 			"url": "https://www.epo.org/en/legal/epc/2020/r19.html",
 			"kind": "rule",
@@ -2670,6 +2875,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r20",
 			"url": "https://www.epo.org/en/legal/epc/2020/r20.html",
 			"kind": "rule",
@@ -2683,6 +2889,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r21",
 			"url": "https://www.epo.org/en/legal/epc/2020/r21.html",
 			"kind": "rule",
@@ -2696,6 +2903,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r22",
 			"url": "https://www.epo.org/en/legal/epc/2020/r22.html",
 			"kind": "rule",
@@ -2709,6 +2917,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r23",
 			"url": "https://www.epo.org/en/legal/epc/2020/r23.html",
 			"kind": "rule",
@@ -2722,6 +2931,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r24",
 			"url": "https://www.epo.org/en/legal/epc/2020/r24.html",
 			"kind": "rule",
@@ -2735,6 +2945,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r25",
 			"url": "https://www.epo.org/en/legal/epc/2020/r25.html",
 			"kind": "rule",
@@ -2748,6 +2959,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r26",
 			"url": "https://www.epo.org/en/legal/epc/2020/r26.html",
 			"kind": "rule",
@@ -2761,6 +2973,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r27",
 			"url": "https://www.epo.org/en/legal/epc/2020/r27.html",
 			"kind": "rule",
@@ -2774,6 +2987,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r28",
 			"url": "https://www.epo.org/en/legal/epc/2020/r28.html",
 			"kind": "rule",
@@ -2787,6 +3001,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r29",
 			"url": "https://www.epo.org/en/legal/epc/2020/r29.html",
 			"kind": "rule",
@@ -2800,6 +3015,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r30",
 			"url": "https://www.epo.org/en/legal/epc/2020/r30.html",
 			"kind": "rule",
@@ -2813,6 +3029,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r31",
 			"url": "https://www.epo.org/en/legal/epc/2020/r31.html",
 			"kind": "rule",
@@ -2826,6 +3043,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r32",
 			"url": "https://www.epo.org/en/legal/epc/2020/r32.html",
 			"kind": "rule",
@@ -2839,6 +3057,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r33",
 			"url": "https://www.epo.org/en/legal/epc/2020/r33.html",
 			"kind": "rule",
@@ -2852,6 +3071,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r34",
 			"url": "https://www.epo.org/en/legal/epc/2020/r34.html",
 			"kind": "rule",
@@ -2865,6 +3085,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r35",
 			"url": "https://www.epo.org/en/legal/epc/2020/r35.html",
 			"kind": "rule",
@@ -2878,6 +3099,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r36",
 			"url": "https://www.epo.org/en/legal/epc/2020/r36.html",
 			"kind": "rule",
@@ -2891,6 +3113,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r37",
 			"url": "https://www.epo.org/en/legal/epc/2020/r37.html",
 			"kind": "rule",
@@ -2904,6 +3127,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r38",
 			"url": "https://www.epo.org/en/legal/epc/2020/r38.html",
 			"kind": "rule",
@@ -2917,6 +3141,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r39",
 			"url": "https://www.epo.org/en/legal/epc/2020/r39.html",
 			"kind": "rule",
@@ -2930,6 +3155,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r40",
 			"url": "https://www.epo.org/en/legal/epc/2020/r40.html",
 			"kind": "rule",
@@ -2943,6 +3169,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r41",
 			"url": "https://www.epo.org/en/legal/epc/2020/r41.html",
 			"kind": "rule",
@@ -2956,6 +3183,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r42",
 			"url": "https://www.epo.org/en/legal/epc/2020/r42.html",
 			"kind": "rule",
@@ -2969,6 +3197,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r43",
 			"url": "https://www.epo.org/en/legal/epc/2020/r43.html",
 			"kind": "rule",
@@ -2982,6 +3211,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r44",
 			"url": "https://www.epo.org/en/legal/epc/2020/r44.html",
 			"kind": "rule",
@@ -2995,6 +3225,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r45",
 			"url": "https://www.epo.org/en/legal/epc/2020/r45.html",
 			"kind": "rule",
@@ -3008,6 +3239,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r46",
 			"url": "https://www.epo.org/en/legal/epc/2020/r46.html",
 			"kind": "rule",
@@ -3021,6 +3253,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r47",
 			"url": "https://www.epo.org/en/legal/epc/2020/r47.html",
 			"kind": "rule",
@@ -3034,6 +3267,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r48",
 			"url": "https://www.epo.org/en/legal/epc/2020/r48.html",
 			"kind": "rule",
@@ -3047,6 +3281,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r49",
 			"url": "https://www.epo.org/en/legal/epc/2020/r49.html",
 			"kind": "rule",
@@ -3060,6 +3295,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r50",
 			"url": "https://www.epo.org/en/legal/epc/2020/r50.html",
 			"kind": "rule",
@@ -3073,6 +3309,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r51",
 			"url": "https://www.epo.org/en/legal/epc/2020/r51.html",
 			"kind": "rule",
@@ -3086,6 +3323,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r52",
 			"url": "https://www.epo.org/en/legal/epc/2020/r52.html",
 			"kind": "rule",
@@ -3099,6 +3337,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r53",
 			"url": "https://www.epo.org/en/legal/epc/2020/r53.html",
 			"kind": "rule",
@@ -3112,6 +3351,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r54",
 			"url": "https://www.epo.org/en/legal/epc/2020/r54.html",
 			"kind": "rule",
@@ -3125,6 +3365,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r55",
 			"url": "https://www.epo.org/en/legal/epc/2020/r55.html",
 			"kind": "rule",
@@ -3138,6 +3379,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r56",
 			"url": "https://www.epo.org/en/legal/epc/2020/r56.html",
 			"kind": "rule",
@@ -3151,6 +3393,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r56a",
 			"url": "https://www.epo.org/en/legal/epc/2020/r56a.html",
 			"kind": "rule",
@@ -3164,6 +3407,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r57",
 			"url": "https://www.epo.org/en/legal/epc/2020/r57.html",
 			"kind": "rule",
@@ -3177,6 +3421,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r58",
 			"url": "https://www.epo.org/en/legal/epc/2020/r58.html",
 			"kind": "rule",
@@ -3190,6 +3435,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r59",
 			"url": "https://www.epo.org/en/legal/epc/2020/r59.html",
 			"kind": "rule",
@@ -3203,6 +3449,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r60",
 			"url": "https://www.epo.org/en/legal/epc/2020/r60.html",
 			"kind": "rule",
@@ -3216,6 +3463,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r61",
 			"url": "https://www.epo.org/en/legal/epc/2020/r61.html",
 			"kind": "rule",
@@ -3229,6 +3477,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r62",
 			"url": "https://www.epo.org/en/legal/epc/2020/r62.html",
 			"kind": "rule",
@@ -3242,6 +3491,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r62a",
 			"url": "https://www.epo.org/en/legal/epc/2020/r62a.html",
 			"kind": "rule",
@@ -3255,6 +3505,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r63",
 			"url": "https://www.epo.org/en/legal/epc/2020/r63.html",
 			"kind": "rule",
@@ -3268,6 +3519,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r64",
 			"url": "https://www.epo.org/en/legal/epc/2020/r64.html",
 			"kind": "rule",
@@ -3281,6 +3533,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r65",
 			"url": "https://www.epo.org/en/legal/epc/2020/r65.html",
 			"kind": "rule",
@@ -3294,6 +3547,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r66",
 			"url": "https://www.epo.org/en/legal/epc/2020/r66.html",
 			"kind": "rule",
@@ -3307,6 +3561,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r67",
 			"url": "https://www.epo.org/en/legal/epc/2020/r67.html",
 			"kind": "rule",
@@ -3320,6 +3575,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r68",
 			"url": "https://www.epo.org/en/legal/epc/2020/r68.html",
 			"kind": "rule",
@@ -3333,6 +3589,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r69",
 			"url": "https://www.epo.org/en/legal/epc/2020/r69.html",
 			"kind": "rule",
@@ -3346,6 +3603,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r70",
 			"url": "https://www.epo.org/en/legal/epc/2020/r70.html",
 			"kind": "rule",
@@ -3359,6 +3617,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r70a",
 			"url": "https://www.epo.org/en/legal/epc/2020/r70a.html",
 			"kind": "rule",
@@ -3372,6 +3631,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r70b",
 			"url": "https://www.epo.org/en/legal/epc/2020/r70b.html",
 			"kind": "rule",
@@ -3385,6 +3645,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r71",
 			"url": "https://www.epo.org/en/legal/epc/2020/r71.html",
 			"kind": "rule",
@@ -3398,6 +3659,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r71a",
 			"url": "https://www.epo.org/en/legal/epc/2020/r71a.html",
 			"kind": "rule",
@@ -3411,6 +3673,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r72",
 			"url": "https://www.epo.org/en/legal/epc/2020/r72.html",
 			"kind": "rule",
@@ -3424,6 +3687,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r73",
 			"url": "https://www.epo.org/en/legal/epc/2020/r73.html",
 			"kind": "rule",
@@ -3437,6 +3701,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r74",
 			"url": "https://www.epo.org/en/legal/epc/2020/r74.html",
 			"kind": "rule",
@@ -3450,6 +3715,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r75",
 			"url": "https://www.epo.org/en/legal/epc/2020/r75.html",
 			"kind": "rule",
@@ -3463,6 +3729,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r76",
 			"url": "https://www.epo.org/en/legal/epc/2020/r76.html",
 			"kind": "rule",
@@ -3476,6 +3743,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r77",
 			"url": "https://www.epo.org/en/legal/epc/2020/r77.html",
 			"kind": "rule",
@@ -3489,6 +3757,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r78",
 			"url": "https://www.epo.org/en/legal/epc/2020/r78.html",
 			"kind": "rule",
@@ -3502,6 +3771,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r79",
 			"url": "https://www.epo.org/en/legal/epc/2020/r79.html",
 			"kind": "rule",
@@ -3515,6 +3785,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r80",
 			"url": "https://www.epo.org/en/legal/epc/2020/r80.html",
 			"kind": "rule",
@@ -3528,6 +3799,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r81",
 			"url": "https://www.epo.org/en/legal/epc/2020/r81.html",
 			"kind": "rule",
@@ -3541,6 +3813,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r82",
 			"url": "https://www.epo.org/en/legal/epc/2020/r82.html",
 			"kind": "rule",
@@ -3554,6 +3827,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r83",
 			"url": "https://www.epo.org/en/legal/epc/2020/r83.html",
 			"kind": "rule",
@@ -3567,6 +3841,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r84",
 			"url": "https://www.epo.org/en/legal/epc/2020/r84.html",
 			"kind": "rule",
@@ -3580,6 +3855,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r85",
 			"url": "https://www.epo.org/en/legal/epc/2020/r85.html",
 			"kind": "rule",
@@ -3593,6 +3869,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r86",
 			"url": "https://www.epo.org/en/legal/epc/2020/r86.html",
 			"kind": "rule",
@@ -3606,6 +3883,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r87",
 			"url": "https://www.epo.org/en/legal/epc/2020/r87.html",
 			"kind": "rule",
@@ -3619,6 +3897,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r88",
 			"url": "https://www.epo.org/en/legal/epc/2020/r88.html",
 			"kind": "rule",
@@ -3632,6 +3911,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r89",
 			"url": "https://www.epo.org/en/legal/epc/2020/r89.html",
 			"kind": "rule",
@@ -3645,6 +3925,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r90",
 			"url": "https://www.epo.org/en/legal/epc/2020/r90.html",
 			"kind": "rule",
@@ -3658,6 +3939,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r91",
 			"url": "https://www.epo.org/en/legal/epc/2020/r91.html",
 			"kind": "rule",
@@ -3671,6 +3953,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r92",
 			"url": "https://www.epo.org/en/legal/epc/2020/r92.html",
 			"kind": "rule",
@@ -3684,6 +3967,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r93",
 			"url": "https://www.epo.org/en/legal/epc/2020/r93.html",
 			"kind": "rule",
@@ -3697,6 +3981,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r94",
 			"url": "https://www.epo.org/en/legal/epc/2020/r94.html",
 			"kind": "rule",
@@ -3710,6 +3995,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r95",
 			"url": "https://www.epo.org/en/legal/epc/2020/r95.html",
 			"kind": "rule",
@@ -3723,6 +4009,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r96",
 			"url": "https://www.epo.org/en/legal/epc/2020/r96.html",
 			"kind": "rule",
@@ -3736,6 +4023,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r97",
 			"url": "https://www.epo.org/en/legal/epc/2020/r97.html",
 			"kind": "rule",
@@ -3749,6 +4037,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r98",
 			"url": "https://www.epo.org/en/legal/epc/2020/r98.html",
 			"kind": "rule",
@@ -3762,6 +4051,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r99",
 			"url": "https://www.epo.org/en/legal/epc/2020/r99.html",
 			"kind": "rule",
@@ -3775,6 +4065,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r100",
 			"url": "https://www.epo.org/en/legal/epc/2020/r100.html",
 			"kind": "rule",
@@ -3788,6 +4079,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r101",
 			"url": "https://www.epo.org/en/legal/epc/2020/r101.html",
 			"kind": "rule",
@@ -3801,6 +4093,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r102",
 			"url": "https://www.epo.org/en/legal/epc/2020/r102.html",
 			"kind": "rule",
@@ -3814,6 +4107,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r103",
 			"url": "https://www.epo.org/en/legal/epc/2020/r103.html",
 			"kind": "rule",
@@ -3827,6 +4121,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r104",
 			"url": "https://www.epo.org/en/legal/epc/2020/r104.html",
 			"kind": "rule",
@@ -3840,6 +4135,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r105",
 			"url": "https://www.epo.org/en/legal/epc/2020/r105.html",
 			"kind": "rule",
@@ -3853,6 +4149,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r106",
 			"url": "https://www.epo.org/en/legal/epc/2020/r106.html",
 			"kind": "rule",
@@ -3866,6 +4163,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r107",
 			"url": "https://www.epo.org/en/legal/epc/2020/r107.html",
 			"kind": "rule",
@@ -3879,6 +4177,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r108",
 			"url": "https://www.epo.org/en/legal/epc/2020/r108.html",
 			"kind": "rule",
@@ -3892,6 +4191,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r109",
 			"url": "https://www.epo.org/en/legal/epc/2020/r109.html",
 			"kind": "rule",
@@ -3905,6 +4205,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r110",
 			"url": "https://www.epo.org/en/legal/epc/2020/r110.html",
 			"kind": "rule",
@@ -3918,6 +4219,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r111",
 			"url": "https://www.epo.org/en/legal/epc/2020/r111.html",
 			"kind": "rule",
@@ -3931,6 +4233,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r112",
 			"url": "https://www.epo.org/en/legal/epc/2020/r112.html",
 			"kind": "rule",
@@ -3944,6 +4247,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r113",
 			"url": "https://www.epo.org/en/legal/epc/2020/r113.html",
 			"kind": "rule",
@@ -3957,6 +4261,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r114",
 			"url": "https://www.epo.org/en/legal/epc/2020/r114.html",
 			"kind": "rule",
@@ -3970,6 +4275,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r115",
 			"url": "https://www.epo.org/en/legal/epc/2020/r115.html",
 			"kind": "rule",
@@ -3983,6 +4289,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r116",
 			"url": "https://www.epo.org/en/legal/epc/2020/r116.html",
 			"kind": "rule",
@@ -3996,6 +4303,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r117",
 			"url": "https://www.epo.org/en/legal/epc/2020/r117.html",
 			"kind": "rule",
@@ -4009,6 +4317,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r118",
 			"url": "https://www.epo.org/en/legal/epc/2020/r118.html",
 			"kind": "rule",
@@ -4022,6 +4331,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r119",
 			"url": "https://www.epo.org/en/legal/epc/2020/r119.html",
 			"kind": "rule",
@@ -4035,6 +4345,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r120",
 			"url": "https://www.epo.org/en/legal/epc/2020/r120.html",
 			"kind": "rule",
@@ -4048,6 +4359,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r121",
 			"url": "https://www.epo.org/en/legal/epc/2020/r121.html",
 			"kind": "rule",
@@ -4061,6 +4373,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r122",
 			"url": "https://www.epo.org/en/legal/epc/2020/r122.html",
 			"kind": "rule",
@@ -4074,6 +4387,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r123",
 			"url": "https://www.epo.org/en/legal/epc/2020/r123.html",
 			"kind": "rule",
@@ -4087,6 +4401,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r124",
 			"url": "https://www.epo.org/en/legal/epc/2020/r124.html",
 			"kind": "rule",
@@ -4100,6 +4415,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r125",
 			"url": "https://www.epo.org/en/legal/epc/2020/r125.html",
 			"kind": "rule",
@@ -4113,6 +4429,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r126",
 			"url": "https://www.epo.org/en/legal/epc/2020/r126.html",
 			"kind": "rule",
@@ -4126,6 +4443,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r127",
 			"url": "https://www.epo.org/en/legal/epc/2020/r127.html",
 			"kind": "rule",
@@ -4139,6 +4457,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r128",
 			"url": "https://www.epo.org/en/legal/epc/2020/r128.html",
 			"kind": "rule",
@@ -4152,6 +4471,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r129",
 			"url": "https://www.epo.org/en/legal/epc/2020/r129.html",
 			"kind": "rule",
@@ -4165,6 +4485,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r130",
 			"url": "https://www.epo.org/en/legal/epc/2020/r130.html",
 			"kind": "rule",
@@ -4178,6 +4499,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r131",
 			"url": "https://www.epo.org/en/legal/epc/2020/r131.html",
 			"kind": "rule",
@@ -4191,6 +4513,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r132",
 			"url": "https://www.epo.org/en/legal/epc/2020/r132.html",
 			"kind": "rule",
@@ -4204,6 +4527,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r133",
 			"url": "https://www.epo.org/en/legal/epc/2020/r133.html",
 			"kind": "rule",
@@ -4217,6 +4541,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r134",
 			"url": "https://www.epo.org/en/legal/epc/2020/r134.html",
 			"kind": "rule",
@@ -4230,6 +4555,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r135",
 			"url": "https://www.epo.org/en/legal/epc/2020/r135.html",
 			"kind": "rule",
@@ -4243,6 +4569,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r136",
 			"url": "https://www.epo.org/en/legal/epc/2020/r136.html",
 			"kind": "rule",
@@ -4256,6 +4583,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r137",
 			"url": "https://www.epo.org/en/legal/epc/2020/r137.html",
 			"kind": "rule",
@@ -4269,6 +4597,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r138",
 			"url": "https://www.epo.org/en/legal/epc/2020/r138.html",
 			"kind": "rule",
@@ -4282,6 +4611,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r139",
 			"url": "https://www.epo.org/en/legal/epc/2020/r139.html",
 			"kind": "rule",
@@ -4295,6 +4625,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r140",
 			"url": "https://www.epo.org/en/legal/epc/2020/r140.html",
 			"kind": "rule",
@@ -4308,6 +4639,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r141",
 			"url": "https://www.epo.org/en/legal/epc/2020/r141.html",
 			"kind": "rule",
@@ -4321,6 +4653,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r142",
 			"url": "https://www.epo.org/en/legal/epc/2020/r142.html",
 			"kind": "rule",
@@ -4334,6 +4667,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r143",
 			"url": "https://www.epo.org/en/legal/epc/2020/r143.html",
 			"kind": "rule",
@@ -4347,6 +4681,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r144",
 			"url": "https://www.epo.org/en/legal/epc/2020/r144.html",
 			"kind": "rule",
@@ -4360,6 +4695,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r145",
 			"url": "https://www.epo.org/en/legal/epc/2020/r145.html",
 			"kind": "rule",
@@ -4373,6 +4709,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r146",
 			"url": "https://www.epo.org/en/legal/epc/2020/r146.html",
 			"kind": "rule",
@@ -4386,6 +4723,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r147",
 			"url": "https://www.epo.org/en/legal/epc/2020/r147.html",
 			"kind": "rule",
@@ -4399,6 +4737,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r148",
 			"url": "https://www.epo.org/en/legal/epc/2020/r148.html",
 			"kind": "rule",
@@ -4412,6 +4751,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r149",
 			"url": "https://www.epo.org/en/legal/epc/2020/r149.html",
 			"kind": "rule",
@@ -4425,6 +4765,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r150",
 			"url": "https://www.epo.org/en/legal/epc/2020/r150.html",
 			"kind": "rule",
@@ -4438,6 +4779,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r151",
 			"url": "https://www.epo.org/en/legal/epc/2020/r151.html",
 			"kind": "rule",
@@ -4451,6 +4793,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r152",
 			"url": "https://www.epo.org/en/legal/epc/2020/r152.html",
 			"kind": "rule",
@@ -4464,6 +4807,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r153",
 			"url": "https://www.epo.org/en/legal/epc/2020/r153.html",
 			"kind": "rule",
@@ -4477,6 +4821,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r154",
 			"url": "https://www.epo.org/en/legal/epc/2020/r154.html",
 			"kind": "rule",
@@ -4490,6 +4835,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r155",
 			"url": "https://www.epo.org/en/legal/epc/2020/r155.html",
 			"kind": "rule",
@@ -4503,6 +4849,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r156",
 			"url": "https://www.epo.org/en/legal/epc/2020/r156.html",
 			"kind": "rule",
@@ -4516,6 +4863,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r157",
 			"url": "https://www.epo.org/en/legal/epc/2020/r157.html",
 			"kind": "rule",
@@ -4529,6 +4877,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r158",
 			"url": "https://www.epo.org/en/legal/epc/2020/r158.html",
 			"kind": "rule",
@@ -4542,6 +4891,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r159",
 			"url": "https://www.epo.org/en/legal/epc/2020/r159.html",
 			"kind": "rule",
@@ -4555,6 +4905,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r160",
 			"url": "https://www.epo.org/en/legal/epc/2020/r160.html",
 			"kind": "rule",
@@ -4568,6 +4919,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r161",
 			"url": "https://www.epo.org/en/legal/epc/2020/r161.html",
 			"kind": "rule",
@@ -4581,6 +4933,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r162",
 			"url": "https://www.epo.org/en/legal/epc/2020/r162.html",
 			"kind": "rule",
@@ -4594,6 +4947,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r163",
 			"url": "https://www.epo.org/en/legal/epc/2020/r163.html",
 			"kind": "rule",
@@ -4607,6 +4961,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r164",
 			"url": "https://www.epo.org/en/legal/epc/2020/r164.html",
 			"kind": "rule",
@@ -4620,6 +4975,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "r165",
 			"url": "https://www.epo.org/en/legal/epc/2020/r165.html",
 			"kind": "rule",
@@ -4633,6 +4989,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f1",
 			"url": "https://www.epo.org/en/legal/epc/2020/f1.html",
 			"kind": "fee",
@@ -4646,6 +5003,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f2",
 			"url": "https://www.epo.org/en/legal/epc/2020/f2.html",
 			"kind": "fee",
@@ -4659,6 +5017,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f3",
 			"url": "https://www.epo.org/en/legal/epc/2020/f3.html",
 			"kind": "fee",
@@ -4672,6 +5031,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f4",
 			"url": "https://www.epo.org/en/legal/epc/2020/f4.html",
 			"kind": "fee",
@@ -4685,6 +5045,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f5",
 			"url": "https://www.epo.org/en/legal/epc/2020/f5.html",
 			"kind": "fee",
@@ -4698,6 +5059,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f6",
 			"url": "https://www.epo.org/en/legal/epc/2020/f6.html",
 			"kind": "fee",
@@ -4711,6 +5073,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f7",
 			"url": "https://www.epo.org/en/legal/epc/2020/f7.html",
 			"kind": "fee",
@@ -4724,6 +5087,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f8",
 			"url": "https://www.epo.org/en/legal/epc/2020/f8.html",
 			"kind": "fee",
@@ -4737,6 +5101,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f9",
 			"url": "https://www.epo.org/en/legal/epc/2020/f9.html",
 			"kind": "fee",
@@ -4750,6 +5115,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f10",
 			"url": "https://www.epo.org/en/legal/epc/2020/f10.html",
 			"kind": "fee",
@@ -4763,6 +5129,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f11",
 			"url": "https://www.epo.org/en/legal/epc/2020/f11.html",
 			"kind": "fee",
@@ -4776,6 +5143,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f12",
 			"url": "https://www.epo.org/en/legal/epc/2020/f12.html",
 			"kind": "fee",
@@ -4789,6 +5157,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f13",
 			"url": "https://www.epo.org/en/legal/epc/2020/f13.html",
 			"kind": "fee",
@@ -4802,6 +5171,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f14",
 			"url": "https://www.epo.org/en/legal/epc/2020/f14.html",
 			"kind": "fee",
@@ -4815,6 +5185,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "f15",
 			"url": "https://www.epo.org/en/legal/epc/2020/f15.html",
 			"kind": "fee",
@@ -4828,6 +5199,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "aci_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/aci_i.html",
 			"kind": "other",
@@ -4841,6 +5213,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "aci_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/aci_ii.html",
 			"kind": "other",
@@ -4854,6 +5227,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "aci_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/aci_iii.html",
 			"kind": "other",
@@ -4867,6 +5241,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "aci_iv",
 			"url": "https://www.epo.org/en/legal/epc/2020/aci_iv.html",
 			"kind": "other",
@@ -4880,6 +5255,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "aci_v",
 			"url": "https://www.epo.org/en/legal/epc/2020/aci_v.html",
 			"kind": "other",
@@ -4893,6 +5269,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acii_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/acii_i.html",
 			"kind": "other",
@@ -4906,6 +5283,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acii_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/acii_ii.html",
 			"kind": "other",
@@ -4919,6 +5297,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acii_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/acii_iii.html",
 			"kind": "other",
@@ -4932,6 +5311,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acii_iv",
 			"url": "https://www.epo.org/en/legal/epc/2020/acii_iv.html",
 			"kind": "other",
@@ -4945,6 +5325,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "aciii_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/aciii_i.html",
 			"kind": "other",
@@ -4958,6 +5339,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "aciii_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/aciii_ii.html",
 			"kind": "other",
@@ -4971,6 +5353,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acvii_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/acvii_i.html",
 			"kind": "other",
@@ -4984,6 +5367,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acvii_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/acvii_ii.html",
 			"kind": "other",
@@ -4997,6 +5381,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acvii_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/acvii_iii.html",
 			"kind": "other",
@@ -5010,6 +5395,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acviii_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/acviii_i.html",
 			"kind": "other",
@@ -5023,6 +5409,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acviii_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/acviii_ii.html",
 			"kind": "other",
@@ -5036,6 +5423,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "acviii_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/acviii_iii.html",
 			"kind": "other",
@@ -5049,6 +5437,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "api",
 			"url": "https://www.epo.org/en/legal/epc/2020/api.html",
 			"kind": "other",
@@ -5062,6 +5451,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apii",
 			"url": "https://www.epo.org/en/legal/epc/2020/apii.html",
 			"kind": "other",
@@ -5075,6 +5465,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apiii",
 			"url": "https://www.epo.org/en/legal/epc/2020/apiii.html",
 			"kind": "other",
@@ -5088,6 +5479,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apiv",
 			"url": "https://www.epo.org/en/legal/epc/2020/apiv.html",
 			"kind": "other",
@@ -5101,6 +5493,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apix",
 			"url": "https://www.epo.org/en/legal/epc/2020/apix.html",
 			"kind": "other",
@@ -5114,6 +5507,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apre",
 			"url": "https://www.epo.org/en/legal/epc/2020/apre.html",
 			"kind": "other",
@@ -5127,6 +5521,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apv",
 			"url": "https://www.epo.org/en/legal/epc/2020/apv.html",
 			"kind": "other",
@@ -5140,6 +5535,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apvi",
 			"url": "https://www.epo.org/en/legal/epc/2020/apvi.html",
 			"kind": "other",
@@ -5153,6 +5549,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apvii",
 			"url": "https://www.epo.org/en/legal/epc/2020/apvii.html",
 			"kind": "other",
@@ -5166,6 +5563,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apviii",
 			"url": "https://www.epo.org/en/legal/epc/2020/apviii.html",
 			"kind": "other",
@@ -5179,6 +5577,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apx",
 			"url": "https://www.epo.org/en/legal/epc/2020/apx.html",
 			"kind": "other",
@@ -5192,6 +5591,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apxi",
 			"url": "https://www.epo.org/en/legal/epc/2020/apxi.html",
 			"kind": "other",
@@ -5205,6 +5605,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "apxii",
 			"url": "https://www.epo.org/en/legal/epc/2020/apxii.html",
 			"kind": "other",
@@ -5218,6 +5619,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "cl_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/cl_i.html",
 			"kind": "other",
@@ -5231,6 +5633,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "cl_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/cl_ii.html",
 			"kind": "other",
@@ -5244,6 +5647,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "cl_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/cl_iii.html",
 			"kind": "other",
@@ -5257,6 +5661,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "cl_iv",
 			"url": "https://www.epo.org/en/legal/epc/2020/cl_iv.html",
 			"kind": "other",
@@ -5270,6 +5675,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "concordance",
 			"url": "https://www.epo.org/en/legal/epc/2020/concordance.html",
 			"kind": "other",
@@ -5283,6 +5689,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "convention",
 			"url": "https://www.epo.org/en/legal/epc/2020/convention.html",
 			"kind": "other",
@@ -5296,6 +5703,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "index",
 			"url": "https://www.epo.org/en/legal/epc/2020/index.html",
 			"kind": "other",
@@ -5309,6 +5717,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "indexofdecisions",
 			"url": "https://www.epo.org/en/legal/epc/2020/indexofdecisions.html",
 			"kind": "other",
@@ -5322,6 +5731,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "procen",
 			"url": "https://www.epo.org/en/legal/epc/2020/procen.html",
 			"kind": "other",
@@ -5335,6 +5745,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "proprim",
 			"url": "https://www.epo.org/en/legal/epc/2020/proprim.html",
 			"kind": "other",
@@ -5348,6 +5759,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "prorecog",
 			"url": "https://www.epo.org/en/legal/epc/2020/prorecog.html",
 			"kind": "other",
@@ -5361,6 +5773,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "prostaff",
 			"url": "https://www.epo.org/en/legal/epc/2020/prostaff.html",
 			"kind": "other",
@@ -5374,6 +5787,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "protinta69",
 			"url": "https://www.epo.org/en/legal/epc/2020/protinta69.html",
 			"kind": "other",
@@ -5387,6 +5801,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rci_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/rci_i.html",
 			"kind": "other",
@@ -5400,6 +5815,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rci_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rci_ii.html",
 			"kind": "other",
@@ -5413,6 +5829,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rci_ii_1",
 			"url": "https://www.epo.org/en/legal/epc/2020/rci_ii_1.html",
 			"kind": "other",
@@ -5426,6 +5843,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rci_ii_2",
 			"url": "https://www.epo.org/en/legal/epc/2020/rci_ii_2.html",
 			"kind": "other",
@@ -5439,6 +5857,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcii_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcii_i.html",
 			"kind": "other",
@@ -5452,6 +5871,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcii_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcii_ii.html",
 			"kind": "other",
@@ -5465,6 +5885,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcii_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcii_iii.html",
 			"kind": "other",
@@ -5478,6 +5899,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcii_iv",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcii_iv.html",
 			"kind": "other",
@@ -5491,6 +5913,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcii_v",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcii_v.html",
 			"kind": "other",
@@ -5504,6 +5927,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciii_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciii_i.html",
 			"kind": "other",
@@ -5517,6 +5941,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciii_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciii_ii.html",
 			"kind": "other",
@@ -5530,6 +5955,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciii_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciii_iii.html",
 			"kind": "other",
@@ -5543,6 +5969,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciii_iv",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciii_iv.html",
 			"kind": "other",
@@ -5556,6 +5983,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciv_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciv_i.html",
 			"kind": "other",
@@ -5569,6 +5997,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciv_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciv_ii.html",
 			"kind": "other",
@@ -5582,6 +6011,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciv_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciv_iii.html",
 			"kind": "other",
@@ -5595,6 +6025,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciv_iv",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciv_iv.html",
 			"kind": "other",
@@ -5608,6 +6039,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rciv_v",
 			"url": "https://www.epo.org/en/legal/epc/2020/rciv_v.html",
 			"kind": "other",
@@ -5621,6 +6053,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcv_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcv_i.html",
 			"kind": "other",
@@ -5634,6 +6067,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcv_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcv_ii.html",
 			"kind": "other",
@@ -5647,6 +6081,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvi_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvi_i.html",
 			"kind": "other",
@@ -5660,6 +6095,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvi_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvi_ii.html",
 			"kind": "other",
@@ -5673,6 +6109,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_i",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_i.html",
 			"kind": "other",
@@ -5686,6 +6123,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_ii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_ii.html",
 			"kind": "other",
@@ -5699,6 +6137,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_iii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_iii.html",
 			"kind": "other",
@@ -5712,6 +6151,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_iv",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_iv.html",
 			"kind": "other",
@@ -5725,6 +6165,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_ix",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_ix.html",
 			"kind": "other",
@@ -5738,6 +6179,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_v",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_v.html",
 			"kind": "other",
@@ -5751,6 +6193,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_vi",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_vi.html",
 			"kind": "other",
@@ -5764,6 +6207,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_vii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_vii.html",
 			"kind": "other",
@@ -5777,6 +6221,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_viii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_viii.html",
 			"kind": "other",
@@ -5790,6 +6235,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_x",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_x.html",
 			"kind": "other",
@@ -5803,6 +6249,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rcvii_xi",
 			"url": "https://www.epo.org/en/legal/epc/2020/rcvii_xi.html",
 			"kind": "other",
@@ -5816,6 +6263,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "regulations",
 			"url": "https://www.epo.org/en/legal/epc/2020/regulations.html",
 			"kind": "other",
@@ -5829,6 +6277,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "revisionact2000",
 			"url": "https://www.epo.org/en/legal/epc/2020/revisionact2000.html",
 			"kind": "other",
@@ -5842,6 +6291,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rfees",
 			"url": "https://www.epo.org/en/legal/epc/2020/rfees.html",
 			"kind": "other",
@@ -5855,6 +6305,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpba",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpba.html",
 			"kind": "other",
@@ -5868,6 +6319,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpeba",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpeba.html",
 			"kind": "other",
@@ -5881,6 +6333,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpi",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpi.html",
 			"kind": "other",
@@ -5894,6 +6347,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpii.html",
 			"kind": "other",
@@ -5907,6 +6361,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpiii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpiii.html",
 			"kind": "other",
@@ -5920,6 +6375,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpiv",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpiv.html",
 			"kind": "other",
@@ -5933,6 +6389,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpix",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpix.html",
 			"kind": "other",
@@ -5946,6 +6403,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpv",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpv.html",
 			"kind": "other",
@@ -5959,6 +6417,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpvi",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpvi.html",
 			"kind": "other",
@@ -5972,6 +6431,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpvii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpvii.html",
 			"kind": "other",
@@ -5985,6 +6445,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "rpviii",
 			"url": "https://www.epo.org/en/legal/epc/2020/rpviii.html",
 			"kind": "other",
@@ -5998,6 +6459,7 @@
 			"updated": "2026-05-21"
 		},
 		{
+			"source": "epc",
 			"slug": "transitionalprovisions",
 			"url": "https://www.epo.org/en/legal/epc/2020/transitionalprovisions.html",
 			"kind": "other",
