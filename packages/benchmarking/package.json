@@ -1,0 +1,20 @@
+{
+	"name": "@patrick/benchmarking",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"hydrate": "bun scripts/hydrate.ts",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@patrick/law": "workspace:*",
+		"@patrick/shared": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.14"
+	}
+}

@@ -1,0 +1,33 @@
+{
+	"id": "ep-added-matter-001",
+	"jurisdiction": "EP",
+	"topic": "added subject-matter",
+	"law_date": "2026-06",
+	"provisions": [
+		{
+			"citation": "Art. 123(2) EPC",
+			"type": "article",
+			"text": "(1) The European patent application or European patent may be amended in proceedings before the European Patent Office, in accordance with the Implementing Regulations. In any event, the applicant shall be given at least one opportunity to amend the application of his own volition.\n(2) The European patent application or European patent may not be amended in such a way that it contains subject-matter which extends beyond the content of the application as filed.\n(3) The European patent may not be amended in such a way as to extend the protection it confers.",
+			"version": "EPC 2020 (consolidated 2026-05-21)"
+		},
+		{
+			"citation": "Art. 123(3) EPC",
+			"type": "article",
+			"text": "(1) The European patent application or European patent may be amended in proceedings before the European Patent Office, in accordance with the Implementing Regulations. In any event, the applicant shall be given at least one opportunity to amend the application of his own volition.\n(2) The European patent application or European patent may not be amended in such a way that it contains subject-matter which extends beyond the content of the application as filed.\n(3) The European patent may not be amended in such a way as to extend the protection it confers.",
+			"version": "EPC 2020 (consolidated 2026-05-21)"
+		},
+		{
+			"citation": "Guidelines H-IV, 2.1",
+			"type": "guidelines",
+			"text": "The question of allowability of amendments is legally a question of whether the application as so amended is allowable. An amended application must of course satisfy all the requirements of the EPC including, in particular, inventive step and the other matters listed in B‑XI, 3.6 (see also C‑III, 2).\nIf, however, the applicant seeks to amend the description (other than references to the prior art, see H‑IV, 2.2.7), the drawings or the claims in such a way that subject-matter which extends beyond the content of the application as filed is thereby introduced, the application as so amended cannot be allowed.\nThe underlying idea of Art. 123(2) is that applicants are not allowed to improve their position by adding subject-matter not disclosed in the application as filed, which would give them an unwarranted advantage and could be damaging to the legal security of third parties relying on the content of the original application (see G 1/93).\nAn amendment is regarded as introducing subject-matter which extends beyond the content of the application as filed, and therefore unallowable, if the overall change in the content of the application (whether by way of addition, alteration or excision) results in the skilled person being presented with information which is not directly and unambiguously derivable from that previously presented by the application, even when account is taken of matter which is implicit to a person skilled in the art (see G 2/10).",
+			"version": "EPC Guidelines (consolidated 2026-03-31)"
+		},
+		{
+			"citation": "Guidelines H-IV, 2.2",
+			"type": "guidelines",
+			"text": "Under Art. 123(2), it is impermissible to add to a European application subject-matter which the skilled person cannot derive directly and unambiguously, using common general knowledge and also taking into account any features implicit to a person skilled in the art in what is expressly mentioned in the document, from the disclosure of the application as filed. Literal support is, however, not required by the wording of Art. 123(2) (see T 667/08).\nThe term \"implicit disclosure\" means no more than the clear and unambiguous consequence of what is explicitly mentioned in the application as filed. Thus, the common general knowledge must be taken into account in deciding what is clearly and unambiguously implied by the explicit disclosure of a document. However, the question of what may be rendered obvious by that disclosure in the light of common general knowledge is not relevant to the assessment of what is implicitly disclosed by that document (T 823/96, T 1125/07).\nWhen assessing the conformity of the amended claims with the requirements of Art. 123(2), the focus is placed on what is really disclosed to the skilled person by the documents as filed as directed to a technical audience. In particular, the examining division needs to avoid disproportionally focusing on the structure of the claims as filed to the detriment of the subject-matter that the skilled person would directly and unambiguously derive from the application as a whole.\nFurthermore, the assessment of the requirements of Art. 123(2) is made from the standpoint of the skilled person on a technical and reasonable basis, avoiding artificial and semantic constructions (T 99/13).",
+			"version": "EPC Guidelines (consolidated 2026-03-31)"
+		}
+	],
+	"source_refs": ["https://www.epo.org/en/legal/epc/2020/a123.html"]
+}

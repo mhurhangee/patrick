@@ -1,0 +1,39 @@
+{
+	"id": "ep-divisional-001",
+	"jurisdiction": "EP",
+	"topic": "divisional applications",
+	"law_date": "2026-06",
+	"provisions": [
+		{
+			"citation": "Art. 76(1) EPC",
+			"type": "article",
+			"text": "(1) A European divisional application shall be filed directly with the European Patent Office in accordance with the Implementing Regulations. It may be filed only in respect of subject-matter which does not extend beyond the content of the earlier application as filed; in so far as this requirement is complied with, the divisional application shall be deemed to have been filed on the date of filing of the earlier application and shall enjoy any right of priority.\n(2) All the Contracting States designated in the earlier application at the time of filing of a European divisional application shall be deemed to be designated in the divisional application.",
+			"version": "EPC 2020 (consolidated 2026-05-21)"
+		},
+		{
+			"citation": "Art. 76(2) EPC",
+			"type": "article",
+			"text": "(1) A European divisional application shall be filed directly with the European Patent Office in accordance with the Implementing Regulations. It may be filed only in respect of subject-matter which does not extend beyond the content of the earlier application as filed; in so far as this requirement is complied with, the divisional application shall be deemed to have been filed on the date of filing of the earlier application and shall enjoy any right of priority.\n(2) All the Contracting States designated in the earlier application at the time of filing of a European divisional application shall be deemed to be designated in the divisional application.",
+			"version": "EPC 2020 (consolidated 2026-05-21)"
+		},
+		{
+			"citation": "Rule 36(1) EPC",
+			"type": "rule",
+			"text": "(1), The applicant may file a divisional application relating to any pending earlier European patent application.\n(2) A divisional application shall be filed in the language of the proceedings for the earlier application. If the latter was not in an official language of the European Patent Office, the divisional application may be filed in the language of the earlier application; a translation into the language of the proceedings for the earlier application shall then be filed within two months of the filing of the divisional application. The divisional application shall be filed with the European Patent Office in Munich, The Hague or Berlin.\n(3) The filing fee and search fee shall be paid within one month of filing the divisional application. If the filing fee or search fee is not paid in due time, the application shall be deemed to be withdrawn.\n(4) The designation fee shall be paid within six months of the date on which the European Patent Bulletin mentions the publication of the European search report drawn up in respect of the divisional application. Rule 39, paragraphs 2 and Rule 39, paragraphs 3, shall apply.\n(5) Rule 39, paragraph 2a, shall apply.",
+			"version": "EPC 2020 (consolidated 2026-05-21)"
+		},
+		{
+			"citation": "Rule 36(2) EPC",
+			"type": "rule",
+			"text": "(1), The applicant may file a divisional application relating to any pending earlier European patent application.\n(2) A divisional application shall be filed in the language of the proceedings for the earlier application. If the latter was not in an official language of the European Patent Office, the divisional application may be filed in the language of the earlier application; a translation into the language of the proceedings for the earlier application shall then be filed within two months of the filing of the divisional application. The divisional application shall be filed with the European Patent Office in Munich, The Hague or Berlin.\n(3) The filing fee and search fee shall be paid within one month of filing the divisional application. If the filing fee or search fee is not paid in due time, the application shall be deemed to be withdrawn.\n(4) The designation fee shall be paid within six months of the date on which the European Patent Bulletin mentions the publication of the European search report drawn up in respect of the divisional application. Rule 39, paragraphs 2 and Rule 39, paragraphs 3, shall apply.\n(5) Rule 39, paragraph 2a, shall apply.",
+			"version": "EPC 2020 (consolidated 2026-05-21)"
+		},
+		{
+			"citation": "Guidelines A-IV, 1.1",
+			"type": "guidelines",
+			"text": "A divisional application may be filed relating to any pending earlier European patent application. A divisional application filed on the same day as the parent application is not considered validly filed. The term \"earlier application\" is understood to mean an application filed at least one day before the divisional application and refers to the immediate application on which the divisional application is based (\"parent application\"). Where the earlier application is a Euro-PCT application, a divisional application can only be filed upon effective entry of the earlier application into the European phase (see A‑XIII, 9.1.2 ). The divisional application is accorded the same date of filing as the parent application and benefits from any priority right of the parent application in respect of the subject-matter contained in the divisional application (see A‑IV, 1.2.1). Where the applicant inserts missing parts of the description and/or missing drawings under Rule 56 (see A‑II, 5) or corrects erroneously filed parts under Rule 56a (see A‑II, 6) after the divisional application's date of receipt, the requirements of Rule 36(1) may no longer be fulfilled (see A‑IV, 1.1.1). If the divisional application claims priority, the date of receipt does not change if the missing parts or the correct application documents are completely contained in the earlier application whose priority is claimed (Art. 88(1)). A European patent application may give rise to more than one divisional application. A divisional application may itself give rise to one or more divisional applications. Where a divisional application is deemed not validly filed due to non-fulfilment of one of the filing conditions (see also A‑IV, 1.1.1 and 1.1.3), the applicant will be duly informed in a communication under Rule 112(1) stating that the application will not be processed as a European divisional application and providing the opportunity to apply for a decision on the EPO's findings under Rule 112(2) (see E‑VIII, 1.9.3). Any fees paid will be refunded if the loss of rights becomes final. Art. 76 Rule 36(1)",
+			"version": "EPC Guidelines (consolidated 2026-03-31)"
+		}
+	],
+	"source_refs": ["https://www.epo.org/en/legal/epc/2020/a76.html"]
+}

@@ -1,0 +1,4 @@
+# Provision-page HTML cache (re-fetched from epo.org on demand, like the app's).
+.cache/
+# Timestamped run outputs — raw system answers + scored reports. Derived.
+data/runs/

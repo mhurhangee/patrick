@@ -1,0 +1,186 @@
+// The benchmark schema, end to end (plan §3–§7). Data flows:
+//   AuthoredSourceSet ──hydrate──► SourceSet ──generate──► ProposedPair
+//     ──judge──► JudgeResult ──accept/reject──► Item ──run──► Contract ──score──► RunReport
+// One type per stage; the scripts only fill in logic.
+
+import type { DistortionKey } from "./taxonomy";
+
+export type Jurisdiction = "EP" | "PCT" | "US";
+export type Framing = "atomic" | "scenario";
+/** The verbatim source's authority class — binding law vs. non-binding guidance. */
+export type ProvisionType =
+	| "article"
+	| "rule"
+	| "guidelines"
+	| "caselaw"
+	| "other";
+/** The two-valued benchmark label an item carries / a system must answer. */
+export type Answer = "TRUE" | "FALSE";
+/** The judge's three-valued verdict — UNVERIFIABLE flags a silent-spot distortion. */
+export type JudgeVerdict = "TRUE" | "FALSE" | "UNVERIFIABLE";
+
+// ── Source sets (plan §3) ──────────────────────────────────────────────────
+
+/** What a human authors: a topic and the gold citations. Text is hydrated. */
+export interface AuthoredSourceSet {
+	id: string;
+	jurisdiction: Jurisdiction;
+	topic: string;
+	/** Resolvable citations, e.g. "Art. 76(1) EPC", "Rule 36(1) EPC". */
+	citations: string[];
+	/** Optional provenance (OJ reference / URL). */
+	source_refs?: string[];
+}
+
+export interface SourceSetProvision {
+	citation: string;
+	type: ProvisionType;
+	/** Verbatim text, hydrated from @patrick/law (current in-force version). */
+	text: string;
+	/** The in-force stamp the text was pulled at, e.g. "EPC 2020 (consolidated …)". */
+	version: string;
+}
+
+/** A hydrated source set — the text the generator reads AND the gold target. */
+export interface SourceSet {
+	id: string;
+	jurisdiction: Jurisdiction;
+	topic: string;
+	/** YYYY-MM the gold was hydrated; the trigger to re-validate when law changes. */
+	law_date: string;
+	provisions: SourceSetProvision[];
+	source_refs?: string[];
+}
+
+// ── Generator (plan §4) ────────────────────────────────────────────────────
+
+export interface ProposedPair {
+	status: "proposed" | "rejected";
+	jurisdiction: Jurisdiction;
+	topic: string;
+	framing: Framing;
+	/** The invented fact pattern in scenario framing; null in atomic. */
+	scenario: string | null;
+	base_proposition: string;
+	gold: {
+		citations: string[];
+		/** Exact substring of a provision.text that fixes the proposition. */
+		supporting_text: string;
+	};
+	true_statement: string;
+	false_statement: string;
+	distortion_used: DistortionKey;
+	distortion_explanation: string;
+	needs_date_check: boolean;
+	rejection_reason: string | null;
+}
+
+// ── Judge (plan §5) ────────────────────────────────────────────────────────
+
+export interface JudgeStatement {
+	verdict: JudgeVerdict;
+	/** Exact substring of a provision.text that settles the verdict; "" if UNVERIFIABLE. */
+	deciding_span: string;
+	why: string;
+}
+
+export interface JudgeResult {
+	A: JudgeStatement;
+	B: JudgeStatement;
+	changed_element: { in_A: string; in_B: string };
+	distortion: DistortionKey | "multiple" | "none";
+	citation_relied_on: string[];
+}
+
+// ── Items (plan §6) ────────────────────────────────────────────────────────
+
+/** An accepted, scorable item — one per statement of an accepted pair. */
+export interface Item {
+	id: string;
+	/** Links the TRUE/FALSE twins of a minimal pair. */
+	pair_id: string;
+	source_set_id: string;
+	jurisdiction: Jurisdiction;
+	topic: string;
+	law_date: string;
+	framing: Framing;
+	scenario: string | null;
+	statement: string;
+	label: Answer;
+	gold_citations: string[];
+	distortion: DistortionKey;
+	provenance: string;
+	judge_deciding_span: string;
+}
+
+// ── System under test (the contract, plan §7) ──────────────────────────────
+
+/** What a system must return per item — without cited_provisions, no grounding score. */
+export interface Contract {
+	answer: Answer;
+	cited_provisions: string[];
+	retrieved_provisions: string[];
+}
+
+/**
+ * The seam between the harness and whatever is being benchmarked. Start with a
+ * local tool-loop implementation; an HTTP-endpoint implementation can slot in
+ * later without touching the scorer, harness, or dataset.
+ */
+export interface SystemUnderTest {
+	/** Stable id for the report, e.g. "local:claude-opus-4-8". */
+	id: string;
+	run(item: Item): Promise<Contract>;
+}
+
+// ── Scoring & analysis (plan §7–§8) ────────────────────────────────────────
+
+export interface ItemScore {
+	item_id: string;
+	answer_correct: boolean;
+	/** |cited ∩ gold| / |gold|. */
+	citation_recall: number;
+	/** |cited ∩ gold| / |cited| — catches padded/hallucinated cites. */
+	citation_precision: number;
+	/** Was each gold citation in what the system retrieved? recall@k. */
+	retrieval_recall: number;
+	/** Right answer AND citation recall = 1 AND citation precision = 1. */
+	fully_correct: boolean;
+}
+
+/** Aggregated metrics over a slice of items (overall or by topic/distortion/…). */
+export interface Aggregate {
+	n: number;
+	answer_accuracy: number;
+	citation_recall: number;
+	citation_precision: number;
+	retrieval_recall: number;
+	fully_correct: number;
+	/** Fraction the system answered TRUE — skew here can fake accuracy. */
+	answered_true: number;
+	/** Rough ±band on a proportion at this n (≈1/√n); don't over-read gaps inside it. */
+	ci: number;
+}
+
+export type Slice = "topic" | "distortion" | "framing" | "jurisdiction";
+
+export interface RunReport {
+	system_id: string;
+	generated_at: string;
+	/** Item set the run scored, for reproducibility. */
+	item_count: number;
+	overall: Aggregate;
+	by: Record<Slice, Record<string, Aggregate>>;
+	/** Modal-answer reproduction rate when resampled; set only if the run resampled. */
+	reliability?: number;
+	scores: ItemScore[];
+}
+
+/** A side-by-side of two runs — the analysis layer's comparison view. */
+export interface Comparison {
+	a: string;
+	b: string;
+	/** metric → { a, b, delta }, overall and per slice value. */
+	overall: Record<string, { a: number; b: number; delta: number }>;
+	regressions: string[];
+}
