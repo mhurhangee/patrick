@@ -84,6 +84,14 @@ export interface ProposedPair {
 	rejection_reason: string | null;
 }
 
+/** A generator proposal as persisted to data/runs/<ts>/proposed.jsonl, carrying
+ *  the source set it came from and the distortion that was requested. */
+export interface ProposalRecord {
+	source_set_id: string;
+	requested_distortion: string;
+	pair: ProposedPair;
+}
+
 // ── Judge (plan §5) ────────────────────────────────────────────────────────
 
 export interface JudgeStatement {

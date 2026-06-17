@@ -14,8 +14,8 @@ import { fileURLToPath } from "node:url";
 import {
 	fileCachedFetcher,
 	lookupProvisions,
-	resolveCitation,
 	type Resolution,
+	resolveCitation,
 } from "@patrick/law";
 import type { EpcKind } from "@patrick/shared";
 import type {
@@ -54,7 +54,12 @@ function parseInput(text: string): AuthoredSourceSet[] {
 		}
 		const eq = line.indexOf("=");
 		const topic =
-			eq !== -1 ? line.slice(0, eq).replace(/^topic/i, "").trim() : undefined;
+			eq !== -1
+				? line
+						.slice(0, eq)
+						.replace(/^topic/i, "")
+						.trim()
+				: undefined;
 		const body = eq !== -1 ? line.slice(eq + 1) : line;
 		const key = `${paper ?? ""}|${question ?? ""}`;
 		const n = (seq.get(key) ?? 0) + 1;

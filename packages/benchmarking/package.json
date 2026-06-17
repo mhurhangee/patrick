@@ -8,11 +8,14 @@
 	},
 	"scripts": {
 		"hydrate": "bun scripts/hydrate.ts",
+		"generate": "bun --env-file=../../.env scripts/generate.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@patrick/law": "workspace:*",
-		"@patrick/shared": "workspace:*"
+		"@patrick/shared": "workspace:*",
+		"ai": "^6.0.204",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.3.14"
