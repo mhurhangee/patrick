@@ -141,8 +141,12 @@ async function buildSource(source: Source, xml: string): Promise<void> {
 		`${JSON.stringify(map, null, 2)}\n`,
 	);
 	const keyed = entries.filter((e) => e.citationKey).length;
+	// Recallable count is a tripwire: it's derived from a single selector
+	// (.epolegal-content non-empty), so a future EPO template change could quietly
+	// collapse it — a sudden drop here means recall + the picker just lost pages.
+	const recallable = entries.filter((e) => e.recallable).length;
 	console.log(
-		`${source.id.padEnd(16)} ${entries.length} pages (${keyed} keyed) → ${source.id}-map.json`,
+		`${source.id.padEnd(16)} ${entries.length} pages (${keyed} keyed, ${recallable} recallable) → ${source.id}-map.json`,
 	);
 }
 
