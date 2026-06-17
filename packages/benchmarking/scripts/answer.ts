@@ -1,12 +1,17 @@
 // Run the system under test over a run's accepted items and write its answers to
 // contracts.<arm>.jsonl, for the scorer. One arm per invocation, so cost is
-// explicit — run both, then `score` for the grounding-lift delta.
+// explicit — answer both arms, then `score` for the grounding-lift delta.
 //
-//   pnpm --filter @patrick/benchmarking run --arm patrick      # grounded
-//   pnpm --filter @patrick/benchmarking run --arm none         # baseline
-//   pnpm --filter @patrick/benchmarking run --arm patrick --run <ts> --limit 10
+//   pnpm --filter @patrick/benchmarking answer --arm patrick      # grounded
+//   pnpm --filter @patrick/benchmarking answer --arm none         # baseline
+//   pnpm --filter @patrick/benchmarking answer --arm patrick --repeat 3
 //
-// Flags: --arm none|patrick (default patrick) · --run <ts> · --limit N · --model <id>
+// --repeat N runs each item N times (resampling) so the scorer can report answer
+// reliability — how often the modal answer repeats. A high-stakes tool that flips
+// on rerun isn't usable even at good average accuracy (STRATEGY §7).
+//
+// Flags: --arm none|patrick (default patrick) · --run <ts> · --limit N ·
+//        --repeat N (default 1) · --model <id>
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -38,6 +43,7 @@ async function main(): Promise<void> {
 	const run = opt("run") ?? (await latestRun());
 	const runDir = join(RUNS, run);
 	const limit = Number(opt("limit") ?? "0") || Number.POSITIVE_INFINITY;
+	const repeat = Math.max(1, Number(opt("repeat") ?? "1") || 1);
 
 	const items = (await readFile(join(runDir, "items.jsonl"), "utf8"))
 		.split("\n")
@@ -48,24 +54,32 @@ async function main(): Promise<void> {
 		throw new Error(`no items in ${run} — judge it first`);
 
 	const runner = localRunner({ tools: arm, modelOverride: opt("model") });
-	console.log(`${runner.id} · run ${run} · ${items.length} items\n`);
+	console.log(
+		`${runner.id} · run ${run} · ${items.length} items${repeat > 1 ? ` ×${repeat}` : ""}\n`,
+	);
 
 	const records: ContractRecord[] = [];
 	let correct = 0;
 	for (const item of items) {
-		try {
-			const contract = await runner.run(item);
-			records.push({ item_id: item.id, contract });
-			const ok = contract.answer === item.label;
-			if (ok) correct++;
-			console.log(
-				`${ok ? "✓" : "✗"} ${item.id} → ${contract.answer} · cite[${contract.cited_provisions.length}] retr[${contract.retrieved_provisions.length}]`,
-			);
-		} catch (err) {
-			console.warn(
-				`! ${item.id} error: ${err instanceof Error ? err.message : String(err)}`,
-			);
+		// Resample each item `repeat` times so the scorer can measure reliability.
+		const answers: string[] = [];
+		for (let k = 0; k < repeat; k++) {
+			try {
+				const contract = await runner.run(item);
+				records.push({ item_id: item.id, contract });
+				answers.push(contract.answer);
+				if (contract.answer === item.label) correct++;
+			} catch (err) {
+				console.warn(
+					`! ${item.id} error: ${err instanceof Error ? err.message : String(err)}`,
+				);
+			}
 		}
+		const ok = answers.filter((a) => a === item.label).length;
+		const flips = new Set(answers).size > 1;
+		console.log(
+			`${ok === answers.length ? "✓" : ok === 0 ? "✗" : "~"} ${item.id} → ${answers.join("/")}${flips ? " (flips!)" : ""}`,
+		);
 	}
 
 	await writeFile(

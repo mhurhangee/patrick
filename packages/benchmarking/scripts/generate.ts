@@ -39,7 +39,9 @@ const opt = (name: string, fallback?: string): string | undefined => {
 };
 
 const limit = Number(opt("limit", "5"));
-const framing = opt("framing", "atomic") as Framing;
+const framingArg = opt("framing", "atomic") as string;
+const framings: Framing[] =
+	framingArg === "both" ? ["atomic", "scenario"] : [framingArg as Framing];
 const distortion = opt("distortion", "auto") as string;
 const idFilter = opt("id");
 const paperFilter = opt("paper");
@@ -69,7 +71,7 @@ async function main(): Promise<void> {
 		distortion === "all" ? [...DISTORTION_KEYS] : [distortion];
 	const model = modelFor("generator", modelOverride);
 	console.log(
-		`generator: ${modelId("generator", modelOverride)} · ${sets.length} sets × ${distortions.length} distortion(s) · framing=${framing}\n`,
+		`generator: ${modelId("generator", modelOverride)} · ${sets.length} sets × ${distortions.length} distortion(s) × ${framings.length} framing(s) [${framings.join(", ")}]\n`,
 	);
 
 	const ts = new Date().toISOString().replace(/[:.]/g, "-");
@@ -81,42 +83,44 @@ async function main(): Promise<void> {
 	let rejected = 0;
 	let tokens = 0;
 	for (const set of sets) {
-		for (const d of distortions) {
-			try {
-				const { object, usage } = await generateObject({
-					model,
-					schema: proposedPairSchema,
-					system: GENERATOR_SYSTEM,
-					prompt: generatorInput(set, framing, d),
-				});
-				tokens += usage?.totalTokens ?? 0;
-				const pair: ProposedPair = {
-					...object,
-					jurisdiction: set.jurisdiction,
-					topic: set.topic,
-					framing,
-				};
-				const record: ProposalRecord = {
-					source_set_id: set.id,
-					requested_distortion: d,
-					pair,
-				};
-				lines.push(JSON.stringify(record));
-				if (object.status === "proposed") {
-					proposed++;
-					console.log(
-						`✓ ${set.id} [${object.distortion_used}]  T: ${object.true_statement.slice(0, 88)}`,
-					);
-				} else {
-					rejected++;
-					console.log(
-						`✗ ${set.id} [${d}] rejected: ${(object.rejection_reason ?? "").slice(0, 80)}`,
+		for (const framing of framings) {
+			for (const d of distortions) {
+				try {
+					const { object, usage } = await generateObject({
+						model,
+						schema: proposedPairSchema,
+						system: GENERATOR_SYSTEM,
+						prompt: generatorInput(set, framing, d),
+					});
+					tokens += usage?.totalTokens ?? 0;
+					const pair: ProposedPair = {
+						...object,
+						jurisdiction: set.jurisdiction,
+						topic: set.topic,
+						framing,
+					};
+					const record: ProposalRecord = {
+						source_set_id: set.id,
+						requested_distortion: d,
+						pair,
+					};
+					lines.push(JSON.stringify(record));
+					if (object.status === "proposed") {
+						proposed++;
+						console.log(
+							`✓ ${set.id} [${framing}/${object.distortion_used}]  T: ${object.true_statement.slice(0, 80)}`,
+						);
+					} else {
+						rejected++;
+						console.log(
+							`✗ ${set.id} [${framing}/${d}] rejected: ${(object.rejection_reason ?? "").slice(0, 70)}`,
+						);
+					}
+				} catch (err) {
+					console.warn(
+						`! ${set.id} [${framing}/${d}] error: ${err instanceof Error ? err.message : String(err)}`,
 					);
 				}
-			} catch (err) {
-				console.warn(
-					`! ${set.id} [${d}] error: ${err instanceof Error ? err.message : String(err)}`,
-				);
 			}
 		}
 	}

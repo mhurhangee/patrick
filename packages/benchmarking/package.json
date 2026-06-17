@@ -10,7 +10,7 @@
 		"hydrate": "bun scripts/hydrate.ts",
 		"generate": "bun --env-file=../../.env scripts/generate.ts",
 		"judge": "bun --env-file=../../.env scripts/judge.ts",
-		"run": "bun --env-file=../../.env scripts/run.ts",
+		"answer": "bun --env-file=../../.env scripts/answer.ts",
 		"score": "bun scripts/score.ts",
 		"typecheck": "tsc --noEmit"
 	},

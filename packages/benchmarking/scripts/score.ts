@@ -16,7 +16,7 @@ import {
 	type Scored,
 	scoreItem,
 } from "../src/score";
-import type { ContractRecord, Item } from "../src/types";
+import type { Contract, ContractRecord, Item } from "../src/types";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const RUNS = join(ROOT, "data", "runs");
@@ -65,17 +65,18 @@ async function main(): Promise<void> {
 	for (const arm of Object.keys(ARMS) as Arm[]) {
 		const file = join(runDir, `contracts.${arm}.jsonl`);
 		if (!(await exists(file))) continue;
-		const contracts = new Map(
-			(await readJsonl<ContractRecord>(file)).map((c) => [
-				c.item_id,
-				c.contract,
-			]),
-		);
+		// Group all runs of each item (the answer script appends one record per run).
+		const byItem = new Map<string, Contract[]>();
+		for (const rec of await readJsonl<ContractRecord>(file)) {
+			const arr = byItem.get(rec.item_id) ?? [];
+			arr.push(rec.contract);
+			byItem.set(rec.item_id, arr);
+		}
 		const rows: Scored[] = [];
 		for (const [id, item] of items) {
-			const contract = contracts.get(id);
-			if (contract)
-				rows.push({ item, contract, score: scoreItem(item, contract) });
+			const contracts = byItem.get(id);
+			if (contracts?.length)
+				rows.push({ item, contracts, score: scoreItem(item, contracts) });
 		}
 		const report = buildReport(ARMS[arm], rows);
 		reports[arm] = report;

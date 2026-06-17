@@ -17,44 +17,68 @@ import type {
 
 export interface Scored {
 	item: Item;
-	contract: Contract;
+	/** One or more runs of the system on this item (>1 when resampled). */
+	contracts: Contract[];
 	score: ItemScore;
 }
 
-export function scoreItem(item: Item, contract: Contract): ItemScore {
-	const gold = citationKeys(item.gold_citations);
-	const cited = citationKeys(contract.cited_provisions);
-	const retrieved = citationKeys(contract.retrieved_provisions);
-	const citedHit = overlap(cited, gold);
+const mean = (xs: number[]): number =>
+	xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0;
 
-	const citation_recall = gold.size ? citedHit / gold.size : 1;
-	const citation_precision = cited.size ? citedHit / cited.size : 0;
-	const retrieval_recall = gold.size ? overlap(retrieved, gold) / gold.size : 1;
-	const answer_correct = contract.answer === item.label;
+/** Score an item over N runs: the modal answer drives accuracy, the grounding
+ *  metrics are averaged across runs, and reliability is how often the modal
+ *  answer repeats (STRATEGY §7 — a tool that flips on rerun isn't usable). */
+export function scoreItem(item: Item, contracts: Contract[]): ItemScore {
+	const gold = citationKeys(item.gold_citations);
+	const recalls: number[] = [];
+	const precisions: number[] = [];
+	const retrievals: number[] = [];
+	let trues = 0;
+	for (const c of contracts) {
+		const cited = citationKeys(c.cited_provisions);
+		const retrieved = citationKeys(c.retrieved_provisions);
+		const hit = overlap(cited, gold);
+		recalls.push(gold.size ? hit / gold.size : 1);
+		precisions.push(cited.size ? hit / cited.size : 0);
+		retrievals.push(gold.size ? overlap(retrieved, gold) / gold.size : 1);
+		if (c.answer === "TRUE") trues++;
+	}
+	const n = contracts.length;
+	const modal: "TRUE" | "FALSE" = trues * 2 >= n ? "TRUE" : "FALSE";
+	const reliability = n ? Math.max(trues, n - trues) / n : 1;
+
+	const citation_recall = mean(recalls);
+	const citation_precision = mean(precisions);
+	const answer_correct = modal === item.label;
 
 	return {
 		item_id: item.id,
 		answer_correct,
 		citation_recall,
 		citation_precision,
-		retrieval_recall,
+		retrieval_recall: mean(retrievals),
 		fully_correct:
 			answer_correct && citation_recall === 1 && citation_precision === 1,
+		reliability,
 	};
 }
 
 function aggregate(rows: Scored[]): Aggregate {
 	const n = rows.length;
-	const mean = (f: (r: Scored) => number): number =>
+	const meanRow = (f: (r: Scored) => number): number =>
 		n ? rows.reduce((s, r) => s + f(r), 0) / n : 0;
+	const allAnswers = rows.flatMap((r) => r.contracts.map((c) => c.answer));
 	return {
 		n,
-		answer_accuracy: mean((r) => (r.score.answer_correct ? 1 : 0)),
-		citation_recall: mean((r) => r.score.citation_recall),
-		citation_precision: mean((r) => r.score.citation_precision),
-		retrieval_recall: mean((r) => r.score.retrieval_recall),
-		fully_correct: mean((r) => (r.score.fully_correct ? 1 : 0)),
-		answered_true: mean((r) => (r.contract.answer === "TRUE" ? 1 : 0)),
+		answer_accuracy: meanRow((r) => (r.score.answer_correct ? 1 : 0)),
+		citation_recall: meanRow((r) => r.score.citation_recall),
+		citation_precision: meanRow((r) => r.score.citation_precision),
+		retrieval_recall: meanRow((r) => r.score.retrieval_recall),
+		fully_correct: meanRow((r) => (r.score.fully_correct ? 1 : 0)),
+		answered_true: allAnswers.length
+			? allAnswers.filter((a) => a === "TRUE").length / allAnswers.length
+			: 0,
+		reliability: meanRow((r) => r.score.reliability),
 		ci: n ? 1 / Math.sqrt(n) : 0,
 	};
 }
@@ -95,11 +119,11 @@ const band = (a: Aggregate): string => `±${pct(a.ci)}`;
 
 /** A metric row for an aggregate (a slice or the overall). */
 function row(label: string, a: Aggregate): string {
-	return `| ${label} | ${a.n} | ${pct(a.answer_accuracy)} | ${pct(a.citation_recall)} | ${pct(a.citation_precision)} | ${pct(a.retrieval_recall)} | ${pct(a.fully_correct)} | ${pct(a.answered_true)} |`;
+	return `| ${label} | ${a.n} | ${pct(a.answer_accuracy)} | ${pct(a.citation_recall)} | ${pct(a.citation_precision)} | ${pct(a.retrieval_recall)} | ${pct(a.fully_correct)} | ${pct(a.reliability)} | ${pct(a.answered_true)} |`;
 }
 
 const HEAD =
-	"| | n | answer | cite-rec | cite-prec | retr-rec | fully | %TRUE |\n|---|--:|--:|--:|--:|--:|--:|--:|";
+	"| | n | answer | cite-rec | cite-prec | retr-rec | fully | relia | %TRUE |\n|---|--:|--:|--:|--:|--:|--:|--:|--:|";
 
 function sliceTable(title: string, slice: Record<string, Aggregate>): string {
 	const rows = Object.entries(slice).map(([k, a]) => row(k, a));
@@ -177,6 +201,7 @@ export function compareReports(
 		deltaRow("citation precision", a.citation_precision, b.citation_precision),
 		deltaRow("retrieval recall", a.retrieval_recall, b.retrieval_recall),
 		deltaRow("fully correct", a.fully_correct, b.fully_correct),
+		deltaRow("reliability", a.reliability, b.reliability),
 		"",
 		regressions.length
 			? `⚠ regressions: ${regressions.join("; ")}`

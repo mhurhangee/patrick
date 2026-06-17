@@ -160,15 +160,18 @@ export interface ContractRecord {
 
 export interface ItemScore {
 	item_id: string;
+	/** Modal answer (over N runs) is correct. */
 	answer_correct: boolean;
-	/** |cited ∩ gold| / |gold|. */
+	/** |cited ∩ gold| / |gold|, averaged over runs. */
 	citation_recall: number;
-	/** |cited ∩ gold| / |cited| — catches padded/hallucinated cites. */
+	/** |cited ∩ gold| / |cited|, averaged over runs — catches padded cites. */
 	citation_precision: number;
-	/** Was each gold citation in what the system retrieved? recall@k. */
+	/** Was each gold citation in what the system retrieved? recall@k, averaged. */
 	retrieval_recall: number;
 	/** Right answer AND citation recall = 1 AND citation precision = 1. */
 	fully_correct: boolean;
+	/** Fraction of runs reproducing the modal answer (1 for a single run). */
+	reliability: number;
 }
 
 /** Aggregated metrics over a slice of items (overall or by topic/distortion/…). */
@@ -179,8 +182,10 @@ export interface Aggregate {
 	citation_precision: number;
 	retrieval_recall: number;
 	fully_correct: number;
-	/** Fraction the system answered TRUE — skew here can fake accuracy. */
+	/** Fraction the system answered TRUE (over all runs) — skew can fake accuracy. */
 	answered_true: number;
+	/** Mean answer reliability — how often the modal answer repeats on resampling. */
+	reliability: number;
 	/** Rough ±band on a proportion at this n (≈1/√n); don't over-read gaps inside it. */
 	ci: number;
 }
