@@ -9,6 +9,7 @@
 	"scripts": {
 		"hydrate": "bun scripts/hydrate.ts",
 		"generate": "bun --env-file=../../.env scripts/generate.ts",
+		"judge": "bun --env-file=../../.env scripts/judge.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
