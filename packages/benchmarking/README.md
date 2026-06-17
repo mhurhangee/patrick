@@ -85,6 +85,10 @@ re-running. `answer`/`score` read the committed `data/items.jsonl`; each model's
 results live under `data/evals/<model>/`. To benchmark another model, just re-run
 `answer --model …` (no rebuild) — same items.
 
+`answer` prints a usage line per run — `tokens: N in · M out · ~$X` (cost
+estimated from the model catalog's list prices; verify against your Gateway
+invoice) — so a small pilot tells you the full-corpus spend before you commit to it.
+
 ## The metrics (§7)
 
 Reported overall and sliced by distortion / framing / topic, each with a ±1/√n
@@ -121,7 +125,9 @@ verbatim text — is derived on `hydrate` from `@patrick/law`.
 
 - `src/taxonomy.ts` — the 8 distortions (single source of truth, rendered into both prompts).
 - `src/types.ts` — the schema for every pipeline stage.
-- `src/{models,prompts,runner,score,citations}.ts` — the stage implementations.
+- `src/harness.ts` — the shared generate→judge→decide→emit steps (build + judge use it).
+- `src/{models,prompts,runner,score,citations,pricing}.ts` — the stage implementations.
+
 **Committed (the reproducible dataset):**
 - `data/source-sets.txt` — authored gold (citations only).
 - `data/hydrated/` — frozen gold with verbatim text; regenerate when the law changes.
