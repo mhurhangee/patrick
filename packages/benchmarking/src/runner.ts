@@ -91,6 +91,12 @@ function patrickTools(
 						{
 							role: "system",
 							content: `${FIND_LAW_INSTRUCTIONS}\n\n${toc(sourceId)}`,
+							// The big static TOC is a cacheable prefix — mark it for Anthropic
+							// (OpenAI/Google cache automatically), so repeated find_law calls in
+							// a run don't re-pay it. Mirrors apps/api/src/lib/ai/find-law.ts.
+							providerOptions: {
+								anthropic: { cacheControl: { type: "ephemeral" } },
+							},
 						},
 						{ role: "user", content: query },
 					],
