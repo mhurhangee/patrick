@@ -53,7 +53,9 @@ async function main(): Promise<void> {
 		`${runner.id} · ${items.length} items${repeat > 1 ? ` ×${repeat}` : ""}\n`,
 	);
 
+	const label = new Map(items.map((i) => [i.id, i.label]));
 	const records: ContractRecord[] = [];
+	let errors = 0;
 	for (const item of items) {
 		const answers: string[] = [];
 		for (let k = 0; k < repeat; k++) {
@@ -62,6 +64,7 @@ async function main(): Promise<void> {
 				records.push({ item_id: item.id, contract });
 				answers.push(contract.answer);
 			} catch (err) {
+				errors++;
 				console.warn(
 					`! ${item.id} error: ${err instanceof Error ? err.message : String(err)}`,
 				);
@@ -79,11 +82,18 @@ async function main(): Promise<void> {
 		`${records.map((r) => JSON.stringify(r)).join("\n")}\n`,
 	);
 	const correct = records.filter(
-		(r) => r.contract.answer === items.find((i) => i.id === r.item_id)?.label,
+		(r) => r.contract.answer === label.get(r.item_id),
 	).length;
+	const expected = items.length * repeat;
+	// Per-run tally (not the modal accuracy `score` reports); flag dropped runs so
+	// a partial run can't quietly shrink the scoring denominator.
 	console.log(
-		`\n${correct}/${records.length} correct · tokens: ${usageLine(runner.modelId, runner.usage.input, runner.usage.output)}`,
+		`\n${correct}/${records.length} runs correct · tokens: ${usageLine(runner.modelId, runner.usage.input, runner.usage.output)}`,
 	);
+	if (records.length < expected)
+		console.warn(
+			`⚠ ${errors} runs errored — ${records.length}/${expected} contracts written; missing items won't be scored.`,
+		);
 	console.log(`→ data/evals/${slug(runner.modelId)}/contracts.${arm}.jsonl`);
 }
 

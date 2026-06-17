@@ -171,17 +171,30 @@ export function localRunner(opts: {
 				system: SYSTEM,
 				prompt: task(item),
 				tools,
-				stopWhen: stepCountIs(8),
+				// Headroom for a few find_law → ep_law_lookup rounds before answering
+				// (find_law alone can return 8 sections). Too low and a well-grounded
+				// item hits the cap mid-retrieval, ending on a tool call.
+				stopWhen: stepCountIs(16),
 			});
 			usage.input += reasoning.usage?.inputTokens ?? 0;
 			usage.output += reasoning.usage?.outputTokens ?? 0;
 
-			// Extract the contract from the reasoning text — decoupled from the tool
+			// `.text` is only the FINAL step's text — empty if the loop ended on a tool
+			// call. Fall back to the whole step trail so the contract is extracted from
+			// the tool-aware reasoning, not re-guessed from nothing.
+			const analysis =
+				reasoning.text.trim() ||
+				(reasoning.steps ?? [])
+					.map((s) => s.text)
+					.filter(Boolean)
+					.join("\n\n");
+
+			// Extract the contract from the reasoning — decoupled from the tool
 			// conversation, so it's provider-safe regardless of the arm.
 			const { object, usage: u } = await generateObject({
 				model,
 				schema: contractSchema,
-				prompt: `${task(item)}\n\nAnalysis:\n${reasoning.text}\n\n${FINAL_ASK}`,
+				prompt: `${task(item)}\n\nAnalysis:\n${analysis}\n\n${FINAL_ASK}`,
 			});
 			usage.input += u?.inputTokens ?? 0;
 			usage.output += u?.outputTokens ?? 0;

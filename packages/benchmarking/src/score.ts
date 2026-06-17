@@ -5,7 +5,7 @@
 // is the cross-arm delta: how much the grounding tools lift accuracy and citation
 // correctness over the identical ungrounded model.
 
-import { citationKeys, overlap } from "./citations";
+import { citationKeys, citedKeysAndCount, overlap } from "./citations";
 import type {
 	Aggregate,
 	Contract,
@@ -27,7 +27,12 @@ const mean = (xs: number[]): number =>
 
 /** Score an item over N runs: the modal answer drives accuracy, the grounding
  *  metrics are averaged across runs, and reliability is how often the modal
- *  answer repeats (STRATEGY §7 — a tool that flips on rerun isn't usable). */
+ *  answer repeats (STRATEGY §7 — a tool that flips on rerun isn't usable).
+ *
+ *  NOTE: citations are scored at provision (article/rule/section) granularity —
+ *  the canonical key drops the paragraph, so a cited A54(1) matches a gold A54(3).
+ *  The gold is provision-level today; paragraph-precise scoring would need
+ *  paragraph-level gold and is a deliberate, documented limitation. */
 export function scoreItem(item: Item, contracts: Contract[]): ItemScore {
 	const gold = citationKeys(item.gold_citations);
 	const recalls: number[] = [];
@@ -35,11 +40,13 @@ export function scoreItem(item: Item, contracts: Contract[]): ItemScore {
 	const retrievals: number[] = [];
 	let trues = 0;
 	for (const c of contracts) {
-		const cited = citationKeys(c.cited_provisions);
+		const cited = citedKeysAndCount(c.cited_provisions);
 		const retrieved = citationKeys(c.retrieved_provisions);
-		const hit = overlap(cited, gold);
+		const hit = overlap(cited.keys, gold);
 		recalls.push(gold.size ? hit / gold.size : 1);
-		precisions.push(cited.size ? hit / cited.size : 0);
+		// Precision denominator includes unresolved cites, so padding/hallucinating
+		// a non-resolving citation counts against precision rather than vanishing.
+		precisions.push(cited.total ? hit / cited.total : 0);
 		retrievals.push(gold.size ? overlap(retrieved, gold) / gold.size : 1);
 		if (c.answer === "TRUE") trues++;
 	}

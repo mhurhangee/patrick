@@ -19,3 +19,24 @@ export function overlap(a: Set<string>, b: Set<string>): number {
 	for (const k of a) if (b.has(k)) n++;
 	return n;
 }
+
+/** Resolved keys PLUS the count of distinct provisions cited including ones that
+ *  don't resolve. The unresolved count feeds the precision denominator so a system
+ *  can't hide a hallucinated cite ("Article 999 EPC") by citing something the
+ *  resolver drops — those still count against it. */
+export function citedKeysAndCount(citations: string[]): {
+	keys: Set<string>;
+	total: number;
+} {
+	const keys = new Set<string>();
+	const unresolved = new Set<string>();
+	for (const c of citations) {
+		const key = resolveCitation(c)?.entry.citationKey;
+		if (key) keys.add(key);
+		else {
+			const norm = c.trim().toUpperCase().replace(/\s+/g, " ");
+			if (norm) unresolved.add(norm);
+		}
+	}
+	return { keys, total: keys.size + unresolved.size };
+}

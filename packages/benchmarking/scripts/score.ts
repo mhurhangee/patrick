@@ -62,6 +62,7 @@ async function main(): Promise<void> {
 	const items = new Map((await readJsonl<Item>(ITEMS)).map((i) => [i.id, i]));
 
 	const reports: Partial<Record<Arm, ReturnType<typeof buildReport>>> = {};
+	const coveredByArm: Partial<Record<Arm, Set<string>>> = {};
 	for (const arm of Object.keys(ARMS) as Arm[]) {
 		const file = join(dir, `contracts.${arm}.jsonl`);
 		if (!(await exists(file))) continue;
@@ -72,12 +73,25 @@ async function main(): Promise<void> {
 			arr.push(rec.contract);
 			byItem.set(rec.item_id, arr);
 		}
+		// Loud signals that the eval is stale/partial, rather than silently scoring
+		// a subset: contracts whose item isn't in the dataset (rebuilt ids), and
+		// dataset items with no contracts (a partial answer run).
+		const orphans = [...byItem.keys()].filter((id) => !items.has(id));
+		if (orphans.length)
+			console.warn(
+				`⚠ ${ARMS[arm]}: ${orphans.length} contracts for items not in the dataset (stale eval? rebuild changed ids) — ignored.`,
+			);
 		const rows: Scored[] = [];
 		for (const [id, item] of items) {
 			const contracts = byItem.get(id);
 			if (contracts?.length)
 				rows.push({ item, contracts, score: scoreItem(item, contracts) });
 		}
+		if (rows.length < items.size)
+			console.warn(
+				`⚠ ${ARMS[arm]}: scored ${rows.length}/${items.size} dataset items (the rest have no contracts).`,
+			);
+		coveredByArm[arm] = new Set(rows.map((r) => r.item.id));
 		const report = buildReport(ARMS[arm], rows);
 		reports[arm] = report;
 		const md = renderReport(report, rows);
@@ -86,6 +100,13 @@ async function main(): Promise<void> {
 	}
 
 	if (reports.none && reports.patrick) {
+		const a = coveredByArm.none ?? new Set();
+		const b = coveredByArm.patrick ?? new Set();
+		const sameItems = a.size === b.size && [...a].every((id) => b.has(id));
+		if (!sameItems)
+			console.warn(
+				"⚠ the two arms scored DIFFERENT item sets — the lift delta isn't a clean paired comparison.",
+			);
 		const md = compareReports(reports.none, reports.patrick);
 		await writeFile(join(dir, "comparison.md"), `${md}\n`);
 		console.log(`\n${md}\n`);

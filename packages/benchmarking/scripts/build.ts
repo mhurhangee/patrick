@@ -14,7 +14,7 @@
 //        --retries N (default 3) · --paper <prefix> · --id <id> · --limit N ·
 //        --force (rebuild pairs already done) · --generator <id> · --judge <id>
 
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -49,15 +49,33 @@ interface FailureRecord {
 	reasons: string[];
 }
 
-const readJsonl = async <T>(path: string): Promise<T[]> =>
-	readFile(path, "utf8").then(
-		(t) =>
-			t
-				.split("\n")
-				.filter(Boolean)
-				.map((l) => JSON.parse(l) as T),
-		() => [],
-	);
+// A missing file is empty (first run); a parse error on an EXISTING file throws
+// loudly BEFORE any paid call, so a truncated/corrupt dataset can't be silently
+// read as empty and trigger a full (re-paid) rebuild.
+async function readJsonl<T>(path: string): Promise<T[]> {
+	let text: string;
+	try {
+		text = await readFile(path, "utf8");
+	} catch (e) {
+		if ((e as NodeJS.ErrnoException).code === "ENOENT") return [];
+		throw e;
+	}
+	return text
+		.split("\n")
+		.filter(Boolean)
+		.map((l, i) => {
+			try {
+				return JSON.parse(l) as T;
+			} catch {
+				throw new Error(
+					`${path}: invalid JSON on line ${i + 1} — refusing to rebuild`,
+				);
+			}
+		});
+}
+
+const appendJsonl = (path: string, rows: object[]): Promise<void> =>
+	appendFile(path, `${rows.map((r) => JSON.stringify(r)).join("\n")}\n`);
 
 async function loadSets(): Promise<SourceSet[]> {
 	const idFilter = opt("id");
@@ -111,10 +129,9 @@ async function main(): Promise<void> {
 		`build · gen ${modelId("generator", opt("generator"))} · judge ${modelId("judge", opt("judge"))} · ${sets.length} sets · framings [${framings.join(", ")}]\n`,
 	);
 
-	const newItems: Item[] = [];
-	const newFailures: FailureRecord[] = [];
 	let built = 0;
 	let failed = 0;
+	let transient = 0;
 	let skipped = 0;
 	let tokens = 0;
 
@@ -131,13 +148,17 @@ async function main(): Promise<void> {
 					skipped++;
 					continue;
 				}
-				if (distortion === "auto" && doneSetFraming.has(`${set.id}|${framing}`)) {
+				if (
+					distortion === "auto" &&
+					doneSetFraming.has(`${set.id}|${framing}`)
+				) {
 					skipped++;
 					continue;
 				}
 
 				const reasons: string[] = [];
 				let accepted = false;
+				let sawDecision = false; // a real content verdict, vs only transient errors
 				for (let attempt = 1; attempt <= retries && !accepted; attempt++) {
 					try {
 						const { pair, tokens: gt } = await proposeOne(
@@ -148,21 +169,27 @@ async function main(): Promise<void> {
 						);
 						tokens += gt;
 						if (pair.status !== "proposed") {
+							sawDecision = true;
 							reasons.push(`gen rejected: ${pair.rejection_reason ?? ""}`);
 							continue;
 						}
 						const id = pairId(set.id, pair);
-						if (done.has(id) || newItems.some((i) => i.pair_id === id)) {
+						if (done.has(id)) {
+							// Paid for generation, but we already have this exact pair.
 							skipped++;
-							accepted = true; // already have this exact pair
+							accepted = true;
+							console.log(`· ${id} already built — skipping judge`);
 							break;
 						}
 						const judged = await judgeOne(judgeModel, set, pair);
 						tokens += judged.tokens;
 						const decision = decide(set, pair, judged.jr, judged.trueSlot);
+						sawDecision = true;
 						if (decision.accept) {
-							newItems.push(
-								...emitItems(
+							// Persist immediately so a crash can't lose paid work.
+							await appendJsonl(
+								ITEMS,
+								emitItems(
 									set,
 									pair,
 									judged.jr,
@@ -181,42 +208,38 @@ async function main(): Promise<void> {
 						reasons.push(err instanceof Error ? err.message : String(err));
 					}
 				}
-				if (!accepted) {
+				if (!accepted && sawDecision) {
+					// A genuine content rejection — persist so it's skipped next run.
 					failed++;
-					newFailures.push({
-						pair_id: probeId ?? `${set.id}-${framing}-auto`,
-						source_set_id: set.id,
-						framing,
-						distortion,
-						attempts: retries,
-						reasons,
-					});
+					await appendJsonl(FAILURES, [
+						{
+							pair_id: probeId ?? `${set.id}-${framing}-auto`,
+							source_set_id: set.id,
+							framing,
+							distortion,
+							attempts: retries,
+							reasons,
+						} satisfies FailureRecord,
+					]);
 					console.log(
 						`✗ ${set.id} [${framing}/${distortion}] — ${reasons.slice(-2).join("; ")}`,
+					);
+				} else if (!accepted) {
+					// Only transient errors (network/gateway) — DON'T persist as a failure,
+					// so it's retried next run instead of skipped forever.
+					transient++;
+					console.warn(
+						`~ ${set.id} [${framing}/${distortion}] transient, not persisted — ${reasons.at(-1) ?? ""}`,
 					);
 				}
 			}
 		}
 	}
 
-	if (newItems.length)
-		await writeFile(
-			ITEMS,
-			[...items, ...newItems].map((i) => JSON.stringify(i)).join("\n") + "\n",
-		);
-	if (newFailures.length)
-		await writeFile(
-			FAILURES,
-			[...failures, ...newFailures].map((f) => JSON.stringify(f)).join("\n") +
-				"\n",
-		);
-
 	console.log(
-		`\n${built} pairs built (${newItems.length} items) · ${failed} failed · ${skipped} skipped · ~${tokens} tokens`,
+		`\n${built} pairs built (${built * 2} items) · ${failed} failed · ${transient} transient · ${skipped} skipped · ~${tokens} tokens`,
 	);
-	console.log(
-		`dataset: ${items.length + newItems.length} items in data/items.jsonl`,
-	);
+	console.log(`dataset: ${items.length + built * 2} items in data/items.jsonl`);
 }
 
 main();
