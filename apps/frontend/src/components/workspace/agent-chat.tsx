@@ -73,6 +73,7 @@ import { SystemCard } from "./system-card";
 const SERVER_TOOLS = new Set([
 	"patrick_help",
 	"ep_law_lookup",
+	"find_law",
 	"web_search",
 	"google_search",
 ]);
@@ -374,14 +375,29 @@ function ChatSession({
 		const all = provisionsRef.current ?? [];
 		// Fall back to the key if an entry predates the `cite` field (stale cache).
 		const cite = (p: { cite?: string; key: string }) => p.cite ?? p.key;
+		// Group by body so the picker reads as EPC / Guidelines / PCT / Case Law.
+		const GROUP_ORDER = ["EPC", "Guidelines", "PCT Guidelines", "Case Law"];
+		const groupOf = (p: {
+			kind: string;
+			cite?: string;
+			key: string;
+		}): string =>
+			p.kind === "caselaw"
+				? "Case Law"
+				: p.kind === "guideline"
+					? cite(p).startsWith("PCT")
+						? "PCT Guidelines"
+						: "Guidelines"
+					: "EPC";
 		const toItem = (p: (typeof all)[number]): MentionItem => ({
 			id: p.key,
 			label: cite(p),
 			description: p.name ?? undefined,
+			group: groupOf(p),
 		});
 		// Empty query: just show the first few (order is arbitrary) — don't clone +
 		// sort the whole ~6k-entry index on every open.
-		if (tokens.length === 0) return all.slice(0, 8).map(toItem);
+		if (tokens.length === 0) return all.slice(0, 12).map(toItem);
 		return (
 			all
 				.filter((p) => {
@@ -393,8 +409,14 @@ function ChatSession({
 					(a, b) =>
 						cite(a).length - cite(b).length || cite(a).localeCompare(cite(b)),
 				)
-				.slice(0, 8)
+				.slice(0, 16)
 				.map(toItem)
+				// Group contiguously (stable sort keeps relevance order within a group).
+				.sort(
+					(a, b) =>
+						GROUP_ORDER.indexOf(a.group ?? "") -
+						GROUP_ORDER.indexOf(b.group ?? ""),
+				)
 		);
 	}, []);
 	const isStreaming = status === "streaming" || status === "submitted";

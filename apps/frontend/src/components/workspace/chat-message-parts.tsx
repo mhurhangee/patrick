@@ -1,4 +1,4 @@
-import type { LookupResult } from "@patrick/shared";
+import type { FindLawResult, LookupResult } from "@patrick/shared";
 import {
 	type DynamicToolUIPart,
 	getToolName,
@@ -71,6 +71,11 @@ const PRESENTERS: Record<string, Presenter> = {
 		runningLabel: "Looking up EPC law…",
 		summary: (input) =>
 			Array.isArray(input?.refs) ? input.refs.join(", ") : null,
+	},
+	find_law: {
+		label: "Find relevant law",
+		runningLabel: "Searching the contents…",
+		summary: (input) => input?.query ?? null,
 	},
 	web_search: {
 		label: "Search the web",
@@ -234,10 +239,36 @@ function SourcesBlock({ sources }: { sources: SourceUrlPart[] }) {
 	);
 }
 
+// Sections find_law surfaced from a body's contents — the agent grounds these
+// verbatim via ep_law_lookup; shown for transparency.
+function FindLawCard({ output }: { output: unknown }) {
+	const r = output as Partial<FindLawResult> | null;
+	if (!r || !Array.isArray(r.sections)) return <JsonView value={output} />;
+	if (r.error)
+		return <p className="text-xs text-muted-foreground">find_law: {r.error}</p>;
+	if (r.sections.length === 0)
+		return (
+			<p className="text-xs text-muted-foreground">
+				No relevant sections found.
+			</p>
+		);
+	return (
+		<div className="space-y-0.5 text-xs">
+			{r.sections.map((s) => (
+				<p key={s.ref}>
+					<span className="font-medium text-foreground">{s.ref}</span>
+					{s.title ? ` — ${s.title}` : ""}
+				</p>
+			))}
+		</div>
+	);
+}
+
 // Tools whose output gets a bespoke renderer instead of the raw JSON view. Add the
 // next rich tool here rather than growing a chain of conditionals in ToolDetail.
 const OUTPUT_RENDERERS: Record<string, (output: unknown) => ReactNode> = {
 	ep_law_lookup: (output) => <LawResults output={output} />,
+	find_law: (output) => <FindLawCard output={output} />,
 };
 
 function ToolDetail({ part }: { part: AnyToolPart }) {

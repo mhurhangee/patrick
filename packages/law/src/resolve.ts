@@ -1,20 +1,6 @@
 import type { ProvisionRef } from "@patrick/shared";
-import caselawData from "../data/caselaw-map.json" with { type: "json" };
-import epcData from "../data/epc-map.json" with { type: "json" };
-import guidelinesEpcData from "../data/guidelines-epc-map.json" with {
-	type: "json",
-};
-import guidelinesPctData from "../data/guidelines-pct-map.json" with {
-	type: "json",
-};
-import type { EpcMap, EpcMapEntry } from "./types";
-
-const ENTRIES: EpcMapEntry[] = [
-	epcData,
-	guidelinesEpcData,
-	guidelinesPctData,
-	caselawData,
-].flatMap((m) => (m as EpcMap).entries);
+import { ENTRIES } from "./maps";
+import type { EpcMapEntry } from "./types";
 
 // A readable, source-tagged citation — what a tag shows and serialises to.
 // EPC provisions get a numbered form; Guidelines/case-law keys are already
