@@ -21,15 +21,22 @@ export type JudgeVerdict = "TRUE" | "FALSE" | "UNVERIFIABLE";
 
 // ── Source sets (plan §3) ──────────────────────────────────────────────────
 
-/** What a human authors: a topic and the gold citations. Text is hydrated. */
+/**
+ * One parsed line of `data/source-sets.txt` — just the gold citations a human
+ * pasted, plus the `# paper` / `## question` headers it sat under. Everything
+ * else (id, topic, jurisdiction, URLs, verbatim text) is derived on hydrate.
+ */
 export interface AuthoredSourceSet {
-	id: string;
-	jurisdiction: Jurisdiction;
-	topic: string;
-	/** Resolvable citations, e.g. "Art. 76(1) EPC", "Rule 36(1) EPC". */
+	/** Resolvable citations, e.g. "Art. 76(1) EPC", "GL A-II 4.1". */
 	citations: string[];
-	/** Optional provenance (OJ reference / URL). */
-	source_refs?: string[];
+	/** Optional human override; otherwise topic = the primary provision's title. */
+	topic?: string;
+	/** The `# …` header in scope, e.g. "2026 Paper F". */
+	paper?: string;
+	/** The `## …` header in scope, e.g. "Q1". */
+	question?: string;
+	/** 1-based position within its paper+question, for a stable id. */
+	seq: number;
 }
 
 export interface SourceSetProvision {
@@ -46,6 +53,8 @@ export interface SourceSet {
 	id: string;
 	jurisdiction: Jurisdiction;
 	topic: string;
+	/** Where the set came from, e.g. "2026 Paper F · Q1" — for coverage analysis. */
+	provenance?: string;
 	/** YYYY-MM the gold was hydrated; the trigger to re-validate when law changes. */
 	law_date: string;
 	provisions: SourceSetProvision[];

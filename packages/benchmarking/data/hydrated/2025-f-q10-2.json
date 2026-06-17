@@ -1,0 +1,25 @@
+{
+  "id": "2025-f-q10-2",
+  "jurisdiction": "EP",
+  "topic": "Article 122 – Re-establishment of rights",
+  "provenance": "2025 Paper F · Q10",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 122 EPC",
+      "type": "article",
+      "text": "(1) An applicant for or proprietor of a European patent who, in spite of all due care required by the circumstances having been taken, was unable to observe a time limit vis-à-vis the European Patent Office shall have his rights re-established upon request if the non-observance of this time limit has the direct consequence of causing the refusal of the European patent application or of a request, or the deeming of the application to have been withdrawn, or the revocation of the European patent, or the loss of any other right or means of redress.\n(2) The European Patent Office shall grant the request, provided that the conditions of paragraph 1 and any other requirements laid down in the Implementing Regulations are met. Otherwise, it shall reject the request.\n(3) If the request is granted, the legal consequences of the failure to observe the time limit shall be deemed not to have ensued.\n(4) Re-establishment of rights shall be ruled out in respect of the time limit for requesting re-establishment of rights. The Implementing Regulations may rule out re-establishment for other time limits.\n(5) Any person who, in a designated Contracting State, has in good faith used or made effective and serious preparations for using an invention which is the subject of a published European patent application or a European patent in the period between the loss of rights referred to in paragraph 1 and publication in the European Patent Bulletin of the mention of re-establishment of those rights, may without payment continue such use in the course of his business or for the needs thereof.\n(6) Nothing in this Article shall limit the right of a Contracting State to grant re-establishment of rights in respect of time limits provided for in this Convention and to be observed vis-à-vis the authorities of such State.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 136(3) EPC",
+      "type": "rule",
+      "text": "(1) Any request for re-establishment of rights under Article 122, paragraph 1, shall be filed in writing within two months of the removal of the cause of non-compliance with the period, but at the latest within one year of expiry of the unobserved time limit. However, a request for re-establishment of rights in respect of any of the periods specified in Article 87, paragraph 1, and in Article 112a, paragraph 4, shall be filed within two months of expiry of that period. The request for re-establishment of rights shall not be deemed to have been filed until the prescribed fee has been paid.\n(2) The request shall state the grounds on which it is based and shall set out the facts on which it relies. The omitted act shall be completed within the relevant period for filing the request according to paragraph 1.\n(3) Re-establishment of rights shall be ruled out in respect of any period for which further processing under Article 121 is available and in respect of the period for requesting re-establishment of rights.\n(4) The department competent to decide on the omitted act shall decide on the request for re-establishment of rights.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a122.html",
+    "https://www.epo.org/en/legal/epc/2020/r136.html"
+  ]
+}

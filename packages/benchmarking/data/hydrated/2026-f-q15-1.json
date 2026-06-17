@@ -1,0 +1,25 @@
+{
+  "id": "2026-f-q15-1",
+  "jurisdiction": "EP",
+  "topic": "Rule 159 – The European Patent Office as a designated or elected Office – Requirements for entry into the European phase",
+  "provenance": "2026 Paper F · Q15",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 159(1) EPC",
+      "type": "rule",
+      "text": "(1) In respect of an international application under Article 153, the applicant shall perform the following acts within thirty-one months from the date of filing of the application or, if priority has been claimed, from the priority date:\n(a) supply, where applicable, the translation of the international application required under Article 153, paragraph 4;\n(b) specify the application documents, as originally filed or as amended, on which the European grant procedure is to be based;\n(c) pay the filing fee provided for in Article 78, paragraph 2;\n(d), pay the designation fee if the period under Rule 39 has expired earlier;\n(e) pay the search fee, where a supplementary European search report has to be drawn up;\n(f) file the request for examination provided for in Article 94, if the period under Rule 70, paragraph 1, has expired earlier;\n(g) pay the renewal fee in respect of the third year provided for in Article 86, paragraph 1, if the fee has fallen due earlier under Rule 51, paragraph 1;\n(h) file, where applicable, the certificate of exhibition referred to in Article 55, paragraph 2, and Rule 25.\n(2) The Examining Division shall be competent to take decisions of the European Patent Office under Article 25, paragraph 2(a) PCT.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 134(1) EPC",
+      "type": "rule",
+      "text": "(1) If a period expires on a day on which one of the filing offices of the European Patent Office under Rule 35, paragraph 1, is not open for receipt of documents or on which, for reasons other than those referred to in paragraph 2, mail is not delivered there, the period shall extend to the first day thereafter on which all the filing offices are open for receipt of documents and on which mail is delivered. The first sentence shall apply mutatis mutandis if documents filed by one of the means of electronic communication permitted by the President of the European Patent Office under Rule 2, paragraph 1, cannot be received.\n(2) If a period expires on a day on which there is a general dislocation in the delivery or transmission of mail in a Contracting State, the period shall extend to the first day following the end of the interval of dislocation for parties which are resident in the State concerned or have appointed representatives with a place of business in that State. Where the State concerned is the State in which the European Patent Office is located, this provision shall apply to all parties and their representatives. This paragraph shall apply mutatis mutandis to the period referred to in Rule 37, paragraph 2.\n(3) Paragraphs 1 and 2 shall apply mutatis mutandis where acts are performed with the competent authority in accordance with Article 75, paragraphs 1(b) or Article 75, paragraphs 2(b).\n(4) The date of commencement and the end of any dislocation under paragraph 2 shall be published by the European Patent Office.\n(5) Without prejudice to paragraphs 1 to 4, a party concerned may produce evidence that on any of the ten days preceding the day of expiry of a period the delivery or transmission of mail was dislocated due to an exceptional occurrence such as a natural disaster, war, civil disorder, a general breakdown in any of the means of electronic communication permitted by the President of the European Patent Office under Rule 2, paragraph 1, or other like reasons affecting the locality where the party or their representative resides or has their place of business. If the evidence produced satisfies the European Patent Office, a document received late shall be deemed to have been received in due time, provided that the mailing or the transmission was effected at the latest on the fifth day after the end of the dislocation.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r159.html",
+    "https://www.epo.org/en/legal/epc/2020/r134.html"
+  ]
+}

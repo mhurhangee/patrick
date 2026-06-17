@@ -1,0 +1,25 @@
+{
+  "id": "2025-f-q7-1",
+  "jurisdiction": "EP",
+  "topic": "Article 99 – Opposition",
+  "provenance": "2025 Paper F · Q7",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 99(1)",
+      "type": "article",
+      "text": "(1) Within nine months of the publication of the mention of the grant of the European patent in the European Patent Bulletin, any person may give notice to the European Patent Office of opposition to that patent, in accordance with the Implementing Regulations. Notice of opposition shall not be deemed to have been filed until the opposition fee has been paid.\n(2) The opposition shall apply to the European patent in all the Contracting States in which that patent has effect.\n(3) Opponents shall be parties to the opposition proceedings as well as the proprietor of the patent.\n(4) Where a person provides evidence that in a Contracting State, following a final decision, he has been entered in the patent register of such State instead of the previous proprietor, such person shall, at his request, replace the previous proprietor in respect of such State. Notwithstanding Article 118, the previous proprietor and the person making the request shall not be regarded as joint proprietors unless both so request.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R.131(4) EPC",
+      "type": "rule",
+      "text": "(1) Periods shall be laid down in terms of full years, months, weeks or days.\n(2) Computation shall start on the day following the day on which the relevant event occurred, the event being either a procedural step or the expiry of another period. Where the procedural step is a notification, the relevant event shall be the deemed receipt of the document notified, unless otherwise provided.\n(3) When a period is expressed as one year or a certain number of years, it shall expire in the relevant subsequent year in the month having the same name and on the day having the same number as the month and the day on which the said event occurred; if the relevant subsequent month has no day with the same number, the period shall expire on the last day of that month.\n(4) When a period is expressed as one month or a certain number of months, it shall expire in the relevant subsequent month on the day which has the same number as the day on which the said event occurred; if the relevant subsequent month has no day with the same number, the period shall expire on the last day of that month.\n(5) When a period is expressed as one week or a certain number of weeks, it shall expire in the relevant subsequent week on the day having the same name as the day on which the said event occurred.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a99.html",
+    "https://www.epo.org/en/legal/epc/2020/r131.html"
+  ]
+}

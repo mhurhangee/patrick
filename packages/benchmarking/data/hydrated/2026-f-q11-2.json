@@ -1,0 +1,18 @@
+{
+  "id": "2026-f-q11-2",
+  "jurisdiction": "EP",
+  "topic": "Rule 93 – Precedence of opposition proceedings",
+  "provenance": "2026 Paper F · Q11",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 93(1) EPC",
+      "type": "rule",
+      "text": "(1) The request for limitation or revocation shall be deemed not to have been filed if opposition proceedings in respect of the patent are pending at the time of filing the request.\n(2) If, at the time of filing an opposition to a European patent, limitation proceedings in respect of that patent are pending, the Examining Division shall terminate the limitation proceedings and order the reimbursement of the limitation fee.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r93.html"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "2026-f-q7-1",
+  "jurisdiction": "EP",
+  "topic": "Article 123 – Amendments",
+  "provenance": "2026 Paper F · Q7",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 123(3) EPC",
+      "type": "article",
+      "text": "(1) The European patent application or European patent may be amended in proceedings before the European Patent Office, in accordance with the Implementing Regulations. In any event, the applicant shall be given at least one opportunity to amend the application of his own volition.\n(2) The European patent application or European patent may not be amended in such a way that it contains subject-matter which extends beyond the content of the application as filed.\n(3) The European patent may not be amended in such a way as to extend the protection it confers.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Art. 54(3) EPC",
+      "type": "article",
+      "text": "(1) An invention shall be considered to be new if it does not form part of the state of the art.\n(2) The state of the art shall be held to comprise everything made available to the public by means of a written or oral description, by use, or in any other way, before the date of filing of the European patent application.\n(3) Additionally, the content of European patent applications as filed, the dates of filing of which are prior to the date referred to in paragraph 2 and which were published on or after that date, shall be considered as comprised in the state of the art.\n(4) Paragraphs 2 and 3 shall not exclude the patentability of any substance or composition, comprised in the state of the art, for use in a method referred to in Article 53(c), provided that its use for any such method is not comprised in the state of the art.\n(5) Paragraphs 2 and 3 shall also not exclude the patentability of any substance or composition referred to in paragraph 4 for any specific use in a method referred to in Article 53(c), provided that such use is not comprised in the state of the art.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a123.html",
+    "https://www.epo.org/en/legal/epc/2020/a54.html"
+  ]
+}

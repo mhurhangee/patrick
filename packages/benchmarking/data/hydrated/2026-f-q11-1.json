@@ -1,0 +1,18 @@
+{
+  "id": "2026-f-q11-1",
+  "jurisdiction": "EP",
+  "topic": "1. Introduction",
+  "provenance": "2026 Paper F · Q11",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Guidelines D-X 1",
+      "type": "guidelines",
+      "text": "The limitation and revocation procedures are centralised ex parte proceedings which take place before the EPO and allow the patent proprietor either to have the claims of the granted patent limited or to have the whole patent revoked for all the designated states. More particularly, the limitation procedure offers an opportunity to obtain a limitation of a European patent in a short and straightforward procedure.\nUnlike in the opposition procedure, there is no restriction on the period between the grant of the patent and the filing of the request. Accordingly, the request can be filed at any time after grant, after opposition proceedings or even after expiry of the patent.\nThe examining division is competent to decide on requests for limitation and revocation. However, certain aspects of this procedure are entrusted to formalities officers (see decisions of the President of the EPO dated 12 December 2013, OJ EPO 2014, A6, and 23 November 2015, OJ EPO 2015, A104). Rule 91",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/guidelines-epc/2026/d_x_1.html"
+  ]
+}

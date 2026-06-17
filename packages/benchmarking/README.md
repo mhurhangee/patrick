@@ -32,7 +32,7 @@ runner are interchangeable without touching the scorer, harness, or dataset.
 
 - `src/taxonomy.ts` — the 8 distortions (single source of truth, rendered into both prompts).
 - `src/types.ts` — the schema for every pipeline stage.
-- `data/source-sets/` — authored gold (citations + topic).
+- `data/source-sets.txt` — authored gold: one set per line (just citations), grouped under `# paper` / `## question` headers. Everything else is derived on hydrate.
 - `data/hydrated/` — frozen gold with verbatim text; regenerate when the law changes.
 - `data/items/` — accepted, scorable items.
 - `data/runs/` — timestamped raw outputs + scored reports (gitignored).
@@ -49,6 +49,6 @@ runner are interchangeable without touching the scorer, harness, or dataset.
 ## Commands
 
 ```bash
-pnpm --filter @patrick/benchmarking hydrate     # source-sets/ → hydrated/
+pnpm --filter @patrick/benchmarking hydrate     # source-sets.txt → hydrated/
 pnpm --filter @patrick/benchmarking typecheck
 ```

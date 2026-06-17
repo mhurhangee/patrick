@@ -1,0 +1,25 @@
+{
+  "id": "2025-f-q8-1",
+  "jurisdiction": "EP",
+  "topic": "Article 133 – General principles of representation",
+  "provenance": "2025 Paper F · Q8",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 133(2) EPC",
+      "type": "article",
+      "text": "(1) Subject to paragraph 2, no person shall be compelled to be represented by a professional representative in proceedings established by this Convention.\n(2) Natural or legal persons not having their residence or principal place of business in a Contracting State shall be represented by a professional representative and act through him in all proceedings established by this Convention, other than in filing a European patent application; the Implementing Regulations may permit other exceptions.\n(3) Natural or legal persons having their residence or principal place of business in a Contracting State may be represented in proceedings established by this Convention by an employee, who need not be a professional representative but who shall be authorised in accordance with the Implementing Regulations. The Implementing Regulations may provide whether and under what conditions an employee of a legal person may also represent other legal persons which have their principal place of business in a Contracting State and which have economic connections with the first legal person.\n(4) The Implementing Regulations may lay down special provisions concerning the common representation of parties acting in common.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines A-VIII 1.1",
+      "type": "guidelines",
+      "text": "Subject to the next sentence, no person may be compelled to be represented by a professional representative in proceedings before the EPO; this holds for all parties to such proceedings, e.g. applicants, proprietors, opponents. A party (natural or legal person) who has neither residence nor principal place of business in a contracting state must be represented by a professional representative; the party must act through a professional representative in all proceedings other than in filing the application (which includes all acts leading to the accordance of a date of filing) or, for Euro-PCT applications, initiating the European phase within the applicable time limit (see A‑XII, 6.2). To \"be represented\" is to be interpreted as meaning due representation, including not only notice of the appointment of a professional representative but also, where applicable, the filing of authorisations of the appointed representative (see A‑VIII, 1.7). Parties having their residence or principal place of business in a contracting state may also act direct before the EPO, even if they have appointed a professional representative (see A‑VIII, 1.2), a legal practitioner (see A‑VIII, 1.3), an association of representatives (see A‑VIII, 1.4) or an employee (see A‑VIII, 1.5) to act on their behalf. When conflicting instructions are received from parties and their representative, each will be advised of the other's action. Should opponents who are party to proceedings and do not have either residence or principal place of business within the territory of one of the contracting states fail to meet the requirement set out under Art. 133(2) in the course of the opposition procedure (e.g. the representative withdraws from the opposition case or is deleted from the list of professional representatives), they are requested to appoint a new representative. Irrespective of whether they do so, the EPO will nevertheless inform opponents of the date and location of any oral proceedings and point out that if they appear alone they will not be entitled to act before the division. Art. 133(1) and Art. 133(2) Art. 90(3) Rule 152",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a133.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_viii_1_1.html"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "2026-f-q12-2",
+  "jurisdiction": "EP",
+  "topic": "2.2 The same invention",
+  "provenance": "2026 Paper F · Q12",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Guidelines F-VI 2.2",
+      "type": "guidelines",
+      "text": "As far as \"the same invention\" requirement is concerned (see F‑VI, 1.3(iv)), the basic test to determine whether a claim is entitled to the date of a priority document is the same as the test for determining whether or not an amendment to an application satisfies the requirement of Art. 123(2) (see H‑IV, 2). That is to say, for the priority date to be valid in this respect, the subject-matter of the claim must be directly and unambiguously derivable from the disclosure of the invention in the priority document, also considering any features implicit to a skilled person in what is expressly mentioned in the document (see G 2/98). As an example of an implicit disclosure, a claim to an apparatus including \"releasable fastening means\" would be entitled to the priority date of a disclosure of that apparatus in which different embodiments of releasable fastening elements such as a nut and bolt, a spring catch and a toggle-operated latch are shown.\nIt is not necessary for the subject-matter for which priority is claimed to appear in any of the previous application's claims. It is sufficient if the documents of the previous application, taken as a whole, \"specifically disclose\" such subject-matter. The description and any claims or drawings of the previous application are, therefore, to be considered as a whole in deciding this question; however, subject-matter only found in the part of the description referring to the prior art or in an explicit disclaimer is not to taken into account. The requirement that the disclosure must be specific means that it is not sufficient if the subject-matter in question is merely referred to in broad and general terms. A claim to a detailed embodiment of a certain feature would not be entitled to priority on the basis of a mere general reference to that feature in a priority document. Exact literal correspondence is not required, however. It is enough that, on a reasonable assessment, there is in substance a disclosure of the same subject-matter of the claim. A disclaimer which is allowable under Art. 123(2) (see H‑V, 4.2.1 and H-V, 4.2.2) has no effect on the identity of the invention within the meaning of Art. 87(1). It may therefore be introduced when drafting and filing a successive European patent application without affecting the right to priority from the first application not containing the disclaimer (see G 1/03, G 2/03 and G 2/10). Art. 88(4)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/guidelines-epc/2026/f_vi_2_2.html"
+  ]
+}

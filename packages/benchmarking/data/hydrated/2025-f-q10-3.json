@@ -1,0 +1,18 @@
+{
+  "id": "2025-f-q10-3",
+  "jurisdiction": "EP",
+  "topic": "Rule 112 – Noting of loss of rights",
+  "provenance": "2025 Paper F · Q10",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 112(1) EPC",
+      "type": "rule",
+      "text": "(1) If the European Patent Office notes that a loss of rights has occurred, without any decision concerning the refusal of the European patent application or the grant, revocation or maintenance of the European patent, or the taking of evidence, it shall communicate this to the party concerned.\n(2) If the party concerned considers that the finding of the European Patent Office is inaccurate, it may, within two months of the communication under paragraph 1, apply for a decision on the matter. The European Patent Office shall take such decision only if it does not share the opinion of the party requesting it; otherwise, it shall inform that party.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r112.html"
+  ]
+}

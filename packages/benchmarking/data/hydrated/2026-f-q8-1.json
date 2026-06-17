@@ -1,0 +1,25 @@
+{
+  "id": "2026-f-q8-1",
+  "jurisdiction": "EP",
+  "topic": "Article 123 – Amendments",
+  "provenance": "2026 Paper F · Q8",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 123(2) EPC",
+      "type": "article",
+      "text": "(1) The European patent application or European patent may be amended in proceedings before the European Patent Office, in accordance with the Implementing Regulations. In any event, the applicant shall be given at least one opportunity to amend the application of his own volition.\n(2) The European patent application or European patent may not be amended in such a way that it contains subject-matter which extends beyond the content of the application as filed.\n(3) The European patent may not be amended in such a way as to extend the protection it confers.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines F-III 2",
+      "type": "guidelines",
+      "text": "It is the responsibility of the applicant to ensure that on filing the application a sufficient disclosure is provided, i.e. one that meets the requirements of Art. 83 in respect of the invention as claimed in all of the claims. If the claims define the invention, or a feature of it, in terms of parameters, the application as filed must include a clear description of the methods used to determine the parameter values unless a skilled person would know what method to use or unless all methods would yield the same result (see F‑IV, 4.11). If the disclosure is seriously insufficient, that deficiency cannot subsequently be remedied by adding further examples or features without offending Art. 123(2), which requires that amendments may not result in the introduction of subject-matter extending beyond the content of the application as filed (see H‑IV, 2.1; see also H‑V, 2.2). Therefore, in such circumstances, the application must normally be refused. If, however, the deficiency concerns only some embodiments of the invention and not others, it could be remedied by restricting the claims to correspond to the sufficiently described embodiments only and deleting the description of the remaining embodiments. Art. 83 Art. 123(2)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a123.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/f_iii_2.html"
+  ]
+}

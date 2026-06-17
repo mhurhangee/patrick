@@ -1,0 +1,18 @@
+{
+  "id": "2025-f-q2-3",
+  "jurisdiction": "EP",
+  "topic": "Article 19 – Opposition Divisions",
+  "provenance": "2025 Paper F · Q2",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 19(2) EPC",
+      "type": "article",
+      "text": "(1) The Opposition Divisions shall be responsible for the examination of oppositions against any European patent.\n(2) An Opposition Division shall consist of three technically qualified examiners, at least two of whom shall not have taken part in the proceedings for grant of the patent to which the opposition relates. An examiner who has taken part in the proceedings for the grant of the European patent may not be the Chairman. Before a decision is taken on the opposition, the Opposition Division may entrust the examination of the opposition to one of its members. Oral proceedings shall be before the Opposition Division itself. If the Opposition Division considers that the nature of the decision so requires, it shall be enlarged by the addition of a legally qualified examiner who shall not have taken part in the proceedings for grant of the patent. In the event of parity of votes, the vote of the Chairman of the Opposition Division shall be decisive.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a19.html"
+  ]
+}

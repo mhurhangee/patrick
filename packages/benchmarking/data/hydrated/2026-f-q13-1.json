@@ -1,0 +1,18 @@
+{
+  "id": "2026-f-q13-1",
+  "jurisdiction": "EP",
+  "topic": "5.1 Determination of the closest prior art",
+  "provenance": "2026 Paper F · Q13",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Guidelines G-VII 5.1",
+      "type": "guidelines",
+      "text": "The closest prior art discloses, in one single reference, the combination of features which constitutes the most promising starting point for a development leading to the invention. In selecting the closest prior art, the first consideration is that it must be directed to a similar purpose or effect as the invention or at least belong to the same or a closely related technical field as the claimed invention. In practice, the closest prior art generally corresponds to a similar use and requires the minimum of structural and functional modifications to arrive at the claimed invention (see T 606/89).\nThere are sometimes several equally valid starting points for assessing inventive step, e.g. if the skilled person has a choice of several workable solutions, i.e. solutions starting from different documents, which might lead to the invention. If a patent is to be granted, it may be necessary to apply the problem-solution approach to each of these starting points in turn, i.e. for all these workable solutions.\nHowever, applying the problem-solution approach from different starting points, e.g. from different prior-art documents, is only required if it has been convincingly shown that these documents are equally valid springboards. In particular in opposition proceedings, the structure of the problem-solution approach is not that of a forum where the opponent can freely develop as many inventive-step attacks as desired in the hope that one of them has a chance of succeeding (T 320/15, Reasons 1.1.2).\nIn the event of refusal or revocation, it is sufficient to show on the basis of one relevant piece of prior art that the claimed subject-matter lacks an inventive step: there is no need to discuss which document is \"closest\" to the invention; the only relevant question is whether the document used is a feasible starting point for assessing inventive step (see T 967/97, T 558/00, T 21/08, T 308/09 and T 1289/09). This is true even if the problem identified by problem-solution reasoning is different from the one identified by the applicant/proprietor.\nAs a consequence, the applicant or proprietor cannot refute the argument that the claimed subject-matter lacks inventive step by submitting that a more promising springboard is available: a piece of prior art on the basis of which the claimed invention is considered non-obvious cannot be \"closer\" than a document on the basis of which the claimed invention appears obvious, because it is evident in this situation that the former is not the most promising springboard from which to arrive at the invention (T 1742/12, Reasons 6.5; T 824/05, Reasons 6.2).\nThe closest prior art must be assessed from the skilled person's point of view on the day before the filing or priority date valid for the claimed invention. The examiner must not interpret the closest prior art artificially on the basis of prior knowledge of the application (see also G‑VII, 8).\nIn identifying the closest prior art, account is taken of what the applicant acknowledges in the description and claims to be known. The examiner regards any such acknowledgement of known art as correct unless the applicant states that a mistake was made (see C‑IV, 7.3(vii)).",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/guidelines-epc/2026/g_vii_5_1.html"
+  ]
+}

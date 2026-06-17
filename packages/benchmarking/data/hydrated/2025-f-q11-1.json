@@ -1,0 +1,25 @@
+{
+  "id": "2025-f-q11-1",
+  "jurisdiction": "EP",
+  "topic": "Rule 20 – Publication of the mention of the inventor",
+  "provenance": "2025 Paper F · Q11",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 20(1) EPC",
+      "type": "rule",
+      "text": "(1) The designated inventor shall be mentioned in the published European patent application and the European patent specification, unless they inform the European Patent Office in writing that they have waived their right to be thus mentioned.\n(2) Paragraph 1 shall apply where a third party files with the European Patent Office a final decision determining that the applicant for or proprietor of a European patent is required to designate them as an inventor.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines A-III 5.2",
+      "type": "guidelines",
+      "text": "Inventors designated by the applicant may send the EPO a written waiver of their right to be mentioned as inventor in the published European patent application and the European patent specification. If it is received in time, their name is not mentioned in the published European patent application, the European patent specification, the European Patent Register (Rule 143(1)(g)) and, consequently, the European Patent Bulletin. Moreover, in accordance with Rule 144(c), the designation of the inventor as well as the waiver is then excluded from file inspection under Art. 128(4). If the waiver is received after the publication of the European patent application, the mention of the inventor will be removed in the European Patent Register. Rule 20(1) Rule 143(1)(g) Rule 144(c) Art. 129(a)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r20.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_iii_5_2.html"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "2026-f-q2-4",
+  "jurisdiction": "EP",
+  "topic": "Rule 3 – Language in written proceedings",
+  "provenance": "2026 Paper F · Q2",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 3(1) EPC",
+      "type": "rule",
+      "text": "(1) In written proceedings before the European Patent Office, any party may use any official language of the European Patent Office. The translation referred to in Article 14, paragraph 4, may be filed in any official language of the European Patent Office.\n(2) Amendments to a European patent application or European patent shall be filed in the language of the proceedings.\n(3) Documentary evidence and, in particular, publications may be filed in any language. The European Patent Office may, however, require that a translation in one of its official languages be filed, within a period to be specified. If a required translation is not filed in due time, the European Patent Office may disregard the document in question.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r3.html"
+  ]
+}

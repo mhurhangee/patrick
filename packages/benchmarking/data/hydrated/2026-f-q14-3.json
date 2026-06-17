@@ -1,0 +1,25 @@
+{
+  "id": "2026-f-q14-3",
+  "jurisdiction": "EP",
+  "topic": "5.2.1 Filing fee and search fee",
+  "provenance": "2026 Paper F · Q14",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Guidelines A-X 5.2.1",
+      "type": "guidelines",
+      "text": "The filing and search fees are due on the day the European patent application is filed. They must be paid either within one month of that date (Rule 38(1), Rule 17(2), Rule 36(3)) or, for Euro-PCT applications, within 31 months of the date of filing or, where applicable, of the earliest priority claimed (Rule 159(1)(c) and (e), see A‑XIII, 4 and A‑XIII, 6). For the additional fees payable as part of the filing fee, see A‑III, 13.2 and A‑IV, 1.4.1.1.",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    },
+    {
+      "citation": "Guidelines A-X 5.1.1",
+      "type": "guidelines",
+      "text": "In the EPC, the term \"due date\" has a special meaning, namely the first day on which payment of a fee may be validly effected, not the last day of a period for such payment (see A‑X, 6, \"Payment in due time\"). The due date for fees is generally laid down by provisions of the EPC or of the PCT. If no due date is specified, the fee is due on the date of receipt of the request for the service incurring the fee concerned. A fee may not be validly paid before the due date. The only exceptions are: (i)renewal fees (see A‑X, 5.2.4) (ii)fees paid voluntarily in response to the communication under Rule 71(3) (where amendments are also filed in response to that communication, see C‑V, 4.2). Payments that may not be validly made before the due date may be refunded by the EPO. If payment is made before the due date, it is possible that the EPO will not return the payment. In this case, however, payment only takes effect on the due date (for an example, see A‑X, 5.2.2). Payments of renewal fees made before the earliest valid payment dates under Rule 51(1) will be rejected and repaid, see A‑X, 4.2.3 and A-X, 5.2.4. Art. 4(1) RFees Rule 51(1), 2nd sentence",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_x_5_2_1.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_x_5_1_1.html"
+  ]
+}
