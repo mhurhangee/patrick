@@ -69,7 +69,11 @@ async function buildEntry(
 	url: string,
 ): Promise<EpcMapEntry> {
 	const c = source.classify(slug);
-	const entry: EpcMapEntry = {
+	// Pages are crawled into .cache/pages/<source>/<slug>.html; read from there
+	// (fetch on a miss). A page with empty .epolegal-content is a nav/index page.
+	const root = parse(await fetchText(url, `pages/${source.id}/${slug}.html`));
+	const body = root.querySelector(".epolegal-content");
+	return {
 		source: source.id,
 		slug,
 		url,
@@ -77,21 +81,13 @@ async function buildEntry(
 		citationKey: c.citationKey,
 		number: c.number,
 		suffix: c.suffix,
-		title: null,
-		instrument: null,
-		part: null,
-		chapter: null,
-		updated: null,
+		recallable: (body?.text ?? "").trim().length > 0,
+		title: meta(root, "title"),
+		instrument: meta(root, "booktitle"),
+		part: meta(root, "parttitle"),
+		chapter: meta(root, "chaptertitle"),
+		updated: meta(root, "date_publication"),
 	};
-	if (source.fetchTitles) {
-		const root = parse(await fetchText(url, `pages/${slug}.html`));
-		entry.title = meta(root, "title");
-		entry.instrument = meta(root, "booktitle");
-		entry.part = meta(root, "parttitle");
-		entry.chapter = meta(root, "chaptertitle");
-		entry.updated = meta(root, "date_publication");
-	}
-	return entry;
 }
 
 async function pool<T>(
@@ -113,15 +109,9 @@ async function pool<T>(
 async function buildSource(source: Source, xml: string): Promise<void> {
 	const pages = [...discover(xml, source).entries()];
 	const entries: EpcMapEntry[] = [];
-	if (source.fetchTitles) {
-		await pool(pages, CONCURRENCY, async ([slug, url]) => {
-			entries.push(await buildEntry(source, slug, url));
-		});
-	} else {
-		// Sitemap-only: no fetches, so just classify each slug.
-		for (const [slug, url] of pages)
-			entries.push(await buildEntry(source, slug, url));
-	}
+	await pool(pages, CONCURRENCY, async ([slug, url]) => {
+		entries.push(await buildEntry(source, slug, url));
+	});
 
 	const rank: Record<string, number> = {
 		article: 0,
@@ -151,8 +141,12 @@ async function buildSource(source: Source, xml: string): Promise<void> {
 		`${JSON.stringify(map, null, 2)}\n`,
 	);
 	const keyed = entries.filter((e) => e.citationKey).length;
+	// Recallable count is a tripwire: it's derived from a single selector
+	// (.epolegal-content non-empty), so a future EPO template change could quietly
+	// collapse it — a sudden drop here means recall + the picker just lost pages.
+	const recallable = entries.filter((e) => e.recallable).length;
 	console.log(
-		`${source.id.padEnd(16)} ${entries.length} pages (${keyed} keyed) → ${source.id}-map.json`,
+		`${source.id.padEnd(16)} ${entries.length} pages (${keyed} keyed, ${recallable} recallable) → ${source.id}-map.json`,
 	);
 }
 

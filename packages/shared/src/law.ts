@@ -51,6 +51,19 @@ export interface ProvisionRef {
 	kind: EpcKind;
 }
 
+/** A section find_law surfaced as relevant — to be grounded via ep_law_lookup. */
+export interface FindLawSection {
+	ref: string;
+	title: string | null;
+}
+
+/** Result of find_law: the relevant section citations from a body's contents. */
+export interface FindLawResult {
+	scope: string;
+	sections: FindLawSection[];
+	error?: string;
+}
+
 export interface LookupResult {
 	/** The caller's original reference, echoed back. */
 	ref: string;

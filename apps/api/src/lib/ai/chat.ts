@@ -28,6 +28,7 @@ import {
 } from "../documents";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
+import { createFindLaw } from "./find-law";
 import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
 import { webSearchTool } from "./web-search";
@@ -431,6 +432,7 @@ export async function handleChat(c: Context) {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
+		find_law: createFindLaw({ provider, apiKey, modelId: detailedModel }),
 		// Web search runs on the attorney's own model (provider-executed) unless the
 		// toolbar toggle is off; the agent grounds what it surfaces via ep_law_lookup.
 		...(body.webSearch === false

@@ -2,6 +2,7 @@ import { Mention } from "@tiptap/extension-mention";
 import { PluginKey } from "@tiptap/pm/state";
 import { EditorContent, type JSONContent, useEditor } from "@tiptap/react";
 import {
+	Fragment,
 	forwardRef,
 	useEffect,
 	useImperativeHandle,
@@ -14,7 +15,13 @@ import { cn } from "@/lib/utils";
 
 // label = what the chip/@text becomes (the filename — a real handle for the
 // model); description = the human label, shown in the picker only.
-export type MentionItem = { id: string; label: string; description?: string };
+export type MentionItem = {
+	id: string;
+	label: string;
+	description?: string;
+	/** Optional section header the item sits under (e.g. "EPC", "Case Law"). */
+	group?: string;
+};
 
 export type ChatComposerHandle = {
 	getMarkdown: () => string;
@@ -277,35 +284,41 @@ function MentionPopup({
 		<div
 			style={{
 				position: "fixed",
-				// clamp so the w-72 (288px) popup can't run off the right edge
-				left: Math.max(8, Math.min(rect.left, window.innerWidth - 296)),
+				// clamp so the w-[26rem] (416px) popup can't run off the right edge
+				left: Math.max(8, Math.min(rect.left, window.innerWidth - 424)),
 				bottom: window.innerHeight - rect.top + 4,
 			}}
-			className="z-50 max-h-56 w-72 overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md"
+			className="z-50 max-h-80 w-[26rem] overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md"
 		>
 			{items.map((item, i) => (
-				<button
-					key={item.id}
-					type="button"
-					// mousedown (not click) so the editor keeps its selection for command()
-					onMouseDown={(e) => {
-						e.preventDefault();
-						onPick(item);
-					}}
-					className={cn(
-						"block w-full rounded px-2 py-1.5 text-left",
-						i === selected
-							? "bg-accent text-accent-foreground"
-							: "hover:bg-muted",
+				<Fragment key={item.id}>
+					{item.group && item.group !== items[i - 1]?.group && (
+						<div className="px-2 pb-0.5 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">
+							{item.group}
+						</div>
 					)}
-				>
-					<span className="block truncate">{item.label}</span>
-					{item.description && (
-						<span className="block truncate text-xs text-muted-foreground">
-							{item.description}
-						</span>
-					)}
-				</button>
+					<button
+						type="button"
+						// mousedown (not click) so the editor keeps its selection for command()
+						onMouseDown={(e) => {
+							e.preventDefault();
+							onPick(item);
+						}}
+						className={cn(
+							"block w-full rounded px-2 py-1.5 text-left",
+							i === selected
+								? "bg-accent text-accent-foreground"
+								: "hover:bg-muted",
+						)}
+					>
+						<span className="block truncate">{item.label}</span>
+						{item.description && (
+							<span className="block truncate text-xs text-muted-foreground">
+								{item.description}
+							</span>
+						)}
+					</button>
+				</Fragment>
 			))}
 		</div>,
 		document.body,

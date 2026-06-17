@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!**/patrick-docs.generated.ts"]
+		"includes": ["**", "!**/patrick-docs.generated.ts", "!packages/law/data"]
 	},
 	"formatter": {
 		"enabled": true,
