@@ -6,6 +6,44 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-17
+
+This release grounds Patrick in real prior art and real law: he can pull the full
+text of publications and cited documents, recall EPC provisions, the Guidelines,
+and the case law verbatim, search that law when he doesn't have the citation, and
+read scanned PDFs.
+
+### Added
+
+- **Prior-art retrieval.** Ask Patrick for an EP or WO publication and he fetches
+  its full text from the EPO's Open Patent Services; any other publication is
+  retrieved via Google Patents — so cited documents and prior art come into the
+  chat without you fetching and pasting them.
+- **Verbatim law recall.** Tag a provision with `/` (e.g. `/Article 54`) and
+  Patrick retrieves its exact wording rather than reciting from memory, shown in
+  a dedicated provision card with its source. Recall covers the EPC, the EPO
+  Guidelines for Examination, the PCT-EPO Guidelines, and the Case Law of the
+  Boards of Appeal.
+- **Find the law.** Describe a point of law or practice and Patrick finds the
+  most relevant Guidelines and case-law sections for you, then retrieves their
+  verbatim text — discovery when you don't already know the citation.
+- **Web search.** Patrick can research law and practice he can't recall, with a
+  toggle in the chat toolbar to turn it on or off per chat.
+- **Selectable, searchable PDFs.** The PDF viewer now has a real text layer you
+  can select and copy. Scanned (image-only) PDFs are run through on-device OCR so
+  they become selectable too, and you can choose per PDF whether Patrick reads the
+  original image or the cheaper extracted text.
+
+### Changed
+
+- The `/` law picker is now grouped (EPC / Guidelines / PCT Guidelines / Case
+  Law) and searchable by section title, not just citation.
+- Underlying dependencies refreshed across the app.
+
+### Fixed
+
+- A web-search citation no longer shows its source domain twice.
+
 ## [0.3.0] - 2026-06-14
 
 ### Added
