@@ -15,19 +15,27 @@ into STRATEGY.md.
 
 ## Pipeline
 
+The **dataset** is built once on the good models, committed, and reproducible; then
+**any number of cheap system-models re-answer the same frozen items.**
+
 ```
 data/source-sets.txt            one source set per line (just citations)
-  └─ hydrate   → data/hydrated/<id>.json     verbatim gold text from @patrick/law
-  └─ generate  → runs/<ts>/proposed.jsonl    true/false pairs (Opus 4.8)
-  └─ judge     → runs/<ts>/items.jsonl       blind verdicts (GPT-5.5) + accept/reject
-  └─ answer    → runs/<ts>/contracts.<arm>.jsonl   the system attempts the items
-  └─ score     → runs/<ts>/report.<arm>.md + comparison.md
+  └─ hydrate → data/hydrated/<id>.json          verbatim gold text from @patrick/law
+  └─ build   → data/items.jsonl + failures.jsonl   generate (Opus) + judge (GPT-5.5),
+                                                    resumable, retries, ONE time
+        the dataset (committed) ─────────────┐
+                                             ▼
+  └─ answer  → data/evals/<model>/contracts.<arm>.jsonl   a system model attempts it
+  └─ score   → data/evals/<model>/report.<arm>.md + comparison.md
 ```
 
 The gold text and the system's retrieval are both the real shared `@patrick/law`
 (`lookupProvisions`, `tableOfContents`, `resolveCitation`) — the same code the
 product runs. Only the thin tool wrappers + loop are local, and they're common to
 both arms, so the baseline-vs-grounded delta isolates exactly the grounding.
+
+`generate` and `judge` are lower-level **dev tools** (they write to `data/runs/`
+for inspecting the prompts on a single set); `build` is the production path.
 
 ## Setup
 
@@ -56,25 +64,26 @@ cd packages/benchmarking   # or prefix each with: pnpm --filter @patrick/benchma
 # 1. Build the gold from data/source-sets.txt (no model calls; one polite crawl)
 pnpm hydrate
 
-# 2. Generate T/F proposals (Gateway, Opus). Start small and eyeball the output.
-pnpm generate --paper 2026-f --limit 5            # 5 sets, atomic, auto distortion
-#   --framing atomic|scenario|both  --distortion auto|all|<key>
-#   --limit N  --id <id>  --paper <id-prefix>  --model <gateway-id>
+# 2. Build the dataset ONCE (generate + judge, resumable). Pilot small first.
+pnpm build --paper 2026-f --limit 10              # then re-run without limits to extend
+#   --framing atomic|scenario|both  --distortion auto|all|<key>  --retries N
+#   --paper <prefix>  --id <id>  --limit N  --force  --generator <id>  --judge <id>
+#   → appends to data/items.jsonl; logs unbuildable points to data/failures.jsonl
 
-# 3. Judge them blind + accept/reject (Gateway, GPT-5.5). Operates on the latest run.
-pnpm judge                                        # or --run <ts>  --model <id>
-
-# 4. The system attempts the accepted items — run BOTH arms (cost is explicit).
+# 3. A system model attempts the dataset — BOTH arms (cost is explicit).
 pnpm answer --arm none                            # baseline: model from memory
 pnpm answer --arm patrick                         # grounded: real ep_law_lookup + find_law
-#   --repeat N  (resample for reliability)  --run <ts>  --limit N  --model <id>
+#   --model google/gemini-3.1-flash-lite  --repeat N (reliability)  --limit N
 
-# 5. Score → per-arm reports + the grounding-lift delta.
-pnpm score                                        # or --run <ts>
+# 4. Score that model → per-arm reports + the grounding-lift delta.
+pnpm score                                        # or --model <id> if several evaluated
 ```
 
-`generate`, `judge`, `answer` default to the **latest** run dir; pass `--run <ts>`
-to target an earlier one. `answer`/`score` operate on a run's `items.jsonl`.
+Re-running `build` is cheap — it **skips** pairs already in the dataset (and known
+failures) and only fills gaps, so you grow the dataset by adding source sets and
+re-running. `answer`/`score` read the committed `data/items.jsonl`; each model's
+results live under `data/evals/<model>/`. To benchmark another model, just re-run
+`answer --model …` (no rebuild) — same items.
 
 ## The metrics (§7)
 
@@ -113,15 +122,22 @@ verbatim text — is derived on `hydrate` from `@patrick/law`.
 - `src/taxonomy.ts` — the 8 distortions (single source of truth, rendered into both prompts).
 - `src/types.ts` — the schema for every pipeline stage.
 - `src/{models,prompts,runner,score,citations}.ts` — the stage implementations.
+**Committed (the reproducible dataset):**
 - `data/source-sets.txt` — authored gold (citations only).
 - `data/hydrated/` — frozen gold with verbatim text; regenerate when the law changes.
-- `data/runs/` — timestamped proposals, items, contracts, reports (gitignored).
+- `data/items.jsonl` — the accepted, scorable items.
+- `data/failures.jsonl` — source-set points the judge couldn't pass + why (coverage gaps).
+
+**Gitignored (derived / re-runnable):**
+- `data/evals/<model>/` — per-model contracts + reports.
+- `data/runs/` — `generate`/`judge` dev-tool one-offs.
+- `.cache/` — provision-page HTML.
 
 ## Status
 
-Pipeline complete end to end (hydrate → generate → judge → answer → score).
-Next: **scale** — generate across the full source-set corpus, judge, then run both
-arms for a real delta; promote a curated accepted set into a committed
-`data/items/`. Later: PCT/US (swap source material), fact-pattern items, a
-deterministic date calculator for `needs_date_check`, and an `HttpEndpointRunner`
-(via the `SystemUnderTest` seam) if an absolute product number is ever wanted.
+Pipeline complete end to end (hydrate → build → answer → score). Next: **scale** —
+grow `source-sets.txt`, `build` the dataset, then `answer` both arms across
+Opus / GPT-5.5 / Gemini for the deltas. Later: PCT/US (swap source material),
+fact-pattern items, a deterministic date calculator for `needs_date_check`, and an
+`HttpEndpointRunner` (via the `SystemUnderTest` seam) for an absolute product
+number if ever wanted.
