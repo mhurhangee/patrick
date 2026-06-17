@@ -15,9 +15,9 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolveCitation } from "@patrick/law";
 import { generateObject } from "ai";
 import type { z } from "zod";
+import { citationKeys } from "../src/citations";
 import { modelFor, modelId } from "../src/models";
 import {
 	JUDGE_SYSTEM,
@@ -37,16 +37,6 @@ const opt = (name: string): string | undefined => {
 	const i = args.indexOf(`--${name}`);
 	return i >= 0 ? args[i + 1] : undefined;
 };
-
-/** Canonical citation keys (so "R. 40(1)" and "Rule 40(3)" both fold to R40). */
-function keys(citations: string[]): Set<string> {
-	const out = new Set<string>();
-	for (const c of citations) {
-		const key = resolveCitation(c)?.entry.citationKey;
-		if (key) out.add(key);
-	}
-	return out;
-}
 
 const setCache = new Map<string, Promise<SourceSet>>();
 function loadSet(id: string): Promise<SourceSet> {
@@ -123,9 +113,9 @@ async function main(): Promise<void> {
 			verdicts.includes("TRUE") &&
 			verdicts.includes("FALSE") &&
 			!verdicts.includes("UNVERIFIABLE");
-		const judgeKeys = keys(jr.citation_relied_on);
-		const goldKeys = keys(pair.gold.citations);
-		const setKeys = keys(set.provisions.map((p) => p.citation));
+		const judgeKeys = citationKeys(jr.citation_relied_on);
+		const goldKeys = citationKeys(pair.gold.citations);
+		const setKeys = citationKeys(set.provisions.map((p) => p.citation));
 		const citationOk =
 			judgeKeys.size > 0 &&
 			[...judgeKeys].every((k) => goldKeys.has(k) && setKeys.has(k));

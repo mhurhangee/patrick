@@ -150,6 +150,12 @@ export interface SystemUnderTest {
 	run(item: Item): Promise<Contract>;
 }
 
+/** A system's answer to one item, as persisted to contracts.<arm>.jsonl. */
+export interface ContractRecord {
+	item_id: string;
+	contract: Contract;
+}
+
 // ── Scoring & analysis (plan §7–§8) ────────────────────────────────────────
 
 export interface ItemScore {
