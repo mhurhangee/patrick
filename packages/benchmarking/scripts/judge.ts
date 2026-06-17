@@ -1,32 +1,17 @@
-// Judge a run's proposals (STRATEGY §5) and accept/reject them (§6). For each
-// proposed pair: shuffle the two statements into A/B, ask a DIFFERENT model to
-// verdict them blind, then apply the accept/reject rules in plain code (never a
-// model). Accepted pairs emit one scorable item per statement.
+// Dev tool: judge the proposals of a single generate run (data/runs/<ts>) and
+// print the accept/reject decisions, for inspecting the generator + judge on a
+// run without touching the committed dataset. The production path is `build`,
+// which generates + judges + saves to data/items.jsonl in one resumable pass.
 //
 //   pnpm --filter @patrick/benchmarking judge                 # latest run
-//   pnpm --filter @patrick/benchmarking judge --run <ts> --model openai/gpt-5.5
-//
-// Rules (all must hold to accept): verdicts are exactly {TRUE, FALSE}; the single
-// distortion the judge sees matches the one the generator applied; the judge's
-// cited basis is within the gold and the source set; and the statement the judge
-// called TRUE is the generator's true one. A judge/generator disagreement on which
-// is true, or a needs_date_check item (no date calculator yet), routes to review.
+//   pnpm --filter @patrick/benchmarking judge --run <ts> --judge <id>
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateObject } from "ai";
-import type { z } from "zod";
-import { citationKeys } from "../src/citations";
+import { decide, emitItems, judgeOne } from "../src/harness";
 import { modelFor, modelId } from "../src/models";
-import {
-	JUDGE_SYSTEM,
-	judgeInput,
-	judgeResultSchema,
-} from "../src/prompts/judge";
 import type { Item, ProposalRecord, SourceSet } from "../src/types";
-
-type JudgeOutput = z.infer<typeof judgeResultSchema>;
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const HYDRATED = join(ROOT, "data", "hydrated");
@@ -69,139 +54,54 @@ async function main(): Promise<void> {
 		.map((l) => JSON.parse(l) as ProposalRecord)
 		.filter((r) => r.pair.status === "proposed");
 
-	const model = modelFor("judge", opt("model"));
+	const model = modelFor("judge", opt("judge"));
 	console.log(
-		`judge: ${modelId("judge", opt("model"))} · run ${run} · ${records.length} pairs\n`,
+		`judge: ${modelId("judge", opt("judge"))} · run ${run} · ${records.length} pairs\n`,
 	);
 
-	const judged: string[] = [];
 	const items: Item[] = [];
 	let accepted = 0;
 	let review = 0;
-	const rejectReasons: string[] = [];
+	const tally: Record<string, number> = {};
 	let tokens = 0;
 
 	for (const { source_set_id, pair } of records) {
 		const set = await loadSet(source_set_id);
-		// Shuffle: put the generator's TRUE statement in a random slot, unlabelled.
-		const trueIsA = Math.random() < 0.5;
-		const aText = trueIsA ? pair.true_statement : pair.false_statement;
-		const bText = trueIsA ? pair.false_statement : pair.true_statement;
-		const trueSlot = trueIsA ? "A" : "B";
-		const falseSlot = trueIsA ? "B" : "A";
-
-		let jr: JudgeOutput;
-		try {
-			const res = await generateObject({
-				model,
-				schema: judgeResultSchema,
-				system: JUDGE_SYSTEM,
-				prompt: judgeInput(set, pair.scenario, aText, bText),
-			});
-			jr = res.object;
-			tokens += res.usage?.totalTokens ?? 0;
-		} catch (err) {
-			console.warn(
-				`! ${source_set_id} judge error: ${err instanceof Error ? err.message : String(err)}`,
-			);
-			continue;
-		}
-
-		// Deterministic accept/reject — never a model.
-		const verdicts = [jr.A.verdict, jr.B.verdict];
-		const oneEach =
-			verdicts.includes("TRUE") &&
-			verdicts.includes("FALSE") &&
-			!verdicts.includes("UNVERIFIABLE");
-		const judgeKeys = citationKeys(jr.citation_relied_on);
-		const goldKeys = citationKeys(pair.gold.citations);
-		const setKeys = citationKeys(set.provisions.map((p) => p.citation));
-		const citationOk =
-			judgeKeys.size > 0 &&
-			[...judgeKeys].every((k) => goldKeys.has(k) && setKeys.has(k));
-
-		const reasons: string[] = [];
-		let toReview = false;
-		if (!oneEach) reasons.push(`verdicts ${verdicts.join("/")}`);
-		else if (jr[trueSlot].verdict !== "TRUE") {
-			reasons.push("judge disagrees which is true");
-			toReview = true;
-		}
-		if (jr.distortion === "multiple" || jr.distortion === "none")
-			reasons.push(`distortion=${jr.distortion}`);
-		else if (jr.distortion !== pair.distortion_used)
-			reasons.push(`distortion ${jr.distortion}≠${pair.distortion_used}`);
-		if (!citationOk) reasons.push("citation basis off");
-		if (pair.needs_date_check) {
-			reasons.push("needs date check");
-			toReview = true;
-		}
-		const accept = reasons.length === 0;
-
-		judged.push(
-			JSON.stringify({
-				source_set_id,
-				distortion: pair.distortion_used,
-				order: { A: aText, B: bText, trueSlot },
-				judge: jr,
-				decision: { accept, review: toReview, reasons },
-			}),
-		);
-
+		const judged = await judgeOne(model, set, pair);
+		tokens += judged.tokens;
+		const {
+			accept,
+			review: toReview,
+			reasons,
+		} = decide(set, pair, judged.jr, judged.trueSlot);
 		if (accept) {
 			accepted++;
-			const pairId = `${source_set_id}-${pair.distortion_used}`;
-			const common = {
-				pair_id: pairId,
-				source_set_id,
-				jurisdiction: set.jurisdiction,
-				topic: set.topic,
-				law_date: set.law_date,
-				framing: pair.framing,
-				scenario: pair.scenario,
-				gold_citations: pair.gold.citations,
-				distortion: pair.distortion_used,
-				provenance: "synthetic-v1",
-			} satisfies Partial<Item>;
-			items.push({
-				...common,
-				id: `${pairId}-T`,
-				statement: pair.true_statement,
-				label: "TRUE",
-				judge_deciding_span: jr[trueSlot].deciding_span,
-			});
-			items.push({
-				...common,
-				id: `${pairId}-F`,
-				statement: pair.false_statement,
-				label: "FALSE",
-				judge_deciding_span: jr[falseSlot].deciding_span,
-			});
-			console.log(`✓ ${source_set_id} [${pair.distortion_used}]`);
+			items.push(
+				...emitItems(set, pair, judged.jr, judged.trueSlot, judged.falseSlot),
+			);
+			console.log(
+				`✓ ${source_set_id} [${pair.framing}/${pair.distortion_used}]`,
+			);
 		} else {
 			if (toReview) review++;
-			rejectReasons.push(...reasons);
+			for (const r of reasons) {
+				const k = r.replace(/[^a-z ].*$/i, "").trim() || r;
+				tally[k] = (tally[k] ?? 0) + 1;
+			}
 			console.log(
-				`${toReview ? "?" : "✗"} ${source_set_id} [${pair.distortion_used}] — ${reasons.join("; ")}`,
+				`${toReview ? "?" : "✗"} ${source_set_id} [${pair.framing}/${pair.distortion_used}] — ${reasons.join("; ")}`,
 			);
 		}
 	}
 
-	await writeFile(join(runDir, "judged.jsonl"), `${judged.join("\n")}\n`);
 	await writeFile(
 		join(runDir, "items.jsonl"),
 		`${items.map((i) => JSON.stringify(i)).join("\n")}\n`,
 	);
-	const tally = rejectReasons.reduce<Record<string, number>>((m, r) => {
-		const k = r.replace(/[^a-z ].*$/i, "").trim() || r;
-		m[k] = (m[k] ?? 0) + 1;
-		return m;
-	}, {});
 	console.log(
 		`\n${accepted} accepted (${items.length} items) · ${review} to review · ${records.length - accepted - review} rejected · ~${tokens} tokens`,
 	);
-	console.log(`reject reasons:`, tally);
-	console.log(`→ data/runs/${run}/items.jsonl · judged.jsonl`);
+	console.log("reject reasons:", tally);
 }
 
 main();

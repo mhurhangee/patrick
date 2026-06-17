@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"hydrate": "bun scripts/hydrate.ts",
+		"build": "bun --env-file=../../.env scripts/build.ts",
 		"generate": "bun --env-file=../../.env scripts/generate.ts",
 		"judge": "bun --env-file=../../.env scripts/judge.ts",
 		"answer": "bun --env-file=../../.env scripts/answer.ts",

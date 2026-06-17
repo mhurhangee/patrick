@@ -1,26 +1,29 @@
-// Run the system under test over a run's accepted items and write its answers to
-// contracts.<arm>.jsonl, for the scorer. One arm per invocation, so cost is
-// explicit — answer both arms, then `score` for the grounding-lift delta.
+// Evaluate a system model over the committed dataset (data/items.jsonl): answer
+// each item TRUE/FALSE and write its answers to data/evals/<model>/contracts.<arm>.jsonl
+// for the scorer. One arm per invocation, so cost is explicit — answer both arms,
+// then `score`. The dataset is built once (`build`); cheap system models re-answer
+// the same frozen items, so swap the model freely with --model.
 //
-//   pnpm --filter @patrick/benchmarking answer --arm patrick      # grounded
-//   pnpm --filter @patrick/benchmarking answer --arm none         # baseline
-//   pnpm --filter @patrick/benchmarking answer --arm patrick --repeat 3
+//   pnpm --filter @patrick/benchmarking answer --arm patrick
+//   pnpm --filter @patrick/benchmarking answer --arm none --model google/gemini-3.1-flash-lite
+//   pnpm --filter @patrick/benchmarking answer --arm patrick --repeat 5
 //
-// --repeat N runs each item N times (resampling) so the scorer can report answer
-// reliability — how often the modal answer repeats. A high-stakes tool that flips
-// on rerun isn't usable even at good average accuracy (STRATEGY §7).
+// --repeat N runs each item N times so the scorer can report answer reliability —
+// how often the modal answer repeats (STRATEGY §7).
 //
-// Flags: --arm none|patrick (default patrick) · --run <ts> · --limit N ·
-//        --repeat N (default 1) · --model <id>
+// Flags: --arm none|patrick (default patrick) · --repeat N (default 1) ·
+//        --limit N · --model <gateway-id>
 
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { usageLine } from "../src/pricing";
 import { localRunner } from "../src/runner";
 import type { ContractRecord, Item } from "../src/types";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const RUNS = join(ROOT, "data", "runs");
+const ITEMS = join(ROOT, "data", "items.jsonl");
+const EVALS = join(ROOT, "data", "evals");
 
 const args = process.argv.slice(2);
 const opt = (name: string): string | undefined => {
@@ -28,47 +31,36 @@ const opt = (name: string): string | undefined => {
 	return i >= 0 ? args[i + 1] : undefined;
 };
 
-async function latestRun(): Promise<string> {
-	const dirs = (await readdir(RUNS, { withFileTypes: true }))
-		.filter((d) => d.isDirectory())
-		.map((d) => d.name)
-		.sort();
-	const last = dirs.at(-1);
-	if (!last) throw new Error("no runs in data/runs");
-	return last;
-}
+const slug = (s: string): string => s.replace(/[^\w.-]+/g, "_");
 
 async function main(): Promise<void> {
 	const arm = (opt("arm") ?? "patrick") as "none" | "patrick";
-	const run = opt("run") ?? (await latestRun());
-	const runDir = join(RUNS, run);
 	const limit = Number(opt("limit") ?? "0") || Number.POSITIVE_INFINITY;
 	const repeat = Math.max(1, Number(opt("repeat") ?? "1") || 1);
 
-	const items = (await readFile(join(runDir, "items.jsonl"), "utf8"))
+	const items = (await readFile(ITEMS, "utf8").catch(() => ""))
 		.split("\n")
 		.filter(Boolean)
 		.map((l) => JSON.parse(l) as Item)
 		.slice(0, limit);
 	if (items.length === 0)
-		throw new Error(`no items in ${run} — judge it first`);
+		throw new Error("no items in data/items.jsonl — run `build` first");
 
 	const runner = localRunner({ tools: arm, modelOverride: opt("model") });
+	const outDir = join(EVALS, slug(runner.modelId));
+	await mkdir(outDir, { recursive: true });
 	console.log(
-		`${runner.id} · run ${run} · ${items.length} items${repeat > 1 ? ` ×${repeat}` : ""}\n`,
+		`${runner.id} · ${items.length} items${repeat > 1 ? ` ×${repeat}` : ""}\n`,
 	);
 
 	const records: ContractRecord[] = [];
-	let correct = 0;
 	for (const item of items) {
-		// Resample each item `repeat` times so the scorer can measure reliability.
 		const answers: string[] = [];
 		for (let k = 0; k < repeat; k++) {
 			try {
 				const contract = await runner.run(item);
 				records.push({ item_id: item.id, contract });
 				answers.push(contract.answer);
-				if (contract.answer === item.label) correct++;
 			} catch (err) {
 				console.warn(
 					`! ${item.id} error: ${err instanceof Error ? err.message : String(err)}`,
@@ -83,12 +75,16 @@ async function main(): Promise<void> {
 	}
 
 	await writeFile(
-		join(runDir, `contracts.${arm}.jsonl`),
+		join(outDir, `contracts.${arm}.jsonl`),
 		`${records.map((r) => JSON.stringify(r)).join("\n")}\n`,
 	);
+	const correct = records.filter(
+		(r) => r.contract.answer === items.find((i) => i.id === r.item_id)?.label,
+	).length;
 	console.log(
-		`\n${correct}/${records.length} correct · → data/runs/${run}/contracts.${arm}.jsonl`,
+		`\n${correct}/${records.length} correct · tokens: ${usageLine(runner.modelId, runner.usage.input, runner.usage.output)}`,
 	);
+	console.log(`→ data/evals/${slug(runner.modelId)}/contracts.${arm}.jsonl`);
 }
 
 main();

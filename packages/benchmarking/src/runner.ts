@@ -57,9 +57,16 @@ function toc(sourceId: string): string {
 	return t;
 }
 
-/** The grounding tools, closing over `retrieved` to record what they surface. */
+export interface Usage {
+	input: number;
+	output: number;
+}
+
+/** The grounding tools, closing over `retrieved` (what they surface) and `usage`
+ *  (the find_law subagent's tokens, which the outer loop doesn't see). */
 function patrickTools(
 	retrieved: Set<string>,
+	usage: Usage,
 	model: ReturnType<typeof modelFor>,
 ) {
 	const ep_law_lookup = tool({
@@ -102,6 +109,8 @@ function patrickTools(
 					],
 					abortSignal: AbortSignal.timeout(60_000),
 				});
+				usage.input += result.usage?.inputTokens ?? 0;
+				usage.output += result.usage?.outputTokens ?? 0;
 				const candidates =
 					result.text.match(/`[^`]+`/g)?.map((s) => s.slice(1, -1)) ??
 					result.text.split("\n").map((l) => l.trim());
@@ -137,18 +146,25 @@ function task(item: Item): string {
 	return `${scenario}Statement:\n${item.statement}\n\nDecide whether this statement is TRUE or FALSE as a matter of European patent law, and identify the governing provision(s).`;
 }
 
-/** A local two-arm runner. `tools: "none"` is the baseline; "patrick" grounds. */
+/** A local two-arm runner. `tools: "none"` is the baseline; "patrick" grounds.
+ *  `usage` accumulates the model's input/output tokens across the whole session. */
 export function localRunner(opts: {
 	tools: "none" | "patrick";
 	modelOverride?: string;
-}): SystemUnderTest {
+}): SystemUnderTest & { usage: Usage; modelId: string } {
 	const model = modelFor("system", opts.modelOverride);
+	const id = modelId("system", opts.modelOverride);
+	const usage: Usage = { input: 0, output: 0 };
 	return {
-		id: `local:${opts.tools}:${modelId("system", opts.modelOverride)}`,
+		id: `local:${opts.tools}:${id}`,
+		usage,
+		modelId: id,
 		async run(item: Item): Promise<Contract> {
 			const retrieved = new Set<string>();
 			const tools =
-				opts.tools === "patrick" ? patrickTools(retrieved, model) : undefined;
+				opts.tools === "patrick"
+					? patrickTools(retrieved, usage, model)
+					: undefined;
 
 			const reasoning = await generateText({
 				model,
@@ -157,14 +173,18 @@ export function localRunner(opts: {
 				tools,
 				stopWhen: stepCountIs(8),
 			});
+			usage.input += reasoning.usage?.inputTokens ?? 0;
+			usage.output += reasoning.usage?.outputTokens ?? 0;
 
 			// Extract the contract from the reasoning text — decoupled from the tool
 			// conversation, so it's provider-safe regardless of the arm.
-			const { object } = await generateObject({
+			const { object, usage: u } = await generateObject({
 				model,
 				schema: contractSchema,
 				prompt: `${task(item)}\n\nAnalysis:\n${reasoning.text}\n\n${FINAL_ASK}`,
 			});
+			usage.input += u?.inputTokens ?? 0;
+			usage.output += u?.outputTokens ?? 0;
 
 			return {
 				answer: object.answer,

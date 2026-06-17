@@ -1,4 +1,9 @@
 # Provision-page HTML cache (re-fetched from epo.org on demand, like the app's).
 .cache/
-# Timestamped run outputs — raw system answers + scored reports. Derived.
+# Dev inspect runs (generate/judge one-offs). Derived.
 data/runs/
+# Per-model evaluations (contracts + reports) — re-runnable against the dataset.
+data/evals/
+#
+# Committed (the reproducible dataset): data/source-sets.txt, data/hydrated/,
+# data/items.jsonl, data/failures.jsonl

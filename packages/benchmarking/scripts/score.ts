@@ -1,10 +1,10 @@
-// Score a run and write the readable report (STRATEGY §7–8). Reads the run's
-// accepted items.jsonl and the per-arm contracts.<arm>.jsonl the runner produced,
-// scores each item, and renders a markdown report per arm. When both arms are
-// present it also writes the headline: the grounding lift (tools vs no tools).
+// Score a model's evaluation and write the readable report (STRATEGY §7–8). Reads
+// the committed dataset (data/items.jsonl) and a model's per-arm contracts under
+// data/evals/<model>/, scores each item, and renders a markdown report per arm.
+// With both arms present it writes the headline: the grounding lift.
 //
-//   pnpm --filter @patrick/benchmarking score              # latest run, both arms
-//   pnpm --filter @patrick/benchmarking score --run <ts>
+//   pnpm --filter @patrick/benchmarking score                       # the only/sole eval
+//   pnpm --filter @patrick/benchmarking score --model google/gemini-3.1-flash-lite
 
 import { access, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -19,13 +19,15 @@ import {
 import type { Contract, ContractRecord, Item } from "../src/types";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const RUNS = join(ROOT, "data", "runs");
+const ITEMS = join(ROOT, "data", "items.jsonl");
+const EVALS = join(ROOT, "data", "evals");
 
 const args = process.argv.slice(2);
 const opt = (name: string): string | undefined => {
 	const i = args.indexOf(`--${name}`);
 	return i >= 0 ? args[i + 1] : undefined;
 };
+const slug = (s: string): string => s.replace(/[^\w.-]+/g, "_");
 
 const ARMS = { none: "baseline", patrick: "patrick" } as const;
 type Arm = keyof typeof ARMS;
@@ -42,30 +44,28 @@ const readJsonl = async <T>(path: string): Promise<T[]> =>
 		.filter(Boolean)
 		.map((l) => JSON.parse(l) as T);
 
-async function latestRun(): Promise<string> {
-	const dirs = (await readdir(RUNS, { withFileTypes: true }))
+/** The eval dir: --model's slug, or the sole dir under data/evals. */
+async function evalDir(): Promise<string> {
+	const model = opt("model");
+	if (model) return slug(model);
+	const dirs = (await readdir(EVALS, { withFileTypes: true }))
 		.filter((d) => d.isDirectory())
-		.map((d) => d.name)
-		.sort();
-	const last = dirs.at(-1);
-	if (!last) throw new Error("no runs in data/runs");
-	return last;
+		.map((d) => d.name);
+	if (dirs.length === 1 && dirs[0]) return dirs[0];
+	throw new Error(
+		`pass --model — evals present: ${dirs.join(", ") || "(none; run answer first)"}`,
+	);
 }
 
 async function main(): Promise<void> {
-	const run = opt("run") ?? (await latestRun());
-	const runDir = join(RUNS, run);
-
-	const items = new Map(
-		(await readJsonl<Item>(join(runDir, "items.jsonl"))).map((i) => [i.id, i]),
-	);
-	if (items.size === 0) throw new Error(`no items in ${run} — judge it first`);
+	const dir = join(EVALS, await evalDir());
+	const items = new Map((await readJsonl<Item>(ITEMS)).map((i) => [i.id, i]));
 
 	const reports: Partial<Record<Arm, ReturnType<typeof buildReport>>> = {};
 	for (const arm of Object.keys(ARMS) as Arm[]) {
-		const file = join(runDir, `contracts.${arm}.jsonl`);
+		const file = join(dir, `contracts.${arm}.jsonl`);
 		if (!(await exists(file))) continue;
-		// Group all runs of each item (the answer script appends one record per run).
+		// Group all runs of each item (answer appends one record per run).
 		const byItem = new Map<string, Contract[]>();
 		for (const rec of await readJsonl<ContractRecord>(file)) {
 			const arr = byItem.get(rec.item_id) ?? [];
@@ -81,16 +81,16 @@ async function main(): Promise<void> {
 		const report = buildReport(ARMS[arm], rows);
 		reports[arm] = report;
 		const md = renderReport(report, rows);
-		await writeFile(join(runDir, `report.${arm}.md`), `${md}\n`);
+		await writeFile(join(dir, `report.${arm}.md`), `${md}\n`);
 		console.log(`\n${md}\n`);
 	}
 
 	if (reports.none && reports.patrick) {
 		const md = compareReports(reports.none, reports.patrick);
-		await writeFile(join(runDir, "comparison.md"), `${md}\n`);
+		await writeFile(join(dir, "comparison.md"), `${md}\n`);
 		console.log(`\n${md}\n`);
 	}
-	console.log(`→ data/runs/${run}/report.*.md`);
+	console.log(`→ ${dir}/report.*.md`);
 }
 
 main();
