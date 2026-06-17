@@ -43,10 +43,11 @@ function shortName(title: string | null): string | null {
 	return parts.length > 1 ? parts.slice(1).join(" – ").trim() : title;
 }
 
-/** The taggable provisions (those with a citation key), for the chat `/` picker. */
+/** The taggable provisions (recallable, with a citation key), for the `/` picker. */
 export function provisionList(): ProvisionRef[] {
 	return ENTRIES.filter(
-		(e): e is EpcMapEntry & { citationKey: string } => e.citationKey !== null,
+		(e): e is EpcMapEntry & { citationKey: string } =>
+			e.citationKey !== null && e.recallable,
 	).map((e) => ({
 		key: e.citationKey,
 		cite: citeOf(e) ?? e.citationKey,
@@ -104,9 +105,12 @@ function canonical(input: string): string {
 // their source-qualified key, never the bare slug.
 const INDEX: Map<string, EpcMapEntry> = (() => {
 	const idx = new Map<string, EpcMapEntry>();
-	for (const e of ENTRIES)
+	// Only recallable pages resolve — nav/index pages (empty content) aren't worth
+	// retrieving; the agent reaches their sections via find_law instead.
+	const entries = ENTRIES.filter((e) => e.recallable);
+	for (const e of entries)
 		if (e.source === "epc") idx.set(canonical(e.slug), e);
-	for (const e of ENTRIES) {
+	for (const e of entries) {
 		const cite = citeOf(e);
 		if (cite) idx.set(canonical(cite), e);
 		if (e.citationKey) idx.set(canonical(e.citationKey), e);

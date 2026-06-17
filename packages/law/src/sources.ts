@@ -13,12 +13,6 @@ export interface Source {
 	/** URL path after /en/legal/, with the edition year — bump when it rolls. */
 	path: string;
 	classify: (slug: string) => SlugClassification;
-	/**
-	 * Fetch each page's <head> for its title. Only the small EPC set is worth the
-	 * crawl; the Guidelines/case-law maps are sitemap-only (citation key from the
-	 * slug, title shown from the body on recall). See `build-map.ts`.
-	 */
-	fetchTitles: boolean;
 }
 
 export const SOURCES: Source[] = [
@@ -28,7 +22,6 @@ export const SOURCES: Source[] = [
 		stamp: "EPC 2020",
 		path: "epc/2020",
 		classify: classifySlug,
-		fetchTitles: true,
 	},
 	{
 		id: "guidelines-epc",
@@ -36,7 +29,6 @@ export const SOURCES: Source[] = [
 		stamp: "EPC Guidelines",
 		path: "guidelines-epc/2026",
 		classify: (s) => classifyGuideline(s, ""),
-		fetchTitles: false,
 	},
 	{
 		id: "guidelines-pct",
@@ -44,7 +36,6 @@ export const SOURCES: Source[] = [
 		stamp: "PCT-EPO Guidelines",
 		path: "guidelines-pct/2026",
 		classify: (s) => classifyGuideline(s, "PCT "),
-		fetchTitles: false,
 	},
 	{
 		id: "caselaw",
@@ -52,6 +43,5 @@ export const SOURCES: Source[] = [
 		stamp: "Case Law of the Boards of Appeal",
 		path: "case-law/2025",
 		classify: classifyCaselaw,
-		fetchTitles: false,
 	},
 ];

@@ -25,6 +25,13 @@ export interface EpcMapEntry {
 	number: number | null;
 	/** Trailing letter for inserted provisions: "a" in A4a, R7b, A105a. */
 	suffix: string | null;
+	/**
+	 * Whether the page has recallable content. Guidelines/case-law chapter and
+	 * section *index* pages have an empty `.epolegal-content` (their subsection
+	 * links live in the layout nav) — they're not recallable, but their title
+	 * still forms a heading in the find_law table of contents.
+	 */
+	recallable: boolean;
 	title: string | null;
 	/** Which instrument: "EPC Convention" / "EPC Implementing Regulations" / … */
 	instrument: string | null;

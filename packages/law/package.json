@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"build:map": "bun scripts/build-map.ts",
+		"crawl": "bun scripts/crawl.ts",
 		"try:lookup": "bun scripts/try-lookup.ts",
 		"typecheck": "tsc --noEmit"
 	},
