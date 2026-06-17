@@ -99,6 +99,13 @@ async function main(): Promise<void> {
 		...items.map((i) => i.pair_id),
 		...(force ? [] : failures.map((f) => f.pair_id)),
 	]);
+	// "auto" picks its distortion at generation time, so it can't be deduped by
+	// pair id before the call — skip a set+framing that already produced anything,
+	// so re-running build to extend doesn't re-pay generation for done sets.
+	const doneSetFraming = new Set<string>([
+		...items.map((i) => `${i.source_set_id}|${i.framing}`),
+		...(force ? [] : failures.map((f) => `${f.source_set_id}|${f.framing}`)),
+	]);
 
 	console.log(
 		`build · gen ${modelId("generator", opt("generator"))} · judge ${modelId("judge", opt("judge"))} · ${sets.length} sets · framings [${framings.join(", ")}]\n`,
@@ -121,6 +128,10 @@ async function main(): Promise<void> {
 				const probeId =
 					distortion === "auto" ? null : `${set.id}-${framing}-${distortion}`;
 				if (probeId && done.has(probeId)) {
+					skipped++;
+					continue;
+				}
+				if (distortion === "auto" && doneSetFraming.has(`${set.id}|${framing}`)) {
 					skipped++;
 					continue;
 				}
