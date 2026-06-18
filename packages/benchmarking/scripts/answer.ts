@@ -19,7 +19,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { usageLine } from "../src/pricing";
 import { localRunner } from "../src/runner";
 import type { ContractRecord, Item } from "../src/types";
 
@@ -88,9 +87,12 @@ async function main(): Promise<void> {
 	).length;
 	const expected = items.length * repeat;
 	// Per-run tally (not the modal accuracy `score` reports); flag dropped runs so
-	// a partial run can't quietly shrink the scoring denominator.
+	// a partial run can't quietly shrink the scoring denominator. Raw tokens are a
+	// usage signal (e.g. find_law TOC size); $ cost is monitored on the Gateway
+	// dashboard, not estimated here.
+	const tok = (n: number): string => n.toLocaleString("en-US");
 	console.log(
-		`\n${correct}/${records.length} runs correct · tokens: ${usageLine(runner.modelId, runner.usage.input, runner.usage.output)}`,
+		`\n${correct}/${records.length} runs correct · tokens: ${tok(runner.usage.input)} in · ${tok(runner.usage.output)} out`,
 	);
 	if (records.length < expected)
 		console.warn(

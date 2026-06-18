@@ -14,24 +14,26 @@
 //        --retries N (default 3) · --paper <prefix> · --id <id> · --limit N ·
 //        --force (rebuild pairs already done) · --generator <id> · --judge <id>
 
-import { appendFile, readdir, readFile } from "node:fs/promises";
+import { appendFile, mkdir, readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
 	decide,
 	emitItems,
+	type Judged,
 	judgeOne,
 	pairId,
 	proposeOne,
 } from "../src/harness";
 import { modelFor, modelId } from "../src/models";
 import { DISTORTION_KEYS } from "../src/taxonomy";
-import type { Framing, Item, SourceSet } from "../src/types";
+import type { Framing, Item, ProposedPair, SourceSet } from "../src/types";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const HYDRATED = join(ROOT, "data", "hydrated");
 const ITEMS = join(ROOT, "data", "items.jsonl");
 const FAILURES = join(ROOT, "data", "failures.jsonl");
+const RUNS = join(ROOT, "data", "runs");
 
 const args = process.argv.slice(2);
 const opt = (name: string, fallback?: string): string | undefined => {
@@ -125,6 +127,12 @@ async function main(): Promise<void> {
 		...(force ? [] : failures.map((f) => `${f.source_set_id}|${f.framing}`)),
 	]);
 
+	// Full reasoning trail for the deep dive: every proposal + blind-judge verdict +
+	// decision, accepted or not. data/runs/ is gitignored (a dev artifact).
+	const auditDir = join(RUNS, new Date().toISOString().replace(/[:.]/g, "-"));
+	await mkdir(auditDir, { recursive: true });
+	const AUDIT = join(auditDir, "build-audit.jsonl");
+
 	console.log(
 		`build · gen ${modelId("generator", opt("generator"))} · judge ${modelId("judge", opt("judge"))} · ${sets.length} sets · framings [${framings.join(", ")}]\n`,
 	);
@@ -159,6 +167,8 @@ async function main(): Promise<void> {
 				const reasons: string[] = [];
 				let accepted = false;
 				let sawDecision = false; // a real content verdict, vs only transient errors
+				let lastPair: ProposedPair | undefined;
+				let lastJudged: Judged | undefined;
 				for (let attempt = 1; attempt <= retries && !accepted; attempt++) {
 					try {
 						const { pair, tokens: gt } = await proposeOne(
@@ -168,6 +178,7 @@ async function main(): Promise<void> {
 							distortion,
 						);
 						tokens += gt;
+						lastPair = pair;
 						if (pair.status !== "proposed") {
 							sawDecision = true;
 							reasons.push(`gen rejected: ${pair.rejection_reason ?? ""}`);
@@ -183,6 +194,7 @@ async function main(): Promise<void> {
 						}
 						const judged = await judgeOne(judgeModel, set, pair);
 						tokens += judged.tokens;
+						lastJudged = judged;
 						const decision = decide(set, pair, judged.jr, judged.trueSlot);
 						sawDecision = true;
 						if (decision.accept) {
@@ -232,6 +244,27 @@ async function main(): Promise<void> {
 						`~ ${set.id} [${framing}/${distortion}] transient, not persisted — ${reasons.at(-1) ?? ""}`,
 					);
 				}
+				// Audit: the proposal + blind verdict + decision for this target.
+				const outcome = accepted
+					? lastJudged
+						? "accepted"
+						: "skipped"
+					: sawDecision
+						? "rejected"
+						: "transient";
+				await appendJsonl(AUDIT, [
+					{
+						source_set_id: set.id,
+						framing,
+						distortion,
+						outcome,
+						reasons,
+						proposal: lastPair ?? null,
+						judge: lastJudged
+							? { ...lastJudged.jr, trueSlot: lastJudged.trueSlot }
+							: null,
+					},
+				]);
 			}
 		}
 	}
