@@ -93,9 +93,11 @@ re-running. `answer`/`score` read the committed `data/items.jsonl`; each model's
 results live under `data/evals/<model>/`. To benchmark another model, just re-run
 `answer --model …` (no rebuild) — same items.
 
-`answer` prints a usage line per run — `tokens: N in · M out · ~$X` (cost
-estimated from the model catalog's list prices; verify against your Gateway
-invoice) — so a small pilot tells you the full-corpus spend before you commit to it.
+`answer` is **resumable** too: it appends per run and tops each item up to
+`--repeat` total, so adding items (e.g. 2026-f) then re-running only answers the
+new ones, `--repeat 3` after a `--repeat 1` run does 2 more, and an errored run is
+retried next time. It prints raw token totals as a usage signal (e.g. find_law TOC
+size); **$ cost is monitored on the Gateway dashboard**, not estimated here.
 
 ## The metrics (§7)
 

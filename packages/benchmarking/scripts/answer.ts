@@ -13,10 +13,14 @@
 // "without Patrick" baseline) · patrick (verbatim EPO grounding). --repeat N runs
 // each item N times so the scorer can report answer reliability (STRATEGY §7).
 //
+// Resumable: appends per run and tops up each item to --repeat total, so a later
+// run after adding items (e.g. 2026-f) only answers the new ones, --repeat 3 after
+// a --repeat 1 run does 2 more (not 3), and an errored run is retried next time.
+//
 // Flags: --arm none|web|patrick (default patrick) · --repeat N (default 1) ·
 //        --limit N · --model <gateway-id>
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { localRunner } from "../src/runner";
@@ -50,20 +54,42 @@ async function main(): Promise<void> {
 	const runner = localRunner({ tools: arm, modelOverride: opt("model") });
 	const outDir = join(EVALS, slug(runner.modelId));
 	await mkdir(outDir, { recursive: true });
+	const contractsFile = join(outDir, `contracts.${arm}.jsonl`);
+
+	// Resume: count runs already recorded per item, so we only top up to `repeat`.
+	const existing = new Map<string, number>();
+	for (const l of (await readFile(contractsFile, "utf8").catch(() => ""))
+		.split("\n")
+		.filter(Boolean)) {
+		const id = (JSON.parse(l) as ContractRecord).item_id;
+		existing.set(id, (existing.get(id) ?? 0) + 1);
+	}
 	console.log(
-		`${runner.id} · ${items.length} items${repeat > 1 ? ` ×${repeat}` : ""}\n`,
+		`${runner.id} · ${items.length} items → ${repeat} run(s) each${existing.size ? " (resuming)" : ""}\n`,
 	);
 
-	const label = new Map(items.map((i) => [i.id, i.label]));
-	const records: ContractRecord[] = [];
+	let done = 0;
+	let correct = 0;
 	let errors = 0;
+	let skipped = 0;
 	for (const item of items) {
+		const need = repeat - (existing.get(item.id) ?? 0);
+		if (need <= 0) {
+			skipped++;
+			continue;
+		}
 		const answers: string[] = [];
-		for (let k = 0; k < repeat; k++) {
+		for (let k = 0; k < need; k++) {
 			try {
 				const contract = await runner.run(item);
-				records.push({ item_id: item.id, contract });
+				// Append per run so a crash keeps finished work and resume sees it.
+				await appendFile(
+					contractsFile,
+					`${JSON.stringify({ item_id: item.id, contract } satisfies ContractRecord)}\n`,
+				);
 				answers.push(contract.answer);
+				done++;
+				if (contract.answer === item.label) correct++;
 			} catch (err) {
 				errors++;
 				console.warn(
@@ -74,29 +100,19 @@ async function main(): Promise<void> {
 		const ok = answers.filter((a) => a === item.label).length;
 		const flips = new Set(answers).size > 1;
 		console.log(
-			`${ok === answers.length ? "✓" : ok === 0 ? "✗" : "~"} ${item.id} → ${answers.join("/")}${flips ? " (flips!)" : ""}`,
+			`${ok === answers.length ? "✓" : ok === 0 ? "✗" : "~"} ${item.id} → ${answers.join("/") || "—"}${flips ? " (flips!)" : ""}`,
 		);
 	}
 
-	await writeFile(
-		join(outDir, `contracts.${arm}.jsonl`),
-		`${records.map((r) => JSON.stringify(r)).join("\n")}\n`,
-	);
-	const correct = records.filter(
-		(r) => r.contract.answer === label.get(r.item_id),
-	).length;
-	const expected = items.length * repeat;
-	// Per-run tally (not the modal accuracy `score` reports); flag dropped runs so
-	// a partial run can't quietly shrink the scoring denominator. Raw tokens are a
-	// usage signal (e.g. find_law TOC size); $ cost is monitored on the Gateway
-	// dashboard, not estimated here.
+	// Raw tokens are a usage signal (e.g. find_law TOC size); $ cost is monitored on
+	// the Gateway dashboard, not estimated here.
 	const tok = (n: number): string => n.toLocaleString("en-US");
 	console.log(
-		`\n${correct}/${records.length} runs correct · tokens: ${tok(runner.usage.input)} in · ${tok(runner.usage.output)} out`,
+		`\n${done} new runs (${correct} correct) · ${skipped} items already at ${repeat} · tokens: ${tok(runner.usage.input)} in · ${tok(runner.usage.output)} out`,
 	);
-	if (records.length < expected)
+	if (errors)
 		console.warn(
-			`⚠ ${errors} runs errored — ${records.length}/${expected} contracts written; missing items won't be scored.`,
+			`⚠ ${errors} runs errored — they'll be retried (topped up) on the next answer.`,
 		);
 	console.log(`→ data/evals/${slug(runner.modelId)}/contracts.${arm}.jsonl`);
 }
