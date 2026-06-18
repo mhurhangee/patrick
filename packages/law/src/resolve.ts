@@ -49,13 +49,24 @@ export function provisionList(): ProvisionRef[] {
 function canonical(input: string): string {
 	const stripped = input
 		.toUpperCase()
+		// Long-form fee name → the RFees disambiguator (before RULES → R below).
+		.replace(/\bRULES? RELATING TO FEES\b/g, "RFEES")
+		// Spelled-out Guidelines hierarchy "Part A, Chapter IV" → the "A-IV" key.
+		.replace(/\bPART\s+([A-Z])[,\s]+CHAPTER\s+([IVXLC]+)\b/g, "$1-$2")
+		// Verbose-citation noise words (so "EPO Guidelines for Examination,
+		// Part B, Chapter I, Section 2.2" and "GL B-I 2.2" both fold to the key).
+		.replace(/\bEPO\b/g, "")
+		.replace(/\bFOR EXAMINATION\b/g, "")
+		.replace(/\b(?:GL|SECTION|PART|CHAPTER)\b/g, "")
+		.replace(/\b(?:ITEMS?|PARAGRAPHS?|SUBPARAGRAPHS?)\s+\d+[A-Z]*\b/g, "")
 		.replace(/\bCASE ?LAW\b/g, "")
 		.replace(/\bBOARDS? OF APPEAL\b/g, "")
 		.replace(/\bGUIDELINES?\b/g, "")
 		.replace(/\b(?:CLBA|CLR|BOA)\b/g, "")
 		.replace(/\bEPC\b/g, "")
 		.replace(/\bARTICLES?\b|\bART\b/g, "A")
-		.replace(/\bRULES?\b/g, "R");
+		.replace(/\bRULES?\b/g, "R")
+		.replace(/\b(?:OF|THE)\b/g, "");
 	// Drop separators, but keep a "." between adjacent digit groups so multi-level
 	// Guidelines/case-law keys don’t collide ("5.3" ≠ "53").
 	return stripped.replace(/[\s.,;:\-–—[\]()]+/g, (sep, i, str) =>
