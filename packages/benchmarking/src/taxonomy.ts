@@ -11,6 +11,8 @@ export const DISTORTIONS = {
 		'change deontic force — may<->must, optional<->mandatory, "is entitled to"<->"is required to"',
 	scope:
 		"change a quantifier/coverage — any<->only, all<->some, always<->never, includes<->excludes",
+	enumeration:
+		'add or drop ONE specific member of a set the source set fixes — an extra or missing requirement, condition, ground, organ, or listed item (the named members change, not just a quantifier). The count word and the list move together, but this is ONE distortion, NOT "multiple". e.g. requirements "A and B" -> "A, B and C"; "two organs: X and Y" -> "three organs: X, Y and Z"',
 	condition:
 		'change a triggering event, the point a period runs from, or a precondition — "from filing"->"from priority"; "while pending"->"after grant"',
 	entity:

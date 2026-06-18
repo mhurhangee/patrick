@@ -93,6 +93,11 @@ DISTORTION TAXONOMY (each FALSE statement uses EXACTLY ONE)
                "is entitled to"<->"is required to"
 - scope      : change a quantifier/coverage — any<->only, all<->some,
                always<->never, includes<->excludes
+- enumeration: add or drop ONE specific member of a set the source set fixes — an
+               extra or missing requirement, condition, ground, organ, or listed
+               item (the named members change, not just a quantifier). The count
+               word and the list move together, but this is ONE distortion, NOT
+               "multiple". e.g. "A and B" -> "A, B and C"
 - condition  : change a triggering event, the point a period runs from, or a
                precondition — "from filing"->"from priority";
                "while pending"->"after grant"
