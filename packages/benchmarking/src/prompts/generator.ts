@@ -26,7 +26,9 @@ export const proposedPairSchema = z.object({
 	gold: z.object({
 		citations: z
 			.array(z.string())
-			.describe("Which source-set citation labels the proposition rests on."),
+			.describe(
+				"ONLY the provision(s) the verdict's correctness actually turns on — the test target, not every provision in the source set (the rest are context for writing the question). If the truth requires reading two provisions together, list both; if it rests on one, list only that.",
+			),
 		supporting_text: z
 			.string()
 			.describe(

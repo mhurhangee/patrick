@@ -8,6 +8,10 @@
 # derived on hydrate from @patrick/law. Non-EP sets (PCT / EPO-PCT) are skipped
 # for now (not yet in the corpus). Write Guidelines sections without an internal
 # comma where you can (GL A-II 4.1), though "GL A-II, 4.1" is also recovered.
+#
+# Prefer a binding basis (Article / Rule / Fee / Case Law) as the real gold; a
+# system that cites the parent Article of a Guidelines section is right, so a
+# GL-only line tends to under-score — include the governing Article too, or drop it.
 
 # 2026 Paper F 
 ## Q1
