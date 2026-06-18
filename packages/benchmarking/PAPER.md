@@ -75,6 +75,10 @@ the headline is `comparison.web.md` (verbatim retrieval vs. web) and
 - Pre-EQE keys are public → memorisation risk; the synthetic distortions are the
   contamination-resistant core.
 - EP-only initially; PCT/US are future work (pipeline is jurisdiction-agnostic).
+- **Points-of-law scope:** statutory law (Articles/Rules/Fees) + Guidelines. Case-law
+  *decisions* (G/T/R/J) are out of scope — the gold almost never cites them and the
+  agent has no decision retrieval — so cited decisions are recognised by form and
+  excluded from the citation metrics. A proper case-law layer is future work.
 
 ---
 
@@ -106,6 +110,14 @@ the paper-facing summary.)
   because the parent Article is the natural cite.
 - **needs_date_check** scoped to genuine date arithmetic (not bare periods); a
   deterministic date calculator is future work (such items route to review).
+- **Citation resolution made robust to verbose forms** — an audit of the GL-gold
+  0%-citation cells showed systems were citing the *right* Guidelines/fee section
+  in spelled-out forms ("Part A, Chapter IV, 1.1.1", "Article 2(1) item 4 RFees")
+  the resolver couldn't parse, inflating both miss-rate and "hallucination". Folded
+  those to the compact key; that, not a prompt or model failure, was the cause.
+- **Case law scoped out** (see Limitations) after confirming the gold almost never
+  cites decisions and the title-derived decision→section map doesn't hold; decision
+  citations are excluded by form rather than chased.
 
 ### Item-selection policy (the anti-cherry-pick rule)
 

@@ -20,10 +20,19 @@ export function overlap(a: Set<string>, b: Set<string>): number {
 	return n;
 }
 
+/** A Board-of-Appeal decision citation (G/T/R/J n/yy). Case-law decisions are OUT
+ *  OF SCOPE for this points-of-law benchmark — Patrick has no first-class decision
+ *  retrieval yet — so a cited decision is neither scored nor counted as
+ *  hallucinated; it's an out-of-scope authority the model may add on top. */
+function isCaseLawDecision(citation: string): boolean {
+	return /\b[GTRJ]\s*\d+\/\d+\b/i.test(citation);
+}
+
 /** Resolved keys PLUS the count of distinct provisions cited including ones that
  *  don't resolve. The unresolved count feeds the precision denominator so a system
  *  can't hide a hallucinated cite ("Article 999 EPC") by citing something the
- *  resolver drops — those still count against it. */
+ *  resolver drops — those still count against it. Case-law decisions are excluded
+ *  (out of scope), so citing G 2/88 as extra authority isn't penalised. */
 export function citedKeysAndCount(citations: string[]): {
 	keys: Set<string>;
 	total: number;
@@ -31,6 +40,7 @@ export function citedKeysAndCount(citations: string[]): {
 	const keys = new Set<string>();
 	const unresolved = new Set<string>();
 	for (const c of citations) {
+		if (isCaseLawDecision(c)) continue;
 		const key = resolveCitation(c)?.entry.citationKey;
 		if (key) keys.add(key);
 		else {

@@ -53,7 +53,7 @@ function webTools(vendor: "anthropic" | "openai" | "google"): ToolSet {
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const fetcher = fileCachedFetcher(join(ROOT, ".cache"));
 
-const SYSTEM = `You assist a European patent attorney. You are given a statement (sometimes with a fact pattern) and must decide whether it is TRUE or FALSE as a matter of European patent law, and identify the governing provision(s) — EPC Articles/Rules, Rules relating to Fees, the EPO Guidelines, or the Boards of Appeal case law. When tools are available to look up or search for the law, use them and rely on what you retrieve rather than your memory; getting the law slightly wrong is unacceptable. Reason carefully, then state your verdict and the provisions you relied on.`;
+const SYSTEM = `You assist a European patent attorney. You are given a statement (sometimes with a fact pattern) and must decide whether it is TRUE or FALSE as a matter of European patent law, and cite the specific provision(s) that determine the answer — an EPC Article, Rule, or Rules-relating-to-Fees provision, a Guidelines section, or Boards of Appeal case law — preferring the most directly on-point source rather than a more general one. When tools are available to look up or search for the law, use them and rely on what you retrieve rather than your memory; getting the law slightly wrong is unacceptable. Reason carefully, then state your verdict and the provisions you relied on.`;
 
 const FINAL_ASK =
 	"Output your final verdict (TRUE or FALSE) and the citations of the provisions you relied on.";
@@ -181,7 +181,7 @@ function patrickTools(
 
 function task(item: Item): string {
 	const scenario = item.scenario ? `Fact pattern:\n${item.scenario}\n\n` : "";
-	return `${scenario}Statement:\n${item.statement}\n\nDecide whether this statement is TRUE or FALSE as a matter of European patent law, and identify the governing provision(s).`;
+	return `${scenario}Statement:\n${item.statement}\n\nDecide whether this statement is TRUE or FALSE as a matter of European patent law, and cite the specific provision(s) the answer turns on (the most directly on-point source).`;
 }
 
 /** A local runner, one of three arms:

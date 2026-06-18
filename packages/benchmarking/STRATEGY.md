@@ -9,6 +9,17 @@ Scope: EP first, then PCT, then US. Format below is jurisdiction-agnostic — th
 same pipeline works once you swap the source material (EPC/Guidelines →
 PCT Articles/Regulations → 35 U.S.C./37 C.F.R./MPEP).
 
+**This is a points-of-law retrieval benchmark — statutory law (EPC Articles,
+Rules, Rules relating to Fees) and the Guidelines. Case-law *decisions* (G/T/R/J)
+are out of scope.** The pre-EQE / Paper F gold answers cite individual decisions
+only ~2–3 times in five years of papers, and the agent has no first-class decision
+retrieval yet (the corpus holds the white-book commentary sections, not the
+decisions). So a model citing a decision by number (e.g. `G 2/88`) — usually as
+interpretive authority layered on the EPC/Guidelines it retrieved — is recognised
+by form and excluded from the citation metrics: neither scored as correct nor
+counted as hallucinated. Proper case-law/decision retrieval is a known agent gap,
+to be designed deliberately later.
+
 Several choices below (reliability scoring, answer-bias tracking, the high-yield
 topic list, the concept-confusion distortion) are informed by Khera et al.,
 *"Can LLMs Understand As Well As Apply Patent Regulations…"* (arXiv 2507.10576),
