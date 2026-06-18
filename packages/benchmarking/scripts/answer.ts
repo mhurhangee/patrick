@@ -18,7 +18,8 @@
 // a --repeat 1 run does 2 more (not 3), and an errored run is retried next time.
 //
 // Flags: --arm none|web|patrick (default patrick) · --repeat N (default 1) ·
-//        --limit N · --model <gateway-id>
+//        --limit N · --model <gateway-id> · --web-searches N (web arm, Anthropic;
+//        default 2 — caps searches/item, the web cost lever ~$0.01 each)
 
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -51,7 +52,11 @@ async function main(): Promise<void> {
 	if (items.length === 0)
 		throw new Error("no items in data/items.jsonl — run `build` first");
 
-	const runner = localRunner({ tools: arm, modelOverride: opt("model") });
+	const runner = localRunner({
+		tools: arm,
+		modelOverride: opt("model"),
+		webMaxUses: Number(opt("web-searches") ?? "2") || 2,
+	});
 	const outDir = join(EVALS, slug(runner.modelId));
 	await mkdir(outDir, { recursive: true });
 	const contractsFile = join(outDir, `contracts.${arm}.jsonl`);

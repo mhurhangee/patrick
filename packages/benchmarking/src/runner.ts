@@ -41,13 +41,18 @@ function vendorOf(id: string): "anthropic" | "openai" | "google" {
 }
 
 // Patrick's web search, mirrored from apps/api/src/lib/ai/web-search.ts (provider-
-// native, gateway-routable) — keep in sync. The realistic "without Patrick" arm:
-// general web search instead of verbatim EPO retrieval.
-function webTools(vendor: "anthropic" | "openai" | "google"): ToolSet {
+// native, gateway-routable). The realistic "without Patrick" arm: general web
+// search instead of verbatim EPO retrieval. `maxUses` caps Anthropic searches per
+// item — it's both a cost lever (~$0.01/search) and a fairness knob (too low
+// starves the baseline; too high inflates cost), so it's configurable per run.
+function webTools(
+	vendor: "anthropic" | "openai" | "google",
+	maxUses: number,
+): ToolSet {
 	if (vendor === "openai") return { web_search: openai.tools.webSearch({}) };
 	if (vendor === "google")
 		return { google_search: google.tools.googleSearch({}) };
-	return { web_search: anthropic.tools.webSearch_20250305({ maxUses: 4 }) };
+	return { web_search: anthropic.tools.webSearch_20250305({ maxUses }) };
 }
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -194,6 +199,8 @@ function task(item: Item): string {
 export function localRunner(opts: {
 	tools: "none" | "web" | "patrick";
 	modelOverride?: string;
+	/** Cap on Anthropic web searches per item (web arm). Default 2. */
+	webMaxUses?: number;
 }): SystemUnderTest & { usage: Usage; toolStats: ToolStats; modelId: string } {
 	const model = modelFor("system", opts.modelOverride);
 	const id = modelId("system", opts.modelOverride);
@@ -210,7 +217,7 @@ export function localRunner(opts: {
 				opts.tools === "patrick"
 					? patrickTools(retrieved, usage, model)
 					: opts.tools === "web"
-						? webTools(vendorOf(id))
+						? webTools(vendorOf(id), opts.webMaxUses ?? 2)
 						: undefined;
 
 			const reasoning = await generateText({
