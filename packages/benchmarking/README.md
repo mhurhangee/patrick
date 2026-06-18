@@ -70,14 +70,22 @@ pnpm build --paper 2026-f --limit 10              # then re-run without limits t
 #   --paper <prefix>  --id <id>  --limit N  --force  --generator <id>  --judge <id>
 #   → appends to data/items.jsonl; logs unbuildable points to data/failures.jsonl
 
-# 3. A system model attempts the dataset — BOTH arms (cost is explicit).
-pnpm answer --arm none                            # baseline: model from memory
+# 3. A system model attempts the dataset — one arm per call (cost is explicit).
+pnpm answer --arm none                            # floor: model from memory
+pnpm answer --arm web                             # realistic baseline: general web search
 pnpm answer --arm patrick                         # grounded: real ep_law_lookup + find_law
 #   --model google/gemini-3.1-flash-lite  --repeat N (reliability)  --limit N
 
-# 4. Score that model → per-arm reports + the grounding-lift delta.
+# 4. Score that model → per-arm reports + the grounding-lift deltas.
 pnpm score                                        # or --model <id> if several evaluated
 ```
+
+Three arms, because the meaningful claim isn't just "beats the model's memory" but
+"beats what you'd actually do without Patrick — search the web". `score` writes
+`comparison.none.md` (lift over memory) and `comparison.web.md` (**the headline:
+verbatim EPO grounding vs general web search**). `web` uses the model's native
+web-search tool (mirrored from the product); only `patrick` populates
+`retrieved_provisions`, so retrieval-recall is a Patrick-specific metric.
 
 Re-running `build` is cheap — it **skips** pairs already in the dataset (and known
 failures) and only fills gaps, so you grow the dataset by adding source sets and

@@ -5,13 +5,15 @@
 // the same frozen items, so swap the model freely with --model.
 //
 //   pnpm --filter @patrick/benchmarking answer --arm patrick
+//   pnpm --filter @patrick/benchmarking answer --arm web    # general web search
 //   pnpm --filter @patrick/benchmarking answer --arm none --model google/gemini-3.1-flash-lite
 //   pnpm --filter @patrick/benchmarking answer --arm patrick --repeat 5
 //
-// --repeat N runs each item N times so the scorer can report answer reliability —
-// how often the modal answer repeats (STRATEGY §7).
+// Arms: none (memory, the floor) · web (general web search, the realistic
+// "without Patrick" baseline) · patrick (verbatim EPO grounding). --repeat N runs
+// each item N times so the scorer can report answer reliability (STRATEGY §7).
 //
-// Flags: --arm none|patrick (default patrick) · --repeat N (default 1) ·
+// Flags: --arm none|web|patrick (default patrick) · --repeat N (default 1) ·
 //        --limit N · --model <gateway-id>
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -34,7 +36,7 @@ const opt = (name: string): string | undefined => {
 const slug = (s: string): string => s.replace(/[^\w.-]+/g, "_");
 
 async function main(): Promise<void> {
-	const arm = (opt("arm") ?? "patrick") as "none" | "patrick";
+	const arm = (opt("arm") ?? "patrick") as "none" | "web" | "patrick";
 	const limit = Number(opt("limit") ?? "0") || Number.POSITIVE_INFINITY;
 	const repeat = Math.max(1, Number(opt("repeat") ?? "1") || 1);
 

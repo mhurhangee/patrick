@@ -29,7 +29,7 @@ const opt = (name: string): string | undefined => {
 };
 const slug = (s: string): string => s.replace(/[^\w.-]+/g, "_");
 
-const ARMS = { none: "baseline", patrick: "patrick" } as const;
+const ARMS = { none: "baseline", web: "web", patrick: "patrick" } as const;
 type Arm = keyof typeof ARMS;
 
 const exists = (p: string): Promise<boolean> =>
@@ -99,17 +99,23 @@ async function main(): Promise<void> {
 		console.log(`\n${md}\n`);
 	}
 
-	if (reports.none && reports.patrick) {
-		const a = coveredByArm.none ?? new Set();
-		const b = coveredByArm.patrick ?? new Set();
-		const sameItems = a.size === b.size && [...a].every((id) => b.has(id));
-		if (!sameItems)
-			console.warn(
-				"⚠ the two arms scored DIFFERENT item sets — the lift delta isn't a clean paired comparison.",
-			);
-		const md = compareReports(reports.none, reports.patrick);
-		await writeFile(join(dir, "comparison.md"), `${md}\n`);
-		console.log(`\n${md}\n`);
+	// Patrick vs each baseline arm present (vs memory, and the headline: vs web).
+	const patrick = reports.patrick;
+	if (patrick) {
+		for (const base of ["none", "web"] as const) {
+			const baseReport = reports[base];
+			if (!baseReport) continue;
+			const a = coveredByArm[base] ?? new Set();
+			const b = coveredByArm.patrick ?? new Set();
+			const sameItems = a.size === b.size && [...a].every((id) => b.has(id));
+			if (!sameItems)
+				console.warn(
+					`⚠ patrick and ${ARMS[base]} scored DIFFERENT item sets — the lift delta isn't a clean paired comparison.`,
+				);
+			const md = compareReports(baseReport, patrick);
+			await writeFile(join(dir, `comparison.${base}.md`), `${md}\n`);
+			console.log(`\n${md}\n`);
+		}
 	}
 	console.log(`→ ${dir}/report.*.md`);
 }

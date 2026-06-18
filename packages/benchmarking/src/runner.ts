@@ -1,32 +1,59 @@
 // The system under test: a LocalToolRunner that answers each item TRUE/FALSE and
-// reports the provisions it cited + retrieved. Two arms, one harness:
-//   tools: "none"    → the model answers from memory (the baseline)
-//   tools: "patrick" → the model gets Patrick's real grounding tools
+// reports the provisions it cited + retrieved. Three arms, one harness:
+//   tools: "none"    → the model answers from memory (the floor)
+//   tools: "web"     → general web search (the realistic "without Patrick" baseline)
+//   tools: "patrick" → Patrick's real verbatim EPO grounding tools
 // The grounding ENGINE is the real shared @patrick/law (lookupProvisions,
 // tableOfContents, resolveCitation) — the same code the product runs; only the
-// thin tool wrappers + loop live here. Because both arms share this harness, the
-// baseline-vs-grounded delta isolates exactly one thing: the grounding.
+// thin tool wrappers + loop live here. Because all arms share this harness, the
+// patrick-vs-web (and vs-none) delta isolates exactly the grounding.
 //
-// ep_law_lookup's description and find_law's description/instructions are copied
-// verbatim from apps/api/src/lib/ai (chat.ts, find-law.ts) — keep them in sync.
+// ep_law_lookup / find_law descriptions and the web-search tools are mirrored
+// verbatim from apps/api/src/lib/ai (chat.ts, find-law.ts, web-search.ts) — keep
+// them in sync.
 
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 import {
 	fileCachedFetcher,
 	lookupProvisions,
 	resolveCitation,
 	tableOfContents,
 } from "@patrick/law";
-import { generateObject, generateText, stepCountIs, tool } from "ai";
+import {
+	generateObject,
+	generateText,
+	stepCountIs,
+	type ToolSet,
+	tool,
+} from "ai";
 import { z } from "zod";
 import { modelFor, modelId } from "./models";
 import type { Contract, Item, SystemUnderTest } from "./types";
 
+/** The model's vendor from its gateway id (`vendor/model`). */
+function vendorOf(id: string): "anthropic" | "openai" | "google" {
+	const v = id.split("/")[0];
+	return v === "openai" || v === "google" ? v : "anthropic";
+}
+
+// Patrick's web search, mirrored from apps/api/src/lib/ai/web-search.ts (provider-
+// native, gateway-routable) — keep in sync. The realistic "without Patrick" arm:
+// general web search instead of verbatim EPO retrieval.
+function webTools(vendor: "anthropic" | "openai" | "google"): ToolSet {
+	if (vendor === "openai") return { web_search: openai.tools.webSearch({}) };
+	if (vendor === "google")
+		return { google_search: google.tools.googleSearch({}) };
+	return { web_search: anthropic.tools.webSearch_20250305({ maxUses: 4 }) };
+}
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const fetcher = fileCachedFetcher(join(ROOT, ".cache"));
 
-const SYSTEM = `You assist a European patent attorney. You are given a statement (sometimes with a fact pattern) and must decide whether it is TRUE or FALSE as a matter of European patent law, and identify the governing provision(s) — EPC Articles/Rules, Rules relating to Fees, the EPO Guidelines, or the Boards of Appeal case law. When law-lookup tools are available, retrieve the verbatim text and rely on it rather than your memory; getting the law slightly wrong is unacceptable. Reason carefully, then state your verdict and the provisions you relied on.`;
+const SYSTEM = `You assist a European patent attorney. You are given a statement (sometimes with a fact pattern) and must decide whether it is TRUE or FALSE as a matter of European patent law, and identify the governing provision(s) — EPC Articles/Rules, Rules relating to Fees, the EPO Guidelines, or the Boards of Appeal case law. When tools are available to look up or search for the law, use them and rely on what you retrieve rather than your memory; getting the law slightly wrong is unacceptable. Reason carefully, then state your verdict and the provisions you relied on.`;
 
 const FINAL_ASK =
 	"Output your final verdict (TRUE or FALSE) and the citations of the provisions you relied on.";
@@ -146,10 +173,15 @@ function task(item: Item): string {
 	return `${scenario}Statement:\n${item.statement}\n\nDecide whether this statement is TRUE or FALSE as a matter of European patent law, and identify the governing provision(s).`;
 }
 
-/** A local two-arm runner. `tools: "none"` is the baseline; "patrick" grounds.
- *  `usage` accumulates the model's input/output tokens across the whole session. */
+/** A local runner, one of three arms:
+ *  - "none"    → no tools (the model answers from memory; the floor)
+ *  - "web"     → general web search (the realistic "without Patrick" baseline)
+ *  - "patrick" → Patrick's verbatim EPO grounding tools
+ *  `usage` accumulates the model's input/output tokens across the whole session.
+ *  Only "patrick" populates retrieved_provisions (web search surfaces pages, not
+ *  provision keys), so retrieval-recall is a Patrick-specific metric. */
 export function localRunner(opts: {
-	tools: "none" | "patrick";
+	tools: "none" | "web" | "patrick";
 	modelOverride?: string;
 }): SystemUnderTest & { usage: Usage; modelId: string } {
 	const model = modelFor("system", opts.modelOverride);
@@ -164,7 +196,9 @@ export function localRunner(opts: {
 			const tools =
 				opts.tools === "patrick"
 					? patrickTools(retrieved, usage, model)
-					: undefined;
+					: opts.tools === "web"
+						? webTools(vendorOf(id))
+						: undefined;
 
 			const reasoning = await generateText({
 				model,
