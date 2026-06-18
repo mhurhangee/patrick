@@ -38,6 +38,7 @@ export function scoreItem(item: Item, contracts: Contract[]): ItemScore {
 	const recalls: number[] = [];
 	const precisions: number[] = [];
 	const retrievals: number[] = [];
+	const hallucinations: number[] = [];
 	let trues = 0;
 	for (const c of contracts) {
 		const cited = citedKeysAndCount(c.cited_provisions);
@@ -47,6 +48,10 @@ export function scoreItem(item: Item, contracts: Contract[]): ItemScore {
 		// Precision denominator includes unresolved cites, so padding/hallucinating
 		// a non-resolving citation counts against precision rather than vanishing.
 		precisions.push(cited.total ? hit / cited.total : 0);
+		// Hallucination: distinct cited provisions that don't resolve to a real one.
+		hallucinations.push(
+			cited.total ? (cited.total - cited.keys.size) / cited.total : 0,
+		);
 		retrievals.push(gold.size ? overlap(retrieved, gold) / gold.size : 1);
 		if (c.answer === "TRUE") trues++;
 	}
@@ -66,6 +71,7 @@ export function scoreItem(item: Item, contracts: Contract[]): ItemScore {
 		retrieval_recall: mean(retrievals),
 		fully_correct:
 			answer_correct && citation_recall === 1 && citation_precision === 1,
+		hallucination: mean(hallucinations),
 		reliability,
 	};
 }
@@ -82,6 +88,7 @@ function aggregate(rows: Scored[]): Aggregate {
 		citation_precision: meanRow((r) => r.score.citation_precision),
 		retrieval_recall: meanRow((r) => r.score.retrieval_recall),
 		fully_correct: meanRow((r) => (r.score.fully_correct ? 1 : 0)),
+		hallucination: meanRow((r) => r.score.hallucination),
 		answered_true: allAnswers.length
 			? allAnswers.filter((a) => a === "TRUE").length / allAnswers.length
 			: 0,
@@ -126,11 +133,11 @@ const band = (a: Aggregate): string => `±${pct(a.ci)}`;
 
 /** A metric row for an aggregate (a slice or the overall). */
 function row(label: string, a: Aggregate): string {
-	return `| ${label} | ${a.n} | ${pct(a.answer_accuracy)} | ${pct(a.citation_recall)} | ${pct(a.citation_precision)} | ${pct(a.retrieval_recall)} | ${pct(a.fully_correct)} | ${pct(a.reliability)} | ${pct(a.answered_true)} |`;
+	return `| ${label} | ${a.n} | ${pct(a.answer_accuracy)} | ${pct(a.citation_recall)} | ${pct(a.citation_precision)} | ${pct(a.hallucination)} | ${pct(a.retrieval_recall)} | ${pct(a.fully_correct)} | ${pct(a.reliability)} | ${pct(a.answered_true)} |`;
 }
 
 const HEAD =
-	"| | n | answer | cite-rec | cite-prec | retr-rec | fully | relia | %TRUE |\n|---|--:|--:|--:|--:|--:|--:|--:|--:|";
+	"| | n | answer | cite-rec | cite-prec | halluc | retr-rec | fully | relia | %TRUE |\n|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|";
 
 function sliceTable(title: string, slice: Record<string, Aggregate>): string {
 	const rows = Object.entries(slice).map(([k, a]) => row(k, a));
@@ -197,6 +204,7 @@ export function compareReports(
 		regressions.push("citation precision dropped");
 	if (b.answer_accuracy < a.answer_accuracy)
 		regressions.push("answer accuracy dropped");
+	if (b.hallucination > a.hallucination) regressions.push("hallucination rose");
 	return [
 		`# Grounding lift — \`${patrick.system_id}\` vs \`${baseline.system_id}\``,
 		`${patrick.item_count} items`,
@@ -206,9 +214,13 @@ export function compareReports(
 		deltaRow("answer accuracy", a.answer_accuracy, b.answer_accuracy),
 		deltaRow("citation recall", a.citation_recall, b.citation_recall),
 		deltaRow("citation precision", a.citation_precision, b.citation_precision),
-		deltaRow("retrieval recall", a.retrieval_recall, b.retrieval_recall),
+		deltaRow("hallucination (lower=better)", a.hallucination, b.hallucination),
 		deltaRow("fully correct", a.fully_correct, b.fully_correct),
 		deltaRow("reliability", a.reliability, b.reliability),
+		"",
+		// retrieval recall is omitted: it's a Patrick-only metric (memory/web emit no
+		// provision keys, so it's 0 by construction) — not a comparable axis.
+		"_retrieval-recall is reported per-arm only (Patrick-specific; not comparable)._",
 		"",
 		regressions.length
 			? `⚠ regressions: ${regressions.join("; ")}`

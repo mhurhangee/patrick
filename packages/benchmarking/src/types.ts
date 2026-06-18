@@ -170,6 +170,10 @@ export interface ItemScore {
 	retrieval_recall: number;
 	/** Right answer AND citation recall = 1 AND citation precision = 1. */
 	fully_correct: boolean;
+	/** Fraction of cited provisions that don't resolve to a real one — the
+	 *  hallucinated/invented citations. Patrick ≈ 0 by construction (it cites only
+	 *  what it retrieved); memory/web can cite provisions that don't exist. */
+	hallucination: number;
 	/** Fraction of runs reproducing the modal answer (1 for a single run). */
 	reliability: number;
 }
@@ -182,6 +186,8 @@ export interface Aggregate {
 	citation_precision: number;
 	retrieval_recall: number;
 	fully_correct: number;
+	/** Mean fraction of cited provisions that don't resolve — invented citations. */
+	hallucination: number;
 	/** Fraction the system answered TRUE (over all runs) — skew can fake accuracy. */
 	answered_true: number;
 	/** Mean answer reliability — how often the modal answer repeats on resampling. */
