@@ -110,6 +110,18 @@ async function main(): Promise<void> {
 	console.log(
 		`\n${done} new runs (${correct} correct) · ${skipped} items already at ${repeat} · tokens: ${tok(runner.usage.input)} in · ${tok(runner.usage.output)} out`,
 	);
+	const ts = runner.toolStats;
+	if (Object.keys(ts.calls).length) {
+		const calls = Object.entries(ts.calls)
+			.map(([k, v]) => `${k}×${v}`)
+			.join(" · ");
+		const scopes = Object.entries(ts.findLawScopes)
+			.map(([k, v]) => `${k}×${v}`)
+			.join(", ");
+		console.log(
+			`tools: ${calls}${scopes ? ` · find_law scopes: ${scopes}` : ""}`,
+		);
+	}
 	if (errors)
 		console.warn(
 			`⚠ ${errors} runs errored — they'll be retried (topped up) on the next answer.`,

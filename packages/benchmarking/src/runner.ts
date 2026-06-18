@@ -90,6 +90,13 @@ export interface Usage {
 	output: number;
 }
 
+/** Tool-call counts across a session — to spot over-firing (e.g. find_law called
+ *  on items the model could ground directly via ep_law_lookup). */
+export interface ToolStats {
+	calls: Record<string, number>;
+	findLawScopes: Record<string, number>;
+}
+
 /** The grounding tools, closing over `retrieved` (what they surface) and `usage`
  *  (the find_law subagent's tokens, which the outer loop doesn't see). */
 function patrickTools(
@@ -187,13 +194,15 @@ function task(item: Item): string {
 export function localRunner(opts: {
 	tools: "none" | "web" | "patrick";
 	modelOverride?: string;
-}): SystemUnderTest & { usage: Usage; modelId: string } {
+}): SystemUnderTest & { usage: Usage; toolStats: ToolStats; modelId: string } {
 	const model = modelFor("system", opts.modelOverride);
 	const id = modelId("system", opts.modelOverride);
 	const usage: Usage = { input: 0, output: 0 };
+	const toolStats: ToolStats = { calls: {}, findLawScopes: {} };
 	return {
 		id: `local:${opts.tools}:${id}`,
 		usage,
+		toolStats,
 		modelId: id,
 		async run(item: Item): Promise<Contract> {
 			const retrieved = new Set<string>();
@@ -216,6 +225,21 @@ export function localRunner(opts: {
 			});
 			usage.input += reasoning.usage?.inputTokens ?? 0;
 			usage.output += reasoning.usage?.outputTokens ?? 0;
+
+			// Count tool calls (over-firing diagnostic): which tools, and which
+			// find_law scopes, the model actually invoked.
+			for (const step of reasoning.steps ?? []) {
+				for (const call of step.toolCalls ?? []) {
+					toolStats.calls[call.toolName] =
+						(toolStats.calls[call.toolName] ?? 0) + 1;
+					if (call.toolName === "find_law") {
+						const scope = (call.input as { scope?: string } | undefined)?.scope;
+						if (scope)
+							toolStats.findLawScopes[scope] =
+								(toolStats.findLawScopes[scope] ?? 0) + 1;
+					}
+				}
+			}
 
 			// `.text` is only the FINAL step's text — empty if the loop ended on a tool
 			// call. Fall back to the whole step trail so the contract is extracted from
