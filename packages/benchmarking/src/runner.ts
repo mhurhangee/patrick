@@ -71,14 +71,17 @@ const contractSchema = z.object({
 });
 
 // find_law scope → source id (mirrors apps/api/src/lib/ai/find-law.ts).
+// Case law (clboa) is intentionally absent: this is a points-of-law benchmark
+// (PAPER.md), so the gold never turns on a decision and cited decisions are
+// excluded from the metrics — offering the scope only burned subagent calls on
+// the large case-law TOC for retrievals nothing could score.
 const SCOPES: Record<string, string> = {
 	epc: "epc",
 	gl: "guidelines-epc",
 	pct: "guidelines-pct",
-	clboa: "caselaw",
 };
 const SCOPE_DESC =
-	"epc = EPC Articles, Rules and Rules relating to Fees; gl = EPO Guidelines for Examination; pct = PCT-EPO Guidelines; clboa = Case Law of the Boards of Appeal";
+	"epc = EPC Articles, Rules and Rules relating to Fees; gl = EPO Guidelines for Examination; pct = PCT-EPO Guidelines";
 const FIND_LAW_INSTRUCTIONS = `Below is the table of contents of a body of European patent law, guidance, or case law, as a nested outline; each recallable section shows its citation in \`backticks\`. Given the attorney's query, identify the sections MOST relevant to it. Return up to 8, most relevant first, as the citation in backticks (e.g. \`G-VII 5.3\`), one per line, nothing else. Only return citations that appear in the contents below. If none are relevant, return nothing.`;
 
 const tocCache = new Map<string, string>();
@@ -111,7 +114,7 @@ function patrickTools(
 ) {
 	const ep_law_lookup = tool({
 		description:
-			"Look up European patent law and get its VERBATIM current text from epo.org: EPC Articles, Rules, and Rules relating to Fees; EPO Guidelines for Examination (EPC and PCT-EPO); and Case Law of the Boards of Appeal (the 'white book' sections). Call this WHENEVER a specific provision/section is cited (by an examiner, by the attorney, or one you are about to rely on), and quote the law ONLY from what this returns — never recite from memory, as getting it slightly wrong is unacceptable. Pass canonical keys: EPC 'A54' / 'A123(2)' / 'R137(3)' / 'RFees A2'; Guidelines 'G-VII 5.3' (EPC) or 'PCT G-VII 5' (PCT-EPO); case law 'II.E.1.3.1'. If you don't have the exact citation, discover it with find_law first. A paragraph in parentheses is noted as the focus. Each result carries the title, the in-force version/date, and (for EPC provisions) footnotes; unresolved refs come back as not_found.",
+			"Look up European patent law and get its VERBATIM current text from epo.org: EPC Articles, Rules, and Rules relating to Fees; and EPO Guidelines for Examination (EPC and PCT-EPO). Call this WHENEVER a specific provision/section is cited (by an examiner, by the attorney, or one you are about to rely on), and quote the law ONLY from what this returns — never recite from memory, as getting it slightly wrong is unacceptable. Pass canonical keys: EPC 'A54' / 'A123(2)' / 'R137(3)' / 'RFees A2'; Guidelines 'G-VII 5.3' (EPC) or 'PCT G-VII 5' (PCT-EPO). If you don't have the exact citation, discover it with find_law first. A paragraph in parentheses is noted as the focus. Each result carries the title, the in-force version/date, and (for EPC provisions) footnotes; unresolved refs come back as not_found.",
 		inputSchema: z.object({
 			refs: z.array(z.string()).min(1),
 		}),
@@ -126,7 +129,7 @@ function patrickTools(
 		description: `Find the most relevant provisions/sections of a body of European patent law — the EPC itself, EPO guidance, or case law — for a topic or question, when you don't already have the exact citation. Scopes: ${SCOPE_DESC}. Returns citations — retrieve their verbatim text with ep_law_lookup and rely on that, not on memory. Call it once per body you want to search.`,
 		inputSchema: z.object({
 			query: z.string().min(1),
-			scope: z.enum(["epc", "gl", "pct", "clboa"]),
+			scope: z.enum(["epc", "gl", "pct"]),
 		}),
 		execute: async ({ query, scope }) => {
 			const sourceId = SCOPES[scope];

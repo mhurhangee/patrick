@@ -115,9 +115,23 @@ the paper-facing summary.)
   in spelled-out forms ("Part A, Chapter IV, 1.1.1", "Article 2(1) item 4 RFees")
   the resolver couldn't parse, inflating both miss-rate and "hallucination". Folded
   those to the compact key; that, not a prompt or model failure, was the cause.
+  A second wave surfaced on the first 418-item haiku run (the grounded arm *quotes
+  the law back*, so it spells citations out): "Rule 6(1) EPC Implementing
+  Regulations", "Article 87 of the European Patent Convention (EPC)" — correct
+  provisions the resolver dropped, faking a 22% patrick "hallucination". Folding the
+  instrument-name wrappers took the unresolved cites 21%→5%; the 5% that remain are
+  *genuine* (wrong instrument named — "Rules of Procedure" ≠ Implementing
+  Regulations — or non-provisions like President's decisions), so they stay flagged.
+  Stopped there rather than chase verbose-Guidelines 1-offs: over-fitting the
+  resolver to the benchmark is the failure mode to avoid. Self-checked: 0/4953
+  provisions changed self-resolution, so no new collisions.
 - **Case law scoped out** (see Limitations) after confirming the gold almost never
   cites decisions and the title-derived decision→section map doesn't hold; decision
-  citations are excluded by form rather than chased.
+  citations are excluded by form rather than chased. The tool surface was then
+  aligned to that scope: the `clboa` (Boards-of-Appeal) `find_law` scope and the
+  case-law mentions in the `ep_law_lookup` description were removed, so the agent
+  isn't steered to search a body nothing can score — a measurement found `find_law`
+  was firing ~0.4 case-law calls/item over the large case-law TOC purely as cost.
 
 ### Item-selection policy (the anti-cherry-pick rule)
 
