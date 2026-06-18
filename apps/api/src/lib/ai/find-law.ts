@@ -10,12 +10,13 @@ import { createModel } from "./model";
 // via ep_law_lookup. Discovery without a search index — the TOC is the index.
 
 const SCOPES: Record<string, string> = {
+	epc: "epc",
 	gl: "guidelines-epc",
 	pct: "guidelines-pct",
 	clboa: "caselaw",
 };
 const SCOPE_DESC =
-	"gl = EPO Guidelines for Examination; pct = PCT-EPO Guidelines; clboa = Case Law of the Boards of Appeal";
+	"epc = EPC Articles, Rules and Rules relating to Fees; gl = EPO Guidelines for Examination; pct = PCT-EPO Guidelines; clboa = Case Law of the Boards of Appeal";
 
 // The TOC is static — render each source once and reuse (also a cacheable prefix).
 const tocCache = new Map<string, string>();
@@ -27,20 +28,20 @@ function toc(sourceId: string): string {
 	return t;
 }
 
-const INSTRUCTIONS = `Below is the table of contents of a body of EPO guidance or case law, as a nested outline; each recallable section shows its citation in \`backticks\`. Given the attorney's query, identify the sections MOST relevant to it. Return up to 8, most relevant first, as the citation in backticks (e.g. \`G-VII 5.3\`), one per line, nothing else. Only return citations that appear in the contents below. If none are relevant, return nothing.`;
+const INSTRUCTIONS = `Below is the table of contents of a body of European patent law, guidance, or case law, as a nested outline; each recallable section shows its citation in \`backticks\`. Given the attorney's query, identify the sections MOST relevant to it. Return up to 8, most relevant first, as the citation in backticks (e.g. \`G-VII 5.3\`), one per line, nothing else. Only return citations that appear in the contents below. If none are relevant, return nothing.`;
 
 export type AiConfig = { provider: Provider; apiKey: string; modelId: string };
 
 /** Build the find_law tool bound to the attorney's configured model. */
 export function createFindLaw(ai: AiConfig) {
 	return tool({
-		description: `Find the most relevant sections of a body of EPO guidance or case law for a topic or question, when you don't already have the exact citation. Scopes: ${SCOPE_DESC}. Returns section citations — retrieve their verbatim text with ep_law_lookup and rely on that, not on memory. Call it once per body you want to search.`,
+		description: `Find the most relevant provisions/sections of a body of European patent law — the EPC itself, EPO guidance, or case law — for a topic or question, when you don't already have the exact citation. Scopes: ${SCOPE_DESC}. Returns citations — retrieve their verbatim text with ep_law_lookup and rely on that, not on memory. Call it once per body you want to search.`,
 		inputSchema: z.object({
 			query: z
 				.string()
 				.min(1)
 				.describe("The point of law or practice to find sections for."),
-			scope: z.enum(["gl", "pct", "clboa"]).describe(SCOPE_DESC),
+			scope: z.enum(["epc", "gl", "pct", "clboa"]).describe(SCOPE_DESC),
 		}),
 		execute: async ({ query, scope }) => {
 			const sourceId = SCOPES[scope];

@@ -42,26 +42,6 @@ export function provisionList(): ProvisionRef[] {
 	}));
 }
 
-// Concept → citation key. A small curated set so the agent can resolve the common
-// objections by name, not just by number. Deliberately conservative — only
-// unambiguous mappings; expand as needed. Keyed lowercase.
-const ALIASES: Record<string, string> = {
-	novelty: "A54",
-	"inventive step": "A56",
-	"industrial application": "A57",
-	"sufficiency of disclosure": "A83",
-	sufficiency: "A83",
-	"added matter": "A123(2)",
-	"added subject-matter": "A123(2)",
-	"extension of protection": "A123(3)",
-	clarity: "A84",
-	priority: "A87",
-	"grounds for opposition": "A100",
-	"patentable inventions": "A52",
-	exceptions: "A53",
-	exclusions: "A53",
-};
-
 // Fold a citation down to a comparison token: "[Art. 54 EPC]" → "A54",
 // "Guidelines G-VII, 5.3" → "GVII53", "CLBA II.E.1.3.1" → "IIE131". Source words
 // (Guidelines / Case Law / CLBA / EPC) are dropped; "PCT" is KEPT — it's the
@@ -108,11 +88,9 @@ export interface Resolution {
 	entry: EpcMapEntry;
 	/** The sub-paragraph the citation pointed at, e.g. "(2)" — informational. */
 	focus: string | null;
-	/** The keyword that resolved here, if it came via the alias table. */
-	resolvedFrom?: string;
 }
 
-/** Resolve a citation string or concept keyword to a provision (or null). */
+/** Resolve a citation string to a provision (or null). */
 export function resolveCitation(input: string): Resolution | null {
 	const raw = input.trim();
 
@@ -122,16 +100,6 @@ export function resolveCitation(input: string): Resolution | null {
 	const focusParts = raw.match(/\([^()]+\)/g);
 	const focus = focusParts ? focusParts.join("") : null;
 	const keyPart = (focusParts ? raw.replace(/\([^()]+\)/g, " ") : raw).trim();
-
-	// Concept/keyword match on the paragraph-stripped phrase (e.g. "inventive step",
-	// "added matter (3)"). An explicit focus on the input wins over the alias's own.
-	const alias = ALIASES[keyPart.toLowerCase().replace(/\s+/g, " ")];
-	if (alias) {
-		const hit = resolveCitation(alias);
-		return hit
-			? { entry: hit.entry, focus: focus ?? hit.focus, resolvedFrom: raw }
-			: null;
-	}
 
 	const entry = INDEX.get(canonical(keyPart));
 	return entry ? { entry, focus } : null;

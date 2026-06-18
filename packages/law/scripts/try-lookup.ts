@@ -27,9 +27,7 @@ for (const r of results) {
 		continue;
 	}
 	const p = r.provision;
-	console.log(
-		`\n✅ ${r.ref}${r.resolvedFrom ? ` (from "${r.resolvedFrom}")` : ""}${r.focus ? ` focus=${r.focus}` : ""}`,
-	);
+	console.log(`\n✅ ${r.ref}${r.focus ? ` focus=${r.focus}` : ""}`);
 	console.log(`   ${p.title}  [${p.version}]`);
 	console.log(`   ${p.citationKey ?? p.slug} · ${p.instrument ?? "—"}`);
 	for (const b of p.blocks.slice(0, 3))

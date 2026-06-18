@@ -134,11 +134,6 @@ function ProvisionCard({ result }: { result: LookupResult }) {
 					{p.version}
 				</span>
 			</div>
-			{result.resolvedFrom && (
-				<p className="text-[11px] text-muted-foreground">
-					“{result.resolvedFrom}” → {p.citationKey}
-				</p>
-			)}
 			<div className="space-y-1 text-xs leading-relaxed text-foreground/90">
 				{p.blocks.map((b, i) => {
 					const focused = !!result.focus && b.text.startsWith(result.focus);

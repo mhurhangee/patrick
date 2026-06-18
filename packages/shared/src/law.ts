@@ -70,7 +70,5 @@ export interface LookupResult {
 	status: "ok" | "not_found";
 	/** The paragraph the citation pointed at, e.g. "(2)" in "A54(2)". */
 	focus?: string | null;
-	/** Set when a keyword resolved to a provision, e.g. "inventive step" → "A56". */
-	resolvedFrom?: string;
 	provision?: Provision;
 }
