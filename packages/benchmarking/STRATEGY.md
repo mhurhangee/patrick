@@ -292,15 +292,21 @@ Map A/B back to the generator's `true_statement` / `false_statement`, then
 **accept the pair iff all hold**:
 
 1. `{A.verdict, B.verdict} == {TRUE, FALSE}` — exactly one of each, no UNVERIFIABLE.
-2. `distortion` is a single taxonomy key (not `multiple` / `none`).
-3. judge `distortion` == generator `distortion_used`.
-4. `citation_relied_on` matches generator `gold.citations` and all exist in the source set.
-5. the statement the judge labelled TRUE == the generator's `true_statement`.
-6. if `needs_date_check` is true, a deterministic date calculator (not the LLM
+2. `distortion` is a single taxonomy key (not `multiple` / `none`). The judge's
+   blind label is the item's distortion; it needn't equal the generator's
+   requested one (both are often defensible — e.g. modal vs scope — so gating on
+   agreement false-rejects good items).
+3. `citation_relied_on` are all in the **source set** — the judge grounded its
+   verdict in the provided law (anti-hallucination). It needn't be the exact
+   `gold`: a source set may pair a binding provision (the gold) with its Guidelines
+   elaboration, and the judge may legitimately cite either. Gold is the scoring
+   target, separate from the judge's basis.
+4. the statement the judge labelled TRUE == the generator's `true_statement`.
+5. if `needs_date_check` is true, a deterministic date calculator (not the LLM
    judge) confirms the deadline/date outcome — LLM judges miscompute weekend and
    holiday math.
 
-Otherwise **reject and log the failed check**. If only rule 5 fails (judge and
+Otherwise **reject and log the failed check**. If only rule 4 fails (judge and
 generator disagree on which is true), route to **human review** — that is a
 genuine-ambiguity signal, not noise.
 

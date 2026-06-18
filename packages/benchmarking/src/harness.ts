@@ -11,6 +11,7 @@ import {
 	proposedPairSchema,
 } from "./prompts/generator";
 import { JUDGE_SYSTEM, judgeInput, judgeResultSchema } from "./prompts/judge";
+import type { DistortionKey } from "./taxonomy";
 import type { Framing, Item, ProposedPair, SourceSet } from "./types";
 
 export type JudgeOutput = z.infer<typeof judgeResultSchema>;
@@ -92,12 +93,14 @@ export function decide(
 		verdicts.includes("TRUE") &&
 		verdicts.includes("FALSE") &&
 		!verdicts.includes("UNVERIFIABLE");
+	// The judge must ground its verdict in the PROVIDED law (anti-hallucination),
+	// but may cite any provision in the source set — including a sibling that
+	// elaborates the gold (e.g. the Guidelines for a gold Article). It needn't hit
+	// the exact gold; gold is the scoring target, separate from the judge's basis.
 	const judgeKeys = citationKeys(jr.citation_relied_on);
-	const goldKeys = citationKeys(pair.gold.citations);
 	const setKeys = citationKeys(set.provisions.map((p) => p.citation));
 	const citationOk =
-		judgeKeys.size > 0 &&
-		[...judgeKeys].every((k) => goldKeys.has(k) && setKeys.has(k));
+		judgeKeys.size > 0 && [...judgeKeys].every((k) => setKeys.has(k));
 
 	const reasons: string[] = [];
 	let review = false;
@@ -106,10 +109,11 @@ export function decide(
 		reasons.push("judge disagrees which is true");
 		review = true;
 	}
+	// Accept any SINGLE clean distortion. The judge's blind label may differ from
+	// the generator's requested one (both often defensible — e.g. modal vs scope);
+	// we keep the judge's as the item's distortion rather than gate on agreement.
 	if (jr.distortion === "multiple" || jr.distortion === "none")
 		reasons.push(`distortion=${jr.distortion}`);
-	else if (jr.distortion !== pair.distortion_used)
-		reasons.push(`distortion ${jr.distortion}≠${pair.distortion_used}`);
 	if (!citationOk) reasons.push("citation basis off");
 	if (pair.needs_date_check) {
 		reasons.push("needs date check");
@@ -131,6 +135,9 @@ export function emitItems(
 	trueSlot: "A" | "B",
 	falseSlot: "A" | "B",
 ): Item[] {
+	// The id keeps the generator's requested distortion (a stable handle, computed
+	// pre-judge for dedup); the analysed `distortion` is the judge's blind label
+	// (post-accept it's a single key, never multiple/none).
 	const id = pairId(set.id, pair);
 	const common = {
 		pair_id: id,
@@ -141,7 +148,7 @@ export function emitItems(
 		framing: pair.framing,
 		scenario: pair.scenario,
 		gold_citations: pair.gold.citations,
-		distortion: pair.distortion_used,
+		distortion: jr.distortion as DistortionKey,
 		provenance: "synthetic-v1",
 	} satisfies Partial<Item>;
 	return [
