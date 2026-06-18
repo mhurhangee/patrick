@@ -134,6 +134,9 @@ function patrickTools(
 						},
 						{ role: "user", content: query },
 					],
+					// The system message carries the cacheable TOC (not user input), so the
+					// prompt-injection warning is a false alarm here — allow it explicitly.
+					allowSystemInMessages: true,
 					abortSignal: AbortSignal.timeout(60_000),
 				});
 				usage.input += result.usage?.inputTokens ?? 0;
