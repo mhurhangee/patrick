@@ -64,6 +64,11 @@ function canonical(input: string): string {
 		.replace(/\bGUIDELINES?\b/g, "")
 		.replace(/\b(?:CLBA|CLR|BOA)\b/g, "")
 		.replace(/\bEPC\b/g, "")
+		// Spelled-out instrument names a verbatim citation drags along
+		// ("Rule 6(1) EPC Implementing Regulations" becomes R6; "Article 87 of
+		// the European Patent Convention" becomes A87) - pure noise, never a key.
+		.replace(/\bIMPLEMENTING REGULATIONS?\b/g, "")
+		.replace(/\bEUROPEAN PATENT (?:CONVENTION|OFFICE|ORGANISATION)\b/g, "")
 		.replace(/\bARTICLES?\b|\bART\b/g, "A")
 		.replace(/\bRULES?\b/g, "R")
 		.replace(/\b(?:OF|THE)\b/g, "");
