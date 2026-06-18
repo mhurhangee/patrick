@@ -44,14 +44,19 @@ export function tableOfContents(sourceId: string): string {
 			},
 		);
 
+	// Compact form: recallable leaves are flat `key title` lines (the key already
+	// encodes the hierarchy), nav/index pages are markdown headings by depth. No
+	// per-line indentation or bullets, and the leading section number is stripped
+	// from the title (it's already in the key) — lossless, and a sizeable token
+	// saving on the big TOCs that find_law sends to the model on every call.
 	const lines: string[] = [`# ${label}`];
+	const titleOf = (e: EpcMapEntry): string =>
+		(e.title ?? e.slug).replace(/^\d+(?:\.\d+)*\.?\s+/, "");
 	const render = (e: EpcMapEntry, depth: number): void => {
-		const indent = "  ".repeat(depth);
-		const title = e.title ?? e.slug;
 		lines.push(
 			e.recallable && e.citationKey
-				? `${indent}- \`${e.citationKey}\` ${title}`
-				: `${indent}- ${title}`,
+				? `\`${e.citationKey}\` ${titleOf(e)}`
+				: `${"#".repeat(Math.min(depth + 2, 6))} ${titleOf(e)}`,
 		);
 		for (const c of (childrenOf.get(e.slug) ?? []).sort(order))
 			render(c, depth + 1);
