@@ -19,7 +19,9 @@
 //
 // Flags: --arm none|web|patrick (default patrick) · --repeat N (default 1) ·
 //        --limit N · --model <gateway-id> · --web-searches N (web arm, Anthropic;
-//        default 2 — caps searches/item, the web cost lever ~$0.01 each)
+//        default 2 — caps searches/item, the web cost lever ~$0.01 each) ·
+//        --set <prefix> (only items whose source_set_id starts with it, e.g.
+//        2026-f — a dev-loop slice; the published set is the whole dataset)
 
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -44,13 +46,19 @@ async function main(): Promise<void> {
 	const limit = Number(opt("limit") ?? "0") || Number.POSITIVE_INFINITY;
 	const repeat = Math.max(1, Number(opt("repeat") ?? "1") || 1);
 
+	const set = opt("set");
 	const items = (await readFile(ITEMS, "utf8").catch(() => ""))
 		.split("\n")
 		.filter(Boolean)
 		.map((l) => JSON.parse(l) as Item)
+		.filter((it) => !set || it.source_set_id.startsWith(set))
 		.slice(0, limit);
 	if (items.length === 0)
-		throw new Error("no items in data/items.jsonl — run `build` first");
+		throw new Error(
+			set
+				? `no items match --set ${set} in data/items.jsonl`
+				: "no items in data/items.jsonl — run `build` first",
+		);
 
 	const runner = localRunner({
 		tools: arm,

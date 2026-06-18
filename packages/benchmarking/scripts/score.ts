@@ -5,6 +5,10 @@
 //
 //   pnpm --filter @patrick/benchmarking score                       # the only/sole eval
 //   pnpm --filter @patrick/benchmarking score --model google/gemini-3.1-flash-lite
+//   pnpm --filter @patrick/benchmarking score --set 2026-f          # a dev-loop slice
+//
+// --set <prefix> scores only items whose source_set_id starts with it (match the
+// same slice answer ran); the published report is the whole dataset.
 
 import { access, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -59,7 +63,18 @@ async function evalDir(): Promise<string> {
 
 async function main(): Promise<void> {
 	const dir = join(EVALS, await evalDir());
-	const items = new Map((await readJsonl<Item>(ITEMS)).map((i) => [i.id, i]));
+	const set = opt("set");
+	// Slice reports get a tagged filename so a dev-loop run doesn't clobber the
+	// full-dataset report.<arm>.md.
+	const tag = set ? `${set}.` : "";
+	const allItems = await readJsonl<Item>(ITEMS);
+	// Orphan detection (below) tests against every id; scoring runs on the slice.
+	const allIds = new Set(allItems.map((i) => i.id));
+	const items = new Map(
+		allItems
+			.filter((i) => !set || i.source_set_id.startsWith(set))
+			.map((i) => [i.id, i]),
+	);
 
 	const reports: Partial<Record<Arm, ReturnType<typeof buildReport>>> = {};
 	const coveredByArm: Partial<Record<Arm, Set<string>>> = {};
@@ -76,7 +91,7 @@ async function main(): Promise<void> {
 		// Loud signals that the eval is stale/partial, rather than silently scoring
 		// a subset: contracts whose item isn't in the dataset (rebuilt ids), and
 		// dataset items with no contracts (a partial answer run).
-		const orphans = [...byItem.keys()].filter((id) => !items.has(id));
+		const orphans = [...byItem.keys()].filter((id) => !allIds.has(id));
 		if (orphans.length)
 			console.warn(
 				`⚠ ${ARMS[arm]}: ${orphans.length} contracts for items not in the dataset (stale eval? rebuild changed ids) — ignored.`,
@@ -95,7 +110,7 @@ async function main(): Promise<void> {
 		const report = buildReport(ARMS[arm], rows);
 		reports[arm] = report;
 		const md = renderReport(report, rows);
-		await writeFile(join(dir, `report.${arm}.md`), `${md}\n`);
+		await writeFile(join(dir, `report.${tag}${arm}.md`), `${md}\n`);
 		console.log(`\n${md}\n`);
 	}
 
@@ -113,11 +128,11 @@ async function main(): Promise<void> {
 					`⚠ patrick and ${ARMS[base]} scored DIFFERENT item sets — the lift delta isn't a clean paired comparison.`,
 				);
 			const md = compareReports(baseReport, patrick);
-			await writeFile(join(dir, `comparison.${base}.md`), `${md}\n`);
+			await writeFile(join(dir, `comparison.${tag}${base}.md`), `${md}\n`);
 			console.log(`\n${md}\n`);
 		}
 	}
-	console.log(`→ ${dir}/report.*.md`);
+	console.log(`→ ${dir}/report.${tag}*.md`);
 }
 
 main();
