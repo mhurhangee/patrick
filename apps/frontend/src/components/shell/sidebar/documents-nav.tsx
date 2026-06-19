@@ -85,15 +85,27 @@ export function DocumentsNav() {
 	const generateLabel = useGenerateLabel(taskId);
 	const { activeProfileId } = useActiveProfile();
 	const [labelling, setLabelling] = useState<string | null>(null);
+	const [labelError, setLabelError] = useState<{
+		filename: string;
+		message: string;
+	} | null>(null);
 	const { isOpen, focused, open, close } = useWorkspace();
 
 	// AI-label one doc directly (kebab action) — one explicit quick-model call.
 	const suggestLabel = (filename: string) => {
 		if (!activeProfileId || labelling) return;
 		setLabelling(filename);
+		setLabelError(null);
 		generateLabel.mutate(
 			{ filename, profileId: activeProfileId },
-			{ onSettled: () => setLabelling(null) },
+			{
+				onError: (e) =>
+					setLabelError({
+						filename,
+						message: e instanceof Error ? e.message : "Labelling failed.",
+					}),
+				onSettled: () => setLabelling(null),
+			},
 		);
 	};
 
@@ -186,6 +198,9 @@ export function DocumentsNav() {
 				activeProfileId ? () => suggestLabel(doc.filename) : undefined
 			}
 			labelling={labelling === doc.filename}
+			labelError={
+				labelError?.filename === doc.filename ? labelError.message : null
+			}
 		/>
 	);
 
@@ -263,6 +278,7 @@ function DocumentRow({
 	extracting,
 	onSuggestLabel,
 	labelling,
+	labelError,
 }: {
 	doc: Document;
 	state: RowState;
@@ -276,6 +292,7 @@ function DocumentRow({
 	/** AI-label this doc; absent when no profile is active. */
 	onSuggestLabel?: () => void;
 	labelling: boolean;
+	labelError: string | null;
 }) {
 	const kind: DocKind = docKind(doc.filename);
 	const [renaming, setRenaming] = useState(false);
@@ -350,6 +367,7 @@ function DocumentRow({
 						extracting={extracting}
 						onSuggestLabel={onSuggestLabel}
 						labelling={labelling}
+						labelError={labelError}
 					/>
 				</div>
 			</div>
@@ -421,6 +439,7 @@ function DocumentMenu({
 	extracting,
 	onSuggestLabel,
 	labelling,
+	labelError,
 }: {
 	doc: Document;
 	kind: DocKind;
@@ -432,6 +451,7 @@ function DocumentMenu({
 	extracting: { done: number; total: number } | null;
 	onSuggestLabel?: () => void;
 	labelling: boolean;
+	labelError: string | null;
 }) {
 	// Originals are the attorney's files — Patrick never renames/deletes them;
 	// instead it offers an editable working copy.
@@ -467,6 +487,9 @@ function DocumentMenu({
 								? "Re-suggest a label"
 								: "Suggest a label"}
 					</DropdownMenuItem>
+				)}
+				{labelError && (
+					<p className="px-2 py-1 text-destructive text-xs">{labelError}</p>
 				)}
 				{kind === "pdf" && (
 					<DropdownMenuItem
