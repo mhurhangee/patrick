@@ -66,7 +66,12 @@ export async function listChats(folder: string): Promise<ChatSummary[]> {
 	);
 }
 
-/** Apply attorney-set chat meta (star, custom title). Empty title clears it. */
+/** Apply attorney-set chat meta (star, custom title). Empty title clears it.
+ *  This and saveChat are non-atomic read-modify-writes on the same file; a star
+ *  landing in the same instant a turn finishes saving could drop one or the
+ *  other. Accepted: local single-user, the window is a few ms, and there's no
+ *  locking anywhere in this file-per-chat model. Any new attorney-set field must
+ *  also be threaded through saveChat (below) or a turn-save would drop it. */
 export async function updateChatMeta(
 	folder: string,
 	id: string,
