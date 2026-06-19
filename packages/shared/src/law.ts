@@ -40,6 +40,13 @@ export interface Provision {
 	notes: Record<string, string>;
 }
 
+/** The body a provision belongs to — the `/` picker's group heading. */
+export type ProvisionGroup =
+	| "EPC"
+	| "Guidelines"
+	| "PCT Guidelines"
+	| "Case Law";
+
 /** A taggable provision for the chat `/` picker — no body. */
 export interface ProvisionRef {
 	/** Stable handle / citation key, e.g. "A54". */
@@ -49,6 +56,8 @@ export interface ProvisionRef {
 	/** Descriptive part of the title: "Novelty". */
 	name: string | null;
 	kind: EpcKind;
+	/** Picker group, precomputed from the source (not re-derived client-side). */
+	group: ProvisionGroup;
 }
 
 /** A section find_law surfaced as relevant — to be grounded via ep_law_lookup. */

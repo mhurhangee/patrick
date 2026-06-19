@@ -377,18 +377,22 @@ function ChatSession({
 		const cite = (p: { cite?: string; key: string }) => p.cite ?? p.key;
 		// Group by body so the picker reads as EPC / Guidelines / PCT / Case Law.
 		const GROUP_ORDER = ["EPC", "Guidelines", "PCT Guidelines", "Case Law"];
+		// Prefer the precomputed group from provisionList; derive only as a fallback
+		// for entries from a stale cache that predate the `group` field.
 		const groupOf = (p: {
+			group?: string;
 			kind: string;
 			cite?: string;
 			key: string;
 		}): string =>
-			p.kind === "caselaw"
+			p.group ??
+			(p.kind === "caselaw"
 				? "Case Law"
 				: p.kind === "guideline"
 					? cite(p).startsWith("PCT")
 						? "PCT Guidelines"
 						: "Guidelines"
-					: "EPC";
+					: "EPC");
 		const toItem = (p: (typeof all)[number]): MentionItem => ({
 			id: p.key,
 			label: cite(p),
@@ -409,6 +413,10 @@ function ChatSession({
 					(a, b) =>
 						cite(a).length - cite(b).length || cite(a).localeCompare(cite(b)),
 				)
+				// Top-16 by relevance, THEN group — so a broad query (e.g. "examination")
+				// can fill all 16 slots with one body (EPC) and starve Guidelines/Case
+				// Law that also matched. Accepted: specific queries narrow fine; a
+				// per-group quota is a deliberate feel change, not a bug to fix blind.
 				.slice(0, 16)
 				.map(toItem)
 				// Group contiguously (stable sort keeps relevance order within a group).

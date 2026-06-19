@@ -15,7 +15,7 @@ export interface Source {
 	classify: (slug: string) => SlugClassification;
 }
 
-export const SOURCES: Source[] = [
+export const SOURCES = [
 	{
 		id: "epc",
 		label: "EPC",
@@ -44,4 +44,8 @@ export const SOURCES: Source[] = [
 		path: "case-law/2025",
 		classify: classifyCaselaw,
 	},
-];
+] as const satisfies readonly Source[];
+
+/** A source-map id, derived from SOURCES so a renamed/typo'd id is a compile error
+ *  at the sites that branch on it (resolve, toc, SOURCE_LABEL). */
+export type SourceId = (typeof SOURCES)[number]["id"];

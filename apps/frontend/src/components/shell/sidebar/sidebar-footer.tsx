@@ -64,7 +64,7 @@ export function SidebarFooter() {
 					<button
 						type="button"
 						className={cn(
-							"flex h-auto min-w-0 flex-1 items-center gap-2 rounded-md border-l-2 px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent",
+							"flex h-auto min-w-0 flex-1 items-center gap-2 rounded-none border-l-2 px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent",
 							onSettings
 								? "border-primary bg-sidebar-accent/50"
 								: "border-transparent",

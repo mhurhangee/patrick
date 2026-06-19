@@ -1,4 +1,5 @@
 import type { EpcKind } from "@patrick/shared";
+import type { SourceId } from "./sources";
 
 // The provision/lookup domain types (EpcKind, Provision, ProvisionBlock,
 // ProvisionRef, LookupResult) live in @patrick/shared so the browser can use them
@@ -10,7 +11,7 @@ import type { EpcKind } from "@patrick/shared";
  * provision *text* is never stored here; it's fetched on demand and cached. */
 export interface EpcMapEntry {
 	/** Which source map this belongs to: "epc", "guidelines-epc", "caselaw", … */
-	source: string;
+	source: SourceId;
 	/** Page slug, e.g. "a54", "r41", "g_vii_5_3", "clr_ii_e_1_3_1". */
 	slug: string;
 	/** Canonical page URL on epo.org. */

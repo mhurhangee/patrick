@@ -1,6 +1,15 @@
-import type { ProvisionRef } from "@patrick/shared";
+import type { ProvisionGroup, ProvisionRef } from "@patrick/shared";
 import { ENTRIES } from "./maps";
+import type { SourceId } from "./sources";
 import type { EpcMapEntry } from "./types";
+
+/** Picker group per source — exhaustive over SourceId, so a new source must add one. */
+const GROUP_BY_SOURCE: Record<SourceId, ProvisionGroup> = {
+	epc: "EPC",
+	"guidelines-epc": "Guidelines",
+	"guidelines-pct": "PCT Guidelines",
+	caselaw: "Case Law",
+};
 
 // A readable, source-tagged citation — what a tag shows and serialises to.
 // EPC provisions get a numbered form; Guidelines/case-law keys are already
@@ -39,6 +48,7 @@ export function provisionList(): ProvisionRef[] {
 		cite: citeOf(e) ?? e.citationKey,
 		name: shortName(e.title),
 		kind: e.kind,
+		group: GROUP_BY_SOURCE[e.source],
 	}));
 }
 
@@ -46,6 +56,13 @@ export function provisionList(): ProvisionRef[] {
 // "Guidelines G-VII, 5.3" → "GVII53", "CLBA II.E.1.3.1" → "IIE131". Source words
 // (Guidelines / Case Law / CLBA / EPC) are dropped; "PCT" is KEPT — it's the
 // disambiguator between the EPC and PCT Guidelines (same section numbers).
+//
+// Accepted limitation: this is a fuzzy string-hash, not a true normaliser — two
+// spellings only both resolve because the build pre-indexes every form (see
+// INDEX). Fine for EP, where the forms are closed and small. When citation forms
+// grow (esp. US/PCT) this should become a structural parse to
+// `{instrument, kind, number, suffix}` compared field-by-field — deferred until
+// that need is real.
 function canonical(input: string): string {
 	const stripped = input
 		.toUpperCase()

@@ -1,7 +1,23 @@
 import { type Document, docKind } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
-import { EyeOff, MoreHorizontal, Plus, Star, Type } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import {
+	Copy,
+	Eye,
+	EyeOff,
+	FileImage,
+	FilePlus2,
+	FileText,
+	MoreHorizontal,
+	Pencil,
+	Plus,
+	RefreshCw,
+	ScanText,
+	Star,
+	StarOff,
+	Trash2,
+	Type,
+} from "lucide-react";
+import { useState } from "react";
 import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
 import {
@@ -15,10 +31,11 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	useCreateDocument,
@@ -186,8 +203,8 @@ function DocumentsActions({
 	onRefresh: () => void;
 }) {
 	return (
-		<Popover>
-			<PopoverTrigger asChild>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
 					title="Add or refresh"
@@ -195,12 +212,18 @@ function DocumentsActions({
 				>
 					<Plus className="size-4" />
 				</button>
-			</PopoverTrigger>
-			<PopoverContent align="end" className="w-52 gap-0.5 p-1">
-				<MenuItem onClick={onNew}>New Word document</MenuItem>
-				<MenuItem onClick={onRefresh}>Refresh folder</MenuItem>
-			</PopoverContent>
-		</Popover>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-52">
+				<DropdownMenuItem onSelect={onNew}>
+					<FilePlus2 />
+					New Word document
+				</DropdownMenuItem>
+				<DropdownMenuItem onSelect={onRefresh}>
+					<RefreshCw />
+					Refresh folder
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
@@ -382,8 +405,8 @@ function DocumentMenu({
 	const mode = doc.contextMode ?? "image";
 
 	return (
-		<Popover>
-			<PopoverTrigger asChild>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
 					title="More"
@@ -391,85 +414,77 @@ function DocumentMenu({
 				>
 					<MoreHorizontal className="size-4" />
 				</button>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-52 gap-0.5 p-1">
-				{canEditCopy && <MenuItem onClick={onEditCopy}>Edit a copy</MenuItem>}
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-52">
+				{canEditCopy && (
+					<DropdownMenuItem onSelect={onEditCopy}>
+						<Copy />
+						Edit a copy
+					</DropdownMenuItem>
+				)}
 				{kind === "pdf" && (
 					<>
-						<MenuItem
-							onClick={onExtract}
+						<DropdownMenuItem
+							// Keep the menu open (don't close-on-select) so the live
+							// "Extracting… x/y" label below stays visible during OCR.
+							onSelect={(e) => {
+								e.preventDefault();
+								onExtract();
+							}}
 							disabled={!!extracting}
 							title="Pull selectable text out of this PDF (OCR for scans)"
 						>
+							<ScanText />
 							{extracting
 								? `Extracting… ${extracting.done}/${extracting.total || "…"}`
 								: doc.extracted
 									? "Re-extract text"
 									: "Extract text"}
-						</MenuItem>
+						</DropdownMenuItem>
 						{doc.extracted && (
 							<>
-								<MenuItem
-									onClick={() => onUpdate({ contextMode: "image" })}
+								<DropdownMenuItem
+									onSelect={() => onUpdate({ contextMode: "image" })}
 									title="Send Patrick the original PDF (figures + layout, pricier)"
 								>
+									<FileImage />
 									{mode === "image" ? "✓ " : ""}Context: original PDF
-								</MenuItem>
-								<MenuItem
-									onClick={() => onUpdate({ contextMode: "text" })}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={() => onUpdate({ contextMode: "text" })}
 									title="Send Patrick the extracted text (cheaper, may have OCR errors)"
 								>
+									<FileText />
 									{mode === "text" ? "✓ " : ""}Context: extracted text
-								</MenuItem>
+								</DropdownMenuItem>
 							</>
 						)}
 					</>
 				)}
-				<MenuItem onClick={() => onUpdate({ starred: !doc.starred })}>
+				<DropdownMenuItem onSelect={() => onUpdate({ starred: !doc.starred })}>
+					{doc.starred ? <StarOff /> : <Star />}
 					{doc.starred ? "Unstar" : "Star"}
-				</MenuItem>
-				<MenuItem onClick={() => onUpdate({ excluded: !doc.excluded })}>
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					onSelect={() => onUpdate({ excluded: !doc.excluded })}
+				>
+					{doc.excluded ? <Eye /> : <EyeOff />}
 					{doc.excluded ? "Include for Patrick" : "Exclude from Patrick"}
-				</MenuItem>
+				</DropdownMenuItem>
 				{isPatrick && (
 					<>
-						<MenuItem onClick={onStartRename}>Rename</MenuItem>
-						<MenuItem destructive onClick={onAskDelete}>
+						<DropdownMenuItem onSelect={onStartRename}>
+							<Pencil />
+							Rename
+						</DropdownMenuItem>
+						<DropdownMenuItem onSelect={onAskDelete} variant="destructive">
+							<Trash2 />
 							Delete
-						</MenuItem>
+						</DropdownMenuItem>
 					</>
 				)}
-			</PopoverContent>
-		</Popover>
-	);
-}
-
-function MenuItem({
-	children,
-	onClick,
-	destructive,
-	disabled,
-	title,
-}: {
-	children: ReactNode;
-	onClick?: () => void;
-	destructive?: boolean;
-	disabled?: boolean;
-	title?: string;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			disabled={disabled}
-			title={title}
-			className={cn(
-				"flex w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-40",
-				destructive && "text-destructive",
-			)}
-		>
-			{children}
-		</button>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 

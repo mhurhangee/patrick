@@ -435,14 +435,33 @@ export async function handleChat(c: Context) {
 		find_law: createFindLaw({ provider, apiKey, modelId: detailedModel }),
 		// Web search runs on the attorney's own model (provider-executed) unless the
 		// toolbar toggle is off; the agent grounds what it surfaces via ep_law_lookup.
+		// Caveat (accepted): if the provider/org doesn't support web search (notably
+		// Anthropic when it isn't enabled in the org console) the provider errors the
+		// whole turn — the toolbar toggle is the escape hatch. A per-model `webSearch`
+		// capability flag to default it off for unsupported models is deferred to the
+		// model-picker/capability work (it also can't catch the org-config case).
 		...(body.webSearch === false
 			? {}
 			: webSearchTool(vendorOf(provider, detailedModel))),
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
+	// When web search is toggled off, strip any web_search tool parts left in the
+	// history by earlier turns — sending those tool calls without the tool declared
+	// makes some providers (Anthropic) reject the whole turn with a 400.
+	const history =
+		body.webSearch === false
+			? body.messages.map((m) => ({
+					...m,
+					parts: m.parts.filter(
+						(p) =>
+							p.type !== "tool-web_search" && p.type !== "tool-google_search",
+					),
+				}))
+			: body.messages;
+
 	// Pinned read-only sources lead the conversation as one cached block.
-	const conversation = await convertToModelMessages(body.messages);
+	const conversation = await convertToModelMessages(history);
 	const pinnedMsg = await pinnedSourcesMessage(task.folder, pinnedSources);
 	const messages = pinnedMsg ? [pinnedMsg, ...conversation] : conversation;
 
