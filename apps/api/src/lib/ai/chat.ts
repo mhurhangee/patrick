@@ -56,6 +56,8 @@ type RequestBody = {
 	activeDraft?: string | null;
 	/** Per-chat instructions edit (ephemeral); absent ⇒ the profile's template. */
 	templateOverride?: string | null;
+	/** The model for this turn (locked per chat client-side); absent ⇒ profile default. */
+	model?: string;
 	/** Whether web search is available this turn (toolbar toggle). Default on. */
 	webSearch?: boolean;
 };
@@ -388,7 +390,7 @@ export async function handleChatPreview(c: Context) {
 		body.templateOverride,
 	);
 	return c.json({
-		model: profile.ai.detailedModel,
+		model: body.model ?? profile.ai.model,
 		system,
 		pinnedSources,
 		activeDraft,
@@ -412,9 +414,12 @@ export async function handleChat(c: Context) {
 		pinnedSources,
 		activeDraft,
 	);
-	const { provider, apiKey, detailedModel, effort } = profile.ai;
-	const model = createModel(provider, apiKey, detailedModel);
-	const { providerOptions } = reasoningOptions(provider, detailedModel, effort);
+	const { provider, apiKey, effort } = profile.ai;
+	// The chat locks its model at first send (client sends it each turn); fall back
+	// to the profile default for the very first request / older chats.
+	const modelId = body.model ?? profile.ai.model;
+	const model = createModel(provider, apiKey, modelId);
+	const { providerOptions } = reasoningOptions(provider, modelId, effort);
 	const system = buildSystemPrompt(
 		profile,
 		task,
@@ -440,7 +445,7 @@ export async function handleChat(c: Context) {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
-		find_law: createFindLaw({ provider, apiKey, modelId: detailedModel }),
+		find_law: createFindLaw({ provider, apiKey, modelId }),
 		// Web search runs on the attorney's own model (provider-executed) unless the
 		// toolbar toggle is off; the agent grounds what it surfaces via ep_law_lookup.
 		// Caveat (accepted): if the provider/org doesn't support web search (notably
@@ -450,7 +455,7 @@ export async function handleChat(c: Context) {
 		// model-picker/capability work (it also can't catch the org-config case).
 		...(body.webSearch === false
 			? {}
-			: webSearchTool(vendorOf(provider, detailedModel))),
+			: webSearchTool(vendorOf(provider, modelId))),
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
@@ -491,7 +496,7 @@ export async function handleChat(c: Context) {
 		messageMetadata: ({ part }): ExchangeMetadata | undefined => {
 			if (part.type === "start")
 				return {
-					context: { model: detailedModel, pinnedSources, activeDraft },
+					context: { model: modelId, pinnedSources, activeDraft },
 				};
 			if (part.type === "finish" && "totalUsage" in part)
 				return { usage: part.totalUsage };
@@ -509,6 +514,7 @@ export async function handleChat(c: Context) {
 			await saveChat(task.folder, {
 				id: body.chatId,
 				systemTemplate: body.templateOverride ?? profile.prompts.agentpat,
+				model: modelId,
 				pinnedSources,
 				messages: [...byId.values()].map((m) =>
 					toStoredMessage({ ...m, parts: m.parts as unknown[] }),

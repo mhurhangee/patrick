@@ -60,11 +60,12 @@ tasks.put("/:id/chats/:chatId", async (c) => {
 	if (!task) return c.json({ error: "not found" }, 404);
 	const body =
 		await c.req.json<
-			Pick<Chat, "systemTemplate" | "pinnedSources" | "messages">
+			Pick<Chat, "systemTemplate" | "model" | "pinnedSources" | "messages">
 		>();
 	const chat = await saveChat(task.folder, {
 		id: c.req.param("chatId"),
 		systemTemplate: body.systemTemplate,
+		model: body.model,
 		pinnedSources: body.pinnedSources,
 		messages: body.messages,
 	});

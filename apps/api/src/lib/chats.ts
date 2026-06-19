@@ -121,6 +121,8 @@ export async function saveChat(
 		createdAt: existing?.createdAt ?? chat.createdAt ?? now,
 		updatedAt: now,
 		systemTemplate: chat.systemTemplate,
+		// Frozen at first send; preserved across turn-saves and forks.
+		model: chat.model ?? existing?.model,
 		pinnedSources: chat.pinnedSources,
 		messages: chat.messages,
 		// Attorney-set meta survives turn-saves.
