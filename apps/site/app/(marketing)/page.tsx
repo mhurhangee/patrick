@@ -48,6 +48,10 @@ function Section({
 function Hero() {
 	return (
 		<section className="mx-auto max-w-5xl px-6 pt-20 pb-8 sm:pt-28">
+			<span className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">
+				<span className="size-1.5 rounded-full bg-[var(--patrick-coral)]" />
+				Alpha — in active development
+			</span>
 			<div className="grid gap-x-16 gap-y-5 lg:grid-cols-[3fr_2fr]">
 				<h1 className="text-5xl leading-[1.05] tracking-tight sm:text-6xl">
 					Your{" "}
@@ -69,9 +73,18 @@ function Hero() {
 			</div>
 
 			<div className="mt-10 flex flex-col items-start gap-3">
-				<Button asChild className="h-12 rounded-lg px-7 text-sm">
-					<Link href="/download">Download free for Windows</Link>
-				</Button>
+				<div className="flex flex-wrap gap-3">
+					<Button asChild className="h-12 rounded-lg px-7 text-sm">
+						<Link href="/download">Download free for Windows</Link>
+					</Button>
+					<Button
+						asChild
+						variant="outline"
+						className="h-12 rounded-lg px-7 text-sm"
+					>
+						<Link href="/download#waitlist">Join the waitlist</Link>
+					</Button>
+				</div>
 				<p className="text-xs text-muted-foreground">
 					Bring your own AI key — you pay your provider, never us.
 				</p>
@@ -191,9 +204,16 @@ function Closing() {
 				free to run — you bring your own AI provider key and pay them directly
 				for what you use, usually pennies per response.
 			</p>
-			<div className="mt-10">
+			<div className="mt-10 flex flex-wrap justify-center gap-3">
 				<Button asChild className="h-12 rounded-lg px-7 text-sm">
 					<Link href="/download">Download free for Windows</Link>
+				</Button>
+				<Button
+					asChild
+					variant="outline"
+					className="h-12 rounded-lg px-7 text-sm"
+				>
+					<Link href="/download#waitlist">Join the waitlist</Link>
 				</Button>
 			</div>
 		</Section>

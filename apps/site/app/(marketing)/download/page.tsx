@@ -2,6 +2,7 @@ import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
+import { WaitlistForm } from "@/components/waitlist-form";
 import { DOWNLOAD_URL, GITHUB_URL } from "@/lib/links";
 
 export const metadata: Metadata = {
@@ -56,6 +57,20 @@ export default function DownloadPage() {
 						with "Windows protected your PC". Click <em>More info</em> →{" "}
 						<em>Run anyway</em> to install. Code signing comes with the beta.
 					</p>
+				</div>
+			</div>
+
+			<div id="waitlist" className="mt-14 border-t border-border/60 pt-12">
+				<h2 className="text-base text-foreground">
+					Not on Windows, or waiting for v1.0?
+				</h2>
+				<p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+					The alpha is Windows-only for now (macOS is planned). Leave your email
+					and we'll tell you when v1.0 — and other platforms — land. It's the
+					only thing we'll use it for.
+				</p>
+				<div className="mt-5">
+					<WaitlistForm />
 				</div>
 			</div>
 		</div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
+import { WaitlistForm } from "@/components/waitlist-form";
 import { CONTACT_EMAIL, ISSUES_URL } from "@/lib/links";
 
 export const metadata: Metadata = {
@@ -45,6 +46,17 @@ export default function Contact() {
 				>
 					<a href={`mailto:${CONTACT_EMAIL}`}>Email us</a>
 				</Button>
+			</div>
+
+			<div className="mt-14 border-t border-border/60 pt-10">
+				<h2 className="text-xl sm:text-2xl">Want release updates?</h2>
+				<p className="mt-2 text-muted-foreground">
+					Patrick is in alpha and moving fast. Leave your email and we'll tell
+					you when v1.0 ships — nothing else, ever.
+				</p>
+				<div className="mt-5">
+					<WaitlistForm />
+				</div>
 			</div>
 		</div>
 	);
