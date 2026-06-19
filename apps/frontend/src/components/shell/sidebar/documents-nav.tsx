@@ -7,7 +7,6 @@ import {
 	FileImage,
 	FilePlus2,
 	FileText,
-	MoreHorizontal,
 	Pencil,
 	Plus,
 	RefreshCw,
@@ -19,18 +18,9 @@ import {
 	Type,
 } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -58,6 +48,7 @@ import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
 import { type DocKind, useWorkspace } from "@/lib/workspace";
 import { RetrievePublication } from "./retrieve-publication";
+import { KebabTrigger, RowRenameField } from "./row-controls";
 import { Section } from "./section";
 
 type RowState = "closed" | "open" | "focused";
@@ -372,33 +363,19 @@ function DocumentRow({
 				</div>
 			</div>
 
-			<AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete "{doc.filename}"?</AlertDialogTitle>
-						<AlertDialogDescription>
-							This removes the file from your task folder. This can't be undone.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel size="default" variant="outline">
-							Cancel
-						</AlertDialogCancel>
-						<AlertDialogAction
-							size="default"
-							variant="destructive"
-							onClick={onDelete}
-						>
-							Delete
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmDialog
+				open={confirmDelete}
+				onOpenChange={setConfirmDelete}
+				title={`Delete "${doc.filename}"?`}
+				description="This removes the file from your task folder. This can't be undone."
+				onConfirm={onDelete}
+			/>
 		</div>
 	);
 }
 
-// Inline filename editor (extension fixed). Enter commits, Esc/blur cancels.
+// Filename editor — the extension is fixed; only the base is editable. Delegates
+// to the shared RowRenameField, recombining the extension on commit.
 function RenameField({
 	filename,
 	onCommit,
@@ -409,21 +386,14 @@ function RenameField({
 	onCancel: () => void;
 }) {
 	const dot = filename.lastIndexOf(".");
-	const [base, setBase] = useState(dot > 0 ? filename.slice(0, dot) : filename);
+	const base = dot > 0 ? filename.slice(0, dot) : filename;
 	const ext = dot > 0 ? filename.slice(dot) : "";
 
 	return (
-		<input
-			// biome-ignore lint/a11y/noAutofocus: a rename field exists to be typed in
-			autoFocus
+		<RowRenameField
 			value={base}
-			onChange={(e) => setBase(e.target.value)}
-			onKeyDown={(e) => {
-				if (e.key === "Enter") onCommit(`${base.trim()}${ext}`);
-				if (e.key === "Escape") onCancel();
-			}}
-			onBlur={onCancel}
-			className="min-w-0 flex-1 rounded-md border border-ring bg-background px-2 py-1 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+			onCommit={(b) => onCommit(`${b}${ext}`)}
+			onCancel={onCancel}
 		/>
 	);
 }
@@ -462,13 +432,7 @@ function DocumentMenu({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<button
-					type="button"
-					title="More"
-					className="shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
-				>
-					<MoreHorizontal className="size-4" />
-				</button>
+				<KebabTrigger />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-52">
 				{onSuggestLabel && (
