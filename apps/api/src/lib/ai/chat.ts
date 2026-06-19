@@ -263,7 +263,7 @@ type Part = TextPart | FilePart;
 // means [system + this whole block] caches — the big, stable source tokens are
 // paid once, then cached every later turn. (Anthropic honours cacheControl;
 // OpenAI auto-caches the prefix; others ignore it.)
-async function pinnedSourcesMessage(
+export async function pinnedSourcesMessage(
 	folder: string,
 	pinned: PinnedSource[],
 ): Promise<ModelMessage | null> {

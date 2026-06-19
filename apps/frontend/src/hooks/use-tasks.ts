@@ -97,6 +97,20 @@ export function useUnlockDocument(id: string) {
 	});
 }
 
+export function useGenerateLabel(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			filename,
+			profileId,
+		}: {
+			filename: string;
+			profileId: string;
+		}) => tasksApi.generateLabel(id, filename, profileId),
+		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
 export function useFetchPublication(id: string) {
 	const qc = useQueryClient();
 	return useMutation({

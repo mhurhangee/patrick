@@ -61,7 +61,7 @@ async function fileExists(folder: string, name: string): Promise<boolean> {
 }
 
 /** Merge a single document's awareness entry without disturbing the others. */
-async function mergeDocumentMeta(
+export async function mergeDocumentMeta(
 	folder: string,
 	filename: string,
 	patch: DocumentMeta[string],

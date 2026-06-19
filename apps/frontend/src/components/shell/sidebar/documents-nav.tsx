@@ -12,6 +12,7 @@ import {
 	Plus,
 	RefreshCw,
 	ScanText,
+	Sparkles,
 	Star,
 	StarOff,
 	Trash2,
@@ -41,12 +42,14 @@ import {
 	useCreateDocument,
 	useDeleteDocument,
 	useExtractText,
+	useGenerateLabel,
 	useRefreshDocuments,
 	useRenameDocument,
 	useSaveDocuments,
 	useTaskDocuments,
 	useUnlockDocument,
 } from "@/hooks/use-tasks";
+import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
 import { type DocKind, useWorkspace } from "@/lib/workspace";
@@ -75,7 +78,20 @@ export function DocumentsNav() {
 		done: number;
 		total: number;
 	} | null>(null);
+	const generateLabel = useGenerateLabel(taskId);
+	const { activeProfileId } = useActiveProfile();
+	const [labelling, setLabelling] = useState<string | null>(null);
 	const { isOpen, focused, open, close } = useWorkspace();
+
+	// AI-label one doc directly (kebab action) — one explicit quick-model call.
+	const suggestLabel = (filename: string) => {
+		if (!activeProfileId || labelling) return;
+		setLabelling(filename);
+		generateLabel.mutate(
+			{ filename, profileId: activeProfileId },
+			{ onSettled: () => setLabelling(null) },
+		);
+	};
 
 	// Extract a PDF's text (one at a time); progress drives the menu label.
 	const extractText = (filename: string) => {
@@ -162,6 +178,10 @@ export function DocumentsNav() {
 					? { done: extracting.done, total: extracting.total }
 					: null
 			}
+			onSuggestLabel={
+				activeProfileId ? () => suggestLabel(doc.filename) : undefined
+			}
+			labelling={labelling === doc.filename}
 		/>
 	);
 
@@ -237,6 +257,8 @@ function DocumentRow({
 	onDelete,
 	onExtract,
 	extracting,
+	onSuggestLabel,
+	labelling,
 }: {
 	doc: Document;
 	state: RowState;
@@ -247,6 +269,9 @@ function DocumentRow({
 	onDelete: () => void;
 	onExtract: () => void;
 	extracting: { done: number; total: number } | null;
+	/** AI-label this doc; absent when no profile is active. */
+	onSuggestLabel?: () => void;
+	labelling: boolean;
 }) {
 	const kind: DocKind = docKind(doc.filename);
 	const [renaming, setRenaming] = useState(false);
@@ -319,6 +344,8 @@ function DocumentRow({
 						onAskDelete={() => setConfirmDelete(true)}
 						onExtract={onExtract}
 						extracting={extracting}
+						onSuggestLabel={onSuggestLabel}
+						labelling={labelling}
 					/>
 				</div>
 			</div>
@@ -388,6 +415,8 @@ function DocumentMenu({
 	onAskDelete,
 	onExtract,
 	extracting,
+	onSuggestLabel,
+	labelling,
 }: {
 	doc: Document;
 	kind: DocKind;
@@ -397,6 +426,8 @@ function DocumentMenu({
 	onAskDelete: () => void;
 	onExtract: () => void;
 	extracting: { done: number; total: number } | null;
+	onSuggestLabel?: () => void;
+	labelling: boolean;
 }) {
 	// Originals are the attorney's files — Patrick never renames/deletes them;
 	// instead it offers an editable working copy.
@@ -416,6 +447,23 @@ function DocumentMenu({
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-52">
+				{onSuggestLabel && (
+					<DropdownMenuItem
+						// Keep the menu open during the call so "Labelling…" stays visible.
+						onSelect={(e) => {
+							e.preventDefault();
+							onSuggestLabel();
+						}}
+						disabled={labelling}
+					>
+						<Sparkles />
+						{labelling
+							? "Labelling…"
+							: doc.label
+								? "Re-suggest a label"
+								: "Suggest a label"}
+					</DropdownMenuItem>
+				)}
 				{canEditCopy && (
 					<DropdownMenuItem onSelect={onEditCopy}>
 						<Copy />
