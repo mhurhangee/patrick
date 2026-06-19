@@ -1,8 +1,4 @@
-import {
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
-	type Provider,
-} from "./ai-models";
+import { DEFAULT_MODEL, type Provider } from "./ai-models";
 
 export type AiEffort = "low" | "medium" | "high";
 export type ThemeMode = "light" | "dark" | "system";
@@ -10,8 +6,8 @@ export type ThemeMode = "light" | "dark" | "system";
 export type AiSettings = {
 	provider: Provider;
 	apiKey: string;
-	quickModel: string;
-	detailedModel: string;
+	/** The model Patrick runs on by default (a chat can lock its own at first send). */
+	model: string;
 	effort: AiEffort;
 };
 
@@ -74,8 +70,7 @@ export function createProfile(id: string, name: string): Profile {
 		ai: {
 			provider: "anthropic",
 			apiKey: "",
-			quickModel: DEFAULT_QUICK_MODEL.anthropic,
-			detailedModel: DEFAULT_DETAILED_MODEL.anthropic,
+			model: DEFAULT_MODEL.anthropic,
 			effort: "medium",
 		},
 		ops: { consumerKey: "", consumerSecret: "" },

@@ -1,7 +1,7 @@
 export type Provider = "gateway" | "anthropic" | "openai" | "google";
 
 // Rough capability/cost tier. Order in each list is always fast → balanced → expert.
-type ModelTier = "fast" | "balanced" | "expert";
+export type ModelTier = "fast" | "balanced" | "expert";
 
 export type CuratedModel = {
 	id: string;
@@ -11,8 +11,8 @@ export type CuratedModel = {
 	contextWindow: number;
 };
 
-// Anthropic / OpenAI / Google direct — flat list used for both quick and detailed
-// selects. IDs carry the gateway-style `vendor/` prefix; the model factory strips
+// Anthropic / OpenAI / Google direct — the per-provider model lists shown in the
+// picker. IDs carry the gateway-style `vendor/` prefix; the model factory strips
 // it for direct providers and keeps it for the gateway (which needs the routing form).
 const CURATED_MODELS: Record<
 	"anthropic" | "openai" | "google",
@@ -114,21 +114,44 @@ function byTier(models: CuratedModel[], tier: ModelTier): CuratedModel {
 	return model;
 }
 
-// Quick model (DraftPat/NotePat, light work) → fast tier.
-export const DEFAULT_QUICK_MODEL: Record<Provider, string> = {
-	anthropic: byTier(CURATED_MODELS.anthropic, "fast").id,
-	openai: byTier(CURATED_MODELS.openai, "fast").id,
-	google: byTier(CURATED_MODELS.google, "fast").id,
-	gateway: byTier(CURATED_MODELS.anthropic, "fast").id,
-};
-
-// Detailed model (Patrick) → balanced tier by default; user can pick expert.
-export const DEFAULT_DETAILED_MODEL: Record<Provider, string> = {
+// The default model for a provider → the balanced tier (the recommended pick; the
+// attorney can choose fast or expert). One model per profile, lockable per chat.
+export const DEFAULT_MODEL: Record<Provider, string> = {
 	anthropic: byTier(CURATED_MODELS.anthropic, "balanced").id,
 	openai: byTier(CURATED_MODELS.openai, "balanced").id,
 	google: byTier(CURATED_MODELS.google, "balanced").id,
 	gateway: byTier(CURATED_MODELS.anthropic, "balanced").id,
 };
+
+/** The recommended model id for a provider (the balanced tier). */
+export function recommendedModelFor(provider: Provider): string {
+	return DEFAULT_MODEL[provider];
+}
+
+/** The cheapest (fast-tier) model for a provider — used for the 1-token key check. */
+export function fastModelFor(provider: Provider): string {
+	const list =
+		provider === "gateway"
+			? CURATED_MODELS.anthropic
+			: CURATED_MODELS[provider];
+	return byTier(list, "fast").id;
+}
+
+// A one-line descriptor per tier — derived, so it never drifts from the catalog.
+export const TIER_BLURB: Record<ModelTier, string> = {
+	fast: "Fast & cheap",
+	balanced: "Best all-round",
+	expert: "Most capable",
+};
+
+/** Compact context-window label: 200000 → "200K", 1_000_000 → "1M". */
+export function formatContextWindow(tokens: number): string {
+	if (tokens >= 1_000_000) {
+		const m = tokens / 1_000_000;
+		return `${Number.isInteger(m) ? m : m.toFixed(1)}M`;
+	}
+	return `${Math.round(tokens / 1000)}K`;
+}
 
 // Models available to a provider's selects.
 export function modelsForProvider(provider: Provider): CuratedModel[] {

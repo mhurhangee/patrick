@@ -16,7 +16,7 @@ export function docKind(filename: string): PinnedSource["kind"] {
 }
 
 export type ExchangeContext = {
-	/** The detailed model id that ran this turn. */
+	/** The model id that ran this turn. */
 	model: string;
 	/** Read-only sources pinned into context (their content rides as messages). */
 	pinnedSources: PinnedSource[];
@@ -56,6 +56,8 @@ export type Chat = {
 	updatedAt: string;
 	/** The locked per-chat instructions (template, with tokens). */
 	systemTemplate: string;
+	/** The model locked for this chat, frozen at first send. */
+	model?: string;
 	/** The sources pinned into this chat (append-only). */
 	pinnedSources: PinnedSource[];
 	messages: StoredChatMessage[];
