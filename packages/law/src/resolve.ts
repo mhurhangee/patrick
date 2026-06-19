@@ -56,6 +56,13 @@ export function provisionList(): ProvisionRef[] {
 // "Guidelines G-VII, 5.3" → "GVII53", "CLBA II.E.1.3.1" → "IIE131". Source words
 // (Guidelines / Case Law / CLBA / EPC) are dropped; "PCT" is KEPT — it's the
 // disambiguator between the EPC and PCT Guidelines (same section numbers).
+//
+// Accepted limitation: this is a fuzzy string-hash, not a true normaliser — two
+// spellings only both resolve because the build pre-indexes every form (see
+// INDEX). Fine for EP, where the forms are closed and small. When citation forms
+// grow (esp. US/PCT) this should become a structural parse to
+// `{instrument, kind, number, suffix}` compared field-by-field — deferred until
+// that need is real.
 function canonical(input: string): string {
 	const stripped = input
 		.toUpperCase()

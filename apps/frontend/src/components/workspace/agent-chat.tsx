@@ -413,6 +413,10 @@ function ChatSession({
 					(a, b) =>
 						cite(a).length - cite(b).length || cite(a).localeCompare(cite(b)),
 				)
+				// Top-16 by relevance, THEN group — so a broad query (e.g. "examination")
+				// can fill all 16 slots with one body (EPC) and starve Guidelines/Case
+				// Law that also matched. Accepted: specific queries narrow fine; a
+				// per-group quota is a deliberate feel change, not a bug to fix blind.
 				.slice(0, 16)
 				.map(toItem)
 				// Group contiguously (stable sort keeps relevance order within a group).
