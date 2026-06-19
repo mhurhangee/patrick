@@ -5,6 +5,16 @@ results come in. The methodology spec lives in [STRATEGY.md](./STRATEGY.md); thi
 file is the *paper-facing* record — motivation, what to collect, limitations, and
 the **decision log** (the integrity trail of how the benchmark was built).
 
+**Status (2026-06-19): paused here.** Completed: the haiku pilot on the full 418
+([results](../results/2026-06_haiku-pilot.md)) and the haiku/sonnet/opus ladder on the
+2026 slice + n=3 haiku reliability ([results](../results/2026-06_ladder-2026.md)). The
+single-provision law-retrieval scope is deliberately matched to the near-term
+prosecution product (recognise → retrieve → understand the cited law); it validates the
+grounding layer and shows the engine does it well. Round 3 (multi-provision +
+fact-pattern, the "everything-assistant" scope) is parked, not failed — pick it up if
+the product reaches for that. Two benchmark-derived *product* to-dos moved to
+`IDEAS.md` (retrieved-but-not-cited gap; retrieval recall on harder law).
+
 Framing rule (non-negotiable for credibility): this is **a benchmark for legal
 retrieval-grounding**, not a product paper. The system under test is described
 neutrally — "memory", "general web search", "verbatim structured retrieval over
