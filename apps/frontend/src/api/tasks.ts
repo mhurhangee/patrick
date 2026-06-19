@@ -45,6 +45,12 @@ export const tasksApi = {
 	documents: (id: string) => api.get<Document[]>(`/tasks/${id}/documents`),
 	saveDocuments: (id: string, meta: DocumentMeta) =>
 		api.put<{ ok: boolean }>(`/tasks/${id}/documents`, meta),
+	/** AI-generate + apply a label (and chat suggestions) for one document. */
+	generateLabel: (id: string, filename: string, profileId: string) =>
+		api.post<{ label: string; suggestions: string[] }>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/label`,
+			{ profileId },
+		),
 	/** Create a new blank Patrick-owned .docx; returns its filename. */
 	createDocument: (id: string, filename?: string) =>
 		api.post<{ filename: string }>(`/tasks/${id}/documents`, { filename }),

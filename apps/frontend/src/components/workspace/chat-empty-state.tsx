@@ -35,6 +35,13 @@ function emptyStateFor(
 				"Summarise what's in this matter",
 			],
 		};
+	// Per-doc prompts generated when the doc was labelled win — they're tailored to
+	// its actual content, not just its kind.
+	if (doc?.suggestions?.length)
+		return {
+			title: `Ask me about ${doc.label}.`,
+			suggestions: doc.suggestions,
+		};
 	if (doc?.kind === "pdf")
 		return {
 			title: `Ask me about ${doc.label}.`,
@@ -92,10 +99,12 @@ export function ChatEmptyState({
 							key={s}
 							variant="outline"
 							size="sm"
-							className="w-full justify-start font-normal text-muted-foreground"
+							// Generated suggestions vary in length — left-align, wrap to at
+							// most two lines (then ellipsis), and grow the pill to fit.
+							className="h-auto w-full justify-start whitespace-normal px-3 py-2 text-left font-normal text-muted-foreground"
 							onClick={() => onPick(s)}
 						>
-							{s}
+							<span className="line-clamp-2">{s}</span>
 						</Button>
 					))}
 				</EmptyContent>

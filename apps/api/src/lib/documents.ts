@@ -61,7 +61,7 @@ async function fileExists(folder: string, name: string): Promise<boolean> {
 }
 
 /** Merge a single document's awareness entry without disturbing the others. */
-async function mergeDocumentMeta(
+export async function mergeDocumentMeta(
 	folder: string,
 	filename: string,
 	patch: DocumentMeta[string],
@@ -250,6 +250,7 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 			// Derived from the sidecar's existence, not stored in the writable meta.
 			extracted: extracted.has(name) || undefined,
 			contextMode: m.contextMode,
+			suggestions: m.suggestions,
 		});
 	}
 	return docs.sort((a, b) => a.filename.localeCompare(b.filename));

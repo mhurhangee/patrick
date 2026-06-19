@@ -49,6 +49,9 @@ export type Document = {
 	/** How a PDF enters Patrick's context: the original image, or the extracted
 	 *  text (cheaper). Absent ⇒ image (the default). */
 	contextMode?: "image" | "text";
+	/** A few one-tap chat prompts tailored to this doc, generated alongside its
+	 *  label (suggestLabel). Surfaced in the empty chat state. */
+	suggestions?: string[];
 };
 
 /** Per-folder document awareness keyed by filename. Stored with the folder. */
@@ -62,6 +65,7 @@ export type DocumentMeta = Record<
 		retrieved?: boolean;
 		source?: string;
 		contextMode?: "image" | "text";
+		suggestions?: string[];
 	}
 >;
 
@@ -103,6 +107,7 @@ export function toDocumentMeta(documents: Document[]): DocumentMeta {
 		if (d.retrieved) entry.retrieved = true;
 		if (d.source) entry.source = d.source;
 		if (d.contextMode) entry.contextMode = d.contextMode;
+		if (d.suggestions?.length) entry.suggestions = d.suggestions;
 		if (Object.keys(entry).length > 0) meta[d.filename] = entry;
 	}
 	return meta;

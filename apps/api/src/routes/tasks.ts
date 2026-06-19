@@ -9,6 +9,7 @@ import {
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { handleChat, handleChatPreview } from "../lib/ai/chat";
+import { generateDocumentLabel } from "../lib/ai/label";
 import { deleteChat, listChats, readChat, saveChat } from "../lib/chats";
 import {
 	createBlankDocument,
@@ -114,6 +115,30 @@ tasks.put("/:id/documents", async (c) => {
 	const meta = await c.req.json<DocumentMeta>();
 	await writeDocumentMeta(task.folder, meta);
 	return c.json({ ok: true });
+});
+
+// AI-generate a label + chat suggestions for one document (the kebab "Suggest a
+// label" action) and apply them. Uses the profile's quick model.
+tasks.post("/:id/documents/:filename/label", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const { profileId } = await c.req.json<{ profileId?: string }>();
+	const profile = profileId ? await readProfile(profileId) : null;
+	if (!profile) return c.json({ error: "profile not found" }, 404);
+	try {
+		const result = await generateDocumentLabel(
+			task.folder,
+			c.req.param("filename"),
+			profile.ai,
+		);
+		if (!result) return c.json({ error: "could not read the document" }, 400);
+		return c.json(result);
+	} catch (err) {
+		return c.json(
+			{ error: err instanceof Error ? err.message : "labelling failed" },
+			500,
+		);
+	}
 });
 
 // Create a new blank Patrick-owned .docx in the task folder.

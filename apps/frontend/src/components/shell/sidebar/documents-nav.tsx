@@ -14,6 +14,7 @@ import {
 	ScanText,
 	Star,
 	StarOff,
+	Tag,
 	Trash2,
 	Type,
 } from "lucide-react";
@@ -34,6 +35,10 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,12 +46,14 @@ import {
 	useCreateDocument,
 	useDeleteDocument,
 	useExtractText,
+	useGenerateLabel,
 	useRefreshDocuments,
 	useRenameDocument,
 	useSaveDocuments,
 	useTaskDocuments,
 	useUnlockDocument,
 } from "@/hooks/use-tasks";
+import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
 import { type DocKind, useWorkspace } from "@/lib/workspace";
@@ -75,7 +82,20 @@ export function DocumentsNav() {
 		done: number;
 		total: number;
 	} | null>(null);
+	const generateLabel = useGenerateLabel(taskId);
+	const { activeProfileId } = useActiveProfile();
+	const [labelling, setLabelling] = useState<string | null>(null);
 	const { isOpen, focused, open, close } = useWorkspace();
+
+	// AI-label one doc directly (kebab action) — one explicit quick-model call.
+	const suggestLabel = (filename: string) => {
+		if (!activeProfileId || labelling) return;
+		setLabelling(filename);
+		generateLabel.mutate(
+			{ filename, profileId: activeProfileId },
+			{ onSettled: () => setLabelling(null) },
+		);
+	};
 
 	// Extract a PDF's text (one at a time); progress drives the menu label.
 	const extractText = (filename: string) => {
@@ -162,6 +182,10 @@ export function DocumentsNav() {
 					? { done: extracting.done, total: extracting.total }
 					: null
 			}
+			onSuggestLabel={
+				activeProfileId ? () => suggestLabel(doc.filename) : undefined
+			}
+			labelling={labelling === doc.filename}
 		/>
 	);
 
@@ -237,6 +261,8 @@ function DocumentRow({
 	onDelete,
 	onExtract,
 	extracting,
+	onSuggestLabel,
+	labelling,
 }: {
 	doc: Document;
 	state: RowState;
@@ -247,6 +273,9 @@ function DocumentRow({
 	onDelete: () => void;
 	onExtract: () => void;
 	extracting: { done: number; total: number } | null;
+	/** AI-label this doc; absent when no profile is active. */
+	onSuggestLabel?: () => void;
+	labelling: boolean;
 }) {
 	const kind: DocKind = docKind(doc.filename);
 	const [renaming, setRenaming] = useState(false);
@@ -319,6 +348,8 @@ function DocumentRow({
 						onAskDelete={() => setConfirmDelete(true)}
 						onExtract={onExtract}
 						extracting={extracting}
+						onSuggestLabel={onSuggestLabel}
+						labelling={labelling}
 					/>
 				</div>
 			</div>
@@ -388,6 +419,8 @@ function DocumentMenu({
 	onAskDelete,
 	onExtract,
 	extracting,
+	onSuggestLabel,
+	labelling,
 }: {
 	doc: Document;
 	kind: DocKind;
@@ -397,6 +430,8 @@ function DocumentMenu({
 	onAskDelete: () => void;
 	onExtract: () => void;
 	extracting: { done: number; total: number } | null;
+	onSuggestLabel?: () => void;
+	labelling: boolean;
 }) {
 	// Originals are the attorney's files — Patrick never renames/deletes them;
 	// instead it offers an editable working copy.
@@ -416,51 +451,76 @@ function DocumentMenu({
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-52">
-				{canEditCopy && (
-					<DropdownMenuItem onSelect={onEditCopy}>
-						<Copy />
-						Edit a copy
+				{onSuggestLabel && (
+					<DropdownMenuItem
+						// Keep the menu open during the call so "Labelling…" stays visible.
+						onSelect={(e) => {
+							e.preventDefault();
+							onSuggestLabel();
+						}}
+						disabled={labelling}
+					>
+						<Tag />
+						{labelling
+							? "Labelling…"
+							: doc.label
+								? "Re-suggest a label"
+								: "Suggest a label"}
 					</DropdownMenuItem>
 				)}
 				{kind === "pdf" && (
+					<DropdownMenuItem
+						// Keep the menu open (don't close-on-select) so the live
+						// "Extracting… x/y" label below stays visible during OCR.
+						onSelect={(e) => {
+							e.preventDefault();
+							onExtract();
+						}}
+						disabled={!!extracting}
+						title="Pull selectable text out of this PDF (OCR for scans)"
+					>
+						<ScanText />
+						{extracting
+							? `Extracting… ${extracting.done}/${extracting.total || "…"}`
+							: doc.extracted
+								? "Re-extract text"
+								: "Extract text"}
+					</DropdownMenuItem>
+				)}
+
+				{/* Context source — which form of the PDF Patrick reads (exclusive). */}
+				{kind === "pdf" && doc.extracted && (
 					<>
-						<DropdownMenuItem
-							// Keep the menu open (don't close-on-select) so the live
-							// "Extracting… x/y" label below stays visible during OCR.
-							onSelect={(e) => {
-								e.preventDefault();
-								onExtract();
-							}}
-							disabled={!!extracting}
-							title="Pull selectable text out of this PDF (OCR for scans)"
+						<DropdownMenuSeparator />
+						<DropdownMenuLabel className="font-normal text-muted-foreground">
+							Patrick reads as
+						</DropdownMenuLabel>
+						<DropdownMenuRadioGroup
+							value={mode}
+							onValueChange={(v) =>
+								onUpdate({ contextMode: v as "image" | "text" })
+							}
 						>
-							<ScanText />
-							{extracting
-								? `Extracting… ${extracting.done}/${extracting.total || "…"}`
-								: doc.extracted
-									? "Re-extract text"
-									: "Extract text"}
-						</DropdownMenuItem>
-						{doc.extracted && (
-							<>
-								<DropdownMenuItem
-									onSelect={() => onUpdate({ contextMode: "image" })}
-									title="Send Patrick the original PDF (figures + layout, pricier)"
-								>
-									<FileImage />
-									{mode === "image" ? "✓ " : ""}Context: original PDF
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onSelect={() => onUpdate({ contextMode: "text" })}
-									title="Send Patrick the extracted text (cheaper, may have OCR errors)"
-								>
-									<FileText />
-									{mode === "text" ? "✓ " : ""}Context: extracted text
-								</DropdownMenuItem>
-							</>
-						)}
+							<DropdownMenuRadioItem
+								value="image"
+								title="The original PDF — figures + layout, pricier"
+							>
+								<FileImage />
+								Original PDF
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem
+								value="text"
+								title="The extracted text — cheaper, may have OCR errors"
+							>
+								<FileText />
+								Extracted text
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
 					</>
 				)}
+
+				{/* Organise (separator only if anything precedes it). */}
+				{(!!onSuggestLabel || kind === "pdf") && <DropdownMenuSeparator />}
 				<DropdownMenuItem onSelect={() => onUpdate({ starred: !doc.starred })}>
 					{doc.starred ? <StarOff /> : <Star />}
 					{doc.starred ? "Unstar" : "Star"}
@@ -471,8 +531,20 @@ function DocumentMenu({
 					{doc.excluded ? <Eye /> : <EyeOff />}
 					{doc.excluded ? "Include for Patrick" : "Exclude from Patrick"}
 				</DropdownMenuItem>
+
+				{/* File */}
+				{canEditCopy && (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onSelect={onEditCopy}>
+							<Copy />
+							Edit a copy
+						</DropdownMenuItem>
+					</>
+				)}
 				{isPatrick && (
 					<>
+						<DropdownMenuSeparator />
 						<DropdownMenuItem onSelect={onStartRename}>
 							<Pencil />
 							Rename
