@@ -1,13 +1,13 @@
 import {
 	type AiEffort,
 	type AiSettings,
-	DEFAULT_DETAILED_MODEL,
-	DEFAULT_QUICK_MODEL,
 	modelsForProvider,
 	type Provider,
+	recommendedModelFor,
 } from "@patrick/shared";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { ModelPicker } from "@/components/model-picker";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,6 @@ import {
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-	FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,7 +27,6 @@ import {
 } from "@/components/ui/select";
 import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { cn } from "@/lib/utils";
-import { ModelSelect } from "./model-select";
 
 const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
 	[
@@ -73,19 +71,12 @@ export function AiSection({
 	const verification = useKeyVerification(value.provider, value.apiKey);
 	const status = keyStatusOf(verification);
 
-	const models = modelsForProvider(value.provider);
-
 	function changeProvider(provider: Provider) {
-		const next = modelsForProvider(provider);
-		const inList = (id: string) => next.some((m) => m.id === id);
+		// Keep the chosen model if the new provider offers it, else its default.
+		const keep = modelsForProvider(provider).some((m) => m.id === value.model);
 		set({
 			provider,
-			quickModel: inList(value.quickModel)
-				? value.quickModel
-				: DEFAULT_QUICK_MODEL[provider],
-			detailedModel: inList(value.detailedModel)
-				? value.detailedModel
-				: DEFAULT_DETAILED_MODEL[provider],
+			model: keep ? value.model : recommendedModelFor(provider),
 		});
 	}
 
@@ -176,49 +167,43 @@ export function AiSection({
 				)}
 			</Field>
 
-			<FieldSeparator />
-
 			<div className="grid gap-4 @md:grid-cols-2">
-				<ModelSelect
-					label="Quick model"
-					description="Light, fast work — drafting helpers."
-					value={value.quickModel}
-					models={models}
-					onChange={(quickModel) => set({ quickModel })}
-				/>
-				<ModelSelect
-					label="Detailed model"
-					description="Patrick — thorough, best reasoning."
-					value={value.detailedModel}
-					models={models}
-					onChange={(detailedModel) => set({ detailedModel })}
-				/>
+				<Field>
+					<FieldLabel>Model</FieldLabel>
+					<ModelPicker
+						provider={value.provider}
+						value={value.model}
+						onChange={(model) => set({ model })}
+						className="w-full"
+					/>
+					<FieldDescription>
+						Patrick's default — lock a different one per chat from the composer.
+					</FieldDescription>
+				</Field>
+
+				<Field>
+					<FieldLabel>Reasoning</FieldLabel>
+					<Select
+						value={value.effort}
+						onValueChange={(effort) => set({ effort: effort as AiEffort })}
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{EFFORTS.map((e) => (
+								<SelectItem key={e.id} value={e.id}>
+									{e.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<FieldDescription>
+						How hard Patrick thinks — higher is more thorough but slower and
+						pricier. Its reasoning always streams into the chat.
+					</FieldDescription>
+				</Field>
 			</div>
-
-			<FieldSeparator />
-
-			<Field>
-				<FieldLabel>Patrick reasoning</FieldLabel>
-				<Select
-					value={value.effort}
-					onValueChange={(effort) => set({ effort: effort as AiEffort })}
-				>
-					<SelectTrigger className="w-48">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{EFFORTS.map((e) => (
-							<SelectItem key={e.id} value={e.id}>
-								{e.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<FieldDescription>
-					How hard Patrick thinks before answering. Higher is more thorough but
-					slower and pricier. Its reasoning always streams into the chat.
-				</FieldDescription>
-			</Field>
 		</FieldGroup>
 	);
 }
