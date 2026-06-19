@@ -477,10 +477,7 @@ function DocumentMenu({
 							<Pencil />
 							Rename
 						</DropdownMenuItem>
-						<DropdownMenuItem
-							onSelect={onAskDelete}
-							className="text-destructive focus:text-destructive"
-						>
+						<DropdownMenuItem onSelect={onAskDelete} variant="destructive">
 							<Trash2 />
 							Delete
 						</DropdownMenuItem>
