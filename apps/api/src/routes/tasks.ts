@@ -8,7 +8,7 @@ import {
 } from "@patrick/shared";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { handleChat, handleChatPreview } from "../lib/ai/chat";
+import { handleChat } from "../lib/ai/chat";
 import { generateDocumentLabel } from "../lib/ai/label";
 import {
 	deleteChat,
@@ -39,8 +39,6 @@ export const tasks = new Hono();
 // Patrick chat — streams a UI message response; docx tool calls round-trip to
 // the client to run against the live editor. See lib/ai/chat.ts.
 tasks.post("/:id/chat", handleChat);
-// Preview the assembled prompt + context for the current open set (no LLM call).
-tasks.post("/:id/chat/preview", handleChatPreview);
 
 // Persisted chats (under <folder>/.patrick/chats). Saved on each turn's finish.
 tasks.get("/:id/chats", async (c) => {

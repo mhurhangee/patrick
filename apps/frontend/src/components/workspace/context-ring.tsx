@@ -1,4 +1,13 @@
-import { Cpu, FileImage, FileText, Lock, Pencil, X } from "lucide-react";
+import {
+	ArrowUpRight,
+	Brain,
+	Cpu,
+	FileImage,
+	FileText,
+	Lock,
+	Pencil,
+	X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
@@ -71,6 +80,7 @@ export function ContextRing({
 	candidates,
 	onClose,
 	onCloseAll,
+	onEditPrompt,
 	activeDraftLabel,
 	used,
 	estimated,
@@ -82,6 +92,8 @@ export function ContextRing({
 	candidates: ContextSource[];
 	onClose: (filename: string) => void;
 	onCloseAll?: () => void;
+	/** Jump to the profile's prompt section (where instructions + abilities live). */
+	onEditPrompt?: () => void;
 	/** The editable draft Patrick reads live via tools (not sent as static context). */
 	activeDraftLabel?: string | null;
 	/** Exact input tokens from the last turn; null before the first send. */
@@ -264,6 +276,20 @@ export function ContextRing({
 								Cost per turn (input)
 							</span>
 							<span>~{formatUsd(inputCostPerTurn)}</span>
+						</div>
+					)}
+
+					{onEditPrompt && (
+						<div className="border-t pt-2">
+							<Button
+								variant="link"
+								onClick={onEditPrompt}
+								className="gap-1.5 text-muted-foreground hover:text-foreground p-0"
+							>
+								<Brain />
+								Patrick's instructions: see in your profile
+								<ArrowUpRight className="size-3 shrink-0 text-xs text-base" />
+							</Button>
 						</div>
 					)}
 				</div>

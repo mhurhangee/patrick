@@ -191,14 +191,12 @@ function ChatSession({
 	const keyStatus = keyStatusOf(keyVerification);
 	const keyReady = keyStatus === "valid";
 
-	// This chat's instructions. null ⇒ "follow the profile" (so editing the
-	// profile prompt updates a fresh chat live); a non-null value is this chat's
-	// own edit (a loaded chat seeds from its locked template). Frozen at first
-	// send (one system per chat).
-	const [chatTemplate, setChatTemplate] = useState<string | null>(
-		initial?.systemTemplate ?? null,
-	);
-	const template = chatTemplate ?? profileTemplate;
+	// This chat's frozen instructions, if it has any (a reopened chat carries the
+	// prompt it was started under). The freeze itself is server-side now — the
+	// server resolves the profile prompt at first send and reuses it. This is only
+	// for the "no longer matches your profile" warning and to carry the prompt on a
+	// fork.
+	const frozenTemplate = initial?.systemTemplate ?? null;
 
 	// This chat's model — null ⇒ follow the profile default (so a fresh chat tracks
 	// profile changes); frozen at first send, like the template. A reopened chat
@@ -283,8 +281,6 @@ function ChatSession({
 	activeDraftRef.current = activeDraft;
 	const profileIdRef = useRef(activeProfileId);
 	profileIdRef.current = activeProfileId;
-	const templateRef = useRef(template);
-	templateRef.current = template;
 	const modelRef = useRef(modelId);
 	modelRef.current = modelId;
 	const refreshChatsRef = useRef(refreshChats);
@@ -310,7 +306,6 @@ function ChatSession({
 					profileId: profileIdRef.current,
 					pinnedSources: pinnedRef.current,
 					activeDraft: activeDraftRef.current,
-					templateOverride: templateRef.current,
 					model: modelRef.current ?? undefined,
 					webSearch: webSearchRef.current,
 				},
@@ -712,12 +707,9 @@ function ChatSession({
 	function send() {
 		const text = composerRef.current?.getMarkdown() ?? "";
 		if (!text || busy || !canSend) return;
-		// Freeze the instructions at first send — one system prompt per chat. Until
-		// now the template follows the live profile (chatTemplate null); snapshot it
-		// so later profile edits don't rewrite this chat's prompt.
-		if (chatTemplate === null) setChatTemplate(template);
-		// Lock the model too — this chat sticks with what it started on (cache stays
-		// warm; no mid-chat provider/model swap). modelRef is already current.
+		// Lock the model at first send — this chat sticks with what it started on
+		// (cache stays warm; no mid-chat provider/model swap). modelRef is already
+		// current. The instructions freeze the same way, but server-side.
 		if (chatModel === null && modelId) setChatModel(modelId);
 		// Commit OPEN = CONTEXT: pin whatever read-only sources are open right now
 		// (append-only). pinnedRef is updated synchronously so this very request
@@ -762,7 +754,7 @@ function ChatSession({
 			: messages.length;
 		const newId = crypto.randomUUID();
 		await tasksApi.saveChat(activeTaskId ?? "", newId, {
-			systemTemplate: template,
+			systemTemplate: frozenTemplate ?? profileTemplate,
 			model: modelId ?? undefined,
 			pinnedSources,
 			messages: messages
@@ -823,29 +815,20 @@ function ChatSession({
 		0,
 	);
 
-	// A locked chat keeps its frozen instructions; if the active profile's prompt
-	// has since changed (edited, or a different profile selected), the chat no
-	// longer reflects it. Surface that rather than silently re-resolving.
+	// A reopened chat keeps the prompt it was frozen with; if the active profile's
+	// prompt has since changed, the chat no longer reflects it. Surface that rather
+	// than silently re-resolving.
 	const locked = messages.length > 0;
 	const profileMismatch =
 		locked &&
-		chatTemplate !== null &&
+		frozenTemplate !== null &&
 		!!profile &&
-		chatTemplate !== profileTemplate;
+		frozenTemplate !== profileTemplate;
 
 	return (
 		<div className="flex h-full flex-col">
 			<SystemCard
-				taskId={activeTaskId}
-				profileId={activeProfileId}
-				pinnedSources={pinnedSources}
-				activeDraft={activeDraft}
-				template={template}
-				edited={chatTemplate !== null}
-				onChangeTemplate={setChatTemplate}
-				onReset={() => setChatTemplate(null)}
 				onNewChat={newChat}
-				locked={locked}
 				profileMismatch={profileMismatch}
 				profileName={profile?.identity.name}
 			/>
@@ -1004,6 +987,9 @@ function ChatSession({
 									onCloseAll={() => {
 										for (const s of candidateCtx) close(s.filename);
 									}}
+									onEditPrompt={() =>
+										navigate({ to: "/profile", hash: "prompt" })
+									}
 									activeDraftLabel={
 										activeDraft
 											? (getDoc(activeDraft)?.label ?? activeDraft)
