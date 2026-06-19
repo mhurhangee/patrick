@@ -5,8 +5,10 @@ import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
 import { fileCachedFetcher, lookupProvisions } from "@patrick/law";
 import {
 	type ExchangeMetadata,
+	modelsForProvider,
 	PATRICK_DOCS,
 	type PinnedSource,
+	type Profile,
 	toStoredMessage,
 } from "@patrick/shared";
 import {
@@ -33,6 +35,19 @@ import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
 import { webSearchTool } from "./web-search";
 
+// The model a turn runs on: the chat's locked model when it's valid for the
+// profile's current provider, else the profile default. Guards the case where the
+// profile switched providers after the chat locked — a foreign model id paired
+// with the new provider would fail every turn (and bricks a model-locked chat).
+function resolveModel(profile: Profile, requested?: string): string {
+	if (
+		requested &&
+		modelsForProvider(profile.ai.provider).some((m) => m.id === requested)
+	)
+		return requested;
+	return profile.ai.model;
+}
+
 // The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
 const TOOL_ALLOW = new Set([
@@ -56,6 +71,8 @@ type RequestBody = {
 	activeDraft?: string | null;
 	/** Per-chat instructions edit (ephemeral); absent ⇒ the profile's template. */
 	templateOverride?: string | null;
+	/** The model for this turn (locked per chat client-side); absent ⇒ profile default. */
+	model?: string;
 	/** Whether web search is available this turn (toolbar toggle). Default on. */
 	webSearch?: boolean;
 };
@@ -388,7 +405,7 @@ export async function handleChatPreview(c: Context) {
 		body.templateOverride,
 	);
 	return c.json({
-		model: profile.ai.detailedModel,
+		model: resolveModel(profile, body.model ?? undefined),
 		system,
 		pinnedSources,
 		activeDraft,
@@ -412,9 +429,13 @@ export async function handleChat(c: Context) {
 		pinnedSources,
 		activeDraft,
 	);
-	const { provider, apiKey, detailedModel, effort } = profile.ai;
-	const model = createModel(provider, apiKey, detailedModel);
-	const { providerOptions } = reasoningOptions(provider, detailedModel, effort);
+	const { provider, apiKey, effort } = profile.ai;
+	// The chat locks its model at first send (client sends it each turn); falls back
+	// to the profile default for the first request, older chats, or a model that no
+	// longer fits the provider.
+	const modelId = resolveModel(profile, body.model ?? undefined);
+	const model = createModel(provider, apiKey, modelId);
+	const { providerOptions } = reasoningOptions(provider, modelId, effort);
 	const system = buildSystemPrompt(
 		profile,
 		task,
@@ -440,7 +461,7 @@ export async function handleChat(c: Context) {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
-		find_law: createFindLaw({ provider, apiKey, modelId: detailedModel }),
+		find_law: createFindLaw({ provider, apiKey, modelId }),
 		// Web search runs on the attorney's own model (provider-executed) unless the
 		// toolbar toggle is off; the agent grounds what it surfaces via ep_law_lookup.
 		// Caveat (accepted): if the provider/org doesn't support web search (notably
@@ -450,7 +471,7 @@ export async function handleChat(c: Context) {
 		// model-picker/capability work (it also can't catch the org-config case).
 		...(body.webSearch === false
 			? {}
-			: webSearchTool(vendorOf(provider, detailedModel))),
+			: webSearchTool(vendorOf(provider, modelId))),
 		...(available.length > 0 ? { requestOpenFile } : {}),
 	};
 
@@ -491,7 +512,7 @@ export async function handleChat(c: Context) {
 		messageMetadata: ({ part }): ExchangeMetadata | undefined => {
 			if (part.type === "start")
 				return {
-					context: { model: detailedModel, pinnedSources, activeDraft },
+					context: { model: modelId, pinnedSources, activeDraft },
 				};
 			if (part.type === "finish" && "totalUsage" in part)
 				return { usage: part.totalUsage };
@@ -509,6 +530,7 @@ export async function handleChat(c: Context) {
 			await saveChat(task.folder, {
 				id: body.chatId,
 				systemTemplate: body.templateOverride ?? profile.prompts.agentpat,
+				model: modelId,
 				pinnedSources,
 				messages: [...byId.values()].map((m) =>
 					toStoredMessage({ ...m, parts: m.parts as unknown[] }),

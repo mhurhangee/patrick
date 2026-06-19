@@ -32,6 +32,7 @@ import {
 } from "react";
 import { BASE_URL } from "@/api/client";
 import { tasksApi } from "@/api/tasks";
+import { ModelPicker } from "@/components/model-picker";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
@@ -158,7 +159,6 @@ function ChatSession({
 	const { activeProfileId } = useActiveProfile();
 	const { newChat, selectChat } = useActiveChat();
 	const { data: profile } = useProfile(activeProfileId);
-	const modelId = profile?.ai.detailedModel ?? null;
 	const profileTemplate = profile?.prompts.agentpat ?? "";
 	const refreshChats = useRefreshChats(activeTaskId);
 	const { data: docs } = useTaskDocuments(activeTaskId);
@@ -198,6 +198,14 @@ function ChatSession({
 		initial?.systemTemplate ?? null,
 	);
 	const template = chatTemplate ?? profileTemplate;
+
+	// This chat's model — null ⇒ follow the profile default (so a fresh chat tracks
+	// profile changes); frozen at first send, like the template. A reopened chat
+	// seeds from its locked model.
+	const [chatModel, setChatModel] = useState<string | null>(
+		initial?.model ?? null,
+	);
+	const modelId = chatModel ?? profile?.ai.model ?? null;
 
 	// Seed messages from the persisted chat (empty for a new one).
 	const initialMessages = useMemo<UIMessage[]>(
@@ -276,6 +284,8 @@ function ChatSession({
 	profileIdRef.current = activeProfileId;
 	const templateRef = useRef(template);
 	templateRef.current = template;
+	const modelRef = useRef(modelId);
+	modelRef.current = modelId;
 	const refreshChatsRef = useRef(refreshChats);
 	refreshChatsRef.current = refreshChats;
 
@@ -300,6 +310,7 @@ function ChatSession({
 					pinnedSources: pinnedRef.current,
 					activeDraft: activeDraftRef.current,
 					templateOverride: templateRef.current,
+					model: modelRef.current ?? undefined,
 					webSearch: webSearchRef.current,
 				},
 			}),
@@ -704,6 +715,9 @@ function ChatSession({
 		// now the template follows the live profile (chatTemplate null); snapshot it
 		// so later profile edits don't rewrite this chat's prompt.
 		if (chatTemplate === null) setChatTemplate(template);
+		// Lock the model too — this chat sticks with what it started on (cache stays
+		// warm; no mid-chat provider/model swap). modelRef is already current.
+		if (chatModel === null && modelId) setChatModel(modelId);
 		// Commit OPEN = CONTEXT: pin whatever read-only sources are open right now
 		// (append-only). pinnedRef is updated synchronously so this very request
 		// carries them; the follow-up loop requests read the same committed set.
@@ -748,6 +762,7 @@ function ChatSession({
 		const newId = crypto.randomUUID();
 		await tasksApi.saveChat(activeTaskId ?? "", newId, {
 			systemTemplate: template,
+			model: modelId ?? undefined,
 			pinnedSources,
 			messages: messages
 				.slice(0, cut)
@@ -933,7 +948,7 @@ function ChatSession({
 						onEmptyChange={setComposerEmpty}
 					/>
 					{/* Toolbar BELOW the editor — no overlap with the text (was bug #5). */}
-					<div className="flex items-center justify-end gap-1.5 px-2 pb-2">
+					<div className="flex items-center gap-1.5 px-2 pb-2">
 						<Button
 							size="icon"
 							variant="ghost"
@@ -944,38 +959,53 @@ function ChatSession({
 									? "Web search on — Patrick can search the web"
 									: "Web search off"
 							}
-							className={`mr-auto size-8 ${webSearch ? "text-emerald-600" : "text-muted-foreground/50"}`}
+							className={`size-8 ${webSearch ? "text-emerald-600" : "text-muted-foreground/50"}`}
 						>
 							<Globe />
 						</Button>
-						{modelId && lastInputTokens != null && (
-							<ContextRing
-								used={lastInputTokens}
-								window={contextWindowFor(modelId)}
-								inputCostPerTurn={inputCostPerTurn}
-							/>
-						)}
-						{busy ? (
-							<Button
-								size="icon"
-								variant="secondary"
-								onClick={stop}
-								className="size-8"
-								title="Stop"
-							>
-								<Square />
-							</Button>
-						) : (
-							<Button
-								size="icon"
-								onClick={send}
-								disabled={composerEmpty || !canSend}
-								className="size-8"
-								title="Send"
-							>
-								<ArrowUp />
-							</Button>
-						)}
+						<div className="ml-auto flex items-center gap-1.5">
+							{/* Before the chat locks: pick the model. After: the ring takes
+							    over (it needs a turn's token count), with the locked model
+							    shown in its popover. */}
+							{!locked && profile && modelId && (
+								<ModelPicker
+									provider={profile.ai.provider}
+									value={modelId}
+									onChange={setChatModel}
+									tone="ghost"
+									align="end"
+								/>
+							)}
+							{modelId && lastInputTokens != null && (
+								<ContextRing
+									used={lastInputTokens}
+									window={contextWindowFor(modelId)}
+									inputCostPerTurn={inputCostPerTurn}
+									modelName={MODELS_BY_ID[modelId]?.name ?? modelId}
+								/>
+							)}
+							{busy ? (
+								<Button
+									size="icon"
+									variant="secondary"
+									onClick={stop}
+									className="size-8"
+									title="Stop"
+								>
+									<Square />
+								</Button>
+							) : (
+								<Button
+									size="icon"
+									onClick={send}
+									disabled={composerEmpty || !canSend}
+									className="size-8"
+									title="Send"
+								>
+									<ArrowUp />
+								</Button>
+							)}
+						</div>
 					</div>
 				</div>
 				<span className="text-[10px] text-muted-foreground/50 flex items-center justify-center">

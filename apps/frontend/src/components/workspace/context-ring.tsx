@@ -1,3 +1,4 @@
+import { Cpu, Lock } from "lucide-react";
 import {
 	Popover,
 	PopoverContent,
@@ -21,11 +22,14 @@ export function ContextRing({
 	used,
 	window,
 	inputCostPerTurn,
+	modelName,
 }: {
 	used: number;
 	window: number;
 	/** Cost of re-sending the current context once (input tokens × input price). */
 	inputCostPerTurn?: number | null;
+	/** The model locked for this chat — shown atop the popover once a chat is going. */
+	modelName?: string | null;
 }) {
 	const fraction = Math.min(used / window, 1);
 	const pct = Math.round((used / window) * 100);
@@ -86,6 +90,21 @@ export function ContextRing({
 				</button>
 			</PopoverTrigger>
 			<PopoverContent align="end" className="w-60 text-xs">
+				{modelName && (
+					<div className="mb-2 flex items-center gap-1.5 border-b pb-2">
+						<Cpu className="size-3.5 text-emerald-600" />
+						<span className="min-w-0 flex-1 truncate font-medium">
+							{modelName}
+						</span>
+						<span
+							className="flex items-center gap-0.5 text-[10px] text-muted-foreground"
+							title="Locked for this chat — start a new chat to change the model"
+						>
+							<Lock className="size-2.5" />
+							Locked
+						</span>
+					</div>
+				)}
 				<div className="flex items-baseline justify-between">
 					<span className="font-medium">Context</span>
 					<span className="tabular-nums text-muted-foreground">

@@ -1,12 +1,30 @@
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import {
+	DEFAULT_MODEL,
 	type Profile,
 	type ProfileSummary,
 	profileSummary,
 } from "@patrick/shared";
 import { parse, stringify } from "yaml";
 import { profilePath, profilesDir } from "./config";
+
+// Backfill the single `ai.model` for any profile whose YAML still carries the
+// legacy detailedModel/quickModel — adopt the detailed model, else the provider
+// default — and drop the dead fields.
+function normalizeProfile(profile: Profile): Profile {
+	const ai = profile.ai as Profile["ai"] & {
+		detailedModel?: string;
+		quickModel?: string;
+	};
+	if (!ai.model) {
+		ai.model =
+			ai.detailedModel ?? DEFAULT_MODEL[ai.provider] ?? DEFAULT_MODEL.anthropic;
+	}
+	delete ai.detailedModel;
+	delete ai.quickModel;
+	return profile;
+}
 
 export async function listProfiles(): Promise<ProfileSummary[]> {
 	let ids: string[];
@@ -26,7 +44,7 @@ export async function listProfiles(): Promise<ProfileSummary[]> {
 export async function readProfile(id: string): Promise<Profile | null> {
 	try {
 		const text = await readFile(profilePath(id), "utf8");
-		return parse(text) as Profile;
+		return normalizeProfile(parse(text) as Profile);
 	} catch {
 		return null;
 	}

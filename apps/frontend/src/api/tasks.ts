@@ -40,7 +40,7 @@ export const tasksApi = {
 	saveChat: (
 		id: string,
 		chatId: string,
-		body: Pick<Chat, "systemTemplate" | "pinnedSources" | "messages">,
+		body: Pick<Chat, "systemTemplate" | "model" | "pinnedSources" | "messages">,
 	) => api.put<Chat>(`/tasks/${id}/chats/${chatId}`, body),
 	/** Raw URL for a document's bytes (for the PDF/docx viewers). */
 	fileUrl: (id: string, filename: string) =>

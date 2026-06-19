@@ -1,4 +1,4 @@
-import { DEFAULT_QUICK_MODEL, type Provider } from "@patrick/shared";
+import { fastModelFor, type Provider } from "@patrick/shared";
 import { generateText } from "ai";
 import { Hono } from "hono";
 import { createModel } from "../lib/ai/model";
@@ -20,7 +20,7 @@ ai.post("/verify", async (c) => {
 	}
 
 	try {
-		const model = createModel(provider, apiKey, DEFAULT_QUICK_MODEL[provider]);
+		const model = createModel(provider, apiKey, fastModelFor(provider));
 		await generateText({ model, prompt: "hi", maxOutputTokens: 1 });
 		return c.json({ valid: true });
 	} catch (error) {

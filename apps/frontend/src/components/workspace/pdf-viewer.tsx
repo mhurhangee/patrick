@@ -103,7 +103,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 
 	const tokens =
 		pages.length && profile
-			? estimatePdfTokens(pages.length, profile.ai.detailedModel)
+			? estimatePdfTokens(pages.length, profile.ai.model)
 			: null;
 
 	function onScroll() {
