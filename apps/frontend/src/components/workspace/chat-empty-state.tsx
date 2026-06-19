@@ -99,10 +99,12 @@ export function ChatEmptyState({
 							key={s}
 							variant="outline"
 							size="sm"
-							className="w-full justify-start font-normal text-muted-foreground"
+							// Generated suggestions vary in length — left-align, wrap to at
+							// most two lines (then ellipsis), and grow the pill to fit.
+							className="h-auto w-full justify-start whitespace-normal px-3 py-2 text-left font-normal text-muted-foreground"
 							onClick={() => onPick(s)}
 						>
-							{s}
+							<span className="line-clamp-2">{s}</span>
 						</Button>
 					))}
 				</EmptyContent>
