@@ -425,7 +425,12 @@ function DocumentMenu({
 				{kind === "pdf" && (
 					<>
 						<DropdownMenuItem
-							onSelect={onExtract}
+							// Keep the menu open (don't close-on-select) so the live
+							// "Extracting… x/y" label below stays visible during OCR.
+							onSelect={(e) => {
+								e.preventDefault();
+								onExtract();
+							}}
 							disabled={!!extracting}
 							title="Pull selectable text out of this PDF (OCR for scans)"
 						>
