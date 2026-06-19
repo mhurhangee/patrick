@@ -14,6 +14,9 @@ export function SiteHeader() {
 					<span className="font-heading text-xl font-semibold tracking-tight">
 						Patrick
 					</span>
+					<span className="rounded-full border border-border/70 px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
+						Alpha
+					</span>
 				</Link>
 
 				<nav className="flex items-center gap-6">
