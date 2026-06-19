@@ -1,6 +1,15 @@
-import type { ProvisionRef } from "@patrick/shared";
+import type { ProvisionGroup, ProvisionRef } from "@patrick/shared";
 import { ENTRIES } from "./maps";
+import type { SourceId } from "./sources";
 import type { EpcMapEntry } from "./types";
+
+/** Picker group per source — exhaustive over SourceId, so a new source must add one. */
+const GROUP_BY_SOURCE: Record<SourceId, ProvisionGroup> = {
+	epc: "EPC",
+	"guidelines-epc": "Guidelines",
+	"guidelines-pct": "PCT Guidelines",
+	caselaw: "Case Law",
+};
 
 // A readable, source-tagged citation — what a tag shows and serialises to.
 // EPC provisions get a numbered form; Guidelines/case-law keys are already
@@ -39,6 +48,7 @@ export function provisionList(): ProvisionRef[] {
 		cite: citeOf(e) ?? e.citationKey,
 		name: shortName(e.title),
 		kind: e.kind,
+		group: GROUP_BY_SOURCE[e.source],
 	}));
 }
 

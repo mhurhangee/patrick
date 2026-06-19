@@ -377,18 +377,22 @@ function ChatSession({
 		const cite = (p: { cite?: string; key: string }) => p.cite ?? p.key;
 		// Group by body so the picker reads as EPC / Guidelines / PCT / Case Law.
 		const GROUP_ORDER = ["EPC", "Guidelines", "PCT Guidelines", "Case Law"];
+		// Prefer the precomputed group from provisionList; derive only as a fallback
+		// for entries from a stale cache that predate the `group` field.
 		const groupOf = (p: {
+			group?: string;
 			kind: string;
 			cite?: string;
 			key: string;
 		}): string =>
-			p.kind === "caselaw"
+			p.group ??
+			(p.kind === "caselaw"
 				? "Case Law"
 				: p.kind === "guideline"
 					? cite(p).startsWith("PCT")
 						? "PCT Guidelines"
 						: "Guidelines"
-					: "EPC";
+					: "EPC");
 		const toItem = (p: (typeof all)[number]): MentionItem => ({
 			id: p.key,
 			label: cite(p),
