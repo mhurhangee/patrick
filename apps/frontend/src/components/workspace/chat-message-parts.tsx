@@ -429,6 +429,9 @@ export type ToolUiHandlers = {
 };
 
 type HitlInput = Record<string, string | undefined>;
+// suggestLabel carries a string[] of follow-up prompts alongside the string
+// fields — read it through this view rather than the flat HitlInput.
+type LabelInput = { filename?: string; label?: string; suggestions?: string[] };
 type HitlOutput = Record<string, unknown>;
 
 const bold = (s: unknown) => (
@@ -479,9 +482,7 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 		icon: <Tag size={13} className={iconCls} />,
 		title: (i) => <>Label {bold(i.filename)} as:</>,
 		detail: (i) => {
-			const n = Array.isArray((i as Record<string, unknown>).suggestions)
-				? ((i as Record<string, unknown>).suggestions as unknown[]).length
-				: 0;
+			const n = (i as LabelInput).suggestions?.length ?? 0;
 			return (
 				<span className="text-foreground italic">
 					“{i.label}”
@@ -497,7 +498,7 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 		acceptLabel: "Apply",
 		rejectLabel: "No",
 		accept: (i, h) => {
-			const raw = (i as Record<string, unknown>).suggestions;
+			const raw = (i as LabelInput).suggestions;
 			const suggestions = Array.isArray(raw)
 				? raw.filter((s): s is string => typeof s === "string")
 				: undefined;
