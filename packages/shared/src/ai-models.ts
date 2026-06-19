@@ -169,7 +169,7 @@ const PDF_TOKENS_PER_PAGE: Record<Vendor, number> = {
 	google: 520,
 };
 
-function vendorForModel(modelId: string): Vendor {
+export function vendorForModel(modelId: string): Vendor {
 	const v = modelId.split("/")[0];
 	return v === "openai" || v === "google" ? v : "anthropic";
 }

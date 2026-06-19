@@ -5,8 +5,10 @@ import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
 import { fileCachedFetcher, lookupProvisions } from "@patrick/law";
 import {
 	type ExchangeMetadata,
+	modelsForProvider,
 	PATRICK_DOCS,
 	type PinnedSource,
+	type Profile,
 	toStoredMessage,
 } from "@patrick/shared";
 import {
@@ -32,6 +34,19 @@ import { createFindLaw } from "./find-law";
 import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
 import { webSearchTool } from "./web-search";
+
+// The model a turn runs on: the chat's locked model when it's valid for the
+// profile's current provider, else the profile default. Guards the case where the
+// profile switched providers after the chat locked — a foreign model id paired
+// with the new provider would fail every turn (and bricks a model-locked chat).
+function resolveModel(profile: Profile, requested?: string): string {
+	if (
+		requested &&
+		modelsForProvider(profile.ai.provider).some((m) => m.id === requested)
+	)
+		return requested;
+	return profile.ai.model;
+}
 
 // The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
@@ -390,7 +405,7 @@ export async function handleChatPreview(c: Context) {
 		body.templateOverride,
 	);
 	return c.json({
-		model: body.model ?? profile.ai.model,
+		model: resolveModel(profile, body.model ?? undefined),
 		system,
 		pinnedSources,
 		activeDraft,
@@ -415,9 +430,10 @@ export async function handleChat(c: Context) {
 		activeDraft,
 	);
 	const { provider, apiKey, effort } = profile.ai;
-	// The chat locks its model at first send (client sends it each turn); fall back
-	// to the profile default for the very first request / older chats.
-	const modelId = body.model ?? profile.ai.model;
+	// The chat locks its model at first send (client sends it each turn); falls back
+	// to the profile default for the first request, older chats, or a model that no
+	// longer fits the provider.
+	const modelId = resolveModel(profile, body.model ?? undefined);
 	const model = createModel(provider, apiKey, modelId);
 	const { providerOptions } = reasoningOptions(provider, modelId, effort);
 	const system = buildSystemPrompt(

@@ -139,7 +139,7 @@ tasks.put("/:id/documents", async (c) => {
 });
 
 // AI-generate a label + chat suggestions for one document (the kebab "Suggest a
-// label" action) and apply them. Uses the profile's quick model.
+// label" action) and apply them. Runs on the profile's model with reasoning off.
 tasks.post("/:id/documents/:filename/label", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);

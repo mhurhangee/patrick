@@ -6,6 +6,7 @@ import {
 	modelsForProvider,
 	type Provider,
 	TIER_BLURB,
+	vendorForModel,
 } from "@patrick/shared";
 import { Check, ChevronsUpDown, Cpu } from "lucide-react";
 import { useState } from "react";
@@ -26,10 +27,6 @@ const TIER_RANK: Record<ModelTier, number> = {
 	balanced: 2,
 	expert: 3,
 };
-
-function vendorOf(id: string): string {
-	return id.split("/")[0] ?? "";
-}
 
 // Three ascending bars, filled to the model's tier — a quick capability glance.
 function TierBars({ tier }: { tier: ModelTier }) {
@@ -55,7 +52,7 @@ function TierBars({ tier }: { tier: ModelTier }) {
 function groupByVendor(models: CuratedModel[]): [string, CuratedModel[]][] {
 	const groups: [string, CuratedModel[]][] = [];
 	for (const m of models) {
-		const v = vendorOf(m.id);
+		const v = vendorForModel(m.id);
 		const last = groups.at(-1);
 		if (last && last[0] === v) last[1].push(m);
 		else groups.push([v, [m]]);
@@ -65,9 +62,8 @@ function groupByVendor(models: CuratedModel[]): [string, CuratedModel[]][] {
 
 /**
  * Model picker — a chip trigger opening a grouped popover (vendor → models with
- * tier blurb/bars, BYO pricing, context window). One model per profile; a chat
- * locks its own (pass `disabled`). Used in the profile AI settings and the chat
- * composer toolbar.
+ * tier blurb/bars, BYO pricing, context window). Used in the profile AI settings
+ * (`tone="field"`) and the chat composer toolbar (`tone="ghost"`).
  */
 export function ModelPicker({
 	value,

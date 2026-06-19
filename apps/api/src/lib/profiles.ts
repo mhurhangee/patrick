@@ -9,8 +9,9 @@ import {
 import { parse, stringify } from "yaml";
 import { profilePath, profilesDir } from "./config";
 
-// Backfill the single `ai.model` for profiles written before the quick/detailed
-// split was collapsed — carry over the old detailed model, else the provider default.
+// Backfill the single `ai.model` for any profile whose YAML still carries the
+// legacy detailedModel/quickModel — adopt the detailed model, else the provider
+// default — and drop the dead fields.
 function normalizeProfile(profile: Profile): Profile {
 	const ai = profile.ai as Profile["ai"] & {
 		detailedModel?: string;
