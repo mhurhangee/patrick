@@ -107,7 +107,17 @@ export function useGenerateLabel(id: string) {
 			filename: string;
 			profileId: string;
 		}) => tasksApi.generateLabel(id, filename, profileId),
-		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+		// Write the result straight into the cache (the server already persisted it
+		// via mergeDocumentMeta). Merging in place — rather than invalidating and
+		// racing a refetch — means an optimistic document-save that snapshots the
+		// cache can't clobber the just-generated label + suggestions.
+		onSuccess: ({ label, suggestions }, { filename }) => {
+			qc.setQueryData<Document[]>(keys.documents(id), (docs) =>
+				docs?.map((d) =>
+					d.filename === filename ? { ...d, label, suggestions } : d,
+				),
+			);
+		},
 	});
 }
 

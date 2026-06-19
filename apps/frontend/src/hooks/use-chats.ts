@@ -38,6 +38,21 @@ export function useDeleteChat(taskId: string | undefined) {
 	});
 }
 
+export function useUpdateChatMeta(taskId: string | undefined) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			chatId,
+			...patch
+		}: {
+			chatId: string;
+			starred?: boolean;
+			customTitle?: string;
+		}) => tasksApi.updateChatMeta(taskId as string, chatId, patch),
+		onSuccess: () => qc.invalidateQueries({ queryKey: key.list(taskId ?? "") }),
+	});
+}
+
 /** Refresh the sidebar list (call after a turn persists). */
 export function useRefreshChats(taskId: string | undefined) {
 	const qc = useQueryClient();

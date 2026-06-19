@@ -46,15 +46,49 @@ export async function listChats(folder: string): Promise<ChatSummary[]> {
 			.filter((f) => f.endsWith(".json"))
 			.map((f) => readChat(folder, f.replace(/\.json$/, ""))),
 	);
-	return chats
-		.filter((c): c is Chat => c != null)
-		.map((chat) => ({
-			id: chat.id,
-			updatedAt: chat.updatedAt,
-			lastUser: lastText(chat.messages, "user"),
-			lastAssistant: lastText(chat.messages, "assistant"),
-		}))
-		.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+	return (
+		chats
+			.filter((c): c is Chat => c != null)
+			.map((chat) => ({
+				id: chat.id,
+				updatedAt: chat.updatedAt,
+				lastUser: lastText(chat.messages, "user"),
+				lastAssistant: lastText(chat.messages, "assistant"),
+				starred: chat.starred,
+				title: chat.customTitle,
+			}))
+			// Starred float to the top; otherwise most-recent first.
+			.sort(
+				(a, b) =>
+					Number(!!b.starred) - Number(!!a.starred) ||
+					b.updatedAt.localeCompare(a.updatedAt),
+			)
+	);
+}
+
+/** Apply attorney-set chat meta (star, custom title). Empty title clears it.
+ *  This and saveChat are non-atomic read-modify-writes on the same file; a star
+ *  landing in the same instant a turn finishes saving could drop one or the
+ *  other. Accepted: local single-user, the window is a few ms, and there's no
+ *  locking anywhere in this file-per-chat model. Any new attorney-set field must
+ *  also be threaded through saveChat (below) or a turn-save would drop it. */
+export async function updateChatMeta(
+	folder: string,
+	id: string,
+	patch: { starred?: boolean; customTitle?: string },
+): Promise<Chat | null> {
+	const existing = await readChat(folder, id);
+	if (!existing) return null;
+	const updated: Chat = { ...existing };
+	if (patch.starred !== undefined) updated.starred = patch.starred || undefined;
+	if (patch.customTitle !== undefined)
+		updated.customTitle = patch.customTitle.trim() || undefined;
+	await writeFile(
+		chatPath(folder, id),
+		JSON.stringify(updated, null, 2),
+		"utf8",
+	);
+	return updated;
 }
 
 export async function readChat(
@@ -89,6 +123,9 @@ export async function saveChat(
 		systemTemplate: chat.systemTemplate,
 		pinnedSources: chat.pinnedSources,
 		messages: chat.messages,
+		// Attorney-set meta survives turn-saves.
+		starred: existing?.starred,
+		customTitle: existing?.customTitle,
 	};
 	const path = chatPath(folder, chat.id);
 	await mkdir(chatsDir(folder), { recursive: true });

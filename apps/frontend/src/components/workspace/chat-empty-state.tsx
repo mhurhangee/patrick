@@ -35,9 +35,11 @@ function emptyStateFor(
 				"Summarise what's in this matter",
 			],
 		};
-	// Per-doc prompts generated when the doc was labelled win — they're tailored to
-	// its actual content, not just its kind.
-	if (doc?.suggestions?.length)
+	// Per-doc prompts generated when the doc was labelled win for read-only
+	// sources — they're tailored to actual content, not just kind. Editable drafts
+	// keep their draft/amend prompts (below), the primary affordance for a doc you
+	// can edit.
+	if (doc?.suggestions?.length && !doc.editable)
 		return {
 			title: `Ask me about ${doc.label}.`,
 			suggestions: doc.suggestions,

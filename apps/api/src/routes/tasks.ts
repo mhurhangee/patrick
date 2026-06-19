@@ -10,7 +10,13 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { handleChat, handleChatPreview } from "../lib/ai/chat";
 import { generateDocumentLabel } from "../lib/ai/label";
-import { deleteChat, listChats, readChat, saveChat } from "../lib/chats";
+import {
+	deleteChat,
+	listChats,
+	readChat,
+	saveChat,
+	updateChatMeta,
+} from "../lib/chats";
 import {
 	createBlankDocument,
 	deleteDocument,
@@ -71,6 +77,20 @@ tasks.delete("/:id/chats/:chatId", async (c) => {
 	return c.json({ ok: true });
 });
 
+// Attorney-set chat meta — star and rename (custom title).
+tasks.post("/:id/chats/:chatId/meta", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const patch = await c.req.json<{ starred?: boolean; customTitle?: string }>();
+	const updated = await updateChatMeta(
+		task.folder,
+		c.req.param("chatId"),
+		patch,
+	);
+	if (!updated) return c.json({ error: "chat not found" }, 404);
+	return c.json({ ok: true });
+});
+
 tasks.get("/", async (c) => c.json(await listTasks()));
 
 tasks.get("/:id", async (c) => {
@@ -128,7 +148,7 @@ tasks.post("/:id/documents/:filename/label", async (c) => {
 	try {
 		const result = await generateDocumentLabel(
 			task.folder,
-			c.req.param("filename"),
+			basename(c.req.param("filename")),
 			profile.ai,
 		);
 		if (!result) return c.json({ error: "could not read the document" }, 400);

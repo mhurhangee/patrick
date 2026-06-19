@@ -59,6 +59,10 @@ export type Chat = {
 	/** The sources pinned into this chat (append-only). */
 	pinnedSources: PinnedSource[];
 	messages: StoredChatMessage[];
+	/** Floated to the top of the sidebar list when set. */
+	starred?: boolean;
+	/** Attorney-set title; overrides the auto preview in the sidebar. */
+	customTitle?: string;
 };
 
 /** Lightweight shape for the sidebar list — shows the latest exchange. */
@@ -69,6 +73,9 @@ export type ChatSummary = {
 	lastUser: string;
 	/** Latest assistant reply (slice). */
 	lastAssistant: string;
+	starred?: boolean;
+	/** Attorney-set title, if any (else the row shows the preview). */
+	title?: string;
 };
 
 /** Normalise a UI message into the stored shape (one writer for the on-disk
