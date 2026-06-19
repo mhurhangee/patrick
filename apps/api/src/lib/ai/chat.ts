@@ -9,6 +9,7 @@ import {
 	PATRICK_DOCS,
 	type PinnedSource,
 	type Profile,
+	type Provider,
 	toStoredMessage,
 } from "@patrick/shared";
 import {
@@ -21,7 +22,7 @@ import {
 } from "ai";
 import type { Context } from "hono";
 import { z } from "zod";
-import { saveChat } from "../chats";
+import { readChat, saveChat } from "../chats";
 import { lawCacheDir } from "../config";
 import {
 	listDocuments,
@@ -48,6 +49,20 @@ function resolveModel(profile: Profile, requested?: string): string {
 	return profile.ai.model;
 }
 
+// A chat freezes its instructions at first send: the profile's prompt is resolved
+// then, persisted on the chat, and reused for every later turn — so editing the
+// profile (or swapping it) never rewrites an in-flight conversation. Read-only;
+// there is no per-chat editing. Before the first send (no persisted chat yet) it
+// follows the live profile.
+async function frozenTemplate(
+	folder: string,
+	chatId: string | undefined,
+	profile: Profile,
+): Promise<string> {
+	const existing = chatId ? await readChat(folder, chatId) : null;
+	return existing?.systemTemplate ?? profile.prompts.agentpat;
+}
+
 // The drafting subset Patrick gets: locate + mutate, plus reads (the active
 // draft isn't in the static prompt — the agent reads it live, always current).
 const TOOL_ALLOW = new Set([
@@ -69,8 +84,6 @@ type RequestBody = {
 	pinnedSources?: PinnedSource[];
 	/** The editable draft in focus — driven by the editor tools, not pinned. */
 	activeDraft?: string | null;
-	/** Per-chat instructions edit (ephemeral); absent ⇒ the profile's template. */
-	templateOverride?: string | null;
 	/** The model for this turn (locked per chat client-side); absent ⇒ profile default. */
 	model?: string;
 	/** Whether web search is available this turn (toolbar toggle). Default on. */
@@ -377,39 +390,43 @@ export async function pinnedSourcesMessage(
 	return { role: "user", content } as ModelMessage;
 }
 
-// Zero-cost observability: assemble and return the exact system prompt + context
-// a turn would send, without calling the model. Drives the context inspector.
-export async function handleChatPreview(c: Context) {
-	const id = c.req.param("id");
-	if (!id) return c.json({ error: "missing task id" }, 400);
-	const body = await c.req.json<RequestBody>();
-
-	const task = await readTask(id);
-	if (!task) return c.json({ error: "task not found" }, 404);
-	const profile = await readProfile(body.profileId);
-	if (!profile) return c.json({ error: "profile not found" }, 404);
-
-	const pinnedSources = body.pinnedSources ?? [];
-	const activeDraft = body.activeDraft ?? null;
-	const available = await availableDocs(
-		task.folder,
-		pinnedSources,
-		activeDraft,
-	);
-	const system = buildSystemPrompt(
-		profile,
-		task,
-		pinnedSources,
-		activeDraft,
-		available,
-		body.templateOverride,
-	);
-	return c.json({
-		model: resolveModel(profile, body.model ?? undefined),
-		system,
-		pinnedSources,
-		activeDraft,
-	});
+// The tools Patrick gets for a turn: editor tools (no execute — they run against
+// the live editor client-side) + the law/search/HITL tools. Web search and the
+// open-a-file proposal are conditional. Built in one place so the inspection
+// panel can list the exact active tool names without drifting from what ships.
+function buildChatTools(opts: {
+	provider: Provider;
+	apiKey: string;
+	modelId: string;
+	webSearch: boolean;
+	hasDocs: boolean;
+}) {
+	return {
+		...Object.fromEntries(
+			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
+		),
+		suggestLabel,
+		suggestBrief,
+		suggestPrompt,
+		createDraft,
+		requestUnlock,
+		fetchPublication,
+		patrick_help: patrickHelp,
+		ep_law_lookup: epcLookup,
+		find_law: createFindLaw({
+			provider: opts.provider,
+			apiKey: opts.apiKey,
+			modelId: opts.modelId,
+		}),
+		// Web search runs on the attorney's own model (provider-executed) unless the
+		// toolbar toggle is off. Caveat (accepted): a provider/org that doesn't
+		// support it (notably Anthropic when it isn't enabled in the org console)
+		// errors the whole turn — the toggle is the escape hatch.
+		...(opts.webSearch
+			? webSearchTool(vendorOf(opts.provider, opts.modelId))
+			: {}),
+		...(opts.hasDocs ? { requestOpenFile } : {}),
+	};
 }
 
 export async function handleChat(c: Context) {
@@ -436,44 +453,24 @@ export async function handleChat(c: Context) {
 	const modelId = resolveModel(profile, body.model ?? undefined);
 	const model = createModel(provider, apiKey, modelId);
 	const { providerOptions } = reasoningOptions(provider, modelId, effort);
+	const template = await frozenTemplate(task.folder, body.chatId, profile);
 	const system = buildSystemPrompt(
-		profile,
 		task,
 		pinnedSources,
 		activeDraft,
 		available,
-		body.templateOverride,
+		template,
 	);
 
-	// Editor tools (no execute — run client-side against the live editor) + our
-	// HITL requestOpenFile when there are docs to propose (resolved by a card).
-	// Adding/removing a capability here? Update PATRICK_CAPABILITIES in
-	// @patrick/shared so Patrick keeps describing itself honestly.
-	const tools = {
-		...Object.fromEntries(
-			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
-		),
-		suggestLabel,
-		suggestBrief,
-		suggestPrompt,
-		createDraft,
-		requestUnlock,
-		fetchPublication,
-		patrick_help: patrickHelp,
-		ep_law_lookup: epcLookup,
-		find_law: createFindLaw({ provider, apiKey, modelId }),
-		// Web search runs on the attorney's own model (provider-executed) unless the
-		// toolbar toggle is off; the agent grounds what it surfaces via ep_law_lookup.
-		// Caveat (accepted): if the provider/org doesn't support web search (notably
-		// Anthropic when it isn't enabled in the org console) the provider errors the
-		// whole turn — the toolbar toggle is the escape hatch. A per-model `webSearch`
-		// capability flag to default it off for unsupported models is deferred to the
-		// model-picker/capability work (it also can't catch the org-config case).
-		...(body.webSearch === false
-			? {}
-			: webSearchTool(vendorOf(provider, modelId))),
-		...(available.length > 0 ? { requestOpenFile } : {}),
-	};
+	// Adding/removing a capability? Do it in buildChatTools — and update
+	// PATRICK_CAPABILITIES in @patrick/shared so the prompt describes Patrick honestly.
+	const tools = buildChatTools({
+		provider,
+		apiKey,
+		modelId,
+		webSearch: body.webSearch !== false,
+		hasDocs: available.length > 0,
+	});
 
 	// When web search is toggled off, strip any web_search tool parts left in the
 	// history by earlier turns — sending those tool calls without the tool declared
@@ -529,7 +526,7 @@ export async function handleChat(c: Context) {
 			byId.set(responseMessage.id, responseMessage);
 			await saveChat(task.folder, {
 				id: body.chatId,
-				systemTemplate: body.templateOverride ?? profile.prompts.agentpat,
+				systemTemplate: template,
 				model: modelId,
 				pinnedSources,
 				messages: [...byId.values()].map((m) =>

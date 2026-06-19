@@ -4,25 +4,14 @@ import type {
 	Document,
 	DocumentMeta,
 	ExtractedDoc,
-	PinnedSource,
 	Task,
 	TaskSummary,
 } from "@patrick/shared";
 import { api, BASE_URL } from "./client";
 
-export type ChatPreviewBody = {
-	profileId: string;
-	pinnedSources: PinnedSource[];
-	activeDraft: string | null;
-	templateOverride?: string | null;
-};
-
 export const tasksApi = {
 	list: () => api.get<TaskSummary[]>("/tasks"),
 	get: (id: string) => api.get<Task>(`/tasks/${id}`),
-	/** Resolve the exact system prompt a turn would send, without a model call. */
-	chatPreview: (id: string, body: ChatPreviewBody) =>
-		api.post<{ system: string }>(`/tasks/${id}/chat/preview`, body),
 	/** Persisted chats for a task (sidebar list). */
 	chats: (id: string) => api.get<ChatSummary[]>(`/tasks/${id}/chats`),
 	/** Load a full persisted chat (messages + locked template + pinned set). */

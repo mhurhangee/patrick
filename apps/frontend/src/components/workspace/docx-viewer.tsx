@@ -1,5 +1,6 @@
 import { DocxEditor, type DocxEditorRef } from "@eigenpal/docx-editor-react";
 import "@eigenpal/docx-editor-react/styles.css";
+import { estimateTextTokens } from "@patrick/shared";
 import { Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";
+import { recordDocSize } from "@/lib/doc-size";
 import { formatTokens } from "@/lib/format";
 
 const MIN_ZOOM = 0.5;
@@ -86,7 +88,7 @@ export function DocxViewer({
 
 	// readOnly strips the editor chrome (incl. its zoom widget), so the viewer
 	// gets its own floating zoom pill — mirroring the PDF viewer.
-	if (!editable) return <ReadOnlyDocx buffer={buffer} />;
+	if (!editable) return <ReadOnlyDocx buffer={buffer} filename={filename} />;
 
 	return (
 		<div className="h-full overflow-auto">
@@ -102,7 +104,14 @@ export function DocxViewer({
 	);
 }
 
-function ReadOnlyDocx({ buffer }: { buffer: ArrayBuffer }) {
+function ReadOnlyDocx({
+	buffer,
+	filename,
+}: {
+	buffer: ArrayBuffer;
+	filename: string;
+}) {
+	const { activeTaskId } = useActiveTask();
 	const ref = useRef<DocxEditorRef>(null);
 	const [zoom, setZoom] = useState(1);
 	const [page, setPage] = useState(1);
@@ -110,8 +119,9 @@ function ReadOnlyDocx({ buffer }: { buffer: ArrayBuffer }) {
 	const [tokens, setTokens] = useState<number | null>(null);
 	const gotTokens = useRef(false);
 
-	// The editor has no page-change event, so poll its current/total page. Token
-	// estimate (~chars/4) is computed once the document agent is available.
+	// The editor has no page-change event, so poll its current/total page. The
+	// character count (once the document agent is available) drives the token
+	// estimate and is recorded so the context control can cost this source.
 	useEffect(() => {
 		const id = setInterval(() => {
 			const ed = ref.current;
@@ -122,12 +132,13 @@ function ReadOnlyDocx({ buffer }: { buffer: ArrayBuffer }) {
 				const chars = ed.getAgent()?.getCharacterCount(true);
 				if (chars && chars > 0) {
 					gotTokens.current = true;
-					setTokens(Math.ceil(chars / 4));
+					setTokens(estimateTextTokens(chars));
+					recordDocSize(activeTaskId ?? "", filename, { chars });
 				}
 			}
 		}, 400);
 		return () => clearInterval(id);
-	}, []);
+	}, [activeTaskId, filename]);
 
 	const apply = (next: number) => {
 		const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +next.toFixed(2)));

@@ -178,3 +178,8 @@ export function vendorForModel(modelId: string): Vendor {
 export function estimatePdfTokens(pages: number, modelId: string): number {
 	return pages * PDF_TOKENS_PER_PAGE[vendorForModel(modelId)];
 }
+
+/** Rough token estimate for plain text/extracted docx — about 4.5 chars/token. */
+export function estimateTextTokens(chars: number): number {
+	return Math.round(chars / 4.5);
+}

@@ -52,6 +52,7 @@ import { useActiveChat } from "@/lib/active-chat";
 import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { estimateDocTokens, useDocSize } from "@/lib/doc-size";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
 import {
 	ChatComposer,
@@ -64,7 +65,7 @@ import {
 	HITL_TOOLS,
 	type ToolUiHandlers,
 } from "./chat-message-parts";
-import { ContextRing } from "./context-ring";
+import { ContextRing, type ContextSource } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
 import { SystemCard } from "./system-card";
 
@@ -175,7 +176,7 @@ function ChatSession({
 	taskRef.current = task;
 	const profileRef = useRef(profile);
 	profileRef.current = profile;
-	const { columnList, focused, getDoc, open } = useWorkspace();
+	const { close, columnList, focused, getDoc, open } = useWorkspace();
 	const navigate = useNavigate();
 	// Tailor only the empty-state prompt to the open surface (display, not Patrick).
 	const surfacePath = useLocation({ select: (l) => l.pathname });
@@ -190,14 +191,13 @@ function ChatSession({
 	const keyStatus = keyStatusOf(keyVerification);
 	const keyReady = keyStatus === "valid";
 
-	// This chat's instructions. null ⇒ "follow the profile" (so editing the
-	// profile prompt updates a fresh chat live); a non-null value is this chat's
-	// own edit (a loaded chat seeds from its locked template). Frozen at first
-	// send (one system per chat).
-	const [chatTemplate, setChatTemplate] = useState<string | null>(
+	// This chat's frozen instructions: a reopened chat carries the prompt it was
+	// started under; a fresh chat snapshots the profile prompt at first send (below),
+	// mirroring the server-side freeze. Drives the "no longer matches your profile"
+	// warning and the prompt carried on a fork — the turn itself is frozen server-side.
+	const [frozenTemplate, setFrozenTemplate] = useState<string | null>(
 		initial?.systemTemplate ?? null,
 	);
-	const template = chatTemplate ?? profileTemplate;
 
 	// This chat's model — null ⇒ follow the profile default (so a fresh chat tracks
 	// profile changes); frozen at first send, like the template. A reopened chat
@@ -282,8 +282,6 @@ function ChatSession({
 	activeDraftRef.current = activeDraft;
 	const profileIdRef = useRef(activeProfileId);
 	profileIdRef.current = activeProfileId;
-	const templateRef = useRef(template);
-	templateRef.current = template;
 	const modelRef = useRef(modelId);
 	modelRef.current = modelId;
 	const refreshChatsRef = useRef(refreshChats);
@@ -309,7 +307,6 @@ function ChatSession({
 					profileId: profileIdRef.current,
 					pinnedSources: pinnedRef.current,
 					activeDraft: activeDraftRef.current,
-					templateOverride: templateRef.current,
 					model: modelRef.current ?? undefined,
 					webSearch: webSearchRef.current,
 				},
@@ -711,13 +708,12 @@ function ChatSession({
 	function send() {
 		const text = composerRef.current?.getMarkdown() ?? "";
 		if (!text || busy || !canSend) return;
-		// Freeze the instructions at first send — one system prompt per chat. Until
-		// now the template follows the live profile (chatTemplate null); snapshot it
-		// so later profile edits don't rewrite this chat's prompt.
-		if (chatTemplate === null) setChatTemplate(template);
-		// Lock the model too — this chat sticks with what it started on (cache stays
-		// warm; no mid-chat provider/model swap). modelRef is already current.
+		// Lock the model at first send — this chat sticks with what it started on
+		// (cache stays warm; no mid-chat provider/model swap). modelRef is already
+		// current. Snapshot the prompt the same way (the server freezes the turn
+		// itself; this client copy drives the mismatch warning + fork).
 		if (chatModel === null && modelId) setChatModel(modelId);
+		if (frozenTemplate === null) setFrozenTemplate(profileTemplate);
 		// Commit OPEN = CONTEXT: pin whatever read-only sources are open right now
 		// (append-only). pinnedRef is updated synchronously so this very request
 		// carries them; the follow-up loop requests read the same committed set.
@@ -761,7 +757,7 @@ function ChatSession({
 			: messages.length;
 		const newId = crypto.randomUUID();
 		await tasksApi.saveChat(activeTaskId ?? "", newId, {
-			systemTemplate: template,
+			systemTemplate: frozenTemplate ?? profileTemplate,
 			model: modelId ?? undefined,
 			pinnedSources,
 			messages: messages
@@ -803,29 +799,39 @@ function ChatSession({
 			? (lastInputTokens / 1_000_000) * inputPrice
 			: null;
 
-	// A locked chat keeps its frozen instructions; if the active profile's prompt
-	// has since changed (edited, or a different profile selected), the chat no
-	// longer reflects it. Surface that rather than silently re-resolving.
+	// Context pieces for the toolbar control: pinned (committed) vs open candidates
+	// (will pin on send), each with a token estimate against the chat's model.
+	const sizeOf = useDocSize(activeTaskId);
+	const toCtxSource = (s: PinnedSource): ContextSource => ({
+		filename: s.filename,
+		label: getDoc(s.filename)?.label ?? s.filename,
+		kind: s.kind,
+		tokens: modelId ? estimateDocTokens(sizeOf(s.filename), modelId) : null,
+	});
+	const pinnedCtx = pinnedSources.map(toCtxSource);
+	const pinnedSet = new Set(pinnedSources.map((p) => p.filename));
+	const candidateCtx = openSources
+		.filter((s) => !pinnedSet.has(s.filename))
+		.map(toCtxSource);
+	const estimatedTokens = [...pinnedCtx, ...candidateCtx].reduce(
+		(sum, s) => sum + (s.tokens ?? 0),
+		0,
+	);
+
+	// A reopened chat keeps the prompt it was frozen with; if the active profile's
+	// prompt has since changed, the chat no longer reflects it. Surface that rather
+	// than silently re-resolving.
 	const locked = messages.length > 0;
 	const profileMismatch =
 		locked &&
-		chatTemplate !== null &&
+		frozenTemplate !== null &&
 		!!profile &&
-		chatTemplate !== profileTemplate;
+		frozenTemplate !== profileTemplate;
 
 	return (
 		<div className="flex h-full flex-col">
 			<SystemCard
-				taskId={activeTaskId}
-				profileId={activeProfileId}
-				pinnedSources={pinnedSources}
-				activeDraft={activeDraft}
-				template={template}
-				edited={chatTemplate !== null}
-				onChangeTemplate={setChatTemplate}
-				onReset={() => setChatTemplate(null)}
 				onNewChat={newChat}
-				locked={locked}
 				profileMismatch={profileMismatch}
 				profileName={profile?.identity.name}
 			/>
@@ -964,9 +970,9 @@ function ChatSession({
 							<Globe />
 						</Button>
 						<div className="ml-auto flex items-center gap-1.5">
-							{/* Before the chat locks: pick the model. After: the ring takes
-							    over (it needs a turn's token count), with the locked model
-							    shown in its popover. */}
+							{/* Before the chat locks: pick the model (the context control
+							    estimates what you're about to send). After: the model is
+							    shown inside the context popover instead. */}
 							{!locked && profile && modelId && (
 								<ModelPicker
 									provider={profile.ai.provider}
@@ -976,9 +982,24 @@ function ChatSession({
 									align="end"
 								/>
 							)}
-							{modelId && lastInputTokens != null && (
+							{modelId && (
 								<ContextRing
+									pinned={pinnedCtx}
+									candidates={candidateCtx}
+									onClose={close}
+									onCloseAll={() => {
+										for (const s of candidateCtx) close(s.filename);
+									}}
+									onEditPrompt={() =>
+										navigate({ to: "/profile", hash: "prompt" })
+									}
+									activeDraftLabel={
+										activeDraft
+											? (getDoc(activeDraft)?.label ?? activeDraft)
+											: null
+									}
 									used={lastInputTokens}
+									estimated={estimatedTokens}
 									window={contextWindowFor(modelId)}
 									inputCostPerTurn={inputCostPerTurn}
 									modelName={MODELS_BY_ID[modelId]?.name ?? modelId}
