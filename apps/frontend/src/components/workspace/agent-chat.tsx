@@ -455,11 +455,15 @@ function ChatSession({
 				// Show what got added — open it in the viewer too.
 				open(filename);
 			},
-			setLabel: (filename, label) => {
+			setLabel: (filename, label, suggestions) => {
 				const list = docsRef.current;
 				if (!list) return;
 				saveDocs.mutate(
-					list.map((d) => (d.filename === filename ? { ...d, label } : d)),
+					list.map((d) =>
+						d.filename === filename
+							? { ...d, label, ...(suggestions?.length ? { suggestions } : {}) }
+							: d,
+					),
 				);
 			},
 			// Return null on failure rather than throwing — the card awaits this and

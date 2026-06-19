@@ -250,6 +250,7 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 			// Derived from the sidecar's existence, not stored in the writable meta.
 			extracted: extracted.has(name) || undefined,
 			contextMode: m.contextMode,
+			suggestions: m.suggestions,
 		});
 	}
 	return docs.sort((a, b) => a.filename.localeCompare(b.filename));

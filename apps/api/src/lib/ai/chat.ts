@@ -99,13 +99,21 @@ const requestOpenFile = tool({
 
 const suggestLabel = tool({
 	description:
-		"Propose a short one-line label for a document — what it is, in a few words. The attorney accepts to apply it. Helpful for documents that have no label yet.",
+		"Propose a short one-line label for a document — what it is, in a few words — plus a couple of follow-up prompts the attorney might next ask about THAT document. The attorney accepts to apply the label; the prompts become one-tap chips in the chat. Helpful for documents that have no label yet.",
 	inputSchema: z.object({
 		filename: z.string().describe("Exact filename of the document to label"),
 		label: z
 			.string()
 			.describe(
 				"A concise label, e.g. 'specification as filed' or 'Smith reference (US7557198)'",
+			),
+		suggestions: z
+			.array(z.string())
+			.min(2)
+			.max(3)
+			.optional()
+			.describe(
+				"2-3 short, specific things the attorney might next ask Patrick about THIS document, phrased as prompts to Patrick, e.g. 'Summarise the independent claims' or 'Compare this with my draft'. Tailored to the document's content and kind.",
 			),
 	}),
 });

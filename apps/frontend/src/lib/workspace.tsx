@@ -20,6 +20,8 @@ export type WorkspaceDoc = {
 	kind: DocKind;
 	/** Patrick-created docs are editable; originals are read-only. */
 	editable: boolean;
+	/** Per-doc chat prompts generated alongside its label (suggestLabel). */
+	suggestions?: string[];
 };
 
 export type Columns = Record<string, string[]>;
@@ -76,6 +78,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				label: d.filename,
 				kind,
 				editable: kind === "docx" && !!d.createdInPatrick,
+				suggestions: d.suggestions,
 			});
 		}
 		return map;

@@ -409,8 +409,8 @@ export type ToolUiHandlers = {
 	}) => void;
 	/** Pin a source into the chat's context (requestOpenFile acceptance). */
 	pinSource: (filename: string) => void;
-	/** Apply a label to a document (suggestLabel acceptance). */
-	setLabel: (filename: string, label: string) => void;
+	/** Apply a label (+ generated chat suggestions) to a document (suggestLabel acceptance). */
+	setLabel: (filename: string, label: string, suggestions?: string[]) => void;
 	/** Create a blank draft + open it; resolves to its filename (createDraft). */
 	createDraft: (name: string) => Promise<string | null>;
 	/** Make an editable copy of an original + open it (requestUnlock). */
@@ -478,11 +478,30 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 	suggestLabel: {
 		icon: <Tag size={13} className={iconCls} />,
 		title: (i) => <>Label {bold(i.filename)} as:</>,
-		detail: (i) => <span className="text-foreground italic">“{i.label}”</span>,
+		detail: (i) => {
+			const n = Array.isArray((i as Record<string, unknown>).suggestions)
+				? ((i as Record<string, unknown>).suggestions as unknown[]).length
+				: 0;
+			return (
+				<span className="text-foreground italic">
+					“{i.label}”
+					{n > 0 && (
+						<span className="text-muted-foreground not-italic">
+							{" "}
+							· +{n} quick prompts
+						</span>
+					)}
+				</span>
+			);
+		},
 		acceptLabel: "Apply",
 		rejectLabel: "No",
 		accept: (i, h) => {
-			if (i.filename && i.label) h.setLabel(i.filename, i.label);
+			const raw = (i as Record<string, unknown>).suggestions;
+			const suggestions = Array.isArray(raw)
+				? raw.filter((s): s is string => typeof s === "string")
+				: undefined;
+			if (i.filename && i.label) h.setLabel(i.filename, i.label, suggestions);
 			return { applied: true, filename: i.filename, label: i.label };
 		},
 		reject: (i) => ({ applied: false, filename: i.filename }),

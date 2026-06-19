@@ -35,6 +35,13 @@ function emptyStateFor(
 				"Summarise what's in this matter",
 			],
 		};
+	// Per-doc prompts generated when the doc was labelled win — they're tailored to
+	// its actual content, not just its kind.
+	if (doc?.suggestions?.length)
+		return {
+			title: `Ask me about ${doc.label}.`,
+			suggestions: doc.suggestions,
+		};
 	if (doc?.kind === "pdf")
 		return {
 			title: `Ask me about ${doc.label}.`,
