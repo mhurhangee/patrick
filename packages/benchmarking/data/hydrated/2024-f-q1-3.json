@@ -1,0 +1,32 @@
+{
+  "id": "2024-f-q1-3",
+  "jurisdiction": "EP",
+  "topic": "Article 14 – Languages of the European Patent Office, European patent applications and other documents",
+  "provenance": "2024 Paper F · Q1",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 14(2)",
+      "type": "article",
+      "text": "(1) The official languages of the European Patent Office shall be English, French and German.\n(2) A European patent application shall be filed in one of the official languages or, if filed in any other language, translated into one of the official languages in accordance with the Implementing Regulations. Throughout the proceedings before the European Patent Office, such translation may be brought into conformity with the application as filed. If a required translation is not filed in due time, the application shall be deemed to be withdrawn.\n(3) The official language of the European Patent Office in which the European patent application is filed or into which it is translated shall be used as the language of the proceedings in all proceedings before the European Patent Office, unless the Implementing Regulations provide otherwise.\n(4) Natural or legal persons having their residence or principal place of business within a Contracting State having a language other than English, French or German as an official language, and nationals of that State who are resident abroad, may file documents which have to be filed within a time limit in an official language of that State. They shall, however, file a translation in an official language of the European Patent Office in accordance with the Implementing Regulations. If any document, other than those documents making up the European patent application, is not filed in the prescribed language, or if any required translation is not filed in due time, the document shall be deemed not to have been filed.\n(5) European patent applications shall be published in the language of the proceedings.\n(6) Specifications of European patents shall be published in the language of the proceedings and shall include a translation of the claims in the other two official languages of the European Patent Office.\n(7) The following shall be published in the three official languages of the European Patent Office:\n(a) the European Patent Bulletin;\n(b) the Official Journal of the European Patent Office.\n(8) Entries in the European Patent Register shall be made in the three official languages of the European Patent Office. In cases of doubt, the entry in the language of the proceedings shall be authentic.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 6(1) EPC",
+      "type": "rule",
+      "text": "(1) A translation under Article 14, paragraph 2, shall be filed within two months of filing the European patent application.\n(2) A translation under Article 14, paragraph 4, shall be filed within one month of filing the document. This shall also apply to requests under Article 105a. Where the document is a notice of opposition or appeal, or a statement of grounds of appeal, or a petition for review, the translation may be filed within the period for filing such a notice or statement or petition, if that period expires later.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines A-VII 1.1",
+      "type": "guidelines",
+      "text": "European patent applications can be filed in any language. However, if filed in a language other than an official EPO language (English, French and German), a translation into one of the official languages must be filed within two months of the date of filing (Rule 6(1)). Although filing in any language is in principle possible, there may be limitations due to the applicable national law for applications filed at a central industrial property office or the competent national authority under Art. 75(1)(b). Art. 14(1) and Art. 14(2) Rule 6(1)\nIn the case of applications filed in \"an admissible non‑EPO language\" (see A‑VII, 3.2), a reduction of the filing fee is allowed for certain categories of applicants (see A‑X, 9.3.1 and A-X, 9.3.2). Filing a European patent application in a single language is not a requirement for according a date of filing (Art. 90(3) in conjunction with Art. 14(2)). However, where an application is filed in more than one language, the EPO will invite the applicant to remedy the deficiency. Rule 7a(1) Rule 7a(2) Rule 7a(5)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a14.html",
+    "https://www.epo.org/en/legal/epc/2020/r6.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_vii_1_1.html"
+  ]
+}

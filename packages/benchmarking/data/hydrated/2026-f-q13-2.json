@@ -1,0 +1,25 @@
+{
+  "id": "2026-f-q13-2",
+  "jurisdiction": "EP",
+  "topic": "Article 94, – Examination of the European patent application",
+  "provenance": "2026 Paper F · Q13",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 94(3) EPC",
+      "type": "article",
+      "text": "(1) The European Patent Office shall, in accordance with the Implementing Regulations, examine on request whether the European patent application and the invention to which it relates meet the requirements of this Convention. The request shall not be deemed to be filed until the examination fee has been paid.\n(2) If no request for examination has been made in due time, the application shall be deemed to be withdrawn.\n(3) If the examination reveals that the application or the invention to which it relates does not meet the requirements of this Convention, the Examining Division shall invite the applicant, as often as necessary, to file his observations and, subject to Article 123, paragraph 1, to amend the application.\n(4) If the applicant fails to reply in due time to any communication from the Examining Division, the application shall be deemed to be withdrawn.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines G-VII 6",
+      "type": "guidelines",
+      "text": "In the context of the problem-solution approach, it is permissible to combine the disclosure of one or more documents, parts of documents or other pieces of prior art (e.g. a public prior use or unwritten general technical knowledge) with the closest prior art. However, the fact that more than one disclosure must be combined with the closest prior art in order to arrive at a combination of features may indicate that there is an inventive step, e.g. if the claimed invention is not a mere aggregation of features (see G‑VII, 7).\nThe situation is different where the invention is a solution to several independent \"partial problems\" (see G‑VII, 7 and G-VII, 5.2). Indeed, in such a case it is necessary to separately assess, for each partial problem, whether the combination of features solving the partial problem is obviously derivable from the prior art. This means that a different document can be combined with the closest prior art for each partial problem (see T 389/86). For the subject-matter of the claim to be inventive, it suffices, however, that one of these combinations of features involves an inventive step.\nIn determining whether it would be obvious to combine two or more distinct disclosures, the examiner must consider especially:\n(i)whether the content of the disclosures (e.g. documents) is such as to make it likely or unlikely that the skilled person, when faced with the problem solved by the invention, would combine them – for example, if two disclosures considered as a whole could not in practice be readily combined because of inherent incompatibility in disclosed features essential to the invention, combining these disclosures is not normally regarded as obvious\n(ii)whether the disclosures (e.g. documents) come from similar, neighbouring or remote technical fields (see G‑VII, 3)\n(iii)that combining two or more parts of the same disclosure would be obvious if there is a reasonable basis for the skilled person to associate these parts with one another. It would normally be obvious to combine a well-known textbook or standard dictionary with a prior-art document; this is only a special case of the general proposition that it is obvious to combine the teaching of one or more documents with the common general knowledge in the art. Generally speaking, it would also be obvious to combine two documents where one of them contains a clear and unmistakable reference to the other (on references which are considered an integral part of the disclosure, see G‑IV, 5.1 and G‑VI, 1). In determining whether it is permissible to combine a document with an item of prior art made public in some other way, e.g. by use, similar considerations apply.",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a94.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/g_vii_6.html"
+  ]
+}

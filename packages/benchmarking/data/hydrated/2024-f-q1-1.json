@@ -1,0 +1,25 @@
+{
+  "id": "2024-f-q1-1",
+  "jurisdiction": "EP",
+  "topic": "Rule 38 – Filing fee and search fee",
+  "provenance": "2024 Paper F · Q1",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 38(1) EPC",
+      "type": "rule",
+      "text": "(1) The filing fee and search fee shall be paid within one month of filing the European patent application.\n(2) The Rules relating to Fees may provide for an additional fee as part of the filing fee if the application comprises more than 35 pages.\n(3) The additional fee referred to in paragraph 2 shall be paid within one month of filing the European patent application or one month of filing the first set of claims or one month of filing the certified copy referred to in Rule 40, paragraph 3, whichever period expires last.\n(4) The Rules relating to Fees may provide for an additional fee as part of the filing fee in the case of a divisional application filed in respect of any earlier application which is itself a divisional application.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 134(1) EPC",
+      "type": "rule",
+      "text": "(1) If a period expires on a day on which one of the filing offices of the European Patent Office under Rule 35, paragraph 1, is not open for receipt of documents or on which, for reasons other than those referred to in paragraph 2, mail is not delivered there, the period shall extend to the first day thereafter on which all the filing offices are open for receipt of documents and on which mail is delivered. The first sentence shall apply mutatis mutandis if documents filed by one of the means of electronic communication permitted by the President of the European Patent Office under Rule 2, paragraph 1, cannot be received.\n(2) If a period expires on a day on which there is a general dislocation in the delivery or transmission of mail in a Contracting State, the period shall extend to the first day following the end of the interval of dislocation for parties which are resident in the State concerned or have appointed representatives with a place of business in that State. Where the State concerned is the State in which the European Patent Office is located, this provision shall apply to all parties and their representatives. This paragraph shall apply mutatis mutandis to the period referred to in Rule 37, paragraph 2.\n(3) Paragraphs 1 and 2 shall apply mutatis mutandis where acts are performed with the competent authority in accordance with Article 75, paragraphs 1(b) or Article 75, paragraphs 2(b).\n(4) The date of commencement and the end of any dislocation under paragraph 2 shall be published by the European Patent Office.\n(5) Without prejudice to paragraphs 1 to 4, a party concerned may produce evidence that on any of the ten days preceding the day of expiry of a period the delivery or transmission of mail was dislocated due to an exceptional occurrence such as a natural disaster, war, civil disorder, a general breakdown in any of the means of electronic communication permitted by the President of the European Patent Office under Rule 2, paragraph 1, or other like reasons affecting the locality where the party or their representative resides or has their place of business. If the evidence produced satisfies the European Patent Office, a document received late shall be deemed to have been received in due time, provided that the mailing or the transmission was effected at the latest on the fifth day after the end of the dislocation.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r38.html",
+    "https://www.epo.org/en/legal/epc/2020/r134.html"
+  ]
+}

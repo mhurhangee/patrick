@@ -7,7 +7,12 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!**/patrick-docs.generated.ts", "!packages/law/data"]
+		"includes": [
+			"**",
+			"!**/patrick-docs.generated.ts",
+			"!packages/law/data",
+			"!packages/benchmarking/data"
+		]
 	},
 	"formatter": {
 		"enabled": true,

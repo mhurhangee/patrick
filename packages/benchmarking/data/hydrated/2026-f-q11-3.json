@@ -1,0 +1,18 @@
+{
+  "id": "2026-f-q11-3",
+  "jurisdiction": "EP",
+  "topic": "Rule 95 – Decision on the request",
+  "provenance": "2026 Paper F · Q11",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 95(2) EPC",
+      "type": "rule",
+      "text": "(1) If a request for revocation is admissible, the Examining Division shall revoke the patent and communicate this to the requester.\n(2) If a request for limitation is admissible, the Examining Division shall examine whether the amended claims constitute a limitation vis-à-vis the claims as granted or amended in opposition or limitation proceedings and comply with Article 84 and Article 123, paragraphs 2 and 3. If the request does not comply with these requirements, the Examining Division shall give the requester one opportunity to correct any deficiencies noted, and to amend the claims and, where appropriate, the description and drawings, within a period to be specified.\n(3) If a request for limitation is allowable under paragraph 2, the Examining Division shall communicate this to the requester and invite them to file a translation of the amended claims in the official languages of the European Patent Office other than the language of the proceedings, within a period of three months; Rule 82, paragraph 3, first sentence, shall apply mutatis mutandis. If the requester performs these acts in due time, the Examining Division shall limit the patent.\n(4) If the requester does not respond in due time to the communication issued under paragraph 2, or if the request for limitation is not allowable, or if the requester fails to perform the acts required under paragraph 3 in due time, the Examining Division shall reject the request.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r95.html"
+  ]
+}

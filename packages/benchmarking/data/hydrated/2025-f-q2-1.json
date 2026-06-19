@@ -1,0 +1,32 @@
+{
+  "id": "2025-f-q2-1",
+  "jurisdiction": "EP",
+  "topic": "Article 17 – Search Divisions",
+  "provenance": "2025 Paper F · Q2",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 17 EPC",
+      "type": "article",
+      "text": "The Search Divisions shall be responsible for drawing up European search reports.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 11(1) EPC",
+      "type": "rule",
+      "text": "(1) Technically qualified examiners acting as members of Search, Examining or Opposition Divisions shall be assigned to Directorates. The President of the European Patent Office shall allocate duties to these Directorates by reference to the international classification.\n(2) The President of the European Patent Office may allocate further duties to the Receiving Section, the Search, Examining and Opposition Divisions, and the Legal Division, in addition to the responsibilities vested in them under the Convention.\n(3) The President of the European Patent Office may entrust to employees who are not technically or legally qualified examiners the execution of duties falling to the Search, Examining or Opposition Divisions and involving no technical or legal difficulties.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines B-I 2.2",
+      "type": "guidelines",
+      "text": "Where the nature of the invention makes it necessary to search in very different specialist fields, for example because the \"person skilled in the art\" in the relevant technical field has to be regarded as being more than one person (see G‑VII, 3), the search division may comprise members from different technical fields.\nThis may also happen where subject-matter covering different technical fields is found to lack unity.\nWhen the search division is enlarged this way, all the documents found in the various technical fields by its different members are included in the same search report. However, only one member draws up the search opinion, albeit in consultation with the members with expertise in the other technical fields where necessary.",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a17.html",
+    "https://www.epo.org/en/legal/epc/2020/r11.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/b_i_2_2.html"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "2026-f-q8-2",
+  "jurisdiction": "EP",
+  "topic": "Rule 80 – Amendment of the European patent",
+  "provenance": "2026 Paper F · Q8",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 80 EPC",
+      "type": "rule",
+      "text": "Without prejudice to Rule 138, the description, claims and drawings may be amended, provided that the amendments are occasioned by a ground for opposition under Article 100, even if that ground has not been invoked by the opponent.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r80.html"
+  ]
+}

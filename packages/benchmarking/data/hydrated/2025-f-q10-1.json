@@ -1,0 +1,46 @@
+{
+  "id": "2025-f-q10-1",
+  "jurisdiction": "EP",
+  "topic": "Article 121 – Further processing of the European patent application",
+  "provenance": "2025 Paper F · Q10",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 121(3) EPC",
+      "type": "article",
+      "text": "(1) If an applicant fails to observe a time limit vis-à-vis the European Patent Office, he may request further processing of the European patent application.\n(2) The European Patent Office shall grant the request, provided that the requirements laid down in the Implementing Regulations are met. Otherwise, it shall reject the request.\n(3) If the request is granted, the legal consequences of the failure to observe the time limit shall be deemed not to have ensued.\n(4) Further processing shall be ruled out in respect of the time limits in Article 87, paragraph 1, Article 108 and Article 112a, paragraph 4, as well as the time limits for requesting further processing or re-establishment of rights. The Implementing Regulations may rule out further processing for other time limits.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R.112(1) EPC",
+      "type": "rule",
+      "text": "(1) If the European Patent Office notes that a loss of rights has occurred, without any decision concerning the refusal of the European patent application or the grant, revocation or maintenance of the European patent, or the taking of evidence, it shall communicate this to the party concerned.\n(2) If the party concerned considers that the finding of the European Patent Office is inaccurate, it may, within two months of the communication under paragraph 1, apply for a decision on the matter. The European Patent Office shall take such decision only if it does not share the opinion of the party requesting it; otherwise, it shall inform that party.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 71(1) EPC",
+      "type": "rule",
+      "text": "(1) In any communication under Article 94, paragraph 3, the Examining Division shall, where appropriate, invite the applicant to correct any deficiencies noted and to amend the description, claims and drawings within a period to be specified.\n(2) Any communication under Article 94, paragraph 3, shall contain a reasoned statement covering, where appropriate, all the grounds against the grant of the European patent.\n(3) Before the Examining Division decides to grant the European patent, it shall inform the applicant of the text in which it intends to grant it and of the related bibliographic data. In this communication the Examining Division shall invite the applicant to pay the fee for grant and publishing and to file a translation of the claims in the two official languages of the European Patent Office other than the language of the proceedings within four months.\n(4) If the European patent application in the text intended for grant comprises more than fifteen claims, the Examining Division shall invite the applicant to pay claims fees in respect of the sixteenth and each subsequent claim within the period under paragraph 3 unless the said fees have already been paid under Rule 45 or Rule 162.\n(5) If the applicant, within the period laid down in paragraph 3, pays the fees under paragraph 3 and, where applicable, paragraph 4 and files the translations under paragraph 3, they shall be deemed to have approved the text communicated to them under paragraph 3 and verified the bibliographic data.\n(6) If the applicant, within the period under paragraph 3, requests reasoned amendments or corrections to the communicated text or keeps to the latest text submitted by them, the Examining Division shall issue a new communication under paragraph 3 if it gives its consent; otherwise it shall resume the examination proceedings.\n(7) If the fee for grant and publishing or the claims fees are not paid in due time, or if the translations are not filed in due time, the European patent application shall be deemed to be withdrawn.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 135(1) EPC",
+      "type": "rule",
+      "text": "(1) Further processing under Article 121, paragraph 1, shall be requested by payment of the prescribed fee within two months of the communication concerning either the failure to observe a time limit or a loss of rights. The omitted act shall be completed within the period for making the request.\n(2) Further processing shall be ruled out in respect of the periods referred to in Article 121, paragraph 4, and of the periods under Rule 6, paragraph 1, Rule 16, paragraph 1(a), Rule 31, paragraph 2, Rule 36, paragraph 2, Rule 40, paragraph 3, Rule 51, paragraphs 2 to Rule 51, paragraphs 5, Rule 52, paragraphs 2 and Rule 52, paragraphs 3, Rules 55, 56, Rule 56a, paragraphs 1 and Rule 56a, paragraphs 3 to Rule 56a, paragraphs 7, Rules 58, 59, 62a, Rule 63, 64, Rule 112, paragraph 2, and Rule 164, paragraphs 1 and Rule 164, paragraphs 2.\n(3) The department competent to decide on the omitted act shall decide on the request for further processing.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 135(2) EPC",
+      "type": "rule",
+      "text": "(1) Further processing under Article 121, paragraph 1, shall be requested by payment of the prescribed fee within two months of the communication concerning either the failure to observe a time limit or a loss of rights. The omitted act shall be completed within the period for making the request.\n(2) Further processing shall be ruled out in respect of the periods referred to in Article 121, paragraph 4, and of the periods under Rule 6, paragraph 1, Rule 16, paragraph 1(a), Rule 31, paragraph 2, Rule 36, paragraph 2, Rule 40, paragraph 3, Rule 51, paragraphs 2 to Rule 51, paragraphs 5, Rule 52, paragraphs 2 and Rule 52, paragraphs 3, Rules 55, 56, Rule 56a, paragraphs 1 and Rule 56a, paragraphs 3 to Rule 56a, paragraphs 7, Rules 58, 59, 62a, Rule 63, 64, Rule 112, paragraph 2, and Rule 164, paragraphs 1 and Rule 164, paragraphs 2.\n(3) The department competent to decide on the omitted act shall decide on the request for further processing.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a121.html",
+    "https://www.epo.org/en/legal/epc/2020/r112.html",
+    "https://www.epo.org/en/legal/epc/2020/r71.html",
+    "https://www.epo.org/en/legal/epc/2020/r135.html",
+    "https://www.epo.org/en/legal/epc/2020/r135.html"
+  ]
+}

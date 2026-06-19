@@ -1,0 +1,217 @@
+# Source sets — one per line, just the gold citations for that set.
+#
+# Separate citations with ; or ,   ·   GL = EPO Guidelines for Examination
+# Lines starting with # are comments; blank lines are ignored.
+# Optionally prefix a line with "topic = " to override the derived topic.
+#
+# Everything else — id, topic, jurisdiction, source URLs, verbatim text — is
+# derived on hydrate from @patrick/law. Non-EP sets (PCT / EPO-PCT) are skipped
+# for now (not yet in the corpus). Write Guidelines sections without an internal
+# comma where you can (GL A-II 4.1), though "GL A-II, 4.1" is also recovered.
+#
+# Prefer a binding basis (Article / Rule / Fee / Case Law) as the real gold; a
+# system that cites the parent Article of a Guidelines section is right, so a
+# GL-only line tends to under-score — include the governing Article too, or drop it.
+
+# 2026 Paper F 
+## Q1
+Art. 150(2) EPC
+Art. 4(2) EPC
+PCT-EPO Guidelines C-IV.2.1
+
+## Q2
+Art. 14(1) EPC
+Art. 14(2) EPC; R. 40 EPC
+Art. 14(4) EPC; R. 3(1) EPC
+R. 3(1) EPC
+
+## Q3
+Art. 89 EPC
+Art. 93(1) EPC
+Art. 63(1) EPC; Art. 89 EPC
+
+## Q4
+R. 51(1) EPC
+
+## Q5
+Art 123(2) EPC; GL H-IV 2.1; GL H-IV 2.2
+Art. 85 EPC; GL F-II 2.7
+Art 123(2) EPC; GL H-IV 2.2.6
+
+## Q6
+R. 71(5) EPC; GL C-V 2
+R. 71(3) EPC
+
+## Q7
+Art. 123(3) EPC; Art. 54(3) EPC 
+Art. 123(2) EPC; Art. 123(3) EPC
+
+## Q8
+Art. 123(2) EPC; GL F-III 2
+R. 80 EPC
+
+## Q9
+PCT Applicant’s Guide, Annex C, NL
+R. 19.4 PCT
+PCT Applicant’s Guide, Annex D, EP
+R. 48.3 PCT
+
+## Q10
+Art. 117(1)(d) EPC
+Art. 117(1) EPC; GL E-IV 1.2; GL E-IV 4.1
+Art. 113(1) EPC
+R. 118(2)(d) EPC
+
+## Q11
+Art. 84 EPC, Art. 123(2) EPC; Art. 123(3) EPC; R. 91 EPC; GL D-X 1
+R. 93(1) EPC
+R. 95(2) EPC
+
+## Q12
+Art. 88 EPC; GL F-VI 1.5
+Art. 88(4) EPC; GL F-VI 2.2
+
+## Q13
+Art. 94(3) EPC; GL G-VII 5.1
+Art. 94(3) EPC; GL G-VII 6
+
+## Q14
+RFees 2(1), item 1
+R. 38(1) EPC
+RFees 4(1); GL A-X 5.2.1; GL A-X 5.1.1
+
+## Q15
+R. 159(1) EPC; R. 134(1) EPC
+
+
+# 2025 Paper F 
+## Q1
+Art. 14(2) EPC
+R. 40(1) EPC; GL A-II 4.1
+R. 157(2) EPC; PCT-EPO GL A-VII 1.1; PCT AG, Annex C, EP
+Art. 11(1)(e) PCT; EPO-PCT GL A-II 4.1
+
+## Q2
+Art. 17 EPC, R. 11(1) EPC; GL B-I 2.2
+Art. 18(2) EPC
+Art. 19(2) EPC
+Art. 21(3)(c) EPC
+Art. 20(2) EPC
+
+## Q3
+R. 4.1(a)(ii) PCT
+R. 4.1(c)(i) PCT
+R. 4.1(a)(iii); R. 4.5(a)(i) PCT
+
+## Q4
+Art. 87(1) EPC
+Art. 87(1) EPC;  GL A-III 6.1
+Art. 59 EPC; GL A-III 6.1
+
+## Q5
+Art. 87(1) EPC; R.131(4) EPC; R. 134(1) EPC
+
+## Q6
+Art. 82 EPC; Art. 100 EPC
+Art. 84 EPC; Art. 100 EPC
+Art. 100(a) EPC; Art. 52(1) EPC; Art. 54 EPC
+Art. 54(2) EPC
+
+## Q7
+Art. 99(1); R.131(4) EPC
+Art. 2 Rfees, Item 10
+
+## Q8
+Art. 133(2) EPC; GL A-VIII 1.1
+
+## Q9
+Art. 116 EPC
+R. 115 EPC
+Art. 116(4) EPC; GL E-III 8.1
+Art. 116(3) EPC
+R. 115(2) EPC
+
+## Q10
+Art. 121(3) EPC; R.112(1) EPC; R. 71(1) EPC; R. 135(1) EPC; R. 135(2) EPC
+Art. 122 EPC; R. 136(3) EPC
+R. 112(1) EPC
+GL. A-IV 1.1.1; R. 36(1) EPC
+
+## Q11
+R. 20(1) EPC; GL A-III 5.2
+
+## Q12
+Art. 63(1) EPC
+Art. 63(1) EPC; Art. 89 EPC
+Art. 63(2) EPC
+
+## Q13
+Art. 59 EPC
+GL D-I 4; Art. 99(1) EPC
+
+## Q14
+R. 45(1) EPC; RFees 2.15
+
+## Q15
+GL G-IV 5.4;  Art. 125 EPC; Art. 97(2) EPC
+
+# 2024 Paper F 
+## Q1
+R. 38(1) EPC; R. 134(1) EPC
+R. 134(1) EPC; Art. 87(1) EPC
+Art. 14(2); R. 6(1) EPC; GL A-VII 1.1
+R. 57(a) EPC; R. 58 EPC; GL A-VII 1.4
+R. 58 EPC; R. 57(c) EPC
+
+## Q2
+R21(1) EPC; GL A-III 5.5; R19 EPC; R21(1) EPC
+R21(1) EPC; GL A-III 5.3; GL A-III 5.5
+GL A-III 5.5; R21(1) EPC
+Art. 100 EPC
+
+## Q3
+R. 56(2) EPC; R. 56(3) EPC
+R. 56a(3) EPC; R. 56a(4) EPC
+Art. 87 EPC
+Art. 87(1) EPC 
+R. 52(2) EPC; R 134(1) EPC
+
+## Q4
+R. 161(1) EPC
+R. 164(2)(a) EPC
+R. 162(1) EPC; R. 162(4)EPC
+R. 161(1)EPC
+
+## Q5
+Art. 99 EPC; R. 77(1) EPC
+Art. 100 EPC
+R. 81(1) EPC
+Art. 115 EPC
+
+## Q6
+Art. 109(1) EPC
+Art 116(1) EPC; Art. 113(1) EPC; GL E-XIII 7.3; R. 103(1)(a) EPC
+R. 99(1)(a) EPC; R. 101(2) EPC
+Art. 108 EPC
+
+## Q7
+Art. 54(3) EPC
+Art. 54(3) EPC; Art 89 EPC
+
+## Q8
+R. 6(3) EPC; R. 6(4) EPC
+Art. 14(4) EPC; R. 6(2) EPC; R. 131(4) EPC
+R. 4(1) EPC; R 4(5) EPC
+R. 4(1) EPC;
+
+## Q9
+Article 11(1)(iii)(c) PCT; Rule 20(1)(b) PCT
+Art. 153 EPC, R. 159 EPC; R 159(1) EPC; R. 131(4) EPC
+R 132(2) EPC; R 159 EPC
+R. 112 (1) EPC; R. 135(1) EPC; R. 159 EPC; Art 121 EPC
+
+## Q10
+Art. 58 EPC
+Art. 151 EPC, Rule 157(1) EPC, R. 19.1(a) PCT, R. 19.2(i) PCT; R. 19.1 PCT
+R. 19.1(iii) PCT; R. 19.2(ii)PCT
+R. 92bis.1.(a)(i) PCT

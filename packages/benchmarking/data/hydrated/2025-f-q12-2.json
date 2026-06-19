@@ -1,0 +1,25 @@
+{
+  "id": "2025-f-q12-2",
+  "jurisdiction": "EP",
+  "topic": "Article 63 – Term of the European patent",
+  "provenance": "2025 Paper F · Q12",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 63(1) EPC",
+      "type": "article",
+      "text": "(1) The term of the European patent shall be 20 years from the date of filing of the application.\n(2) Nothing in the preceding paragraph shall limit the right of a Contracting State to extend the term of a European patent, or to grant corresponding protection which follows immediately on expiry of the term of the patent, under the same conditions as those applying to national patents:\n(a) in order to take account of a state of war or similar emergency conditions affecting that State;\n(b) if the subject-matter of the European patent is a product or a process for manufacturing a product or a use of a product which has to undergo an administrative authorisation procedure required by law before it can be put on the market in that State.\n(3) Paragraph 2 shall apply mutatis mutandis to European patents granted jointly for a group of Contracting States in accordance with Article 142.\n(4) A Contracting State which makes provision for extension of the term or corresponding protection under paragraph 2(b) may, in accordance with an agreement concluded with the Organisation, entrust to the European Patent Office tasks associated with implementation of the relevant provisions.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Art. 89 EPC",
+      "type": "article",
+      "text": "The right of priority shall have the effect that the date of priority shall count as the date of filing of the European patent application for the purposes of Article 54, paragraphs 2 and Article 54, paragraphs 3, and Article 60, paragraph 2.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a63.html",
+    "https://www.epo.org/en/legal/epc/2020/a89.html"
+  ]
+}

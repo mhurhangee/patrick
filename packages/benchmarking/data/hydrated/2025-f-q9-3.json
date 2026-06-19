@@ -1,0 +1,25 @@
+{
+  "id": "2025-f-q9-3",
+  "jurisdiction": "EP",
+  "topic": "Article 116 – Oral proceedings",
+  "provenance": "2025 Paper F · Q9",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 116(4) EPC",
+      "type": "article",
+      "text": "(1) Oral proceedings shall take place either at the instance of the European Patent Office if it considers this to be expedient or at the request of any party to the proceedings. However, the European Patent Office may reject a request for further oral proceedings before the same department where the parties and the subject of the proceedings are the same.\n(2) Nevertheless, oral proceedings shall take place before the Receiving Section at the request of the applicant only where the Receiving Section considers this to be expedient or where it intends to refuse the European patent application.\n(3) Oral proceedings before the Receiving Section, the Examining Divisions and the Legal Division shall not be public.\n(4) Oral proceedings, including delivery of the decision, shall be public, as regards the Boards of Appeal and the Enlarged Board of Appeal, after publication of the European patent application, and also before the Opposition Divisions, in so far as the department before which the proceedings are taking place does not decide otherwise in cases where admission of the public could have serious and unjustified disadvantages, in particular for a party to the proceedings.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines E-III 8.1",
+      "type": "guidelines",
+      "text": "Oral proceedings before the Receiving Section, the examining divisions and the Legal Division are not public. Art. 116(3)\nOral proceedings before the opposition divisions, including delivery of the decision (see E‑III, 9), are public unless the opposition division decides otherwise in cases where admitting the public could have serious and unjustified disadvantages, in particular for a party to the proceedings. This could, for example, be the case if any of the parties wishes to give information about sales figures or other commercial secrets in support of their case. Generally, the public will only be excluded while this information is being given. The public is also excluded during discussions about a request for exclusion of a document from file inspection (see D‑II, 4.3) and when a decision on this matter is pronounced. The parties that did not make the request, as well as their representatives, may also be excluded as part of the public (e.g. where exclusion of a medical certificate from file inspection is requested). Members of the public may be granted remote access to opposition oral proceedings via a link provided at their request. See OJ EPO 2022, A106, for details about making a request and the applicable conditions. Art. 116(4)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a116.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/e_iii_8_1.html"
+  ]
+}

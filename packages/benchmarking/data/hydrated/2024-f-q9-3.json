@@ -1,0 +1,25 @@
+{
+  "id": "2024-f-q9-3",
+  "jurisdiction": "EP",
+  "topic": "Rule 132 – Periods specified by the European Patent Office",
+  "provenance": "2024 Paper F · Q9",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R 132(2) EPC",
+      "type": "rule",
+      "text": "(1) Where the Convention or these Implementing Regulations refer to \"a period to be specified\", this period shall be specified by the European Patent Office.\n(2) Unless otherwise provided, a period specified by the European Patent Office shall be neither less than two months nor more than four months; in certain circumstances it may be up to six months. In special cases, the period may be extended upon request, presented before the expiry of such period.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R 159 EPC",
+      "type": "rule",
+      "text": "(1) In respect of an international application under Article 153, the applicant shall perform the following acts within thirty-one months from the date of filing of the application or, if priority has been claimed, from the priority date:\n(a) supply, where applicable, the translation of the international application required under Article 153, paragraph 4;\n(b) specify the application documents, as originally filed or as amended, on which the European grant procedure is to be based;\n(c) pay the filing fee provided for in Article 78, paragraph 2;\n(d), pay the designation fee if the period under Rule 39 has expired earlier;\n(e) pay the search fee, where a supplementary European search report has to be drawn up;\n(f) file the request for examination provided for in Article 94, if the period under Rule 70, paragraph 1, has expired earlier;\n(g) pay the renewal fee in respect of the third year provided for in Article 86, paragraph 1, if the fee has fallen due earlier under Rule 51, paragraph 1;\n(h) file, where applicable, the certificate of exhibition referred to in Article 55, paragraph 2, and Rule 25.\n(2) The Examining Division shall be competent to take decisions of the European Patent Office under Article 25, paragraph 2(a) PCT.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r132.html",
+    "https://www.epo.org/en/legal/epc/2020/r159.html"
+  ]
+}

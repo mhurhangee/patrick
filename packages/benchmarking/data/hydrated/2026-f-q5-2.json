@@ -1,0 +1,25 @@
+{
+  "id": "2026-f-q5-2",
+  "jurisdiction": "EP",
+  "topic": "Article 85 – Abstract",
+  "provenance": "2026 Paper F · Q5",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 85 EPC",
+      "type": "article",
+      "text": "The abstract shall serve the purpose of technical information only; it may not be taken into account for any other purpose, in particular for interpreting the scope of the protection sought or applying Article 54, paragraph 3.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines F-II 2.7",
+      "type": "guidelines",
+      "text": "The general considerations relating to the abstract are set out in F‑II, 2.1 to F-II, 2.6. The abstract relates to the application as filed and published, and its final form for publication is determined by the search division. It does not have to be brought into conformity with the content of the published patent, even if this differs in substance from that of the application, since the patent specification does not contain an abstract. The examining division therefore does not seek any amendment of the abstract. Art. 98\nThe abstract has no legal effect on the application containing it; for instance, it cannot be used to interpret the scope of protection or to justify the addition to the description of new subject-matter. Art. 85",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a85.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/f_ii_2_7.html"
+  ]
+}

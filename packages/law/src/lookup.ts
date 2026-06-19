@@ -26,7 +26,6 @@ export async function lookupProvisions(
 					ref,
 					status: "ok",
 					focus: hit.focus,
-					...(hit.resolvedFrom ? { resolvedFrom: hit.resolvedFrom } : {}),
 					provision,
 				};
 			} catch {

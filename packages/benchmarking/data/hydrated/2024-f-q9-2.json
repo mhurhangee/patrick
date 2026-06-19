@@ -1,0 +1,39 @@
+{
+  "id": "2024-f-q9-2",
+  "jurisdiction": "EP",
+  "topic": "Article 153 – The European Patent Office as designated Office or elected Office",
+  "provenance": "2024 Paper F · Q9",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 153 EPC",
+      "type": "article",
+      "text": "(1) The European Patent Office shall be\n(a) a designated Office for any State party to this Convention in respect of which the PCT is in force, which is designated in the international application and for which the applicant wishes to obtain a European patent, and\n(b) an elected Office, if the applicant has elected a State designated pursuant to letter (a).\n(2) An international application for which the European Patent Office is a designated or elected Office, and which has been accorded an international date of filing, shall be equivalent to a regular European application (Euro-PCT application).\n(3) The international publication of a Euro-PCT application in an official language of the European Patent Office shall take the place of the publication of the European patent application and shall be mentioned in the European Patent Bulletin.\n(4) If the Euro-PCT application is published in another language, a translation into one of the official languages shall be filed with the European Patent Office, which shall publish it. Subject to Article 67, paragraph 3, the provisional protection under Article 67, paragraphs 1 and Article 67, paragraphs 2, shall be effective from the date of that publication.\n(5) The Euro-PCT application shall be treated as a European patent application and shall be considered as comprised in the state of the art under Article 54, paragraph 3, if the conditions laid down in paragraph 3 or 4 and in the Implementing Regulations are fulfilled.\n(6) The international search report drawn up in respect of a Euro-PCT application or the declaration replacing it, and their international publication, shall take the place of the European search report and the mention of its publication in the European Patent Bulletin.\n(7) A supplementary European search report shall be drawn up in respect of any Euro-PCT application under paragraph 5. The Administrative Council may decide that the supplementary search report is to be dispensed with or that the search fee is to be reduced.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 159 EPC",
+      "type": "rule",
+      "text": "(1) In respect of an international application under Article 153, the applicant shall perform the following acts within thirty-one months from the date of filing of the application or, if priority has been claimed, from the priority date:\n(a) supply, where applicable, the translation of the international application required under Article 153, paragraph 4;\n(b) specify the application documents, as originally filed or as amended, on which the European grant procedure is to be based;\n(c) pay the filing fee provided for in Article 78, paragraph 2;\n(d), pay the designation fee if the period under Rule 39 has expired earlier;\n(e) pay the search fee, where a supplementary European search report has to be drawn up;\n(f) file the request for examination provided for in Article 94, if the period under Rule 70, paragraph 1, has expired earlier;\n(g) pay the renewal fee in respect of the third year provided for in Article 86, paragraph 1, if the fee has fallen due earlier under Rule 51, paragraph 1;\n(h) file, where applicable, the certificate of exhibition referred to in Article 55, paragraph 2, and Rule 25.\n(2) The Examining Division shall be competent to take decisions of the European Patent Office under Article 25, paragraph 2(a) PCT.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R 159(1) EPC",
+      "type": "rule",
+      "text": "(1) In respect of an international application under Article 153, the applicant shall perform the following acts within thirty-one months from the date of filing of the application or, if priority has been claimed, from the priority date:\n(a) supply, where applicable, the translation of the international application required under Article 153, paragraph 4;\n(b) specify the application documents, as originally filed or as amended, on which the European grant procedure is to be based;\n(c) pay the filing fee provided for in Article 78, paragraph 2;\n(d), pay the designation fee if the period under Rule 39 has expired earlier;\n(e) pay the search fee, where a supplementary European search report has to be drawn up;\n(f) file the request for examination provided for in Article 94, if the period under Rule 70, paragraph 1, has expired earlier;\n(g) pay the renewal fee in respect of the third year provided for in Article 86, paragraph 1, if the fee has fallen due earlier under Rule 51, paragraph 1;\n(h) file, where applicable, the certificate of exhibition referred to in Article 55, paragraph 2, and Rule 25.\n(2) The Examining Division shall be competent to take decisions of the European Patent Office under Article 25, paragraph 2(a) PCT.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 131(4) EPC",
+      "type": "rule",
+      "text": "(1) Periods shall be laid down in terms of full years, months, weeks or days.\n(2) Computation shall start on the day following the day on which the relevant event occurred, the event being either a procedural step or the expiry of another period. Where the procedural step is a notification, the relevant event shall be the deemed receipt of the document notified, unless otherwise provided.\n(3) When a period is expressed as one year or a certain number of years, it shall expire in the relevant subsequent year in the month having the same name and on the day having the same number as the month and the day on which the said event occurred; if the relevant subsequent month has no day with the same number, the period shall expire on the last day of that month.\n(4) When a period is expressed as one month or a certain number of months, it shall expire in the relevant subsequent month on the day which has the same number as the day on which the said event occurred; if the relevant subsequent month has no day with the same number, the period shall expire on the last day of that month.\n(5) When a period is expressed as one week or a certain number of weeks, it shall expire in the relevant subsequent week on the day having the same name as the day on which the said event occurred.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a153.html",
+    "https://www.epo.org/en/legal/epc/2020/r159.html",
+    "https://www.epo.org/en/legal/epc/2020/r159.html",
+    "https://www.epo.org/en/legal/epc/2020/r131.html"
+  ]
+}
