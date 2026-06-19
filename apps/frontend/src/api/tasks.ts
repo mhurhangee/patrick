@@ -30,6 +30,12 @@ export const tasksApi = {
 		api.get<Chat>(`/tasks/${id}/chats/${chatId}`),
 	removeChat: (id: string, chatId: string) =>
 		api.del<{ ok: boolean }>(`/tasks/${id}/chats/${chatId}`),
+	/** Star / rename a chat (attorney-set meta). */
+	updateChatMeta: (
+		id: string,
+		chatId: string,
+		patch: { starred?: boolean; customTitle?: string },
+	) => api.post<{ ok: boolean }>(`/tasks/${id}/chats/${chatId}/meta`, patch),
 	/** Write a chat record directly (Fork: materialise a sliced copy). */
 	saveChat: (
 		id: string,
