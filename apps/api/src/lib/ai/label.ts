@@ -27,7 +27,15 @@ export async function generateDocumentLabel(
 	const content = await pinnedSourcesMessage(folder, [
 		{ filename, kind: docKind(filename) },
 	]);
-	if (!content) return null;
+	// The message always carries a leading header part; require an actual document
+	// part too. An unreadable source yields header-only — labelling it would make
+	// the model invent a label from nothing.
+	if (
+		!content ||
+		!Array.isArray(content.content) ||
+		content.content.length <= 1
+	)
+		return null;
 
 	const { object } = await generateObject({
 		model: createModel(ai.provider, ai.apiKey, ai.quickModel),

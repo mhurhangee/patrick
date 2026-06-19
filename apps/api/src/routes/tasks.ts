@@ -148,7 +148,7 @@ tasks.post("/:id/documents/:filename/label", async (c) => {
 	try {
 		const result = await generateDocumentLabel(
 			task.folder,
-			c.req.param("filename"),
+			basename(c.req.param("filename")),
 			profile.ai,
 		);
 		if (!result) return c.json({ error: "could not read the document" }, 400);
