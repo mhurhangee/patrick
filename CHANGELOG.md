@@ -6,6 +6,42 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-19
+
+This release puts you in control of how Patrick runs and shows you exactly what
+goes into each turn: choose the model per chat, see (and trim) the context before
+you send, and read your instructions and Patrick's abilities in one place.
+
+### Added
+
+- **Per-chat model picker.** Choose Patrick's model for a chat from a richer
+  picker — grouped by vendor, with each model's tier, your own (bring-your-own-key)
+  pricing per million tokens, and context window. The model locks once the chat
+  starts, so a conversation never silently switches mid-thread; your profile sets
+  the default.
+- **A context control in the composer.** One toolbar affordance shows what a turn
+  costs across the chat's life: before you send, an estimate of what's about to go
+  — the open source documents, each with a token estimate and a one-tap close (so
+  you don't accidentally send documents you forgot were open), and a warning as
+  the context grows; after you send, the provider's exact token usage, the pinned
+  sources, the locked model, and the cost per turn.
+- **Chat management.** Star, rename, and delete chats from the sidebar — starred
+  chats float to the top.
+- **Per-document quick prompts.** When Patrick labels a document it also suggests
+  a few follow-up prompts tailored to that document, offered as one-tap chips on a
+  fresh chat. A "Suggest a label" action lives in the document menu.
+
+### Changed
+
+- **One model per profile.** The separate "quick" and "detailed" models are now a
+  single model setting, chosen in the same picker.
+- **Read-only system prompt, honest by default.** Per-chat prompt editing is gone;
+  your instructions and Patrick's abilities live in the profile prompt builder
+  (with its preview), linked from the chat. A chat freezes the prompt it started
+  under, and warns you if your profile has since changed.
+- The documents and chats menus were reorganised into grouped actions for clearer,
+  more consistent controls.
+
 ## [0.4.0] - 2026-06-17
 
 This release grounds Patrick in real prior art and real law: he can pull the full
