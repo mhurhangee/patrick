@@ -12,9 +12,9 @@ import {
 	Plus,
 	RefreshCw,
 	ScanText,
-	Sparkles,
 	Star,
 	StarOff,
+	Tag,
 	Trash2,
 	Type,
 } from "lucide-react";
@@ -35,6 +35,10 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -456,7 +460,7 @@ function DocumentMenu({
 						}}
 						disabled={labelling}
 					>
-						<Sparkles />
+						<Tag />
 						{labelling
 							? "Labelling…"
 							: doc.label
@@ -464,51 +468,59 @@ function DocumentMenu({
 								: "Suggest a label"}
 					</DropdownMenuItem>
 				)}
-				{canEditCopy && (
-					<DropdownMenuItem onSelect={onEditCopy}>
-						<Copy />
-						Edit a copy
+				{kind === "pdf" && (
+					<DropdownMenuItem
+						// Keep the menu open (don't close-on-select) so the live
+						// "Extracting… x/y" label below stays visible during OCR.
+						onSelect={(e) => {
+							e.preventDefault();
+							onExtract();
+						}}
+						disabled={!!extracting}
+						title="Pull selectable text out of this PDF (OCR for scans)"
+					>
+						<ScanText />
+						{extracting
+							? `Extracting… ${extracting.done}/${extracting.total || "…"}`
+							: doc.extracted
+								? "Re-extract text"
+								: "Extract text"}
 					</DropdownMenuItem>
 				)}
-				{kind === "pdf" && (
+
+				{/* Context source — which form of the PDF Patrick reads (exclusive). */}
+				{kind === "pdf" && doc.extracted && (
 					<>
-						<DropdownMenuItem
-							// Keep the menu open (don't close-on-select) so the live
-							// "Extracting… x/y" label below stays visible during OCR.
-							onSelect={(e) => {
-								e.preventDefault();
-								onExtract();
-							}}
-							disabled={!!extracting}
-							title="Pull selectable text out of this PDF (OCR for scans)"
+						<DropdownMenuSeparator />
+						<DropdownMenuLabel className="font-normal text-muted-foreground">
+							Patrick reads as
+						</DropdownMenuLabel>
+						<DropdownMenuRadioGroup
+							value={mode}
+							onValueChange={(v) =>
+								onUpdate({ contextMode: v as "image" | "text" })
+							}
 						>
-							<ScanText />
-							{extracting
-								? `Extracting… ${extracting.done}/${extracting.total || "…"}`
-								: doc.extracted
-									? "Re-extract text"
-									: "Extract text"}
-						</DropdownMenuItem>
-						{doc.extracted && (
-							<>
-								<DropdownMenuItem
-									onSelect={() => onUpdate({ contextMode: "image" })}
-									title="Send Patrick the original PDF (figures + layout, pricier)"
-								>
-									<FileImage />
-									{mode === "image" ? "✓ " : ""}Context: original PDF
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onSelect={() => onUpdate({ contextMode: "text" })}
-									title="Send Patrick the extracted text (cheaper, may have OCR errors)"
-								>
-									<FileText />
-									{mode === "text" ? "✓ " : ""}Context: extracted text
-								</DropdownMenuItem>
-							</>
-						)}
+							<DropdownMenuRadioItem
+								value="image"
+								title="The original PDF — figures + layout, pricier"
+							>
+								<FileImage />
+								Original PDF
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem
+								value="text"
+								title="The extracted text — cheaper, may have OCR errors"
+							>
+								<FileText />
+								Extracted text
+							</DropdownMenuRadioItem>
+						</DropdownMenuRadioGroup>
 					</>
 				)}
+
+				{/* Organise (separator only if anything precedes it). */}
+				{(!!onSuggestLabel || kind === "pdf") && <DropdownMenuSeparator />}
 				<DropdownMenuItem onSelect={() => onUpdate({ starred: !doc.starred })}>
 					{doc.starred ? <StarOff /> : <Star />}
 					{doc.starred ? "Unstar" : "Star"}
@@ -519,8 +531,20 @@ function DocumentMenu({
 					{doc.excluded ? <Eye /> : <EyeOff />}
 					{doc.excluded ? "Include for Patrick" : "Exclude from Patrick"}
 				</DropdownMenuItem>
+
+				{/* File */}
+				{canEditCopy && (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onSelect={onEditCopy}>
+							<Copy />
+							Edit a copy
+						</DropdownMenuItem>
+					</>
+				)}
 				{isPatrick && (
 					<>
+						<DropdownMenuSeparator />
 						<DropdownMenuItem onSelect={onStartRename}>
 							<Pencil />
 							Rename
