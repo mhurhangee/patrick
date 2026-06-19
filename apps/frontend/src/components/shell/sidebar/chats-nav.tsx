@@ -2,7 +2,6 @@ import type { ChatSummary } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
 import {
 	MessageSquare,
-	MoreHorizontal,
 	Pencil,
 	Plus,
 	Star,
@@ -10,16 +9,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -31,6 +21,7 @@ import { useChats, useDeleteChat, useUpdateChatMeta } from "@/hooks/use-chats";
 import { useActiveChat } from "@/lib/active-chat";
 import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
+import { KebabTrigger, RowRenameField } from "./row-controls";
 import { Section } from "./section";
 
 export function ChatsNav() {
@@ -122,8 +113,9 @@ function ChatRow({
 				<MessageSquare className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
 				<div className="min-w-0 flex-1">
 					{renaming ? (
-						<ChatRenameField
+						<RowRenameField
 							value={chat.title || chat.lastUser || ""}
+							placeholder="Chat title…"
 							onCommit={(t) => {
 								setRenaming(false);
 								onRename(t);
@@ -158,28 +150,13 @@ function ChatRow({
 				</div>
 			</div>
 
-			<AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete this chat?</AlertDialogTitle>
-						<AlertDialogDescription>
-							This permanently removes the conversation. This can't be undone.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel size="default" variant="outline">
-							Cancel
-						</AlertDialogCancel>
-						<AlertDialogAction
-							size="default"
-							variant="destructive"
-							onClick={onDelete}
-						>
-							Delete
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmDialog
+				open={confirmDelete}
+				onOpenChange={setConfirmDelete}
+				title="Delete this chat?"
+				description="This permanently removes the conversation. This can't be undone."
+				onConfirm={onDelete}
+			/>
 		</div>
 	);
 }
@@ -198,13 +175,7 @@ function ChatMenu({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<button
-					type="button"
-					title="More"
-					className="shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
-				>
-					<MoreHorizontal className="size-4" />
-				</button>
+				<KebabTrigger />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-44">
 				<DropdownMenuItem onSelect={onStar}>
@@ -222,32 +193,5 @@ function ChatMenu({
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
-	);
-}
-
-function ChatRenameField({
-	value,
-	onCommit,
-	onCancel,
-}: {
-	value: string;
-	onCommit: (title: string) => void;
-	onCancel: () => void;
-}) {
-	const [text, setText] = useState(value);
-	return (
-		<input
-			// biome-ignore lint/a11y/noAutofocus: a rename field exists to be typed in
-			autoFocus
-			value={text}
-			onChange={(e) => setText(e.target.value)}
-			onKeyDown={(e) => {
-				if (e.key === "Enter") onCommit(text.trim());
-				if (e.key === "Escape") onCancel();
-			}}
-			onBlur={onCancel}
-			placeholder="Chat title…"
-			className="w-full min-w-0 rounded-md border border-ring bg-background px-2 py-1 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-		/>
 	);
 }
