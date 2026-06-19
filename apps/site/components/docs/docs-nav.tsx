@@ -59,7 +59,7 @@ function NavItem({
 			<Link
 				href={node.url ?? "#"}
 				className={cn(
-					"block rounded-md border-l-2 py-1.5 pr-2 text-sm transition-colors",
+					"block rounded-none border-l-2 py-1.5 pr-2 text-sm transition-colors",
 					pad(depth),
 					active
 						? "border-primary bg-accent font-medium text-foreground"
