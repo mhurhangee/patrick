@@ -1,7 +1,6 @@
 import {
 	assembleSystemPrompt,
 	type PinnedSource,
-	type Profile,
 	type Task,
 } from "@patrick/shared";
 
@@ -64,22 +63,18 @@ function manifest(
 }
 
 // Assemble the system prompt: Patrick's capabilities/primer, then the attorney's
-// block "middle" (their `## Header` sections), then the runtime task + the
-// context manifest. `templateOverride` is the per-chat instructions edit
-// (ephemeral, never written to the profile); absent ⇒ the profile's saved middle.
+// block "middle" (their `## Header` sections), then the runtime task + the context
+// manifest. `middle` is the chat's frozen instructions, already resolved by the
+// caller — an empty middle is honoured (it just drops out of the assembly).
 export function buildSystemPrompt(
-	profile: Profile,
 	task: Task,
 	pinned: PinnedSource[],
 	activeDraft: string | null,
 	available: AvailableDoc[],
-	templateOverride?: string | null,
+	middle: string,
 ): string {
-	const middle = (
-		templateOverride?.trim() ? templateOverride : profile.prompts.agentpat
-	).trim();
 	return assembleSystemPrompt(
-		middle,
+		middle.trim(),
 		taskBlock(task),
 		manifest(pinned, activeDraft, available),
 	);

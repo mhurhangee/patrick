@@ -25,10 +25,13 @@ function load(): Store {
 
 let store: Store = load();
 const listeners = new Set<() => void>();
-const keyOf = (taskId: string, filename: string) => `${taskId}${SEP}${filename}`;
+const keyOf = (taskId: string, filename: string) =>
+	`${taskId}${SEP}${filename}`;
 
 /** Capture a doc's size when it's opened (PDF pages / text chars). */
 export function recordDocSize(taskId: string, filename: string, size: DocSize) {
+	// Skip until the task resolves — a key under "" can never be read back.
+	if (!taskId) return;
 	const k = keyOf(taskId, filename);
 	const prev = store[k];
 	if (prev && prev.pages === size.pages && prev.chars === size.chars) return;

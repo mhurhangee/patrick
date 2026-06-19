@@ -191,12 +191,13 @@ function ChatSession({
 	const keyStatus = keyStatusOf(keyVerification);
 	const keyReady = keyStatus === "valid";
 
-	// This chat's frozen instructions, if it has any (a reopened chat carries the
-	// prompt it was started under). The freeze itself is server-side now — the
-	// server resolves the profile prompt at first send and reuses it. This is only
-	// for the "no longer matches your profile" warning and to carry the prompt on a
-	// fork.
-	const frozenTemplate = initial?.systemTemplate ?? null;
+	// This chat's frozen instructions: a reopened chat carries the prompt it was
+	// started under; a fresh chat snapshots the profile prompt at first send (below),
+	// mirroring the server-side freeze. Drives the "no longer matches your profile"
+	// warning and the prompt carried on a fork — the turn itself is frozen server-side.
+	const [frozenTemplate, setFrozenTemplate] = useState<string | null>(
+		initial?.systemTemplate ?? null,
+	);
 
 	// This chat's model — null ⇒ follow the profile default (so a fresh chat tracks
 	// profile changes); frozen at first send, like the template. A reopened chat
@@ -709,8 +710,10 @@ function ChatSession({
 		if (!text || busy || !canSend) return;
 		// Lock the model at first send — this chat sticks with what it started on
 		// (cache stays warm; no mid-chat provider/model swap). modelRef is already
-		// current. The instructions freeze the same way, but server-side.
+		// current. Snapshot the prompt the same way (the server freezes the turn
+		// itself; this client copy drives the mismatch warning + fork).
 		if (chatModel === null && modelId) setChatModel(modelId);
+		if (frozenTemplate === null) setFrozenTemplate(profileTemplate);
 		// Commit OPEN = CONTEXT: pin whatever read-only sources are open right now
 		// (append-only). pinnedRef is updated synchronously so this very request
 		// carries them; the follow-up loop requests read the same committed set.

@@ -4,7 +4,8 @@ import { VersionChip } from "./version-chip";
 
 // The chat header: Patrick's identity + a new-chat button, plus the warning when
 // this chat's frozen prompt no longer matches the active profile. The system
-// prompt + tools inspection lives in the composer toolbar (SystemInspect).
+// prompt + abilities live in the profile prompt builder (linked from the context
+// popover), not here.
 export function SystemCard({
 	onNewChat,
 	profileMismatch,

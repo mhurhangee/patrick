@@ -455,7 +455,6 @@ export async function handleChat(c: Context) {
 	const { providerOptions } = reasoningOptions(provider, modelId, effort);
 	const template = await frozenTemplate(task.folder, body.chatId, profile);
 	const system = buildSystemPrompt(
-		profile,
 		task,
 		pinnedSources,
 		activeDraft,
