@@ -21,6 +21,7 @@ import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { recordDocSize } from "@/lib/doc-size";
 import { formatTokens } from "@/lib/format";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -64,7 +65,10 @@ export function PdfViewer({ filename }: { filename: string }) {
 				const ps = await Promise.all(
 					Array.from({ length: doc.numPages }, (_, i) => doc.getPage(i + 1)),
 				);
-				if (!cancelled) setPages(ps);
+				if (!cancelled) {
+					setPages(ps);
+					recordDocSize(activeTaskId ?? "", filename, { pages: doc.numPages });
+				}
 			} catch {
 				if (!cancelled) setError(true);
 			}

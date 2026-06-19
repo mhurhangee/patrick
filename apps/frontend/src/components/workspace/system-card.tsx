@@ -68,17 +68,6 @@ export function SystemCard({
 		};
 	}, [open, taskId, profileId, template, pinnedKey, activeDraft]);
 
-	const summary =
-		pinnedSources.length > 0 || activeDraft
-			? [
-					pinnedSources.length > 0 &&
-						`${pinnedSources.length} source${pinnedSources.length === 1 ? "" : "s"}`,
-					activeDraft && "draft",
-				]
-					.filter(Boolean)
-					.join(" · ")
-			: "no context yet";
-
 	return (
 		<div className="@container">
 			<div className="flex items-center justify-between gap-2 py-2 pr-2 pl-4">
@@ -102,8 +91,9 @@ export function SystemCard({
 						className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
 					>
 						<Code size={16} className="text-muted-foreground" />
-						<span className="max-w-[12rem] truncate text-xs text-muted-foreground">
-							{summary}
+						<span className="flex items-center gap-1 text-xs text-muted-foreground">
+							Instructions
+							{locked && <Lock className="size-3" />}
 						</span>
 						<ChevronDown
 							className={cn(

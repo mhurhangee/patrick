@@ -52,6 +52,7 @@ import { useActiveChat } from "@/lib/active-chat";
 import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { estimateDocTokens, useDocSize } from "@/lib/doc-size";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
 import {
 	ChatComposer,
@@ -64,7 +65,7 @@ import {
 	HITL_TOOLS,
 	type ToolUiHandlers,
 } from "./chat-message-parts";
-import { ContextRing } from "./context-ring";
+import { ContextRing, type ContextSource } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
 import { SystemCard } from "./system-card";
 
@@ -175,7 +176,7 @@ function ChatSession({
 	taskRef.current = task;
 	const profileRef = useRef(profile);
 	profileRef.current = profile;
-	const { columnList, focused, getDoc, open } = useWorkspace();
+	const { close, columnList, focused, getDoc, open } = useWorkspace();
 	const navigate = useNavigate();
 	// Tailor only the empty-state prompt to the open surface (display, not Patrick).
 	const surfacePath = useLocation({ select: (l) => l.pathname });
@@ -803,6 +804,25 @@ function ChatSession({
 			? (lastInputTokens / 1_000_000) * inputPrice
 			: null;
 
+	// Context pieces for the toolbar control: pinned (committed) vs open candidates
+	// (will pin on send), each with a token estimate against the chat's model.
+	const sizeOf = useDocSize(activeTaskId);
+	const toCtxSource = (s: PinnedSource): ContextSource => ({
+		filename: s.filename,
+		label: getDoc(s.filename)?.label ?? s.filename,
+		kind: s.kind,
+		tokens: modelId ? estimateDocTokens(sizeOf(s.filename), modelId) : null,
+	});
+	const pinnedCtx = pinnedSources.map(toCtxSource);
+	const pinnedSet = new Set(pinnedSources.map((p) => p.filename));
+	const candidateCtx = openSources
+		.filter((s) => !pinnedSet.has(s.filename))
+		.map(toCtxSource);
+	const estimatedTokens = [...pinnedCtx, ...candidateCtx].reduce(
+		(sum, s) => sum + (s.tokens ?? 0),
+		0,
+	);
+
 	// A locked chat keeps its frozen instructions; if the active profile's prompt
 	// has since changed (edited, or a different profile selected), the chat no
 	// longer reflects it. Surface that rather than silently re-resolving.
@@ -964,9 +984,9 @@ function ChatSession({
 							<Globe />
 						</Button>
 						<div className="ml-auto flex items-center gap-1.5">
-							{/* Before the chat locks: pick the model. After: the ring takes
-							    over (it needs a turn's token count), with the locked model
-							    shown in its popover. */}
+							{/* Before the chat locks: pick the model (the context control
+							    estimates what you're about to send). After: the model is
+							    shown inside the context popover instead. */}
 							{!locked && profile && modelId && (
 								<ModelPicker
 									provider={profile.ai.provider}
@@ -976,9 +996,21 @@ function ChatSession({
 									align="end"
 								/>
 							)}
-							{modelId && lastInputTokens != null && (
+							{modelId && (
 								<ContextRing
+									pinned={pinnedCtx}
+									candidates={candidateCtx}
+									onClose={close}
+									onCloseAll={() => {
+										for (const s of candidateCtx) close(s.filename);
+									}}
+									activeDraftLabel={
+										activeDraft
+											? (getDoc(activeDraft)?.label ?? activeDraft)
+											: null
+									}
 									used={lastInputTokens}
+									estimated={estimatedTokens}
 									window={contextWindowFor(modelId)}
 									inputCostPerTurn={inputCostPerTurn}
 									modelName={MODELS_BY_ID[modelId]?.name ?? modelId}

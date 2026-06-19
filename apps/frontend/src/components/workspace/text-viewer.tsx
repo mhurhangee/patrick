@@ -4,6 +4,7 @@ import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
+import { recordDocSize } from "@/lib/doc-size";
 
 // Read-only viewer for the plain-text/markdown documents Patrick saves (retrieved
 // publications). The content is simple — headings, a metadata header, numbered
@@ -173,7 +174,10 @@ export function TextViewer({ filename }: { filename: string }) {
 				const res = await fetch(tasksApi.fileUrl(activeTaskId ?? "", filename));
 				if (!res.ok) throw new Error(String(res.status));
 				const body = await res.text();
-				if (!cancelled) setText(body);
+				if (!cancelled) {
+					setText(body);
+					recordDocSize(activeTaskId ?? "", filename, { chars: body.length });
+				}
 			} catch {
 				if (!cancelled) setError(true);
 			}
