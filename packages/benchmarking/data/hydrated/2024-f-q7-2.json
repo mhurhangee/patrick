@@ -1,0 +1,25 @@
+{
+  "id": "2024-f-q7-2",
+  "jurisdiction": "EP",
+  "topic": "Article 54 – Novelty",
+  "provenance": "2024 Paper F · Q7",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 54(3) EPC",
+      "type": "article",
+      "text": "(1) An invention shall be considered to be new if it does not form part of the state of the art.\n(2) The state of the art shall be held to comprise everything made available to the public by means of a written or oral description, by use, or in any other way, before the date of filing of the European patent application.\n(3) Additionally, the content of European patent applications as filed, the dates of filing of which are prior to the date referred to in paragraph 2 and which were published on or after that date, shall be considered as comprised in the state of the art.\n(4) Paragraphs 2 and 3 shall not exclude the patentability of any substance or composition, comprised in the state of the art, for use in a method referred to in Article 53(c), provided that its use for any such method is not comprised in the state of the art.\n(5) Paragraphs 2 and 3 shall also not exclude the patentability of any substance or composition referred to in paragraph 4 for any specific use in a method referred to in Article 53(c), provided that such use is not comprised in the state of the art.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Art 89 EPC",
+      "type": "article",
+      "text": "The right of priority shall have the effect that the date of priority shall count as the date of filing of the European patent application for the purposes of Article 54, paragraphs 2 and Article 54, paragraphs 3, and Article 60, paragraph 2.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a54.html",
+    "https://www.epo.org/en/legal/epc/2020/a89.html"
+  ]
+}

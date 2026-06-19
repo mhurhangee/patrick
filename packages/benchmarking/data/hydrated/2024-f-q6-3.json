@@ -1,0 +1,25 @@
+{
+  "id": "2024-f-q6-3",
+  "jurisdiction": "EP",
+  "topic": "Rule 99 – Content of the notice of appeal and the statement of grounds",
+  "provenance": "2024 Paper F · Q6",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 99(1)(a) EPC",
+      "type": "rule",
+      "text": "(1) The notice of appeal shall contain:\n(a) the name and the address of the appellant as provided in Rule 41, paragraph 2(c);\n(b) an indication of the decision impugned; and\n(c) a request defining the subject of the appeal.\n(2) In the statement of grounds of appeal the appellant shall indicate the reasons for setting aside the decision impugned, or the extent to which it is to be amended, and the facts and evidence on which the appeal is based.\n(3) Part III of the Implementing Regulations shall apply mutatis mutandis to the notice of appeal, the statement of grounds and the documents filed in appeal proceedings.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 101(2) EPC",
+      "type": "rule",
+      "text": "(1) If the appeal does not comply with Articles 106 to Article 108, Rule 97 or Rule 99, paragraph 1(b) or Rule 99, paragraph 1(c) or Rule 99, paragraph 2, the Board of Appeal shall reject it as inadmissible, unless any deficiency has been remedied before the relevant period under Article 108 has expired.\n(2) If the Board of Appeal notes that the appeal does not comply with Rule 99, paragraph 1(a), it shall communicate this to the appellant and shall invite them to remedy the deficiencies noted within a period to be specified. If the deficiencies are not remedied in due time, the Board of Appeal shall reject the appeal as inadmissible.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r99.html",
+    "https://www.epo.org/en/legal/epc/2020/r101.html"
+  ]
+}

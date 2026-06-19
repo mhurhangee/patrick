@@ -1,0 +1,18 @@
+{
+  "id": "2024-f-q2-4",
+  "jurisdiction": "EP",
+  "topic": "Article 100 – Grounds for opposition",
+  "provenance": "2024 Paper F · Q2",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 100 EPC",
+      "type": "article",
+      "text": "Opposition may only be filed on the grounds that:\n(a) the subject-matter of the European patent is not patentable under Articles Article 52 to Article 57;\n(b) the European patent does not disclose the invention in a manner sufficiently clear and complete for it to be carried out by a person skilled in the art;\n(c) the subject-matter of the European patent extends beyond the content of the application as filed, or, if the patent was granted on a divisional application or on a new application filed under Article 61, beyond the content of the earlier application as filed.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a100.html"
+  ]
+}

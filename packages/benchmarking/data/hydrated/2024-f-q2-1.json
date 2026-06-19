@@ -1,0 +1,39 @@
+{
+  "id": "2024-f-q2-1",
+  "jurisdiction": "EP",
+  "topic": "Rule 21 – Rectification of the designation of an inventor",
+  "provenance": "2024 Paper F · Q2",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R21(1) EPC",
+      "type": "rule",
+      "text": "(1) An incorrect designation of an inventor shall be rectified upon request and only with the consent of the wrongly designated person and, where such a request is filed by a third party, the consent of the applicant for or proprietor of the patent. Rule 19 shall apply mutatis mutandis.\n(2) Where an incorrect designation of the inventor has been recorded in the European Patent Register or published in the European Patent Bulletin, its rectification or cancellation shall also be recorded or published therein.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines A-III 5.5",
+      "type": "guidelines",
+      "text": "An incorrect designation may be rectified, provided that a request is received together with the consent of the wrongly designated person and that of the patent's applicant or proprietor where the request is not filed by that party. If a further inventor is to be designated, the consent of the inventor(s) previously designated is not necessary (see J 8/82). The provisions of A‑III, 5.3 apply to the corrected designation mutatis mutandis. Rectification may also be requested after the proceedings before the EPO are terminated. Rule 21(1)\nWhere an incorrect designation has been rectified and where the incorrect designation was recorded in the European Patent Register or published in the European Patent Bulletin, its rectification or cancellation will also be recorded or published there. Rectification of the designation of an inventor falls under the responsibility of the Legal Division (see the decisions of the President of the EPO dated 21 November 2013, OJ EPO 2013, 600 and OJ EPO 2013, 601). Rule 21(2)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    },
+    {
+      "citation": "R19 EPC",
+      "type": "rule",
+      "text": "(1) The request for grant of a European patent shall contain the designation of the inventor. However, if the applicant is not the inventor or is not the sole inventor, the designation shall be filed in a separate document. The designation shall state the family name, given names and country and place of residence of the inventor, contain the statement referred to in Article 81 and bear the signature of the applicant or their representative.\n(2) The European Patent Office shall not verify the accuracy of the designation of the inventor.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R21(1) EPC",
+      "type": "rule",
+      "text": "(1) An incorrect designation of an inventor shall be rectified upon request and only with the consent of the wrongly designated person and, where such a request is filed by a third party, the consent of the applicant for or proprietor of the patent. Rule 19 shall apply mutatis mutandis.\n(2) Where an incorrect designation of the inventor has been recorded in the European Patent Register or published in the European Patent Bulletin, its rectification or cancellation shall also be recorded or published therein.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r21.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_iii_5_5.html",
+    "https://www.epo.org/en/legal/epc/2020/r19.html",
+    "https://www.epo.org/en/legal/epc/2020/r21.html"
+  ]
+}

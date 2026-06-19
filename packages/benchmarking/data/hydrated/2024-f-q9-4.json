@@ -1,0 +1,39 @@
+{
+  "id": "2024-f-q9-4",
+  "jurisdiction": "EP",
+  "topic": "Rule 112 – Noting of loss of rights",
+  "provenance": "2024 Paper F · Q9",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 112 (1) EPC",
+      "type": "rule",
+      "text": "(1) If the European Patent Office notes that a loss of rights has occurred, without any decision concerning the refusal of the European patent application or the grant, revocation or maintenance of the European patent, or the taking of evidence, it shall communicate this to the party concerned.\n(2) If the party concerned considers that the finding of the European Patent Office is inaccurate, it may, within two months of the communication under paragraph 1, apply for a decision on the matter. The European Patent Office shall take such decision only if it does not share the opinion of the party requesting it; otherwise, it shall inform that party.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 135(1) EPC",
+      "type": "rule",
+      "text": "(1) Further processing under Article 121, paragraph 1, shall be requested by payment of the prescribed fee within two months of the communication concerning either the failure to observe a time limit or a loss of rights. The omitted act shall be completed within the period for making the request.\n(2) Further processing shall be ruled out in respect of the periods referred to in Article 121, paragraph 4, and of the periods under Rule 6, paragraph 1, Rule 16, paragraph 1(a), Rule 31, paragraph 2, Rule 36, paragraph 2, Rule 40, paragraph 3, Rule 51, paragraphs 2 to Rule 51, paragraphs 5, Rule 52, paragraphs 2 and Rule 52, paragraphs 3, Rules 55, 56, Rule 56a, paragraphs 1 and Rule 56a, paragraphs 3 to Rule 56a, paragraphs 7, Rules 58, 59, 62a, Rule 63, 64, Rule 112, paragraph 2, and Rule 164, paragraphs 1 and Rule 164, paragraphs 2.\n(3) The department competent to decide on the omitted act shall decide on the request for further processing.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 159 EPC",
+      "type": "rule",
+      "text": "(1) In respect of an international application under Article 153, the applicant shall perform the following acts within thirty-one months from the date of filing of the application or, if priority has been claimed, from the priority date:\n(a) supply, where applicable, the translation of the international application required under Article 153, paragraph 4;\n(b) specify the application documents, as originally filed or as amended, on which the European grant procedure is to be based;\n(c) pay the filing fee provided for in Article 78, paragraph 2;\n(d), pay the designation fee if the period under Rule 39 has expired earlier;\n(e) pay the search fee, where a supplementary European search report has to be drawn up;\n(f) file the request for examination provided for in Article 94, if the period under Rule 70, paragraph 1, has expired earlier;\n(g) pay the renewal fee in respect of the third year provided for in Article 86, paragraph 1, if the fee has fallen due earlier under Rule 51, paragraph 1;\n(h) file, where applicable, the certificate of exhibition referred to in Article 55, paragraph 2, and Rule 25.\n(2) The Examining Division shall be competent to take decisions of the European Patent Office under Article 25, paragraph 2(a) PCT.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Art 121 EPC",
+      "type": "article",
+      "text": "(1) If an applicant fails to observe a time limit vis-à-vis the European Patent Office, he may request further processing of the European patent application.\n(2) The European Patent Office shall grant the request, provided that the requirements laid down in the Implementing Regulations are met. Otherwise, it shall reject the request.\n(3) If the request is granted, the legal consequences of the failure to observe the time limit shall be deemed not to have ensued.\n(4) Further processing shall be ruled out in respect of the time limits in Article 87, paragraph 1, Article 108 and Article 112a, paragraph 4, as well as the time limits for requesting further processing or re-establishment of rights. The Implementing Regulations may rule out further processing for other time limits.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r112.html",
+    "https://www.epo.org/en/legal/epc/2020/r135.html",
+    "https://www.epo.org/en/legal/epc/2020/r159.html",
+    "https://www.epo.org/en/legal/epc/2020/a121.html"
+  ]
+}

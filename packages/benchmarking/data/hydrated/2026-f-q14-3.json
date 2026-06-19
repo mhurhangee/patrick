@@ -1,10 +1,16 @@
 {
   "id": "2026-f-q14-3",
   "jurisdiction": "EP",
-  "topic": "5.2.1 Filing fee and search fee",
+  "topic": "Article 4 – Due date for fees",
   "provenance": "2026 Paper F · Q14",
   "law_date": "2026-06",
   "provisions": [
+    {
+      "citation": "Article 4 RFees(1)",
+      "type": "other",
+      "text": "(1) Fees in respect of which the due date is not specified in the provisions of the Convention or of the PCT or of the Implementing Regulations thereto shall be due on the date of receipt of the request for the service incurring the fee concerned.\n(2) The President of the Office may decide not to make services within the meaning of paragraph 1 dependent upon the advance payment of the corresponding fee.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
     {
       "citation": "Guidelines A-X 5.2.1",
       "type": "guidelines",
@@ -19,6 +25,7 @@
     }
   ],
   "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/f4.html",
     "https://www.epo.org/en/legal/guidelines-epc/2026/a_x_5_2_1.html",
     "https://www.epo.org/en/legal/guidelines-epc/2026/a_x_5_1_1.html"
   ]

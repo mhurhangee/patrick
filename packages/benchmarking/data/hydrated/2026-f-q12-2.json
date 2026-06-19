@@ -1,10 +1,16 @@
 {
   "id": "2026-f-q12-2",
   "jurisdiction": "EP",
-  "topic": "2.2 The same invention",
+  "topic": "Article 88 – Claiming priority",
   "provenance": "2026 Paper F · Q12",
   "law_date": "2026-06",
   "provisions": [
+    {
+      "citation": "Art. 88(4) EPC",
+      "type": "article",
+      "text": "(1) An applicant desiring to take advantage of the priority of a previous application shall file a declaration of priority and any other document required, in accordance with the Implementing Regulations.\n(2) Multiple priorities may be claimed in respect of a European patent application, notwithstanding the fact that they originated in different countries. Where appropriate, multiple priorities may be claimed for any one claim. Where multiple priorities are claimed, time limits which run from the date of priority shall run from the earliest date of priority.\n(3) If one or more priorities are claimed in respect of a European patent application, the right of priority shall cover only those elements of the European patent application which are included in the application or applications whose priority is claimed.\n(4) If certain elements of the invention for which priority is claimed do not appear among the claims formulated in the previous application, priority may nonetheless be granted, provided that the documents of the previous application as a whole specifically disclose such elements.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
     {
       "citation": "Guidelines F-VI 2.2",
       "type": "guidelines",
@@ -13,6 +19,7 @@
     }
   ],
   "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a88.html",
     "https://www.epo.org/en/legal/guidelines-epc/2026/f_vi_2_2.html"
   ]
 }

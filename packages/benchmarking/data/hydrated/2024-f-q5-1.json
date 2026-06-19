@@ -1,0 +1,25 @@
+{
+  "id": "2024-f-q5-1",
+  "jurisdiction": "EP",
+  "topic": "Article 99 – Opposition",
+  "provenance": "2024 Paper F · Q5",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 99 EPC",
+      "type": "article",
+      "text": "(1) Within nine months of the publication of the mention of the grant of the European patent in the European Patent Bulletin, any person may give notice to the European Patent Office of opposition to that patent, in accordance with the Implementing Regulations. Notice of opposition shall not be deemed to have been filed until the opposition fee has been paid.\n(2) The opposition shall apply to the European patent in all the Contracting States in which that patent has effect.\n(3) Opponents shall be parties to the opposition proceedings as well as the proprietor of the patent.\n(4) Where a person provides evidence that in a Contracting State, following a final decision, he has been entered in the patent register of such State instead of the previous proprietor, such person shall, at his request, replace the previous proprietor in respect of such State. Notwithstanding Article 118, the previous proprietor and the person making the request shall not be regarded as joint proprietors unless both so request.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 77(1) EPC",
+      "type": "rule",
+      "text": "(1) If the Opposition Division notes that the notice of opposition does not comply with Article 99, paragraph 1, or Rule 76, paragraph 2(c), or does not sufficiently identify the patent against which opposition has been filed, it shall reject the opposition as inadmissible, unless these deficiencies have been remedied before expiry of the opposition period.\n(2) If the Opposition Division notes that the notice of opposition does not comply with provisions other than those referred to in paragraph 1, it shall communicate this to the opponent and shall invite them to remedy the deficiencies noted within a period to be specified. If the deficiencies are not remedied in due time, the Opposition Division shall reject the opposition as inadmissible.\n(3) The decision to reject an opposition as inadmissible shall be communicated to the proprietor of the patent, together with a copy of the notice of opposition.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a99.html",
+    "https://www.epo.org/en/legal/epc/2020/r77.html"
+  ]
+}

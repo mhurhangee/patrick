@@ -1,0 +1,18 @@
+{
+  "id": "2024-f-q5-4",
+  "jurisdiction": "EP",
+  "topic": "Article 115 – Observations by third parties",
+  "provenance": "2024 Paper F · Q5",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 115 EPC",
+      "type": "article",
+      "text": "In proceedings before the European Patent Office, following the publication of the European patent application, any third party may, in accordance with the Implementing Regulations, present observations concerning the patentability of the invention to which the application or patent relates. That person shall not be a party to the proceedings.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a115.html"
+  ]
+}

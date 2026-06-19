@@ -1,0 +1,25 @@
+{
+  "id": "2024-f-q1-5",
+  "jurisdiction": "EP",
+  "topic": "Rule 58 – Correction of deficiencies in the application documents",
+  "provenance": "2024 Paper F · Q1",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 58 EPC",
+      "type": "rule",
+      "text": "If the European patent application does not comply with the requirements of Rule 57(a) to Rule 57(d), Rule 57(h) and Rule 57(i), the European Patent Office shall inform the applicant accordingly and invite them to correct the deficiencies noted within two months. The description, claims and drawings may be amended only to an extent sufficient to remedy such deficiencies.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 57(c) EPC",
+      "type": "rule",
+      "text": "If the European patent application has been accorded a date of filing, the European Patent Office shall examine, in accordance with Article 90, paragraph 3, whether:\n(a) a translation of the application required under Article 14, paragraph 2, under Rule 36, paragraph 2, second sentence, or under Rule 40, paragraph 3, second sentence, has been filed in due time;\n(b) the request for grant of a European patent satisfies the requirements of Rule 41;\n(c) the application contains one or more claims in accordance with Article 78, paragraph 1(c), or a reference to a previously filed application in accordance with Rule 40, paragraphs 1(c), Rule 40, paragraphs 2 and Rule 40, paragraphs 3, indicating that it replaces also the claims;\n(d) the application contains an abstract in accordance with Article 78, paragraph 1(e);\n(e) the filing fee and the search fee have been paid in accordance with Rule 17, paragraph 2, Rule 36, paragraph 3, or Rule 38;\n(f) the designation of the inventor has been made in accordance with Rule 19, paragraph 1;\n(g) where appropriate, the requirements laid down in Rules 52 and Rule 53 concerning the claim to priority have been satisfied;\n(h) where appropriate, the requirements of Article 133, paragraph 2, have been satisfied;\n(i) the application meets the requirements laid down in Rule 49, paragraph 1, and the applicable requirements prescribed by the President of the European Patent Office under Rule 49, paragraph 2;\n(j) the application meets the requirements laid down in Rule 30.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r58.html",
+    "https://www.epo.org/en/legal/epc/2020/r57.html"
+  ]
+}

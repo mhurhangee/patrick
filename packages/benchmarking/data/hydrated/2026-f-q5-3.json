@@ -1,10 +1,16 @@
 {
   "id": "2026-f-q5-3",
   "jurisdiction": "EP",
-  "topic": "2.2.6 Priority documents",
+  "topic": "Article 123 – Amendments",
   "provenance": "2026 Paper F · Q5",
   "law_date": "2026-06",
   "provisions": [
+    {
+      "citation": "Art 123(2) EPC",
+      "type": "article",
+      "text": "(1) The European patent application or European patent may be amended in proceedings before the European Patent Office, in accordance with the Implementing Regulations. In any event, the applicant shall be given at least one opportunity to amend the application of his own volition.\n(2) The European patent application or European patent may not be amended in such a way that it contains subject-matter which extends beyond the content of the application as filed.\n(3) The European patent may not be amended in such a way as to extend the protection it confers.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
     {
       "citation": "Guidelines H-IV 2.2.6",
       "type": "guidelines",
@@ -13,6 +19,7 @@
     }
   ],
   "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a123.html",
     "https://www.epo.org/en/legal/guidelines-epc/2026/h_iv_2_2_6.html"
   ]
 }

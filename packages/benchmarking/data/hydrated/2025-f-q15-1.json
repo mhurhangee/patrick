@@ -10,9 +10,23 @@
       "type": "guidelines",
       "text": "As acknowledged by the Enlarged Board, the prohibition on double patenting is applicable under Art. 125 (G 4/19). It is a principle of procedural law generally recognised in the majority of contracting states that two patents cannot be granted to the same applicant with claims directed to the same subject-matter.\nIn line with that, a European patent application can be refused under Art. 97(2) if it claims the same subject-matter as a European patent that has been granted to the same applicant and does not form part of the state of the art pursuant to Art. 54(2) and Art. 54(3). This would especially be the case in the following typical situations: two applications filed on the same day, parent and divisional applications, or an application and its priority application.\nAn applicant can be allowed to proceed with an application that has the same description as a patent already granted to them as long as it does not claim the same subject-matter (see also T 2461/10). However, when, for example, the subject-matter of claim 1 in an application is the same as that of a dependent claim in a granted patent held by the same applicant, an objection of double patenting will be raised (see T 1128/19). Where two or more European applications from the same applicant designate the same state or states and their claims have the same filing or priority date and relate to the same invention, the applicant must amend one or more of the applications so that the subject-matter of their claims is no longer the same, withdraw overlapping designations or choose which one of those applications is to proceed to grant. Otherwise, once one of the applications has been granted, the others will be refused under Art. 97(2) in conjunction with Art. 125 (G 4/19). If the claims of those applications only partially overlap, no objection should be raised (see T 877/06). If two applications with the same effective date are received from two different applicants, each must be allowed to proceed as though the other did not exist.",
       "version": "EPC Guidelines (consolidated 2026-03-31)"
+    },
+    {
+      "citation": "Art. 125 EPC",
+      "type": "article",
+      "text": "In the absence of procedural provisions in this Convention, the European Patent Office shall take into account the principles of procedural law generally recognised in the Contracting States.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Art. 97(2) EPC",
+      "type": "article",
+      "text": "(1) If the Examining Division is of the opinion that the European patent application and the invention to which it relates meet the requirements of this Convention, it shall decide to grant a European patent, provided that the conditions laid down in the Implementing Regulations are fulfilled.\n(2) If the Examining Division is of the opinion that the European patent application or the invention to which it relates does not meet the requirements of this Convention, it shall refuse the application unless this Convention provides for a different legal consequence.\n(3) The decision to grant a European patent shall take effect on the date on which the mention of the grant is published in the European Patent Bulletin.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
     }
   ],
   "source_refs": [
-    "https://www.epo.org/en/legal/guidelines-epc/2026/g_iv_5_4.html"
+    "https://www.epo.org/en/legal/guidelines-epc/2026/g_iv_5_4.html",
+    "https://www.epo.org/en/legal/epc/2020/a125.html",
+    "https://www.epo.org/en/legal/epc/2020/a97.html"
   ]
 }

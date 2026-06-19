@@ -1,0 +1,18 @@
+{
+  "id": "2024-f-q4-1",
+  "jurisdiction": "EP",
+  "topic": "Rule 161 – Amendment of the application",
+  "provenance": "2024 Paper F · Q4",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R. 161(1) EPC",
+      "type": "rule",
+      "text": "(1) If the European Patent Office has acted as the International Searching Authority and, where a demand under Article 31 PCT was filed, also as the International Preliminary Examining Authority for a Euro-PCT application, it shall give the applicant the opportunity to comment on the written opinion of the International Searching Authority or the International Preliminary Examination Report and, where appropriate, invite them to correct any deficiencies noted in the written opinion or in the International Preliminary Examination Report and to amend the description, claims and drawings within a period of six months from the respective communication. If the European Patent Office has drawn up a supplementary international search report, an invitation in accordance with the first sentence shall be issued in respect of the explanations given in accordance with Rule 45bis.7(e) PCT. If the applicant does not comply with or comment on an invitation in accordance with the first or second sentence, the application shall be deemed to be withdrawn.\n(2) Where the European Patent Office draws up a supplementary European search report on a Euro-PCT application, the application may be amended once within a period of six months from a communication informing the applicant accordingly. The application as amended shall serve as the basis for the supplementary European search.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r161.html"
+  ]
+}

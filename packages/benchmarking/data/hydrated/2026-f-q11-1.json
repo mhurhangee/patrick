@@ -1,10 +1,34 @@
 {
   "id": "2026-f-q11-1",
   "jurisdiction": "EP",
-  "topic": "1. Introduction",
+  "topic": "Article 84 – Claims",
   "provenance": "2026 Paper F · Q11",
   "law_date": "2026-06",
   "provisions": [
+    {
+      "citation": "Art. 84 EPC",
+      "type": "article",
+      "text": "The claims shall define the matter for which protection is sought. They shall be clear and concise and be supported by the description.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Art. 123(2) EPC",
+      "type": "article",
+      "text": "(1) The European patent application or European patent may be amended in proceedings before the European Patent Office, in accordance with the Implementing Regulations. In any event, the applicant shall be given at least one opportunity to amend the application of his own volition.\n(2) The European patent application or European patent may not be amended in such a way that it contains subject-matter which extends beyond the content of the application as filed.\n(3) The European patent may not be amended in such a way as to extend the protection it confers.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Art. 123(3) EPC",
+      "type": "article",
+      "text": "(1) The European patent application or European patent may be amended in proceedings before the European Patent Office, in accordance with the Implementing Regulations. In any event, the applicant shall be given at least one opportunity to amend the application of his own volition.\n(2) The European patent application or European patent may not be amended in such a way that it contains subject-matter which extends beyond the content of the application as filed.\n(3) The European patent may not be amended in such a way as to extend the protection it confers.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 91 EPC",
+      "type": "rule",
+      "text": "Decisions on requests for limitation or revocation of the European patent under Article 105a shall be taken by the Examining Division. Article 18, paragraph 2, shall apply mutatis mutandis.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
     {
       "citation": "Guidelines D-X 1",
       "type": "guidelines",
@@ -13,6 +37,10 @@
     }
   ],
   "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a84.html",
+    "https://www.epo.org/en/legal/epc/2020/a123.html",
+    "https://www.epo.org/en/legal/epc/2020/a123.html",
+    "https://www.epo.org/en/legal/epc/2020/r91.html",
     "https://www.epo.org/en/legal/guidelines-epc/2026/d_x_1.html"
   ]
 }

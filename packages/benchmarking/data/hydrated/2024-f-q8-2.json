@@ -1,0 +1,32 @@
+{
+  "id": "2024-f-q8-2",
+  "jurisdiction": "EP",
+  "topic": "Article 14 – Languages of the European Patent Office, European patent applications and other documents",
+  "provenance": "2024 Paper F · Q8",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "Art. 14(4) EPC",
+      "type": "article",
+      "text": "(1) The official languages of the European Patent Office shall be English, French and German.\n(2) A European patent application shall be filed in one of the official languages or, if filed in any other language, translated into one of the official languages in accordance with the Implementing Regulations. Throughout the proceedings before the European Patent Office, such translation may be brought into conformity with the application as filed. If a required translation is not filed in due time, the application shall be deemed to be withdrawn.\n(3) The official language of the European Patent Office in which the European patent application is filed or into which it is translated shall be used as the language of the proceedings in all proceedings before the European Patent Office, unless the Implementing Regulations provide otherwise.\n(4) Natural or legal persons having their residence or principal place of business within a Contracting State having a language other than English, French or German as an official language, and nationals of that State who are resident abroad, may file documents which have to be filed within a time limit in an official language of that State. They shall, however, file a translation in an official language of the European Patent Office in accordance with the Implementing Regulations. If any document, other than those documents making up the European patent application, is not filed in the prescribed language, or if any required translation is not filed in due time, the document shall be deemed not to have been filed.\n(5) European patent applications shall be published in the language of the proceedings.\n(6) Specifications of European patents shall be published in the language of the proceedings and shall include a translation of the claims in the other two official languages of the European Patent Office.\n(7) The following shall be published in the three official languages of the European Patent Office:\n(a) the European Patent Bulletin;\n(b) the Official Journal of the European Patent Office.\n(8) Entries in the European Patent Register shall be made in the three official languages of the European Patent Office. In cases of doubt, the entry in the language of the proceedings shall be authentic.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 6(2) EPC",
+      "type": "rule",
+      "text": "(1) A translation under Article 14, paragraph 2, shall be filed within two months of filing the European patent application.\n(2) A translation under Article 14, paragraph 4, shall be filed within one month of filing the document. This shall also apply to requests under Article 105a. Where the document is a notice of opposition or appeal, or a statement of grounds of appeal, or a petition for review, the translation may be filed within the period for filing such a notice or statement or petition, if that period expires later.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "R. 131(4) EPC",
+      "type": "rule",
+      "text": "(1) Periods shall be laid down in terms of full years, months, weeks or days.\n(2) Computation shall start on the day following the day on which the relevant event occurred, the event being either a procedural step or the expiry of another period. Where the procedural step is a notification, the relevant event shall be the deemed receipt of the document notified, unless otherwise provided.\n(3) When a period is expressed as one year or a certain number of years, it shall expire in the relevant subsequent year in the month having the same name and on the day having the same number as the month and the day on which the said event occurred; if the relevant subsequent month has no day with the same number, the period shall expire on the last day of that month.\n(4) When a period is expressed as one month or a certain number of months, it shall expire in the relevant subsequent month on the day which has the same number as the day on which the said event occurred; if the relevant subsequent month has no day with the same number, the period shall expire on the last day of that month.\n(5) When a period is expressed as one week or a certain number of weeks, it shall expire in the relevant subsequent week on the day having the same name as the day on which the said event occurred.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a14.html",
+    "https://www.epo.org/en/legal/epc/2020/r6.html",
+    "https://www.epo.org/en/legal/epc/2020/r131.html"
+  ]
+}

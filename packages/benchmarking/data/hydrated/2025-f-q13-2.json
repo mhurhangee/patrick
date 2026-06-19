@@ -10,9 +10,16 @@
       "type": "guidelines",
       "text": "\"Any person\" may give notice of opposition without specifying any particular interest. \"Any person\" is to be construed in line with Art. 58 as meaning any natural person (private individual, self-employed persons, etc.), any legal person or any body assimilated to a legal person under the law governing it. \"Any person\" does not include the patent proprietor (see G 9/93, reversing G 1/84). Notice of opposition may also be filed jointly by more than one of the persons mentioned above. In order to safeguard the rights of the patent proprietor and in the interests of procedural efficiency, it has to be clear throughout the procedure who belongs to the group of common opponents. If a common opponent (including the common representative) intends to withdraw from the proceedings, the EPO must be notified accordingly by the common representative or by a new common representative determined under Rule 151(1) in order for the withdrawal to take effect (see also G 3/99). Oppositions are not assignable but may be inherited or succeeded to as part of an overall succession in law, e.g. in the event of the merger of legal persons (see G 4/88). Acquiring companies may also take over oppositions filed by acquired companies. However, a legal person who was a subsidiary of the opponent when the opposition was filed and who carries on the business to which the opposed patent relates cannot acquire the status of opponent if all its shares are assigned to another company (see G 2/04). The EPO has to examine the validity of a claimed transfer of opponent status to a new party ex officio at all stages of the proceedings (see T 1178/04). Art. 99(1)",
       "version": "EPC Guidelines (consolidated 2026-03-31)"
+    },
+    {
+      "citation": "Art. 99(1) EPC",
+      "type": "article",
+      "text": "(1) Within nine months of the publication of the mention of the grant of the European patent in the European Patent Bulletin, any person may give notice to the European Patent Office of opposition to that patent, in accordance with the Implementing Regulations. Notice of opposition shall not be deemed to have been filed until the opposition fee has been paid.\n(2) The opposition shall apply to the European patent in all the Contracting States in which that patent has effect.\n(3) Opponents shall be parties to the opposition proceedings as well as the proprietor of the patent.\n(4) Where a person provides evidence that in a Contracting State, following a final decision, he has been entered in the patent register of such State instead of the previous proprietor, such person shall, at his request, replace the previous proprietor in respect of such State. Notwithstanding Article 118, the previous proprietor and the person making the request shall not be regarded as joint proprietors unless both so request.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
     }
   ],
   "source_refs": [
-    "https://www.epo.org/en/legal/guidelines-epc/2026/d_i_4.html"
+    "https://www.epo.org/en/legal/guidelines-epc/2026/d_i_4.html",
+    "https://www.epo.org/en/legal/epc/2020/a99.html"
   ]
 }

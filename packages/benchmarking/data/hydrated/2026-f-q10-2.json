@@ -1,10 +1,16 @@
 {
   "id": "2026-f-q10-2",
   "jurisdiction": "EP",
-  "topic": "1.2 Means of evidence",
+  "topic": "Article 117 – Means and taking of evidence",
   "provenance": "2026 Paper F · Q10",
   "law_date": "2026-06",
   "provisions": [
+    {
+      "citation": "Art. 117(1) EPC",
+      "type": "article",
+      "text": "(1) In proceedings before the European Patent Office the means of giving or obtaining evidence shall include the following:\n(a) hearing the parties;\n(b) requests for information;\n(c) production of documents;\n(d) hearing witnesses;\n(e) opinions by experts;\n(f) inspection;\n(g) sworn statements in writing.\n(2) The procedure for taking such evidence shall be laid down in the Implementing Regulations.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
     {
       "citation": "Guidelines E-IV 1.2",
       "type": "guidelines",
@@ -19,6 +25,7 @@
     }
   ],
   "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/a117.html",
     "https://www.epo.org/en/legal/guidelines-epc/2026/e_iv_1_2.html",
     "https://www.epo.org/en/legal/guidelines-epc/2026/e_iv_4_1.html"
   ]

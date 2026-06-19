@@ -1,0 +1,32 @@
+{
+  "id": "2024-f-q2-2",
+  "jurisdiction": "EP",
+  "topic": "Rule 21 – Rectification of the designation of an inventor",
+  "provenance": "2024 Paper F · Q2",
+  "law_date": "2026-06",
+  "provisions": [
+    {
+      "citation": "R21(1) EPC",
+      "type": "rule",
+      "text": "(1) An incorrect designation of an inventor shall be rectified upon request and only with the consent of the wrongly designated person and, where such a request is filed by a third party, the consent of the applicant for or proprietor of the patent. Rule 19 shall apply mutatis mutandis.\n(2) Where an incorrect designation of the inventor has been recorded in the European Patent Register or published in the European Patent Bulletin, its rectification or cancellation shall also be recorded or published therein.",
+      "version": "EPC 2020 (consolidated 2026-05-21)"
+    },
+    {
+      "citation": "Guidelines A-III 5.3",
+      "type": "guidelines",
+      "text": "Where filed in a separate document, the designation must contain the inventor's family name, given names and country and place of residence. The place of residence is the city or municipality, i.e. not the province or region, where the inventor permanently resides and should preferably include the postal code (see the notice from the EPO dated 22 February 2021, OJ EPO 2021, A12). The country and place of residence may also be that of the inventor's employer (e.g. a company). The designation must contain the statement, referred to in Art. 81, indicating the origin of the right to the patent and the signature of the applicant or the appointed representative. In the case of assignment, the words \"by agreement dated ...\" suffice. For inventions by employees, it is sufficient to mention that the inventor(s) is/are employee(s) of the applicant(s) and for cases of succession that the applicant(s) is/are heir(s) of the inventor(s). The designation of inventor must be signed by the applicant or the appointed representative. With regard to the signature, the provisions set out in A‑VIII, 3.2 to A-VIII, 3.4, apply. Rule 19(1)\nThe EPO does not verify the accuracy of the information given in the designation of the inventor but checks whether the designated inventor is a natural person (J 8/20). If the designation of inventor is filed subsequently, the requirements set out in A‑VIII, 3.1 apply. Rule 19(2)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    },
+    {
+      "citation": "Guidelines A-III 5.5",
+      "type": "guidelines",
+      "text": "An incorrect designation may be rectified, provided that a request is received together with the consent of the wrongly designated person and that of the patent's applicant or proprietor where the request is not filed by that party. If a further inventor is to be designated, the consent of the inventor(s) previously designated is not necessary (see J 8/82). The provisions of A‑III, 5.3 apply to the corrected designation mutatis mutandis. Rectification may also be requested after the proceedings before the EPO are terminated. Rule 21(1)\nWhere an incorrect designation has been rectified and where the incorrect designation was recorded in the European Patent Register or published in the European Patent Bulletin, its rectification or cancellation will also be recorded or published there. Rectification of the designation of an inventor falls under the responsibility of the Legal Division (see the decisions of the President of the EPO dated 21 November 2013, OJ EPO 2013, 600 and OJ EPO 2013, 601). Rule 21(2)",
+      "version": "EPC Guidelines (consolidated 2026-03-31)"
+    }
+  ],
+  "source_refs": [
+    "https://www.epo.org/en/legal/epc/2020/r21.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_iii_5_3.html",
+    "https://www.epo.org/en/legal/guidelines-epc/2026/a_iii_5_5.html"
+  ]
+}
