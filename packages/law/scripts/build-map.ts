@@ -10,7 +10,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type HTMLElement, parse } from "node-html-parser";
-import { SOURCES, type Source } from "../src/sources";
+import { SOURCES, type Source, type SourceId } from "../src/sources";
 import type { EpcMap, EpcMapEntry } from "../src/types";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -74,7 +74,8 @@ async function buildEntry(
 	const root = parse(await fetchText(url, `pages/${source.id}/${slug}.html`));
 	const body = root.querySelector(".epolegal-content");
 	return {
-		source: source.id,
+		// source is one of SOURCES at runtime; narrow the build-only string.
+		source: source.id as SourceId,
 		slug,
 		url,
 		kind: c.kind,
