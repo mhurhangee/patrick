@@ -41,7 +41,11 @@ export interface Provision {
 }
 
 /** The body a provision belongs to — the `/` picker's group heading. */
-export type ProvisionGroup = "EPC" | "Guidelines" | "PCT Guidelines" | "Case Law";
+export type ProvisionGroup =
+	| "EPC"
+	| "Guidelines"
+	| "PCT Guidelines"
+	| "Case Law";
 
 /** A taggable provision for the chat `/` picker — no body. */
 export interface ProvisionRef {

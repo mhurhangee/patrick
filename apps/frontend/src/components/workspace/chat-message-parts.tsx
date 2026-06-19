@@ -200,11 +200,20 @@ function domainOf(url: string, title?: string): string {
 function SourcesBlock({ sources }: { sources: SourceUrlPart[] }) {
 	const seen = new Set<string>();
 	const rows: SourceUrlPart[] = [];
-	for (const s of sources)
-		if (s.url && !seen.has(s.url)) {
-			seen.add(s.url);
+	for (const s of sources) {
+		if (!s.url) continue;
+		// Google emits several distinct opaque redirect URLs for the same page, so
+		// dedupe those by title (its domain); keep other vendors' real URLs distinct.
+		let key = s.url;
+		try {
+			if (new URL(s.url).hostname === "vertexaisearch.cloud.google.com")
+				key = `g:${(s.title ?? s.url).toLowerCase()}`;
+		} catch {}
+		if (!seen.has(key)) {
+			seen.add(key);
 			rows.push(s);
 		}
+	}
 	if (rows.length === 0) return null;
 	return (
 		<div className="space-y-0.5 rounded-md border bg-muted/30 p-2 text-xs">
