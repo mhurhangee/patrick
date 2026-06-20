@@ -1,6 +1,7 @@
 import { taskDisplayName } from "@patrick/shared";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, FolderOpen, Settings2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -39,14 +40,10 @@ export function TaskSwitcher() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<button
-					type="button"
-					className={cn(
-						"flex w-full items-center gap-2 border-l-2 px-3 py-2 text-left transition-colors hover:bg-sidebar-accent",
-						onSettings
-							? "border-primary bg-sidebar-accent/50"
-							: "border-transparent",
-					)}
+				<Button
+					variant="row"
+					size="auto"
+					aria-current={onSettings || undefined}
 				>
 					<div className="min-w-0 flex-1">
 						{loadingActive ? (
@@ -66,7 +63,7 @@ export function TaskSwitcher() {
 						)}
 					</div>
 					<ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
-				</button>
+				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-64">
 				<DropdownMenuLabel>Tasks</DropdownMenuLabel>

@@ -8,7 +8,7 @@ import {
 	TIER_BLURB,
 	vendorForModel,
 } from "@patrick/shared";
-import { Check, ChevronsUpDown, Cpu } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 import {
 	Popover,
@@ -16,6 +16,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 const VENDOR_LABEL: Record<string, string> = {
 	anthropic: "Anthropic",
@@ -69,15 +70,14 @@ export function ModelPicker({
 	value,
 	onChange,
 	provider,
-	tone = "field",
+	variant = "outline",
 	align = "start",
 	className,
 }: {
 	value: string;
 	onChange: (id: string) => void;
 	provider: Provider;
-	/** "field" — a bordered control (profile); "ghost" — a bare chip (toolbar). */
-	tone?: "field" | "ghost";
+	variant?: React.ComponentProps<typeof Button>["variant"];
 	align?: "start" | "center" | "end";
 	className?: string;
 }) {
@@ -88,23 +88,12 @@ export function ModelPicker({
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
-				<button
-					type="button"
-					title="Choose a model"
-					className={cn(
-						"inline-flex items-center gap-1.5 rounded-md text-sm transition-colors",
-						tone === "ghost"
-							? "px-1.5 py-1 text-muted-foreground hover:bg-muted hover:text-foreground data-[state=open]:bg-muted"
-							: "border px-2 py-1 hover:bg-accent data-[state=open]:bg-accent",
-						className,
-					)}
-				>
-					<Cpu className="size-3.5 shrink-0 text-emerald-600" />
+				<Button variant={variant} className={className}>
 					<span className="min-w-0 flex-1 truncate text-left">
 						{current?.name ?? value}
 					</span>
 					<ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground/60" />
-				</button>
+				</Button>
 			</PopoverTrigger>
 			<PopoverContent align={align} className="w-80 p-0">
 				<div className="flex items-center justify-between px-3 py-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">

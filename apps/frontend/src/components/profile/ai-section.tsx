@@ -174,6 +174,7 @@ export function AiSection({
 						provider={value.provider}
 						value={value.model}
 						onChange={(model) => set({ model })}
+						variant="outline"
 						className="w-full"
 					/>
 					<FieldDescription>

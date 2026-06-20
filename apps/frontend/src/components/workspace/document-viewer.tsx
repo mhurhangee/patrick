@@ -94,8 +94,8 @@ function Column({
 					<Button
 						variant="ghost"
 						size="icon"
-						className="size-7 text-muted-foreground"
-						title="Split right"
+						className="text-muted-foreground"
+						tooltip="Split right"
 						onClick={() => splitRight(active)}
 					>
 						<Columns2 />
@@ -174,17 +174,18 @@ function Tab({
 		>
 			<DocIcon kind={doc.kind} editable={doc.editable} className="size-3.5" />
 			<span className="max-w-44 truncate">{doc.label}</span>
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="icon-xxs"
+				tooltip="Close tab"
 				onClick={(e) => {
 					e.stopPropagation();
 					onClose();
 				}}
-				title="Close tab"
-				className="rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100"
+				className="text-muted-foreground opacity-0 group-hover:opacity-100"
 			>
-				<X className="size-3.5" />
-			</button>
+				<X />
+			</Button>
 		</div>
 	);
 }

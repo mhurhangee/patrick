@@ -14,7 +14,7 @@ export function FeedbackButton() {
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
-				<Button variant="ghost" size="icon" title="Send feedback">
+				<Button variant="ghost" size="icon-sm" tooltip="Send feedback">
 					<MessageSquare className="size-4 text-muted-foreground" />
 				</Button>
 			</PopoverTrigger>

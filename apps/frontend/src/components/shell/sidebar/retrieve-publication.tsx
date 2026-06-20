@@ -56,14 +56,15 @@ export function RetrievePublication({
 			}}
 		>
 			<PopoverTrigger asChild>
-				<button
-					type="button"
-					title="Retrieve a publication by number"
+				<Button
+					variant="ghost"
+					size="icon-xxs"
+					tooltip="Retrieve a publication by number"
 					disabled={!taskId}
-					className="rounded p-0.5 text-muted-foreground/70 hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40 data-[state=open]:bg-accent data-[state=open]:text-foreground"
+					className="text-muted-foreground/70 disabled:opacity-40"
 				>
-					<Plus className="size-4" />
-				</button>
+					<Plus />
+				</Button>
 			</PopoverTrigger>
 			<PopoverContent align="end" className="w-72 space-y-2 p-2.5">
 				<p className="text-muted-foreground text-xs">

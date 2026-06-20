@@ -8,6 +8,11 @@ import {
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { applyColour, applyScale, COLOUR_THEMES } from "@/lib/appearance";
 import { cn } from "@/lib/utils";
 
@@ -47,19 +52,24 @@ export function AppearanceSection({
 				<FieldLabel>Colour</FieldLabel>
 				<div className="flex gap-2">
 					{COLOUR_THEMES.map((t) => (
-						<button
-							type="button"
-							key={t.id}
-							title={t.label}
-							onClick={() => setColour(t.id)}
-							className={cn(
-								"flex size-8 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-background transition-colors",
-								value.theme === t.id ? "ring-ring" : "ring-transparent",
-							)}
-							style={{ backgroundColor: t.primary }}
-						>
-							{value.theme === t.id && <Check className="size-4 text-white" />}
-						</button>
+						<Tooltip key={t.id}>
+							<TooltipTrigger asChild>
+								<button
+									type="button"
+									onClick={() => setColour(t.id)}
+									className={cn(
+										"flex size-8 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-background transition-colors",
+										value.theme === t.id ? "ring-ring" : "ring-transparent",
+									)}
+									style={{ backgroundColor: t.primary }}
+								>
+									{value.theme === t.id && (
+										<Check className="size-4 text-white" />
+									)}
+								</button>
+							</TooltipTrigger>
+							<TooltipContent>{t.label}</TooltipContent>
+						</Tooltip>
 					))}
 				</div>
 				<FieldDescription>Retheme to your firm's colour.</FieldDescription>

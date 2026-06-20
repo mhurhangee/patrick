@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -49,14 +50,15 @@ export function ChatsNav() {
 		<Section
 			label="Chats"
 			action={
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="icon-xxs"
+					tooltip="New chat"
 					onClick={openNew}
-					title="New chat"
-					className="rounded p-0.5 text-muted-foreground/70 hover:bg-accent hover:text-foreground"
+					className="text-muted-foreground/70"
 				>
-					<Plus className="size-4" />
-				</button>
+					<Plus />
+				</Button>
 			}
 		>
 			{chats?.length === 0 && (
@@ -123,18 +125,19 @@ function ChatRow({
 							onCancel={() => setRenaming(false)}
 						/>
 					) : (
-						<button
-							type="button"
+						<Button
+							variant="bare"
+							size="auto"
 							onClick={onOpen}
-							className="block w-full min-w-0 text-left"
+							className="w-full min-w-0 flex-col items-start"
 						>
-							<span className="block truncate text-sm">{title}</span>
+							<span className="block w-full truncate text-sm">{title}</span>
 							{chat.lastAssistant && (
-								<span className="block truncate text-xs text-muted-foreground">
+								<span className="block w-full truncate text-xs text-muted-foreground">
 									{chat.lastAssistant}
 								</span>
 							)}
-						</button>
+						</Button>
 					)}
 				</div>
 				<div className="flex shrink-0 items-center gap-0.5">

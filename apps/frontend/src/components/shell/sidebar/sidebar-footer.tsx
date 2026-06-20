@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, Plus, Settings2 } from "lucide-react";
 import { ProfileTemplateItems } from "@/components/profile/profile-template-items";
-import { FeedbackButton } from "@/components/shell/sidebar/feedback-button";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -58,17 +58,14 @@ export function SidebarFooter() {
 				: "API key not verified — check in profile";
 
 	return (
-		<div className="flex items-center gap-1 p-2">
+		<div className="p-2">
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<button
-						type="button"
-						className={cn(
-							"flex h-auto min-w-0 flex-1 items-center gap-2 rounded-none border-l-2 px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent",
-							onSettings
-								? "border-primary bg-sidebar-accent/50"
-								: "border-transparent",
-						)}
+					<Button
+						variant="row"
+						size="auto"
+						aria-current={onSettings || undefined}
+						className="min-w-0"
 					>
 						<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
 							{initialsOf(name)}
@@ -89,7 +86,7 @@ export function SidebarFooter() {
 							)}
 						/>
 						<ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
-					</button>
+					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start" side="top" className="w-60">
 					<DropdownMenuLabel>Profiles</DropdownMenuLabel>
@@ -146,8 +143,6 @@ export function SidebarFooter() {
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
-
-			<FeedbackButton />
 		</div>
 	);
 }

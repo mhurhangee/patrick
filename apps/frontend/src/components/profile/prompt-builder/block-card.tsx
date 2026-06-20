@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import { GripVertical, X } from "lucide-react";
 import { RichEditor } from "@/components/rich-editor/rich-editor";
+import { Button } from "@/components/ui/button";
 
 // One editable block: a freeform label (the `## Header`) + rich content (marks +
 // lists, no headings — `##` is the block delimiter). Draggable via the grip.
@@ -43,14 +44,15 @@ export function BlockCard({
 					placeholder="Heading (e.g. Do's)"
 					className="flex-1 bg-transparent text-xs font-medium outline-none placeholder:font-normal placeholder:text-muted-foreground/50"
 				/>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="icon-xxs"
 					onClick={onRemove}
 					aria-label="Remove block"
 					className="text-muted-foreground/40 hover:text-destructive"
 				>
-					<X className="size-3.5" />
-				</button>
+					<X />
+				</Button>
 			</div>
 			<RichEditor
 				value={content}

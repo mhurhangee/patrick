@@ -21,6 +21,7 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -32,6 +33,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
 	useCreateDocument,
 	useDeleteDocument,
@@ -235,13 +241,14 @@ function DocumentsActions({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<button
-					type="button"
-					title="Add or refresh"
-					className="rounded p-0.5 text-muted-foreground/70 hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+				<Button
+					variant="ghost"
+					size="icon-xxs"
+					tooltip="Add or refresh"
+					className="text-muted-foreground/70"
 				>
-					<Plus className="size-4" />
-				</button>
+					<Plus />
+				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-52">
 				<DropdownMenuItem onSelect={onNew}>
@@ -318,13 +325,14 @@ function DocumentRow({
 							onCancel={() => setRenaming(false)}
 						/>
 					) : (
-						<button
-							type="button"
+						<Button
+							variant="bare"
+							size="auto"
 							onClick={onOpen}
-							className="block w-full truncate text-left text-sm leading-tight"
+							className="w-full text-sm leading-tight"
 						>
-							{doc.filename}
-						</button>
+							<span className="block w-full truncate">{doc.filename}</span>
+						</Button>
 					)}
 					{/* Label hugs the filename; chromeless at rest, editable in place. */}
 					<InlineEdit
@@ -337,9 +345,16 @@ function DocumentRow({
 				{/* shrink-0 — the title truncates, these stay pinned right. */}
 				<div className="flex shrink-0 items-center gap-0.5">
 					{doc.contextMode === "text" && (
-						<span title="Sent to Patrick as extracted text, not the PDF image">
-							<Type className="size-3.5 text-emerald-600/80" />
-						</span>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span>
+									<Type className="size-3.5 text-emerald-600/80" />
+								</span>
+							</TooltipTrigger>
+							<TooltipContent>
+								Sent to Patrick as extracted text, not the PDF image
+							</TooltipContent>
+						</Tooltip>
 					)}
 					{doc.starred && (
 						<Star className="size-3.5 fill-current text-primary" />

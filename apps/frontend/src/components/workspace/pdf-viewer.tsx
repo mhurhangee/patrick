@@ -17,6 +17,11 @@ import {
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
@@ -164,9 +169,8 @@ export function PdfViewer({ filename }: { filename: string }) {
 				<span className="h-4 w-px bg-border" />
 				<Button
 					variant="ghost"
-					size="icon"
-					className="size-6"
-					title="Zoom out"
+					size="icon-sm"
+					tooltip="Zoom out"
 					onClick={() =>
 						setScale((s) => Math.max(MIN_SCALE, +(s - STEP).toFixed(2)))
 					}
@@ -178,9 +182,8 @@ export function PdfViewer({ filename }: { filename: string }) {
 				</span>
 				<Button
 					variant="ghost"
-					size="icon"
-					className="size-6"
-					title="Zoom in"
+					size="icon-sm"
+					tooltip="Zoom in"
 					onClick={() =>
 						setScale((s) => Math.min(MAX_SCALE, +(s + STEP).toFixed(2)))
 					}
@@ -190,12 +193,16 @@ export function PdfViewer({ filename }: { filename: string }) {
 				{tokens != null && (
 					<>
 						<span className="h-4 w-px bg-border" />
-						<span
-							className="px-1.5 text-muted-foreground"
-							title="Estimated input tokens for your detailed model"
-						>
-							~{formatTokens(tokens)} tokens
-						</span>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="px-1.5 text-muted-foreground">
+									~{formatTokens(tokens)} tokens
+								</span>
+							</TooltipTrigger>
+							<TooltipContent>
+								Estimated input tokens for the chat's model
+							</TooltipContent>
+						</Tooltip>
 					</>
 				)}
 			</div>
