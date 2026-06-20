@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { RichEditor } from "@/components/rich-editor/rich-editor";
 import { SaveStatus } from "@/components/save-status";
+import { Button } from "@/components/ui/button";
 import { useAutosavedDraft } from "@/hooks/use-autosave";
 import { useTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
@@ -29,10 +30,10 @@ function BriefEditor({ task }: { task: Task }) {
 
 	return (
 		<div>
-			<button
-				type="button"
+			<Button
+				variant="bare"
 				onClick={() => setOpen((o) => !o)}
-				className="flex w-full items-center gap-1 px-2 pb-1"
+				className="w-full gap-1 px-2 pb-1"
 			>
 				<span className="text-xs font-medium text-muted-foreground">Brief</span>
 				{open && <SaveStatus status={status} />}
@@ -42,7 +43,7 @@ function BriefEditor({ task }: { task: Task }) {
 						open && "rotate-180",
 					)}
 				/>
-			</button>
+			</Button>
 
 			{open ? (
 				<div className="px-1">
@@ -55,13 +56,13 @@ function BriefEditor({ task }: { task: Task }) {
 					/>
 				</div>
 			) : (
-				<button
-					type="button"
+				<Button
+					variant="bare"
 					onClick={() => setOpen(true)}
-					className="block w-full px-2 text-left"
+					className="w-full px-2"
 				>
 					{draft.brief?.trim() ? (
-						<span className="line-clamp-2 text-xs whitespace-pre-wrap text-muted-foreground/70">
+						<span className="line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground/70">
 							{draft.brief}
 						</span>
 					) : (
@@ -69,7 +70,7 @@ function BriefEditor({ task }: { task: Task }) {
 							No brief yet.
 						</span>
 					)}
-				</button>
+				</Button>
 			)}
 		</div>
 	);

@@ -904,14 +904,15 @@ function ChatSession({
 				</div>
 
 				{!atBottom && (
-					<button
-						type="button"
+					<Button
+						variant="outline"
+						size="icon"
 						onClick={scrollToBottom}
 						aria-label="Scroll to bottom"
-						className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border bg-background p-1.5 text-muted-foreground shadow-md transition-colors hover:text-foreground"
+						className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-background text-muted-foreground shadow-md hover:text-foreground"
 					>
 						<ChevronDown className="size-4" />
-					</button>
+					</Button>
 				)}
 			</div>
 
@@ -921,27 +922,27 @@ function ChatSession({
 						<span className="min-w-0 flex-1 break-words">
 							{errorText(error)}
 						</span>
-						<button
-							type="button"
+						<Button
+							variant="link"
 							onClick={() => regenerate()}
-							className="shrink-0 font-medium underline underline-offset-2 hover:no-underline"
+							className="h-auto shrink-0 p-0 font-medium text-destructive underline underline-offset-2 hover:no-underline"
 						>
 							Retry
-						</button>
+						</Button>
 					</div>
 				)}
 				{!keyReady && (
-					<button
-						type="button"
+					<Button
+						variant="outline"
 						onClick={() => navigate({ to: "/profile", hash: "ai" })}
-						className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+						className="mb-2 h-auto w-full whitespace-normal border-dashed px-3 py-2 text-xs text-muted-foreground"
 					>
 						{keyStatus === "verifying"
 							? "Verifying your API key…"
 							: keyStatus === "invalid"
 								? "Your API key isn't verified — open your profile."
 								: "Add an API key in your profile to chat."}
-					</button>
+					</Button>
 				)}
 				<div className="rounded-lg border bg-background focus-within:border-ring">
 					<ChatComposer
@@ -978,7 +979,7 @@ function ChatSession({
 									provider={profile.ai.provider}
 									value={modelId}
 									onChange={setChatModel}
-									tone="ghost"
+									variant="ghost"
 									align="end"
 								/>
 							)}
@@ -1011,7 +1012,6 @@ function ChatSession({
 									variant="secondary"
 									onClick={stop}
 									className="size-8"
-									title="Stop"
 								>
 									<Square />
 								</Button>
@@ -1021,7 +1021,6 @@ function ChatSession({
 									onClick={send}
 									disabled={composerEmpty || !canSend}
 									className="size-8"
-									title="Send"
 								>
 									<ArrowUp />
 								</Button>

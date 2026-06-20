@@ -318,12 +318,12 @@ function TrailStep({ step }: { step: TrailStepData }) {
 	const hasDetail = step.detail != null;
 	return (
 		<div>
-			<button
-				type="button"
+			<Button
+				variant="bare"
 				disabled={!hasDetail}
 				onClick={() => setOpen((o) => !o)}
 				className={cn(
-					"flex items-center gap-1.5 py-0.5 text-left text-xs",
+					"items-center gap-1.5 py-0.5 text-xs",
 					step.status === "error"
 						? "text-destructive"
 						: "text-muted-foreground",
@@ -347,7 +347,7 @@ function TrailStep({ step }: { step: TrailStepData }) {
 						)}
 					/>
 				)}
-			</button>
+			</Button>
 			{open && hasDetail && (
 				<div className="mb-1 mt-1 text-xs text-muted-foreground/80">
 					{step.detail}
@@ -365,10 +365,10 @@ function ReasoningTrail({ steps }: { steps: TrailStepData[] }) {
 	const count = `${steps.length} step${steps.length === 1 ? "" : "s"}`;
 	return (
 		<div className="not-prose my-2">
-			<button
-				type="button"
+			<Button
+				variant="bare"
 				onClick={() => setOpen((o) => !o)}
-				className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+				className="items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
 			>
 				{running && (
 					<Patrick variant="scanning" size={12} className="shrink-0" />
@@ -385,7 +385,7 @@ function ReasoningTrail({ steps }: { steps: TrailStepData[] }) {
 						open && "rotate-90",
 					)}
 				/>
-			</button>
+			</Button>
 			{open && (
 				<div className="mt-1 ml-1 border-l border-border pl-3">
 					{steps.map((step) => (

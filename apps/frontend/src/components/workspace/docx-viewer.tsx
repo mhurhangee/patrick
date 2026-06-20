@@ -7,6 +7,7 @@ import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { SaveStatus } from "@/components/save-status";
 import { Button } from "@/components/ui/button";
+import { InfoTooltip } from "@/components/ui/tooltip";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";
@@ -169,9 +170,8 @@ function ReadOnlyDocx({
 				)}
 				<Button
 					variant="ghost"
-					size="icon"
-					className="size-6"
-					title="Zoom out"
+					size="icon-sm"
+					tooltip="Zoom out"
 					onClick={() => apply(zoom - ZOOM_STEP)}
 				>
 					<Minus />
@@ -181,9 +181,8 @@ function ReadOnlyDocx({
 				</span>
 				<Button
 					variant="ghost"
-					size="icon"
-					className="size-6"
-					title="Zoom in"
+					size="icon-sm"
+					tooltip="Zoom in"
 					onClick={() => apply(zoom + ZOOM_STEP)}
 				>
 					<Plus />
@@ -191,12 +190,11 @@ function ReadOnlyDocx({
 				{tokens != null && (
 					<>
 						<span className="h-4 w-px bg-border" />
-						<span
-							className="px-1.5 text-muted-foreground"
-							title="Estimated input tokens (~characters ÷ 4)"
-						>
-							~{formatTokens(tokens)} tokens
-						</span>
+						<InfoTooltip label="Estimated input tokens (~characters ÷ 4)">
+							<span className="px-1.5 text-muted-foreground">
+								~{formatTokens(tokens)} tokens
+							</span>
+						</InfoTooltip>
 					</>
 				)}
 			</div>

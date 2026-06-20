@@ -1,5 +1,6 @@
 import { MoreHorizontal } from "lucide-react";
 import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // The kebab (…) button that opens a sidebar row's action menu. forwardRef +
@@ -8,18 +9,16 @@ export const KebabTrigger = forwardRef<
 	HTMLButtonElement,
 	ComponentPropsWithoutRef<"button">
 >(({ className, ...props }, ref) => (
-	<button
+	<Button
 		ref={ref}
-		type="button"
-		title="More"
+		variant="ghost"
+		size="icon-sm"
+		aria-label="More actions"
+		className={cn("shrink-0 text-muted-foreground/60", className)}
 		{...props}
-		className={cn(
-			"shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground",
-			className,
-		)}
 	>
-		<MoreHorizontal className="size-4" />
-	</button>
+		<MoreHorizontal />
+	</Button>
 ));
 KebabTrigger.displayName = "KebabTrigger";
 

@@ -1,7 +1,11 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import * as React from "react";
-
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -19,6 +23,15 @@ const buttonVariants = cva(
 				destructive:
 					"bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
 				link: "text-primary underline-offset-4 hover:underline",
+				// A full-width sidebar/switcher row: left-aligned, a selection rail on
+				// the inline-start edge (active via aria-current), sidebar hover. The
+				// box (height/padding/gap) comes from a compoundVariant so the size
+				// prop doesn't need setting.
+				row: "w-full justify-start rounded-none border-l-2 border-transparent text-left font-normal hover:bg-sidebar-accent aria-[current=true]:border-l-primary aria-[current=true]:bg-sidebar-accent/50",
+				// Chrome-less, content-shaped click target — e.g. the open-button
+				// inside a row whose parent already owns the hover, or a disclosure
+				// toggle. Horizontal by default; stacked callers add flex-col.
+				bare: "justify-start rounded-none text-left font-normal",
 			},
 			size: {
 				default:
@@ -28,10 +41,17 @@ const buttonVariants = cva(
 				lg: "h-8 gap-1 px-2.5 text-xs/relaxed has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-4",
 				icon: "size-7 [&_svg:not([class*='size-'])]:size-3.5",
 				"icon-xs": "size-5 rounded-sm [&_svg:not([class*='size-'])]:size-2.5",
+				"icon-xxs": "size-4 rounded-sm [&_svg:not([class*='size-'])]:size-3",
 				"icon-sm": "size-6 [&_svg:not([class*='size-'])]:size-3",
 				"icon-lg": "size-8 [&_svg:not([class*='size-'])]:size-4",
 			},
 		},
+		// The content-shaped variants own their own box; these land after `size`
+		// in the cascade, so row/bare work with the default size — no size prop.
+		compoundVariants: [
+			{ variant: "row", class: "h-auto gap-2 px-2 py-1.5" },
+			{ variant: "bare", class: "h-auto gap-0 p-0" },
+		],
 		defaultVariants: {
 			variant: "default",
 			size: "default",
@@ -44,21 +64,39 @@ function Button({
 	variant = "default",
 	size = "default",
 	asChild = false,
+	tooltip,
+	tooltipSide,
 	...props
 }: React.ComponentProps<"button"> &
 	VariantProps<typeof buttonVariants> & {
 		asChild?: boolean;
+		/** When set, wraps the button in a styled tooltip (replaces native title=). */
+		tooltip?: React.ReactNode;
+		tooltipSide?: React.ComponentProps<typeof TooltipContent>["side"];
 	}) {
 	const Comp = asChild ? Slot.Root : "button";
 
-	return (
+	const button = (
 		<Comp
 			data-slot="button"
 			data-variant={variant}
 			data-size={size}
+			// A string tooltip doubles as the accessible name for an icon-only button
+			// (Radix tooltips set aria-describedby, not a name); an explicit aria-label
+			// passed by the caller still wins via the spread.
+			aria-label={typeof tooltip === "string" ? tooltip : undefined}
 			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
 		/>
+	);
+
+	if (tooltip == null) return button;
+
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>{button}</TooltipTrigger>
+			<TooltipContent side={tooltipSide}>{tooltip}</TooltipContent>
+		</Tooltip>
 	);
 }
 

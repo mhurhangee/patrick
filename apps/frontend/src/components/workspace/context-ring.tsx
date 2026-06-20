@@ -14,6 +14,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { InfoTooltip } from "@/components/ui/tooltip";
 import { formatTokens } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DocKind } from "@/lib/workspace";
@@ -60,7 +61,7 @@ function SourceRow({
 					variant="ghost"
 					size="icon-xs"
 					onClick={() => onClose(source.filename)}
-					title="Close — don't send this document"
+					tooltip="Close — don't send this document"
 					className="shrink-0 text-muted-foreground/60"
 				>
 					<X className="size-3" />
@@ -177,13 +178,12 @@ export function ContextRing({
 							<span className="min-w-0 flex-1 truncate font-medium">
 								{modelName}
 							</span>
-							<span
-								className="flex items-center gap-0.5 text-[10px] text-muted-foreground"
-								title="Locked for this chat — start a new chat to change the model"
-							>
-								<Lock className="size-2.5" />
-								Locked
-							</span>
+							<InfoTooltip label="Locked for this chat — start a new chat to change the model">
+								<span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+									<Lock className="size-2.5" />
+									Locked
+								</span>
+							</InfoTooltip>
 						</>
 					)}
 					{!(modelName && used != null) && (

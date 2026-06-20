@@ -1,5 +1,7 @@
 import { Plus } from "lucide-react";
 import { Patrick } from "../patrick";
+import { FeedbackButton } from "../shell/sidebar/feedback-button";
+import { Button } from "../ui/button";
 import { VersionChip } from "./version-chip";
 
 // The chat header: Patrick's identity + a new-chat button, plus the warning when
@@ -29,14 +31,18 @@ export function SystemCard({
 					</span>
 				</div>
 
-				<button
-					type="button"
-					onClick={onNewChat}
-					title="New chat"
-					className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-				>
-					<Plus className="size-4" />
-				</button>
+				<div className="flex shrink-0 items-center gap-0.5">
+					<FeedbackButton />
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						tooltip="New chat"
+						onClick={onNewChat}
+						className="text-muted-foreground"
+					>
+						<Plus className="size-4" />
+					</Button>
+				</div>
 			</div>
 
 			{profileMismatch && (
@@ -45,13 +51,13 @@ export function SystemCard({
 						Frozen instructions — no longer match{" "}
 						{profileName ? `${profileName}'s` : "your"} current prompt.
 					</span>
-					<button
-						type="button"
+					<Button
+						variant="link"
 						onClick={onNewChat}
-						className="shrink-0 font-medium text-foreground hover:underline"
+						className="h-auto shrink-0 p-0 font-medium text-foreground"
 					>
 						New chat
-					</button>
+					</Button>
 				</div>
 			)}
 		</div>

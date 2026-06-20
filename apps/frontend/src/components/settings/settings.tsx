@@ -111,20 +111,21 @@ function JumpLink({
 	destructive?: boolean;
 }) {
 	return (
-		<button
-			type="button"
+		<Button
+			variant="ghost"
+			size="sm"
 			onClick={() =>
 				document
 					.getElementById(id)
 					?.scrollIntoView({ behavior: "smooth", block: "start" })
 			}
 			className={cn(
-				"rounded-md px-2 py-1 text-left text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+				"w-full justify-start font-normal text-muted-foreground",
 				destructive && "text-destructive/80 hover:text-destructive",
 			)}
 		>
 			{label}
-		</button>
+		</Button>
 	);
 }
 

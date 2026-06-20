@@ -127,10 +127,10 @@ export function ExchangePanel({
 						<GitFork />
 					</Action>
 				</div>
-				<button
-					type="button"
+				<Button
+					variant="bare"
 					onClick={onToggle}
-					className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/40 hover:text-muted-foreground"
+					className="items-center gap-1 px-1.5 py-0.5 text-[11px] text-muted-foreground/40 hover:text-muted-foreground"
 				>
 					{data.inputTokens != null && data.outputTokens != null && (
 						<span className="tabular-nums">
@@ -145,7 +145,7 @@ export function ExchangePanel({
 					) : (
 						<ChevronDown className="size-3" />
 					)}
-				</button>
+				</Button>
 			</div>
 
 			{isExpanded && (
