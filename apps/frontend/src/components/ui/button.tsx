@@ -78,6 +78,10 @@ function Button({
 			data-slot="button"
 			data-variant={variant}
 			data-size={size}
+			// A string tooltip doubles as the accessible name for an icon-only button
+			// (Radix tooltips set aria-describedby, not a name); an explicit aria-label
+			// passed by the caller still wins via the spread.
+			aria-label={typeof tooltip === "string" ? tooltip : undefined}
 			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
 		/>

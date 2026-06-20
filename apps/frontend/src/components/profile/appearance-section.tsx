@@ -56,6 +56,7 @@ export function AppearanceSection({
 							<TooltipTrigger asChild>
 								<button
 									type="button"
+									aria-label={t.label}
 									onClick={() => setColour(t.id)}
 									className={cn(
 										"flex size-8 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-background transition-colors",

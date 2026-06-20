@@ -13,6 +13,7 @@ export const KebabTrigger = forwardRef<
 		ref={ref}
 		variant="ghost"
 		size="icon-sm"
+		aria-label="More actions"
 		className={cn("shrink-0 text-muted-foreground/60", className)}
 		{...props}
 	>
