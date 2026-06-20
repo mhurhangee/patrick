@@ -129,7 +129,6 @@ export function ExchangePanel({
 				</div>
 				<Button
 					variant="bare"
-					size="auto"
 					onClick={onToggle}
 					className="items-center gap-1 px-1.5 py-0.5 text-[11px] text-muted-foreground/40 hover:text-muted-foreground"
 				>

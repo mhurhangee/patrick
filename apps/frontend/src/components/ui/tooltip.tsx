@@ -52,4 +52,29 @@ function TooltipContent({
 	);
 }
 
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };
+// The common case: a styled tooltip over a single element (an info icon, a
+// status pill). `children` must be one element (it becomes the trigger).
+function InfoTooltip({
+	label,
+	side,
+	children,
+}: {
+	label: React.ReactNode;
+	side?: React.ComponentProps<typeof TooltipContent>["side"];
+	children: React.ReactNode;
+}) {
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>{children}</TooltipTrigger>
+			<TooltipContent side={side}>{label}</TooltipContent>
+		</Tooltip>
+	);
+}
+
+export {
+	InfoTooltip,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+};

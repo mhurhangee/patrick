@@ -33,11 +33,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { InfoTooltip } from "@/components/ui/tooltip";
 import {
 	useCreateDocument,
 	useDeleteDocument,
@@ -327,7 +323,6 @@ function DocumentRow({
 					) : (
 						<Button
 							variant="bare"
-							size="auto"
 							onClick={onOpen}
 							className="w-full text-sm leading-tight"
 						>
@@ -345,16 +340,11 @@ function DocumentRow({
 				{/* shrink-0 — the title truncates, these stay pinned right. */}
 				<div className="flex shrink-0 items-center gap-0.5">
 					{doc.contextMode === "text" && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span>
-									<Type className="size-3.5 text-emerald-600/80" />
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								Sent to Patrick as extracted text, not the PDF image
-							</TooltipContent>
-						</Tooltip>
+						<InfoTooltip label="Sent to Patrick as extracted text, not the PDF image">
+							<span>
+								<Type className="size-3.5 text-emerald-600/80" />
+							</span>
+						</InfoTooltip>
 					)}
 					{doc.starred && (
 						<Star className="size-3.5 fill-current text-primary" />

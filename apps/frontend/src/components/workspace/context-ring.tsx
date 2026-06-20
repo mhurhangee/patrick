@@ -14,11 +14,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { InfoTooltip } from "@/components/ui/tooltip";
 import { formatTokens } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DocKind } from "@/lib/workspace";
@@ -182,17 +178,12 @@ export function ContextRing({
 							<span className="min-w-0 flex-1 truncate font-medium">
 								{modelName}
 							</span>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-										<Lock className="size-2.5" />
-										Locked
-									</span>
-								</TooltipTrigger>
-								<TooltipContent>
-									Locked for this chat — start a new chat to change the model
-								</TooltipContent>
-							</Tooltip>
+							<InfoTooltip label="Locked for this chat — start a new chat to change the model">
+								<span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+									<Lock className="size-2.5" />
+									Locked
+								</span>
+							</InfoTooltip>
 						</>
 					)}
 					{!(modelName && used != null) && (

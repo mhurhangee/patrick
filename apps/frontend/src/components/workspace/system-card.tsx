@@ -53,9 +53,8 @@ export function SystemCard({
 					</span>
 					<Button
 						variant="link"
-						size="auto"
 						onClick={onNewChat}
-						className="shrink-0 font-medium text-foreground"
+						className="h-auto shrink-0 p-0 font-medium text-foreground"
 					>
 						New chat
 					</Button>

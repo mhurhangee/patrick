@@ -63,7 +63,6 @@ export function SidebarFooter() {
 				<DropdownMenuTrigger asChild>
 					<Button
 						variant="row"
-						size="auto"
 						aria-current={onSettings || undefined}
 						className="min-w-0"
 					>

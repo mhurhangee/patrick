@@ -17,11 +17,7 @@ import {
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { InfoTooltip } from "@/components/ui/tooltip";
 import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
@@ -193,16 +189,11 @@ export function PdfViewer({ filename }: { filename: string }) {
 				{tokens != null && (
 					<>
 						<span className="h-4 w-px bg-border" />
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="px-1.5 text-muted-foreground">
-									~{formatTokens(tokens)} tokens
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								Estimated input tokens for the chat's model
-							</TooltipContent>
-						</Tooltip>
+						<InfoTooltip label="Estimated input tokens for the chat's model">
+							<span className="px-1.5 text-muted-foreground">
+								~{formatTokens(tokens)} tokens
+							</span>
+						</InfoTooltip>
 					</>
 				)}
 			</div>

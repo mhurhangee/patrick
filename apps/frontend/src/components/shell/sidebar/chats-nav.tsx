@@ -127,7 +127,6 @@ function ChatRow({
 					) : (
 						<Button
 							variant="bare"
-							size="auto"
 							onClick={onOpen}
 							className="w-full min-w-0 flex-col items-start"
 						>

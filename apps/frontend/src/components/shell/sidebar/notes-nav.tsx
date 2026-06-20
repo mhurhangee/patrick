@@ -32,7 +32,6 @@ function BriefEditor({ task }: { task: Task }) {
 		<div>
 			<Button
 				variant="bare"
-				size="auto"
 				onClick={() => setOpen((o) => !o)}
 				className="w-full gap-1 px-2 pb-1"
 			>
@@ -59,7 +58,6 @@ function BriefEditor({ task }: { task: Task }) {
 			) : (
 				<Button
 					variant="bare"
-					size="auto"
 					onClick={() => setOpen(true)}
 					className="w-full px-2"
 				>

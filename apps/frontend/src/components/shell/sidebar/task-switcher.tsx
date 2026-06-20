@@ -40,11 +40,7 @@ export function TaskSwitcher() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button
-					variant="row"
-					size="auto"
-					aria-current={onSettings || undefined}
-				>
+				<Button variant="row" aria-current={onSettings || undefined}>
 					<div className="min-w-0 flex-1">
 						{loadingActive ? (
 							<div className="space-y-1.5 py-0.5">

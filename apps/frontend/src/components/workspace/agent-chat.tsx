@@ -924,9 +924,8 @@ function ChatSession({
 						</span>
 						<Button
 							variant="link"
-							size="auto"
 							onClick={() => regenerate()}
-							className="shrink-0 font-medium text-destructive underline underline-offset-2 hover:no-underline"
+							className="h-auto shrink-0 p-0 font-medium text-destructive underline underline-offset-2 hover:no-underline"
 						>
 							Retry
 						</Button>

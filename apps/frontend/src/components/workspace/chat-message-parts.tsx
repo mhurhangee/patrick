@@ -320,7 +320,6 @@ function TrailStep({ step }: { step: TrailStepData }) {
 		<div>
 			<Button
 				variant="bare"
-				size="auto"
 				disabled={!hasDetail}
 				onClick={() => setOpen((o) => !o)}
 				className={cn(
@@ -368,7 +367,6 @@ function ReasoningTrail({ steps }: { steps: TrailStepData[] }) {
 		<div className="not-prose my-2">
 			<Button
 				variant="bare"
-				size="auto"
 				onClick={() => setOpen((o) => !o)}
 				className="items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
 			>
