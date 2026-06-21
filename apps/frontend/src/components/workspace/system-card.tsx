@@ -1,8 +1,6 @@
 import { Plus } from "lucide-react";
-import { Patrick } from "../patrick";
-import { FeedbackButton } from "../shell/sidebar/feedback-button";
 import { Button } from "../ui/button";
-import { VersionChip } from "./version-chip";
+import { PatrickMenu } from "./patrick-menu";
 
 // The chat header: Patrick's identity + a new-chat button, plus the warning when
 // this chat's frozen prompt no longer matches the active profile. The system
@@ -20,29 +18,17 @@ export function SystemCard({
 }) {
 	return (
 		<div className="@container">
-			<div className="flex items-center justify-between gap-2 py-2 pr-2 pl-4">
-				<div className="flex min-w-0 items-center gap-2">
-					<Patrick size={18} />
-					<span className="@[20rem]:inline hidden font-heading text-lg font-semibold tracking-tighter">
-						Patrick
-					</span>
-					<span className="@[20rem]:inline hidden">
-						<VersionChip />
-					</span>
-				</div>
-
-				<div className="flex shrink-0 items-center gap-0.5">
-					<FeedbackButton />
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						tooltip="New chat"
-						onClick={onNewChat}
-						className="text-muted-foreground"
-					>
-						<Plus className="size-4" />
-					</Button>
-				</div>
+			<div className="flex items-center justify-between gap-2 py-2 pr-2 pl-2">
+				<PatrickMenu />
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					tooltip="New chat"
+					onClick={onNewChat}
+					className="shrink-0 text-muted-foreground"
+				>
+					<Plus className="size-4" />
+				</Button>
 			</div>
 
 			{profileMismatch && (
