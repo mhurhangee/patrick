@@ -1,10 +1,10 @@
 import {
 	type AiEffort,
 	type AiSettings,
-	MODELS_BY_ID,
 	modelsForProvider,
 	type Provider,
 	recommendedModelFor,
+	supportsReasoning,
 } from "@patrick/shared";
 import { ArrowUpRight, Lock } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -101,9 +101,7 @@ export function AiSection({
 	const [showKey, setShowKey] = useState(false);
 	const providerName =
 		PROVIDER_OPTIONS.find((p) => p.id === value.provider)?.name ?? "provider";
-	// Fast-tier models (e.g. Haiku) don't support extended reasoning — see the
-	// reasoning gate in apps/api/src/lib/ai/model.ts.
-	const reasoningAvailable = MODELS_BY_ID[value.model]?.tier !== "fast";
+	const reasoningAvailable = supportsReasoning(value.model);
 
 	// Auto-verify shortly after the key stops changing — no manual Verify step.
 	// Cached by [provider, key]; a new key value re-verifies.

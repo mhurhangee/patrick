@@ -179,6 +179,17 @@ export function estimatePdfTokens(pages: number, modelId: string): number {
 	return pages * PDF_TOKENS_PER_PAGE[vendorForModel(modelId)];
 }
 
+/**
+ * Whether a model supports extended reasoning. Anthropic's fast tier (Haiku)
+ * rejects it; every other current model reasons. Read by both the reasoning UI
+ * and the server's reasoning options so they can't disagree.
+ */
+export function supportsReasoning(modelId: string): boolean {
+	const model = MODELS_BY_ID[modelId];
+	if (!model) return true; // unknown id → assume capable, don't disable the UI
+	return !(vendorForModel(modelId) === "anthropic" && model.tier === "fast");
+}
+
 /** Rough token estimate for plain text/extracted docx — about 4.5 chars/token. */
 export function estimateTextTokens(chars: number): number {
 	return Math.round(chars / 4.5);
