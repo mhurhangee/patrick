@@ -20,7 +20,10 @@ export function useKeyVerification(
 		enabled: (options?.enabled ?? false) && !!provider && !!apiKey,
 		staleTime: Number.POSITIVE_INFINITY,
 		gcTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		// A wrong key returns 200 {valid:false} (not an error), so this only retries
+		// real network/5xx blips — without the old manual Verify button there's no
+		// other way to recover from a transient failure on a valid key.
+		retry: 2,
 	});
 }
 

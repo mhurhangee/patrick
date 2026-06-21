@@ -6,16 +6,14 @@ export const ops = new Hono();
 // Verify EPO OPS credentials with a real OAuth exchange against OPS. Always
 // responds 200 with { valid } so the client reads a clean result.
 ops.post("/verify", async (c) => {
-	const { consumerKey, consumerSecret } = await c.req.json<{
-		consumerKey?: string;
-		consumerSecret?: string;
-	}>();
-
-	if (!consumerKey || !consumerSecret) {
-		return c.json({ valid: false, error: "Missing credentials" });
-	}
-
 	try {
+		const { consumerKey, consumerSecret } = await c.req.json<{
+			consumerKey?: string;
+			consumerSecret?: string;
+		}>();
+		if (!consumerKey || !consumerSecret) {
+			return c.json({ valid: false, error: "Missing credentials" });
+		}
 		const valid = await verifyCredentials({ consumerKey, consumerSecret });
 		return c.json({
 			valid,

@@ -18,6 +18,7 @@ export function useOpsVerification(
 		enabled: (options?.enabled ?? false) && !!consumerKey && !!consumerSecret,
 		staleTime: Number.POSITIVE_INFINITY,
 		gcTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		// Only retries real network/5xx blips (bad creds are a 200 {valid:false}).
+		retry: 2,
 	});
 }
