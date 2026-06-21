@@ -14,6 +14,7 @@ import { ProviderLogo } from "@/components/provider-logo";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
+	FieldContent,
 	FieldDescription,
 	FieldGroup,
 	FieldLabel,
@@ -26,6 +27,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
 	type KeyStatus,
@@ -251,6 +253,20 @@ export function AiSection({
 						</FieldDescription>
 					</Field>
 				</div>
+				<Field orientation="horizontal">
+					<FieldContent>
+						<FieldLabel htmlFor="web-search">Web search</FieldLabel>
+						<FieldDescription>
+							Let Patrick search the web — on by default in new chats, and
+							toggleable per chat from the composer.
+						</FieldDescription>
+					</FieldContent>
+					<Switch
+						id="web-search"
+						checked={value.webSearch}
+						onCheckedChange={(webSearch) => set({ webSearch })}
+					/>
+				</Field>
 			</FieldGroup>
 		</div>
 	);
