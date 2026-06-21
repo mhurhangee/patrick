@@ -4,8 +4,12 @@ import { cn } from "@/lib/utils";
 // Brand SVGs live in /public. Google ships a multicolour mark; the rest are
 // monochrome black, so they follow the theme via dark:invert (black in light,
 // white in dark). The gateway is Vercel.
-const LOGO: Record<Provider, { src: string; monochrome: boolean }> = {
-	anthropic: { src: "/anthropic.svg", monochrome: true },
+const LOGO: Record<
+	Provider,
+	{ src: string; monochrome: boolean; cls?: string }
+> = {
+	// Anthropic's wordmark is visually heavier, so trim it a touch to match.
+	anthropic: { src: "/anthropic.svg", monochrome: true, cls: "h-4" },
 	openai: { src: "/openai.svg", monochrome: true },
 	google: { src: "/google.svg", monochrome: false },
 	gateway: { src: "/vercel.svg", monochrome: true },
@@ -19,7 +23,7 @@ export function ProviderLogo({
 	provider: Provider;
 	className?: string;
 }) {
-	const { src, monochrome } = LOGO[provider];
+	const { src, monochrome, cls } = LOGO[provider];
 	return (
 		<img
 			src={src}
@@ -28,6 +32,7 @@ export function ProviderLogo({
 			className={cn(
 				"h-5 w-auto shrink-0 object-contain",
 				monochrome && "dark:invert",
+				cls,
 				className,
 			)}
 		/>

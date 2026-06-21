@@ -64,7 +64,7 @@ const PROVIDER_KEY_URL: Record<Provider, string> = {
 	anthropic: "https://console.anthropic.com/settings/keys",
 	openai: "https://platform.openai.com/api-keys",
 	google: "https://aistudio.google.com/app/apikey",
-	gateway: "https://vercel.com/dashboard/ai-gateway",
+	gateway: "https://vercel.com/dashboard/",
 };
 
 const EFFORTS: { id: AiEffort; label: string }[] = [
