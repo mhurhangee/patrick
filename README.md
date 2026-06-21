@@ -35,8 +35,11 @@
 
 - **Works inside your documents** — edits your actual Word file as native tracked
   changes you accept or reject, just like a colleague's redlines.
-- **You write the instructions** — the whole system prompt is yours to read and
-  edit; nothing it's told is hidden or fixed.
+- **Grounded in real law and prior art** — recalls the verbatim EPC, EPO
+  Guidelines, and case law, and fetches the full text of cited patents, so its
+  arguments cite the source instead of reciting from memory.
+- **You write the instructions** — Patrick's whole system prompt is yours to read
+  and shape; nothing it's told is hidden from you.
 - **Nothing behind your back** — the reasoning, the tool calls, and the per-turn
   cost are all on screen.
 - **Your choice of model** — Anthropic, OpenAI, or Google; your key, your account.
@@ -64,12 +67,14 @@ of important documents, and please
 
 ```
 apps/
-  frontend/   React + Vite UI (the webview; reused by desktop, web, cloud)
+  frontend/   React + Vite UI (the webview; reused by desktop, and later web/cloud)
   api/        Hono on Bun — the local backend (Tauri sidecar)
   desktop/    Tauri desktop wrapper
-  web/        the marketing site
+  site/       the marketing + docs site (Next.js)
 packages/
-  shared/     shared TypeScript types, model catalog, prompt tokens
+  shared/       shared TypeScript types, model catalog, prompt tokens
+  law/          the EP law dataset + retrieval (EPC, EPO Guidelines, case law)
+  benchmarking/ a grounding benchmark measuring the agent's legal accuracy
 ```
 
 ## Stack
@@ -77,7 +82,7 @@ packages/
 React 19 · Vite · Tailwind v4 · shadcn/ui · TanStack Router + Query ·
 [@eigenpal/docx-editor](https://www.npmjs.com/package/@eigenpal/docx-editor)
 (ProseMirror) · Hono on Bun · Vercel AI SDK v6 (Anthropic / OpenAI / Google /
-Gateway, bring-your-own-key) · pnpm · Biome · TypeScript.
+Gateway, bring-your-own-key) · Next.js (site) · pnpm · Biome · TypeScript.
 
 ## Develop
 
