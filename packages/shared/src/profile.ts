@@ -9,6 +9,8 @@ export type AiSettings = {
 	/** The model Patrick runs on by default (a chat can lock its own at first send). */
 	model: string;
 	effort: AiEffort;
+	/** Whether web search is on by default in new chats (toggleable per chat). */
+	webSearch: boolean;
 };
 
 /** EPO Open Patent Services credentials (BYOK) — used to fetch EP/WO publications. */
@@ -72,6 +74,7 @@ export function createProfile(id: string, name: string): Profile {
 			apiKey: "",
 			model: DEFAULT_MODEL.anthropic,
 			effort: "medium",
+			webSearch: true,
 		},
 		ops: { consumerKey: "", consumerSecret: "" },
 		prompts: { agentpat: DEFAULT_AGENTPAT_PROMPT },

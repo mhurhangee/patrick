@@ -21,6 +21,8 @@ function normalizeProfile(profile: Profile): Profile {
 		ai.model =
 			ai.detailedModel ?? DEFAULT_MODEL[ai.provider] ?? DEFAULT_MODEL.anthropic;
 	}
+	// Web search predates the per-profile default — older profiles opt in.
+	if (ai.webSearch === undefined) ai.webSearch = true;
 	delete ai.detailedModel;
 	delete ai.quickModel;
 	return profile;
