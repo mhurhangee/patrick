@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { ai } from "./routes/ai";
 import { law } from "./routes/law";
+import { ops } from "./routes/ops";
 import { profiles } from "./routes/profiles";
 import { tasks } from "./routes/tasks";
 
@@ -13,6 +14,7 @@ app.route("/profiles", profiles);
 app.route("/ai", ai);
 app.route("/tasks", tasks);
 app.route("/law", law);
+app.route("/ops", ops);
 
 export default {
 	port: Number(process.env.PORT ?? 3001),

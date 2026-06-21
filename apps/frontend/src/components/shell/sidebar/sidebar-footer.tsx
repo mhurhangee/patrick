@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, Plus, Settings2 } from "lucide-react";
+import { KeyStatusDot, keyStatusLabel } from "@/components/key-status-dot";
 import { ProfileTemplateItems } from "@/components/profile/profile-template-items";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,22 +15,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNewProfile } from "@/hooks/use-create-flows";
-import {
-	type KeyStatus,
-	keyStatusOf,
-	useKeyVerification,
-} from "@/hooks/use-key-verification";
+import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { useProfile, useProfiles } from "@/hooks/use-profiles";
 import { useActiveProfile } from "@/lib/active-profile";
 import { initialsOf } from "@/lib/text";
 import { cn } from "@/lib/utils";
-
-const DOT_COLOR: Record<KeyStatus, string> = {
-	valid: "bg-emerald-500",
-	invalid: "bg-amber-500",
-	verifying: "bg-muted-foreground/40 animate-pulse",
-	idle: "bg-muted-foreground/40",
-};
 
 export function SidebarFooter() {
 	const navigate = useNavigate();
@@ -49,13 +39,7 @@ export function SidebarFooter() {
 		{ enabled: hasKey },
 	);
 	const status = keyStatusOf(verification);
-	const dotTitle = !hasKey
-		? "No API key set"
-		: status === "valid"
-			? "AI key verified"
-			: status === "verifying"
-				? "Verifying API key…"
-				: "API key not verified — check in profile";
+	const dotTitle = keyStatusLabel(status, hasKey);
 
 	return (
 		<div className="p-2">
@@ -77,13 +61,7 @@ export function SidebarFooter() {
 								</span>
 							)}
 						</span>
-						<span
-							title={dotTitle}
-							className={cn(
-								"size-2.5 shrink-0 rounded-full",
-								DOT_COLOR[status],
-							)}
-						/>
+						<KeyStatusDot status={status} title={dotTitle} />
 						<ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
 					</Button>
 				</DropdownMenuTrigger>
@@ -125,9 +103,7 @@ export function SidebarFooter() {
 						onSelect={() => navigate({ to: "/profile", hash: "ai" })}
 						disabled={!activeProfileId}
 					>
-						<span
-							className={cn("size-2 shrink-0 rounded-full", DOT_COLOR[status])}
-						/>
+						<KeyStatusDot status={status} className="size-2" />
 						AI &amp; keys
 						<span className="ml-auto text-[0.625rem] text-muted-foreground">
 							{dotTitle}

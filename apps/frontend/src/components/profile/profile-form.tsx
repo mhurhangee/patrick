@@ -93,19 +93,51 @@ export function ProfileForm({
 					/>
 				}
 			>
-				<SettingsSection id="identity" title="Identity">
+				<SettingsSection
+					id="identity"
+					title="Identity"
+					description="Who this profile is. How Patrick works for you lives in the Prompt section."
+				>
 					<IdentitySection
 						value={draft.identity}
 						onChange={(identity) => set({ identity })}
 					/>
 				</SettingsSection>
-				<SettingsSection id="ai" title="AI">
+				<SettingsSection
+					id="ai"
+					title="AI"
+					description="Patrick runs on your own AI key, on your machine. Choose a provider, connect your key, then set how it behaves."
+				>
 					<AiSection value={draft.ai} onChange={(ai) => set({ ai })} />
 				</SettingsSection>
-				<SettingsSection id="ops" title="Patent data">
+				<SettingsSection
+					id="ops"
+					title="Patent data"
+					description={
+						<>
+							<span className="font-medium text-foreground">Optional.</span>{" "}
+							Patrick fetches published patents (EP, WO, US) from Google Patents
+							without any key. An EPO Open Patent Services key makes EP and WO
+							come from the official EPO source instead — register a free app at{" "}
+							<a
+								href="https://developers.epo.org/"
+								target="_blank"
+								rel="noreferrer"
+								className="underline underline-offset-2 hover:text-foreground"
+							>
+								developers.epo.org
+							</a>
+							. Your key stays in this profile and is only ever sent to the EPO.
+						</>
+					}
+				>
 					<OpsSection value={draft.ops} onChange={(ops) => set({ ops })} />
 				</SettingsSection>
-				<SettingsSection id="prompt" title="Prompt">
+				<SettingsSection
+					id="prompt"
+					title="Prompt"
+					description="Patrick's standing instructions — practice context, do's and don'ts, response style. Each chat freezes them when it starts."
+				>
 					{activeTaskId && (
 						<Hint className="mb-4" title="Patrick can help">
 							Ask in the chat and Patrick will draft or refine any section —
@@ -117,7 +149,11 @@ export function ProfileForm({
 						onChange={(agentpat) => set({ prompts: { agentpat } })}
 					/>
 				</SettingsSection>
-				<SettingsSection id="appearance" title="Appearance">
+				<SettingsSection
+					id="appearance"
+					title="Appearance"
+					description="Make Patrick yours — colour theme and light or dark."
+				>
 					<AppearanceSection
 						value={draft.appearance}
 						onChange={(appearance) => set({ appearance })}

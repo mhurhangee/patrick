@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { FolderOpen, Plus } from "lucide-react";
 import { useState } from "react";
+import { OptionCard } from "@/components/option-card";
 import { Patrick } from "@/components/patrick";
 import { ProfileTemplateItems } from "@/components/profile/profile-template-items";
 import { Button } from "@/components/ui/button";
@@ -58,26 +59,17 @@ export function ProfileWelcome() {
 				<EmptyContent>
 					{hasProfiles &&
 						profiles?.map((p) => (
-							<button
-								type="button"
+							<OptionCard
 								key={p.id}
 								onClick={() => choose(p.id)}
-								className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent"
-							>
-								<span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-									{initialsOf(p.name)}
-								</span>
-								<span className="min-w-0 flex-1">
-									<span className="block truncate text-sm font-medium">
-										{p.name || "Untitled profile"}
+								leading={
+									<span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+										{initialsOf(p.name)}
 									</span>
-									{p.author && (
-										<span className="block truncate text-xs text-muted-foreground">
-											{p.author}
-										</span>
-									)}
-								</span>
-							</button>
+								}
+								title={p.name || "Untitled profile"}
+								description={p.author || undefined}
+							/>
 						))}
 
 					<DropdownMenu>

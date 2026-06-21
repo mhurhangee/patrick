@@ -4,20 +4,22 @@ import {
 	modelsForProvider,
 	type Provider,
 	recommendedModelFor,
+	supportsReasoning,
 } from "@patrick/shared";
-import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { ArrowUpRight, Lock } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { KeyStatusDot } from "@/components/key-status-dot";
 import { ModelPicker } from "@/components/model-picker";
-import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
+import { OptionCard } from "@/components/option-card";
+import { ProviderLogo } from "@/components/provider-logo";
+import { SecretInput } from "@/components/secret-input";
 import {
 	Field,
+	FieldContent,
 	FieldDescription,
-	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -25,8 +27,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
-import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import {
+	type KeyStatus,
+	keyStatusOf,
+	useKeyVerification,
+} from "@/hooks/use-key-verification";
 
 const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
 	[
@@ -51,11 +58,37 @@ const PROVIDER_PLACEHOLDER: Record<Provider, string> = {
 	gateway: "aig_…",
 };
 
+// Where to create a key for each provider (used by the contextual "Get a key" link).
+const PROVIDER_KEY_URL: Record<Provider, string> = {
+	anthropic: "https://console.anthropic.com/settings/keys",
+	openai: "https://platform.openai.com/api-keys",
+	google: "https://aistudio.google.com/app/apikey",
+	gateway: "https://vercel.com/dashboard/",
+};
+
 const EFFORTS: { id: AiEffort; label: string }[] = [
 	{ id: "low", label: "Low — fastest" },
 	{ id: "medium", label: "Medium — balanced" },
 	{ id: "high", label: "High — thorough" },
 ];
+
+const STATUS_TEXT: Record<KeyStatus, { text: string; cls: string }> = {
+	idle: { text: "Enter your key to connect", cls: "text-muted-foreground" },
+	verifying: { text: "Checking your key…", cls: "text-muted-foreground" },
+	valid: { text: "Connected", cls: "text-emerald-600 dark:text-emerald-400" },
+	invalid: {
+		text: "Invalid key — check and try again",
+		cls: "text-destructive",
+	},
+};
+
+function GroupLabel({ children }: { children: ReactNode }) {
+	return (
+		<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+			{children}
+		</p>
+	);
+}
 
 export function AiSection({
 	value,
@@ -66,10 +99,20 @@ export function AiSection({
 }) {
 	const set = (patch: Partial<AiSettings>) => onChange({ ...value, ...patch });
 	const [showKey, setShowKey] = useState(false);
+	const providerName =
+		PROVIDER_OPTIONS.find((p) => p.id === value.provider)?.name ?? "provider";
+	const reasoningAvailable = supportsReasoning(value.model);
 
-	// Cached by [provider, key]; editing the key changes the key → status resets.
-	const verification = useKeyVerification(value.provider, value.apiKey);
-	const status = keyStatusOf(verification);
+	// Auto-verify shortly after the key stops changing — no manual Verify step.
+	// Cached by [provider, key]; a new key value re-verifies.
+	const debouncedKey = useDebouncedValue(value.apiKey, 500);
+	const verification = useKeyVerification(value.provider, debouncedKey, {
+		enabled: !!debouncedKey,
+	});
+	// While still typing (live key ahead of the debounced one) show "checking"
+	// rather than a stale result.
+	const pending = !!value.apiKey && value.apiKey !== debouncedKey;
+	const status: KeyStatus = pending ? "verifying" : keyStatusOf(verification);
 
 	function changeProvider(provider: Provider) {
 		// Keep the chosen model if the new provider offers it, else its default.
@@ -81,130 +124,123 @@ export function AiSection({
 	}
 
 	return (
-		<FieldGroup>
-			<Field>
-				<FieldLabel>Provider</FieldLabel>
-				<div className="grid grid-cols-1 gap-3 @sm:grid-cols-2 @xl:grid-cols-4">
-					{PROVIDER_OPTIONS.map((p) => (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => changeProvider(p.id)}
-							className={cn(
-								"rounded-lg border p-3 text-left transition-colors",
-								value.provider === p.id
-									? "border-primary bg-primary/5 ring-1 ring-primary"
-									: "hover:border-foreground/20 hover:bg-muted/50",
-							)}
-						>
-							<p className="text-sm font-medium">{p.name}</p>
-							<p className="text-xs text-muted-foreground">{p.description}</p>
-						</button>
-					))}
-				</div>
-			</Field>
-
-			<Field>
-				<FieldLabel htmlFor="api-key">API key</FieldLabel>
-				<div className="flex gap-1.5">
-					<div className="relative flex-1">
-						<Input
-							id="api-key"
-							type={showKey ? "text" : "password"}
-							value={value.apiKey}
-							placeholder={PROVIDER_PLACEHOLDER[value.provider]}
-							className="pr-9"
-							onChange={(e) => set({ apiKey: e.target.value })}
-						/>
-						<div className="absolute inset-y-0 right-1 flex items-center">
-							<Button
-								variant="ghost"
-								size="icon"
-								type="button"
-								className="size-7 text-muted-foreground"
-								onClick={() => setShowKey((s) => !s)}
-							>
-								{showKey ? <EyeOff /> : <Eye />}
-							</Button>
-						</div>
+		<div className="space-y-6">
+			<FieldGroup>
+				<GroupLabel>Connection</GroupLabel>
+				<Field>
+					<FieldLabel>Provider</FieldLabel>
+					<div className="grid grid-cols-1 gap-3 @sm:grid-cols-2 @xl:grid-cols-4">
+						{PROVIDER_OPTIONS.map((p) => (
+							<OptionCard
+								key={p.id}
+								selected={value.provider === p.id}
+								onClick={() => changeProvider(p.id)}
+								leading={<ProviderLogo provider={p.id} />}
+								title={p.name}
+								description={p.description}
+							/>
+						))}
 					</div>
-					<Button
-						variant="secondary"
-						disabled={!value.apiKey || status === "verifying"}
-						onClick={() => verification.refetch()}
-					>
-						{status === "verifying" ? (
-							<Patrick variant="scanning" size={16} />
-						) : (
-							"Verify"
-						)}
-					</Button>
-					{value.apiKey && (
-						<Button
-							variant="ghost"
-							className="text-muted-foreground"
-							onClick={() => set({ apiKey: "" })}
-						>
-							Clear
-						</Button>
-					)}
-				</div>
-				{status === "idle" && (
-					<FieldDescription>
-						Stored locally, in this profile only — never sent to our servers.
-					</FieldDescription>
-				)}
-				{status === "verifying" && (
-					<FieldDescription>Verifying…</FieldDescription>
-				)}
-				{status === "valid" && (
-					<FieldDescription className="text-emerald-600 dark:text-emerald-400">
-						✓ Connected
-					</FieldDescription>
-				)}
-				{status === "invalid" && (
-					<FieldError>Invalid key — check and try again</FieldError>
-				)}
-			</Field>
+				</Field>
 
-			<div className="grid gap-4 @md:grid-cols-2">
 				<Field>
-					<FieldLabel>Model</FieldLabel>
-					<ModelPicker
-						provider={value.provider}
-						value={value.model}
-						onChange={(model) => set({ model })}
-						variant="outline"
-						className="w-full"
+					<FieldLabel htmlFor="api-key">API key</FieldLabel>
+					<SecretInput
+						id="api-key"
+						value={value.apiKey}
+						placeholder={PROVIDER_PLACEHOLDER[value.provider]}
+						show={showKey}
+						onToggleShow={() => setShowKey((s) => !s)}
+						onChange={(apiKey) => set({ apiKey })}
+						onClear={() => set({ apiKey: "" })}
 					/>
-					<FieldDescription>
-						Patrick's default — lock a different one per chat from the composer.
-					</FieldDescription>
+					{/* Fixed-height status row (shared dot + section copy) — never shifts. */}
+					<div className="flex items-center justify-between gap-2 text-xs">
+						<span className="flex items-center gap-1.5">
+							<KeyStatusDot status={status} />
+							<span className={STATUS_TEXT[status].cls}>
+								{STATUS_TEXT[status].text}
+							</span>
+						</span>
+						<a
+							href={PROVIDER_KEY_URL[value.provider]}
+							target="_blank"
+							rel="noreferrer"
+							className="inline-flex shrink-0 items-center gap-0.5 text-muted-foreground hover:text-foreground"
+						>
+							Get a {providerName} key
+							<ArrowUpRight className="size-3" />
+						</a>
+					</div>
+					<p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+						<Lock className="mt-0.5 size-3 shrink-0" />
+						<span>
+							Your key is stored on this machine, in this profile, and sent only
+							to the provider you choose. There's no Patrick server — it never
+							goes to us or any third party.
+						</span>
+					</p>
 				</Field>
+			</FieldGroup>
 
-				<Field>
-					<FieldLabel>Reasoning</FieldLabel>
-					<Select
-						value={value.effort}
-						onValueChange={(effort) => set({ effort: effort as AiEffort })}
-					>
-						<SelectTrigger className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{EFFORTS.map((e) => (
-								<SelectItem key={e.id} value={e.id}>
-									{e.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<FieldDescription>
-						How hard Patrick thinks — higher is more thorough but slower and
-						pricier. Its reasoning always streams into the chat.
-					</FieldDescription>
+			<FieldGroup className="border-t pt-6">
+				<GroupLabel>Behaviour</GroupLabel>
+				<div className="grid gap-4 @md:grid-cols-2">
+					<Field>
+						<FieldLabel>Model</FieldLabel>
+						<ModelPicker
+							provider={value.provider}
+							value={value.model}
+							onChange={(model) => set({ model })}
+							variant="outline"
+							className="w-full"
+						/>
+						<FieldDescription>
+							Patrick's default — lock a different one per chat from the
+							composer.
+						</FieldDescription>
+					</Field>
+
+					<Field>
+						<FieldLabel>Reasoning</FieldLabel>
+						<Select
+							value={value.effort}
+							onValueChange={(effort) => set({ effort: effort as AiEffort })}
+							disabled={!reasoningAvailable}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{EFFORTS.map((e) => (
+									<SelectItem key={e.id} value={e.id}>
+										{e.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<FieldDescription>
+							{reasoningAvailable
+								? "How hard Patrick thinks — higher is more thorough but slower and pricier. Its reasoning always streams into the chat."
+								: "Faster models don't support extended reasoning — this one runs without it."}
+						</FieldDescription>
+					</Field>
+				</div>
+				<Field orientation="horizontal">
+					<FieldContent>
+						<FieldLabel htmlFor="web-search">Web search</FieldLabel>
+						<FieldDescription>
+							Let Patrick search the web — on by default in new chats, and
+							toggleable per chat from the composer.
+						</FieldDescription>
+					</FieldContent>
+					<Switch
+						id="web-search"
+						checked={value.webSearch}
+						onCheckedChange={(webSearch) => set({ webSearch })}
+					/>
 				</Field>
-			</div>
-		</FieldGroup>
+			</FieldGroup>
+		</div>
 	);
 }

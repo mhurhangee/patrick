@@ -25,6 +25,27 @@ export function clearToken(creds: OpsSettings): void {
 	tokenCache.delete(creds.consumerKey.trim());
 }
 
+/**
+ * A one-off credential check: do the OAuth exchange directly (no token cache, so
+ * a changed secret under the same key isn't masked by a cached token) and report
+ * whether the key/secret are accepted. A real OPS request, behind the scenes.
+ */
+export async function verifyCredentials(creds: OpsSettings): Promise<boolean> {
+	const key = creds.consumerKey.trim();
+	const secret = creds.consumerSecret.trim();
+	if (!key || !secret) return false;
+	const basic = Buffer.from(`${key}:${secret}`).toString("base64");
+	const res = await fetch(AUTH_URL, {
+		method: "POST",
+		headers: {
+			Authorization: `Basic ${basic}`,
+			"Content-Type": "application/x-www-form-urlencoded",
+		},
+		body: "grant_type=client_credentials",
+	});
+	return res.ok;
+}
+
 export async function getAccessToken(creds: OpsSettings): Promise<string> {
 	// Copy-pasting the key/secret from the EPO portal easily picks up stray
 	// whitespace — trim before use so it doesn't silently break auth.
