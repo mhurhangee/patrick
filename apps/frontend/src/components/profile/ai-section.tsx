@@ -1,6 +1,7 @@
 import {
 	type AiEffort,
 	type AiSettings,
+	MODELS_BY_ID,
 	modelsForProvider,
 	type Provider,
 	recommendedModelFor,
@@ -101,6 +102,9 @@ export function AiSection({
 	const [showKey, setShowKey] = useState(false);
 	const providerName =
 		PROVIDER_OPTIONS.find((p) => p.id === value.provider)?.name ?? "provider";
+	// Fast-tier models (e.g. Haiku) don't support extended reasoning — see the
+	// reasoning gate in apps/api/src/lib/ai/model.ts.
+	const reasoningAvailable = MODELS_BY_ID[value.model]?.tier !== "fast";
 
 	// Auto-verify shortly after the key stops changing — no manual Verify step.
 	// Cached by [provider, key]; a new key value re-verifies.
@@ -235,6 +239,7 @@ export function AiSection({
 						<Select
 							value={value.effort}
 							onValueChange={(effort) => set({ effort: effort as AiEffort })}
+							disabled={!reasoningAvailable}
 						>
 							<SelectTrigger className="w-full">
 								<SelectValue />
@@ -248,8 +253,9 @@ export function AiSection({
 							</SelectContent>
 						</Select>
 						<FieldDescription>
-							How hard Patrick thinks — higher is more thorough but slower and
-							pricier. Its reasoning always streams into the chat.
+							{reasoningAvailable
+								? "How hard Patrick thinks — higher is more thorough but slower and pricier. Its reasoning always streams into the chat."
+								: "Faster models don't support extended reasoning — this one runs without it."}
 						</FieldDescription>
 					</Field>
 				</div>
