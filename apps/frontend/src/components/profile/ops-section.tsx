@@ -2,12 +2,7 @@ import type { OpsSettings } from "@patrick/shared";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Field,
-	FieldDescription,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 const EMPTY: OpsSettings = { consumerKey: "", consumerSecret: "" };
@@ -25,23 +20,6 @@ export function OpsSection({
 
 	return (
 		<FieldGroup>
-			<p className="text-sm text-muted-foreground">
-				<span className="font-medium text-foreground">Optional.</span> Patrick
-				fetches published patents (EP, WO, US) without any key, from Google
-				Patents. Adding an EPO Open Patent Services key makes EP and WO come
-				from the official EPO source instead. Register a free OPS app at{" "}
-				<a
-					href="https://developers.epo.org/"
-					target="_blank"
-					rel="noreferrer"
-					className="underline underline-offset-2 hover:text-foreground"
-				>
-					developers.epo.org
-				</a>{" "}
-				for a consumer key and secret. Bring your own key — it stays in this
-				profile and is only ever sent to the EPO.
-			</p>
-
 			<Field>
 				<FieldLabel htmlFor="ops-key">Consumer key</FieldLabel>
 				<Input
@@ -87,9 +65,6 @@ export function OpsSection({
 						</Button>
 					)}
 				</div>
-				<FieldDescription>
-					Stored locally, in this profile only — never sent to our servers.
-				</FieldDescription>
 			</Field>
 		</FieldGroup>
 	);

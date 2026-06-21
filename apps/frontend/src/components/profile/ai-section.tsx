@@ -128,11 +128,6 @@ export function AiSection({
 
 	return (
 		<div className="space-y-6">
-			<p className="text-sm text-muted-foreground">
-				Patrick runs on your own AI key, on your machine. Choose a provider,
-				connect your key, then set how it behaves.
-			</p>
-
 			<FieldGroup>
 				<GroupLabel>Connection</GroupLabel>
 				<Field>
