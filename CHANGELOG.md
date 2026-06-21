@@ -6,6 +6,15 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-21
+
+### Fixed
+
+- **Claude Haiku 4.5** no longer errors on the first message. Haiku doesn't
+  support the adaptive thinking the larger Claude models use, so a chat on Haiku
+  failed immediately; it now runs without extended thinking. Other models are
+  unaffected.
+
 ## [0.5.0] - 2026-06-19
 
 This release puts you in control of how Patrick runs and shows you exactly what

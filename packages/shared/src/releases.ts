@@ -7,11 +7,9 @@
  * The version itself is not here — it's injected at build from tauri.conf.json.
  */
 export const LATEST_HIGHLIGHTS = {
-	headline: "Control your model and see your context",
+	headline: "A fix for Claude Haiku",
 	highlights: [
-		"Pick the model per chat from a richer picker, locked once the chat starts",
-		"One context control in the toolbar — what's about to be sent, with token estimates and one-tap close",
-		"Star, rename, and organise chats; per-document quick prompts",
+		"Chats on Claude Haiku 4.5 no longer error on the first message",
 	],
 } as const;
 
