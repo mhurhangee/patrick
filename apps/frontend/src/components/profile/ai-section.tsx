@@ -5,11 +5,12 @@ import {
 	type Provider,
 	recommendedModelFor,
 } from "@patrick/shared";
-import { Eye, EyeOff, X } from "lucide-react";
+import { ArrowUpRight, Eye, EyeOff, X } from "lucide-react";
 import { useState } from "react";
 import { KeyStatusDot } from "@/components/key-status-dot";
 import { ModelPicker } from "@/components/model-picker";
 import { OptionCard } from "@/components/option-card";
+import { ProviderLogo } from "@/components/provider-logo";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
@@ -55,6 +56,14 @@ const PROVIDER_PLACEHOLDER: Record<Provider, string> = {
 	gateway: "aig_…",
 };
 
+// Where to create a key for each provider (used by the contextual "Get a key" link).
+const PROVIDER_KEY_URL: Record<Provider, string> = {
+	anthropic: "https://console.anthropic.com/settings/keys",
+	openai: "https://platform.openai.com/api-keys",
+	google: "https://aistudio.google.com/app/apikey",
+	gateway: "https://vercel.com/dashboard/ai-gateway",
+};
+
 const EFFORTS: { id: AiEffort; label: string }[] = [
 	{ id: "low", label: "Low — fastest" },
 	{ id: "medium", label: "Medium — balanced" },
@@ -80,6 +89,8 @@ export function AiSection({
 }) {
 	const set = (patch: Partial<AiSettings>) => onChange({ ...value, ...patch });
 	const [showKey, setShowKey] = useState(false);
+	const providerName =
+		PROVIDER_OPTIONS.find((p) => p.id === value.provider)?.name ?? "provider";
 
 	// Auto-verify shortly after the key stops changing — no manual Verify step.
 	// Cached by [provider, key]; a new key value re-verifies.
@@ -111,6 +122,7 @@ export function AiSection({
 							key={p.id}
 							selected={value.provider === p.id}
 							onClick={() => changeProvider(p.id)}
+							leading={<ProviderLogo provider={p.id} />}
 							title={p.name}
 							description={p.description}
 						/>
@@ -155,11 +167,22 @@ export function AiSection({
 					</div>
 				</div>
 				{/* Fixed-height status row (shared dot + section copy) — never shifts. */}
-				<div className="flex items-center gap-1.5 text-xs">
-					<KeyStatusDot status={status} />
-					<span className={STATUS_TEXT[status].cls}>
-						{STATUS_TEXT[status].text}
+				<div className="flex items-center justify-between gap-2 text-xs">
+					<span className="flex items-center gap-1.5">
+						<KeyStatusDot status={status} />
+						<span className={STATUS_TEXT[status].cls}>
+							{STATUS_TEXT[status].text}
+						</span>
 					</span>
+					<a
+						href={PROVIDER_KEY_URL[value.provider]}
+						target="_blank"
+						rel="noreferrer"
+						className="inline-flex shrink-0 items-center gap-0.5 text-muted-foreground hover:text-foreground"
+					>
+						Get a {providerName} key
+						<ArrowUpRight className="size-3" />
+					</a>
 				</div>
 			</Field>
 
