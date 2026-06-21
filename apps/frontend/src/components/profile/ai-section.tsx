@@ -8,6 +8,7 @@ import {
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { ModelPicker } from "@/components/model-picker";
+import { OptionCard } from "@/components/option-card";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +27,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
-import { cn } from "@/lib/utils";
 
 const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
 	[
@@ -86,20 +86,13 @@ export function AiSection({
 				<FieldLabel>Provider</FieldLabel>
 				<div className="grid grid-cols-1 gap-3 @sm:grid-cols-2 @xl:grid-cols-4">
 					{PROVIDER_OPTIONS.map((p) => (
-						<button
+						<OptionCard
 							key={p.id}
-							type="button"
+							selected={value.provider === p.id}
 							onClick={() => changeProvider(p.id)}
-							className={cn(
-								"rounded-lg border p-3 text-left transition-colors",
-								value.provider === p.id
-									? "border-primary bg-primary/5 ring-1 ring-primary"
-									: "hover:border-foreground/20 hover:bg-muted/50",
-							)}
-						>
-							<p className="text-sm font-medium">{p.name}</p>
-							<p className="text-xs text-muted-foreground">{p.description}</p>
-						</button>
+							title={p.name}
+							description={p.description}
+						/>
 					))}
 				</div>
 			</Field>
