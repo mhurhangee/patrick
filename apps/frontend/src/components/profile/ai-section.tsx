@@ -5,16 +5,15 @@ import {
 	type Provider,
 	recommendedModelFor,
 } from "@patrick/shared";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { useState } from "react";
+import { KeyStatusDot } from "@/components/key-status-dot";
 import { ModelPicker } from "@/components/model-picker";
 import { OptionCard } from "@/components/option-card";
-import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
 	FieldDescription,
-	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
@@ -26,7 +25,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import {
+	type KeyStatus,
+	keyStatusOf,
+	useKeyVerification,
+} from "@/hooks/use-key-verification";
 
 const PROVIDER_OPTIONS: { id: Provider; name: string; description: string }[] =
 	[
@@ -57,6 +61,16 @@ const EFFORTS: { id: AiEffort; label: string }[] = [
 	{ id: "high", label: "High — thorough" },
 ];
 
+const STATUS_TEXT: Record<KeyStatus, { text: string; cls: string }> = {
+	idle: { text: "Enter your key to connect", cls: "text-muted-foreground" },
+	verifying: { text: "Checking your key…", cls: "text-muted-foreground" },
+	valid: { text: "Connected", cls: "text-emerald-600 dark:text-emerald-400" },
+	invalid: {
+		text: "Invalid key — check and try again",
+		cls: "text-destructive",
+	},
+};
+
 export function AiSection({
 	value,
 	onChange,
@@ -67,9 +81,16 @@ export function AiSection({
 	const set = (patch: Partial<AiSettings>) => onChange({ ...value, ...patch });
 	const [showKey, setShowKey] = useState(false);
 
-	// Cached by [provider, key]; editing the key changes the key → status resets.
-	const verification = useKeyVerification(value.provider, value.apiKey);
-	const status = keyStatusOf(verification);
+	// Auto-verify shortly after the key stops changing — no manual Verify step.
+	// Cached by [provider, key]; a new key value re-verifies.
+	const debouncedKey = useDebouncedValue(value.apiKey, 500);
+	const verification = useKeyVerification(value.provider, debouncedKey, {
+		enabled: !!debouncedKey,
+	});
+	// While still typing (live key ahead of the debounced one) show "checking"
+	// rather than a stale result.
+	const pending = !!value.apiKey && value.apiKey !== debouncedKey;
+	const status: KeyStatus = pending ? "verifying" : keyStatusOf(verification);
 
 	function changeProvider(provider: Provider) {
 		// Keep the chosen model if the new provider offers it, else its default.
@@ -99,65 +120,47 @@ export function AiSection({
 
 			<Field>
 				<FieldLabel htmlFor="api-key">API key</FieldLabel>
-				<div className="flex gap-1.5">
-					<div className="relative flex-1">
-						<Input
-							id="api-key"
-							type={showKey ? "text" : "password"}
-							value={value.apiKey}
-							placeholder={PROVIDER_PLACEHOLDER[value.provider]}
-							className="pr-9"
-							onChange={(e) => set({ apiKey: e.target.value })}
-						/>
-						<div className="absolute inset-y-0 right-1 flex items-center">
+				<div className="relative">
+					<Input
+						id="api-key"
+						type={showKey ? "text" : "password"}
+						value={value.apiKey}
+						placeholder={PROVIDER_PLACEHOLDER[value.provider]}
+						className="pr-14"
+						onChange={(e) => set({ apiKey: e.target.value })}
+					/>
+					<div className="absolute inset-y-0 right-1 flex items-center gap-0.5">
+						{value.apiKey && (
 							<Button
 								variant="ghost"
-								size="icon"
+								size="icon-sm"
 								type="button"
-								className="size-7 text-muted-foreground"
-								onClick={() => setShowKey((s) => !s)}
+								tooltip="Clear"
+								className="text-muted-foreground"
+								onClick={() => set({ apiKey: "" })}
 							>
-								{showKey ? <EyeOff /> : <Eye />}
+								<X />
 							</Button>
-						</div>
-					</div>
-					<Button
-						variant="secondary"
-						disabled={!value.apiKey || status === "verifying"}
-						onClick={() => verification.refetch()}
-					>
-						{status === "verifying" ? (
-							<Patrick variant="scanning" size={16} />
-						) : (
-							"Verify"
 						)}
-					</Button>
-					{value.apiKey && (
 						<Button
 							variant="ghost"
+							size="icon-sm"
+							type="button"
+							tooltip={showKey ? "Hide key" : "Show key"}
 							className="text-muted-foreground"
-							onClick={() => set({ apiKey: "" })}
+							onClick={() => setShowKey((s) => !s)}
 						>
-							Clear
+							{showKey ? <EyeOff /> : <Eye />}
 						</Button>
-					)}
+					</div>
 				</div>
-				{status === "idle" && (
-					<FieldDescription>
-						Stored locally, in this profile only — never sent to our servers.
-					</FieldDescription>
-				)}
-				{status === "verifying" && (
-					<FieldDescription>Verifying…</FieldDescription>
-				)}
-				{status === "valid" && (
-					<FieldDescription className="text-emerald-600 dark:text-emerald-400">
-						✓ Connected
-					</FieldDescription>
-				)}
-				{status === "invalid" && (
-					<FieldError>Invalid key — check and try again</FieldError>
-				)}
+				{/* Fixed-height status row (shared dot + section copy) — never shifts. */}
+				<div className="flex items-center gap-1.5 text-xs">
+					<KeyStatusDot status={status} />
+					<span className={STATUS_TEXT[status].cls}>
+						{STATUS_TEXT[status].text}
+					</span>
+				</div>
 			</Field>
 
 			<div className="grid gap-4 @md:grid-cols-2">
