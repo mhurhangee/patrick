@@ -961,7 +961,7 @@ function ChatSession({
 							variant="ghost"
 							onClick={() => setWebSearch((v) => !v)}
 							aria-pressed={webSearch}
-							tooltip={
+							title={
 								webSearch
 									? "Web search on — Patrick can search the web"
 									: "Web search off"
