@@ -36,8 +36,9 @@ no entry.
 not for every fix.
 
 1. **Bump the version** in `apps/desktop/src-tauri/tauri.conf.json` and
-   `apps/desktop/src-tauri/Cargo.toml` (keep the two in sync). The in-app version
-   chip reads this automatically — there's no other version to touch.
+   `apps/desktop/src-tauri/Cargo.toml` (keep the two in sync); the `app` package
+   entry in `apps/desktop/src-tauri/Cargo.lock` follows. The in-app version chip
+   reads this automatically — there's no other version to touch.
 2. **Roll the changelog**: rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`
    and open a fresh empty `[Unreleased]` above it.
 3. **Refresh the in-app highlights** in `packages/shared/src/releases.ts` — the
