@@ -1,7 +1,7 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
-import type { AiEffort, Provider } from "@patrick/shared";
+import { type AiEffort, MODELS_BY_ID, type Provider } from "@patrick/shared";
 import { createGateway } from "ai";
 
 // Curated model IDs carry a `vendor/` prefix (the gateway routing form). Direct
@@ -69,11 +69,11 @@ export function reasoningOptions(
 		return { providerOptions: { google: { thinkingConfig } } };
 	}
 
-	// anthropic: `effort` is a frontier-model knob (Haiku rejects it), so "off"
-	// sends nothing. Otherwise pair effort with adaptive thinking (Opus 4.7+
-	// require the pairing), shown as a summary.
+	// anthropic: adaptive thinking + `effort` is a frontier-model knob — the fast
+	// tier (Haiku) rejects it ("adaptive thinking is not supported on this model"),
+	// so only the larger models get the pairing; "off" (or Haiku) sends nothing.
 	const anthropic: Record<string, Json> = {};
-	if (reason) {
+	if (reason && MODELS_BY_ID[modelId]?.tier !== "fast") {
 		anthropic.effort = effort;
 		anthropic.thinking = { type: "adaptive", display: "summarized" };
 	}
