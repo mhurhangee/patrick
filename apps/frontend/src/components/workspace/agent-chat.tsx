@@ -270,8 +270,13 @@ function ChatSession({
 	// Web search: a per-chat toolbar toggle (default on). Patrick can search the
 	// web; off removes the tool for the turn (also the escape hatch if a model
 	// doesn't support it). Sent with each request.
-	// Seeded from the profile default; toggleable per chat (situational, not frozen).
-	const [webSearch, setWebSearch] = useState(profile?.ai.webSearch ?? true);
+	// Follows the profile default until the user toggles it for this chat
+	// (situational, not frozen) — derived live so it isn't captured before the
+	// profile query resolves.
+	const [webSearchOverride, setWebSearchOverride] = useState<boolean | null>(
+		null,
+	);
+	const webSearch = webSearchOverride ?? profile?.ai.webSearch ?? true;
 
 	// Refs so the transport/onToolCall always read the latest without re-creating
 	// the chat instance.
@@ -960,7 +965,7 @@ function ChatSession({
 						<Button
 							size="icon"
 							variant="ghost"
-							onClick={() => setWebSearch((v) => !v)}
+							onClick={() => setWebSearchOverride(!webSearch)}
 							aria-pressed={webSearch}
 							tooltip={
 								webSearch
