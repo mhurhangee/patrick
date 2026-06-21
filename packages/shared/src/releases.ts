@@ -16,3 +16,6 @@ export const LATEST_HIGHLIGHTS = {
 /** The full changelog on GitHub — the popover's "Full changelog" link. */
 export const CHANGELOG_URL =
 	"https://github.com/mhurhangee/patrick/blob/main/CHANGELOG.md";
+
+/** The hosted docs — the Patrick menu's "Docs" link. */
+export const DOCS_URL = "https://usepatrick.com/docs";
