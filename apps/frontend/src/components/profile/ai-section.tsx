@@ -5,8 +5,8 @@ import {
 	type Provider,
 	recommendedModelFor,
 } from "@patrick/shared";
-import { ArrowUpRight, Eye, EyeOff, X } from "lucide-react";
-import { useState } from "react";
+import { ArrowUpRight, Eye, EyeOff, Lock, X } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { KeyStatusDot } from "@/components/key-status-dot";
 import { ModelPicker } from "@/components/model-picker";
 import { OptionCard } from "@/components/option-card";
@@ -80,6 +80,14 @@ const STATUS_TEXT: Record<KeyStatus, { text: string; cls: string }> = {
 	},
 };
 
+function GroupLabel({ children }: { children: ReactNode }) {
+	return (
+		<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+			{children}
+		</p>
+	);
+}
+
 export function AiSection({
 	value,
 	onChange,
@@ -113,117 +121,137 @@ export function AiSection({
 	}
 
 	return (
-		<FieldGroup>
-			<Field>
-				<FieldLabel>Provider</FieldLabel>
-				<div className="grid grid-cols-1 gap-3 @sm:grid-cols-2 @xl:grid-cols-4">
-					{PROVIDER_OPTIONS.map((p) => (
-						<OptionCard
-							key={p.id}
-							selected={value.provider === p.id}
-							onClick={() => changeProvider(p.id)}
-							leading={<ProviderLogo provider={p.id} />}
-							title={p.name}
-							description={p.description}
-						/>
-					))}
-				</div>
-			</Field>
+		<div className="space-y-6">
+			<p className="text-sm text-muted-foreground">
+				Patrick runs on your own AI key, on your machine. Choose a provider,
+				connect your key, then set how it behaves.
+			</p>
 
-			<Field>
-				<FieldLabel htmlFor="api-key">API key</FieldLabel>
-				<div className="relative">
-					<Input
-						id="api-key"
-						type={showKey ? "text" : "password"}
-						value={value.apiKey}
-						placeholder={PROVIDER_PLACEHOLDER[value.provider]}
-						className="pr-14"
-						onChange={(e) => set({ apiKey: e.target.value })}
-					/>
-					<div className="absolute inset-y-0 right-1 flex items-center gap-0.5">
-						{value.apiKey && (
+			<FieldGroup>
+				<GroupLabel>Connection</GroupLabel>
+				<Field>
+					<FieldLabel>Provider</FieldLabel>
+					<div className="grid grid-cols-1 gap-3 @sm:grid-cols-2 @xl:grid-cols-4">
+						{PROVIDER_OPTIONS.map((p) => (
+							<OptionCard
+								key={p.id}
+								selected={value.provider === p.id}
+								onClick={() => changeProvider(p.id)}
+								leading={<ProviderLogo provider={p.id} />}
+								title={p.name}
+								description={p.description}
+							/>
+						))}
+					</div>
+				</Field>
+
+				<Field>
+					<FieldLabel htmlFor="api-key">API key</FieldLabel>
+					<div className="relative">
+						<Input
+							id="api-key"
+							type={showKey ? "text" : "password"}
+							value={value.apiKey}
+							placeholder={PROVIDER_PLACEHOLDER[value.provider]}
+							className="pr-14"
+							onChange={(e) => set({ apiKey: e.target.value })}
+						/>
+						<div className="absolute inset-y-0 right-1 flex items-center gap-0.5">
+							{value.apiKey && (
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									type="button"
+									tooltip="Clear"
+									className="text-muted-foreground"
+									onClick={() => set({ apiKey: "" })}
+								>
+									<X />
+								</Button>
+							)}
 							<Button
 								variant="ghost"
 								size="icon-sm"
 								type="button"
-								tooltip="Clear"
+								tooltip={showKey ? "Hide key" : "Show key"}
 								className="text-muted-foreground"
-								onClick={() => set({ apiKey: "" })}
+								onClick={() => setShowKey((s) => !s)}
 							>
-								<X />
+								{showKey ? <EyeOff /> : <Eye />}
 							</Button>
-						)}
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							type="button"
-							tooltip={showKey ? "Hide key" : "Show key"}
-							className="text-muted-foreground"
-							onClick={() => setShowKey((s) => !s)}
-						>
-							{showKey ? <EyeOff /> : <Eye />}
-						</Button>
+						</div>
 					</div>
-				</div>
-				{/* Fixed-height status row (shared dot + section copy) — never shifts. */}
-				<div className="flex items-center justify-between gap-2 text-xs">
-					<span className="flex items-center gap-1.5">
-						<KeyStatusDot status={status} />
-						<span className={STATUS_TEXT[status].cls}>
-							{STATUS_TEXT[status].text}
+					{/* Fixed-height status row (shared dot + section copy) — never shifts. */}
+					<div className="flex items-center justify-between gap-2 text-xs">
+						<span className="flex items-center gap-1.5">
+							<KeyStatusDot status={status} />
+							<span className={STATUS_TEXT[status].cls}>
+								{STATUS_TEXT[status].text}
+							</span>
 						</span>
-					</span>
-					<a
-						href={PROVIDER_KEY_URL[value.provider]}
-						target="_blank"
-						rel="noreferrer"
-						className="inline-flex shrink-0 items-center gap-0.5 text-muted-foreground hover:text-foreground"
-					>
-						Get a {providerName} key
-						<ArrowUpRight className="size-3" />
-					</a>
+						<a
+							href={PROVIDER_KEY_URL[value.provider]}
+							target="_blank"
+							rel="noreferrer"
+							className="inline-flex shrink-0 items-center gap-0.5 text-muted-foreground hover:text-foreground"
+						>
+							Get a {providerName} key
+							<ArrowUpRight className="size-3" />
+						</a>
+					</div>
+					<p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+						<Lock className="mt-0.5 size-3 shrink-0" />
+						<span>
+							Your key is stored on this machine, in this profile, and sent only
+							to the provider you choose. There's no Patrick server — it never
+							goes to us or any third party.
+						</span>
+					</p>
+				</Field>
+			</FieldGroup>
+
+			<FieldGroup className="border-t pt-6">
+				<GroupLabel>Behaviour</GroupLabel>
+				<div className="grid gap-4 @md:grid-cols-2">
+					<Field>
+						<FieldLabel>Model</FieldLabel>
+						<ModelPicker
+							provider={value.provider}
+							value={value.model}
+							onChange={(model) => set({ model })}
+							variant="outline"
+							className="w-full"
+						/>
+						<FieldDescription>
+							Patrick's default — lock a different one per chat from the
+							composer.
+						</FieldDescription>
+					</Field>
+
+					<Field>
+						<FieldLabel>Reasoning</FieldLabel>
+						<Select
+							value={value.effort}
+							onValueChange={(effort) => set({ effort: effort as AiEffort })}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{EFFORTS.map((e) => (
+									<SelectItem key={e.id} value={e.id}>
+										{e.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<FieldDescription>
+							How hard Patrick thinks — higher is more thorough but slower and
+							pricier. Its reasoning always streams into the chat.
+						</FieldDescription>
+					</Field>
 				</div>
-			</Field>
-
-			<div className="grid gap-4 @md:grid-cols-2">
-				<Field>
-					<FieldLabel>Model</FieldLabel>
-					<ModelPicker
-						provider={value.provider}
-						value={value.model}
-						onChange={(model) => set({ model })}
-						variant="outline"
-						className="w-full"
-					/>
-					<FieldDescription>
-						Patrick's default — lock a different one per chat from the composer.
-					</FieldDescription>
-				</Field>
-
-				<Field>
-					<FieldLabel>Reasoning</FieldLabel>
-					<Select
-						value={value.effort}
-						onValueChange={(effort) => set({ effort: effort as AiEffort })}
-					>
-						<SelectTrigger className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{EFFORTS.map((e) => (
-								<SelectItem key={e.id} value={e.id}>
-									{e.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<FieldDescription>
-						How hard Patrick thinks — higher is more thorough but slower and
-						pricier. Its reasoning always streams into the chat.
-					</FieldDescription>
-				</Field>
-			</div>
-		</FieldGroup>
+			</FieldGroup>
+		</div>
 	);
 }
