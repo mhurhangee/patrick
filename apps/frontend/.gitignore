@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Bundled search model (fetched at predev/prebuild by scripts/fetch-search-model.mjs)
+public/models
+
 # TanStack Router (generated route tree)
 src/routeTree.gen.ts
 

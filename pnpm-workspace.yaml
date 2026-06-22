@@ -2,5 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  # onnxruntime-node is transformers.js's Node backend — never used in the webview
+  # (Vite picks onnxruntime-web/WASM), so don't build its native bindings.
+  onnxruntime-node: false
+  protobufjs: false
   sharp: true
   tesseract.js: true

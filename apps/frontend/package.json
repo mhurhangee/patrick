@@ -4,7 +4,9 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"predev": "node scripts/fetch-search-model.mjs",
 		"dev": "vite",
+		"prebuild": "node scripts/fetch-search-model.mjs",
 		"build": "vite build",
 		"typecheck": "tsc -b",
 		"preview": "vite preview"
@@ -18,6 +20,7 @@
 		"@eigenpal/docx-editor-react": "^1.5.0",
 		"@fontsource-variable/hanken-grotesk": "^5.2.8",
 		"@fontsource-variable/lora": "^5.2.8",
+		"@huggingface/transformers": "^4.2.0",
 		"@patrick/shared": "workspace:*",
 		"@tailwindcss/vite": "^4.3.1",
 		"@tanstack/react-query": "^5.101.0",

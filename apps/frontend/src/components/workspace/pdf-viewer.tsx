@@ -1,5 +1,5 @@
 import { type ExtractedWord, estimatePdfTokens } from "@patrick/shared";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Search } from "lucide-react";
 import {
 	GlobalWorkerOptions,
 	getDocument,
@@ -9,6 +9,7 @@ import {
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
 	type CSSProperties,
+	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
@@ -18,6 +19,7 @@ import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { InfoTooltip } from "@/components/ui/tooltip";
+import { DocSearchPanel } from "@/components/workspace/doc-search";
 import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
@@ -42,7 +44,25 @@ export function PdfViewer({ filename }: { filename: string }) {
 	const [scale, setScale] = useState(1.2);
 	const [current, setCurrent] = useState(1);
 	const [error, setError] = useState(false);
+	const [searchOpen, setSearchOpen] = useState(false);
 	const scrollRef = useRef<HTMLDivElement>(null);
+
+	// Spike search: chunk + embed this PDF's extracted text in the webview. Needs
+	// text — if it hasn't been extracted, the panel says so.
+	const loadSearchPages = useCallback(async () => {
+		try {
+			const ext = await tasksApi.extractedText(activeTaskId ?? "", filename);
+			return ext.pages.map((p) => ({ text: p.text }));
+		} catch {
+			return null;
+		}
+	}, [activeTaskId, filename]);
+
+	const jumpToPage = useCallback((page: number) => {
+		scrollRef.current
+			?.querySelector<HTMLElement>(`[data-page="${page}"]`)
+			?.scrollIntoView({ behavior: "smooth", block: "start" });
+	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -197,6 +217,25 @@ export function PdfViewer({ filename }: { filename: string }) {
 					</>
 				)}
 			</div>
+
+			{!searchOpen && (
+				<Button
+					variant="outline"
+					size="icon-sm"
+					tooltip="Search this document"
+					className="absolute top-3 right-3 z-10 bg-background/95 shadow-sm backdrop-blur"
+					onClick={() => setSearchOpen(true)}
+				>
+					<Search />
+				</Button>
+			)}
+			{searchOpen && (
+				<DocSearchPanel
+					loadPages={loadSearchPages}
+					onJump={jumpToPage}
+					onClose={() => setSearchOpen(false)}
+				/>
+			)}
 		</div>
 	);
 }
