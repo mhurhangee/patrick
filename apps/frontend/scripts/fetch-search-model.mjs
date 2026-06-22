@@ -7,7 +7,8 @@ import { mkdir, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const MODEL = "Xenova/bge-small-en-v1.5";
+// Keep in sync with src/lib/search/model.ts (EMBED_MODEL + RERANK_MODEL).
+const MODELS = ["Xenova/bge-small-en-v1.5", "Xenova/ms-marco-MiniLM-L-6-v2"];
 const FILES = [
 	"config.json",
 	"tokenizer.json",
@@ -16,8 +17,6 @@ const FILES = [
 ];
 
 const here = dirname(fileURLToPath(import.meta.url));
-const outRoot = join(here, "..", "public", "models", MODEL);
-const base = `https://huggingface.co/${MODEL}/resolve/main`;
 
 async function exists(p) {
 	try {
@@ -28,26 +27,30 @@ async function exists(p) {
 	}
 }
 
-async function fetchFile(rel) {
-	const dest = join(outRoot, rel);
+async function fetchFile(model, rel) {
+	const dest = join(here, "..", "public", "models", model, rel);
 	if (await exists(dest)) {
-		console.log(`[search-model] have ${rel}`);
+		console.log(`[search-model] have ${model}/${rel}`);
 		return;
 	}
-	console.log(`[search-model] fetching ${rel}…`);
-	const res = await fetch(`${base}/${rel}`);
-	if (!res.ok) throw new Error(`${rel}: ${res.status}`);
+	console.log(`[search-model] fetching ${model}/${rel}…`);
+	const res = await fetch(
+		`https://huggingface.co/${model}/resolve/main/${rel}`,
+	);
+	if (!res.ok) throw new Error(`${model}/${rel}: ${res.status}`);
 	const buf = Buffer.from(await res.arrayBuffer());
 	await mkdir(dirname(dest), { recursive: true });
 	await writeFile(dest, buf);
 	console.log(
-		`[search-model] saved ${rel} (${(buf.length / 1e6).toFixed(1)} MB)`,
+		`[search-model] saved ${model}/${rel} (${(buf.length / 1e6).toFixed(1)} MB)`,
 	);
 }
 
 try {
-	for (const f of FILES) await fetchFile(f);
-	console.log(`[search-model] ready: ${MODEL}`);
+	for (const model of MODELS) {
+		for (const f of FILES) await fetchFile(model, f);
+	}
+	console.log(`[search-model] ready: ${MODELS.join(", ")}`);
 } catch (err) {
 	console.warn(
 		`[search-model] skipped bundling (${err.message}) — the app will fall back to the CDN at runtime.`,

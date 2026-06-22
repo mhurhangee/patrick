@@ -2,14 +2,19 @@
 // the heavy WASM compute; here we just marshal requests and surface progress.
 
 type Pending = {
-	resolve: (v: Float32Array[]) => void;
+	resolve: (v: unknown) => void;
 	reject: (e: Error) => void;
 	onProgress?: (done: number, total: number) => void;
 };
 
+type WorkerReq =
+	| { kind: "embed"; texts: string[]; isQuery: boolean }
+	| { kind: "rerank"; query: string; passages: string[] };
+
 type WorkerMsg =
 	| { id: number; type: "progress"; done: number; total: number }
 	| { id: number; type: "done"; vectors: number[][] }
+	| { id: number; type: "scores"; scores: number[] }
 	| { id: number; type: "error"; message: string };
 
 let worker: Worker | null = null;
@@ -30,6 +35,9 @@ function getWorker(): Worker {
 		} else if (msg.type === "done") {
 			pending.delete(msg.id);
 			p.resolve(msg.vectors.map((r) => Float32Array.from(r)));
+		} else if (msg.type === "scores") {
+			pending.delete(msg.id);
+			p.resolve(msg.scores);
 		} else {
 			pending.delete(msg.id);
 			p.reject(new Error(msg.message));
@@ -50,16 +58,19 @@ function getWorker(): Worker {
 	return w;
 }
 
-function run(
-	texts: string[],
-	isQuery: boolean,
+function request<T>(
+	req: WorkerReq,
 	onProgress?: (done: number, total: number) => void,
-): Promise<Float32Array[]> {
+): Promise<T> {
 	const w = getWorker();
 	const id = ++seq;
-	return new Promise((resolve, reject) => {
-		pending.set(id, { resolve, reject, onProgress });
-		w.postMessage({ id, texts, isQuery });
+	return new Promise<T>((resolve, reject) => {
+		pending.set(id, {
+			resolve: resolve as (v: unknown) => void,
+			reject,
+			onProgress,
+		});
+		w.postMessage({ ...req, id });
 	});
 }
 
@@ -68,12 +79,24 @@ export function embedPassages(
 	texts: string[],
 	onProgress?: (done: number, total: number) => void,
 ): Promise<Float32Array[]> {
-	return run(texts, false, onProgress);
+	return request<Float32Array[]>(
+		{ kind: "embed", texts, isQuery: false },
+		onProgress,
+	);
 }
 
 /** Embed a search query (with the bge instruction prefix). */
 export async function embedQuery(text: string): Promise<Float32Array> {
-	const [v] = await run([text], true);
+	const [v] = await request<Float32Array[]>({
+		kind: "embed",
+		texts: [text],
+		isQuery: true,
+	});
 	if (!v) throw new Error("query embedding failed");
 	return v;
+}
+
+/** Cross-encoder relevance scores for each passage against the query (higher = better). */
+export function rerank(query: string, passages: string[]): Promise<number[]> {
+	return request<number[]>({ kind: "rerank", query, passages });
 }
