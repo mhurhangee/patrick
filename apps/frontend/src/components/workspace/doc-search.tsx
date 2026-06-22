@@ -10,6 +10,37 @@ import { hybridRank, type SearchHit } from "@/lib/search/search";
 type Status = "loading" | "no-text" | "ready" | "error";
 type Index = { chunks: Chunk[]; vectors: Float32Array[]; bm25: Bm25Index };
 
+// Built indexes live for the app session, keyed by document, so reopening the panel
+// (or switching back to a doc) never re-embeds — the slow part. `inflight` dedupes
+// concurrent builds (e.g. StrictMode's double-mount). Phase 1 persists this to disk.
+const indexCache = new Map<string, Index>();
+const inflight = new Map<string, Promise<Index | null>>();
+
+function buildIndex(
+	key: string,
+	loadPages: () => Promise<{ text: string }[] | null>,
+	onProgress: (done: number, total: number) => void,
+): Promise<Index | null> {
+	const cached = indexCache.get(key);
+	if (cached) return Promise.resolve(cached);
+	const existing = inflight.get(key);
+	if (existing) return existing;
+	const build = (async () => {
+		const pages = await loadPages();
+		if (!pages || pages.every((p) => !p.text.trim())) return null;
+		const chunks = chunkPages(pages);
+		const vectors = await embedPassages(
+			chunks.map((c) => c.text),
+			onProgress,
+		);
+		const idx: Index = { chunks, vectors, bm25: buildBm25(chunks) };
+		indexCache.set(key, idx);
+		return idx;
+	})().finally(() => inflight.delete(key));
+	inflight.set(key, build);
+	return build;
+}
+
 /**
  * Spike: in-document semantic search. Chunks the document's text, embeds every
  * chunk in the webview, and ranks passages by meaning against the query — so
@@ -17,10 +48,12 @@ type Index = { chunks: Chunk[]; vectors: Float32Array[]; bm25: Bm25Index };
  * the engine + model + speed; persistence, BM25/rerank, and the agent tool follow.
  */
 export function DocSearchPanel({
+	cacheKey,
 	loadPages,
 	onJump,
 	onClose,
 }: {
+	cacheKey: string;
 	loadPages: () => Promise<{ text: string }[] | null>;
 	onJump?: (page: number) => void;
 	onClose: () => void;
@@ -35,39 +68,38 @@ export function DocSearchPanel({
 	const [searching, setSearching] = useState(false);
 	const indexRef = useRef<Index | null>(null);
 
-	// Build the index once when the panel opens: chunk the document and embed every
-	// chunk. The first embed() also downloads the model (cached after that).
+	// Get the index for this doc — instant on a cache hit (reopening), otherwise
+	// built once. Only embedding (a cold build) shows the loading/indexing status.
 	useEffect(() => {
 		let cancelled = false;
-		(async () => {
-			setStatus("loading");
-			setProgress(null);
-			try {
-				const pages = await loadPages();
+		const cached = indexCache.get(cacheKey);
+		if (cached) {
+			indexRef.current = cached;
+			setStatus("ready");
+			return;
+		}
+		setStatus("loading");
+		setProgress(null);
+		buildIndex(cacheKey, loadPages, (done, total) => {
+			if (!cancelled) setProgress({ done, total });
+		})
+			.then((idx) => {
 				if (cancelled) return;
-				if (!pages || pages.every((p) => !p.text.trim())) {
+				if (!idx) {
 					setStatus("no-text");
 					return;
 				}
-				const chunks = chunkPages(pages);
-				const vectors = await embedPassages(
-					chunks.map((c) => c.text),
-					(done, total) => {
-						if (!cancelled) setProgress({ done, total });
-					},
-				);
-				if (cancelled) return;
-				indexRef.current = { chunks, vectors, bm25: buildBm25(chunks) };
+				indexRef.current = idx;
 				setStatus("ready");
-			} catch (err) {
+			})
+			.catch((err) => {
 				console.error("[search] index failed", err);
 				if (!cancelled) setStatus("error");
-			}
-		})();
+			});
 		return () => {
 			cancelled = true;
 		};
-	}, [loadPages]);
+	}, [cacheKey, loadPages]);
 
 	// Debounced semantic search over the built index.
 	useEffect(() => {

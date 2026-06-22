@@ -231,6 +231,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 			)}
 			{searchOpen && (
 				<DocSearchPanel
+					cacheKey={`${activeTaskId}/${filename}`}
 					loadPages={loadSearchPages}
 					onJump={jumpToPage}
 					onClose={() => setSearchOpen(false)}

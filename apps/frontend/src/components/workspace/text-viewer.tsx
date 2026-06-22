@@ -262,6 +262,7 @@ export function TextViewer({ filename }: { filename: string }) {
 			)}
 			{searchOpen && (
 				<DocSearchPanel
+					cacheKey={`${activeTaskId}/${filename}`}
 					loadPages={loadSearchPages}
 					onClose={() => setSearchOpen(false)}
 				/>
