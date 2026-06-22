@@ -234,6 +234,13 @@ export function DocSearchPanel({
 		};
 	}, [query, mode, pagesReady]);
 
+	// Reset the active selection the instant the query/mode changes, so the counter and
+	// prev/next never index a stale (longer) list during the debounce window.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset on query/mode change
+	useEffect(() => {
+		setSelected(0);
+	}, [query, mode]);
+
 	const sortedResults = useMemo(
 		() =>
 			sort === "appearance"
