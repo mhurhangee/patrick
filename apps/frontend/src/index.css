@@ -439,3 +439,13 @@
 .ocrLayer ::selection {
 	background: color-mix(in srgb, var(--primary) 30%, transparent);
 }
+
+/* In-document search highlights (CSS Custom Highlight API, set from
+   use-doc-highlights.ts): every match faint, the selected one strong. */
+::highlight(doc-search-all) {
+	background-color: rgb(250 204 21 / 0.28);
+}
+::highlight(doc-search-selected) {
+	background-color: rgb(250 204 21 / 0.7);
+	color: inherit;
+}

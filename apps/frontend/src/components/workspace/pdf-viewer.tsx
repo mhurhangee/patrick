@@ -1,5 +1,5 @@
 import { type ExtractedWord, estimatePdfTokens } from "@patrick/shared";
-import { Minus, Plus, Search } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import {
 	GlobalWorkerOptions,
 	getDocument,
@@ -19,7 +19,7 @@ import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
 import { InfoTooltip } from "@/components/ui/tooltip";
-import { DocSearchPanel } from "@/components/workspace/doc-search";
+import { DocSearchLayout } from "@/components/workspace/doc-search-layout";
 import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
@@ -44,7 +44,6 @@ export function PdfViewer({ filename }: { filename: string }) {
 	const [scale, setScale] = useState(1.2);
 	const [current, setCurrent] = useState(1);
 	const [error, setError] = useState(false);
-	const [searchOpen, setSearchOpen] = useState(false);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
 	// Search over this PDF's extracted text. Needs text — if it hasn't been
@@ -158,7 +157,12 @@ export function PdfViewer({ filename }: { filename: string }) {
 	}
 
 	return (
-		<div className="relative h-full">
+		<DocSearchLayout
+			taskId={activeTaskId ?? ""}
+			filename={filename}
+			loadPages={loadSearchPages}
+			onJump={jumpToPage}
+		>
 			<div
 				ref={scrollRef}
 				onScroll={onScroll}
@@ -217,28 +221,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 					</>
 				)}
 			</div>
-
-			{!searchOpen && (
-				<Button
-					variant="outline"
-					size="icon-sm"
-					tooltip="Search this document"
-					className="absolute top-3 right-3 z-10 bg-background/95 shadow-sm backdrop-blur"
-					onClick={() => setSearchOpen(true)}
-				>
-					<Search />
-				</Button>
-			)}
-			{searchOpen && (
-				<DocSearchPanel
-					taskId={activeTaskId ?? ""}
-					filename={filename}
-					loadPages={loadSearchPages}
-					onJump={jumpToPage}
-					onClose={() => setSearchOpen(false)}
-				/>
-			)}
-		</div>
+		</DocSearchLayout>
 	);
 }
 
