@@ -16,10 +16,12 @@ import {
 	FolderOpen,
 	Tag,
 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
 import { Patrick } from "@/components/patrick";
 import { Button } from "@/components/ui/button";
+import { useActiveTask } from "@/lib/active-task";
+import { indexKey, onIndexProgress } from "@/lib/search/doc-index";
 import { cn } from "@/lib/utils";
 
 type Part = UIMessage["parts"][number];
@@ -86,6 +88,16 @@ const PRESENTERS: Record<string, Presenter> = {
 		label: "Search the web",
 		runningLabel: "Searching the web…",
 		summary: (input) => input?.query ?? null,
+	},
+	search_document: {
+		label: "Search a document",
+		runningLabel: "Searching…",
+		summary: (input, output) => {
+			if (output?.error) return output.error;
+			const n = output?.passages?.length ?? 0;
+			const where = input?.filename ? ` in ${input.filename}` : "";
+			return `${n} passage${n === 1 ? "" : "s"}${where}`;
+		},
 	},
 };
 
@@ -309,9 +321,28 @@ type TrailStepData = {
 	key: string;
 	label: string;
 	status: "running" | "error" | "complete";
-	statusLabel?: string | null;
+	statusLabel?: ReactNode;
 	detail?: ReactNode;
 };
+
+// Live indexing status for a running search_document call: the doc is indexed on
+// demand inside the tool call, which is otherwise a silent multi-minute wait on a
+// large unindexed doc. Shows "Indexing N/M" while building, then "Searching".
+function SearchProgress({ filename }: { filename?: string }) {
+	const { activeTaskId } = useActiveTask();
+	const [p, setP] = useState<{ done: number; total: number } | null>(null);
+	useEffect(() => {
+		if (!activeTaskId || !filename) return;
+		return onIndexProgress(indexKey(activeTaskId, filename), (done, total) =>
+			setP({ done, total }),
+		);
+	}, [activeTaskId, filename]);
+	return (
+		<>
+			{p && p.done < p.total ? `Indexing ${p.done}/${p.total}…` : "Searching…"}
+		</>
+	);
+}
 
 function TrailStep({ step }: { step: TrailStepData }) {
 	const [open, setOpen] = useState(false);
@@ -759,12 +790,22 @@ export function AssistantParts({
 			part.state === "output-available" && !failed && presenter?.summary
 				? presenter.summary(part.input, part.output)
 				: null;
+		// search_document indexes on demand inside the call; show live indexing
+		// progress rather than a static "Searching…" during the wait.
+		const runningLabel =
+			running && name === "search_document" ? (
+				<SearchProgress
+					filename={(part.input as { filename?: string } | undefined)?.filename}
+				/>
+			) : (
+				(presenter?.runningLabel ?? "Running…")
+			);
 		trail.push({
 			key: `t-${i}`,
 			label: presenter?.label ?? humanize(name),
 			status: failed ? "error" : running ? "running" : "complete",
 			statusLabel: running
-				? (presenter?.runningLabel ?? "Running…")
+				? runningLabel
 				: failed
 					? (out?.error ?? "failed")
 					: summary,

@@ -53,6 +53,7 @@ import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { estimateDocTokens, useDocSize } from "@/lib/doc-size";
+import { searchDocument } from "@/lib/search/doc-index";
 import { useWorkspace, type WorkspaceDoc } from "@/lib/workspace";
 import {
 	ChatComposer,
@@ -292,6 +293,8 @@ function ChatSession({
 	modelRef.current = modelId;
 	const refreshChatsRef = useRef(refreshChats);
 	refreshChatsRef.current = refreshChats;
+	const activeTaskIdRef = useRef(activeTaskId);
+	activeTaskIdRef.current = activeTaskId;
 
 	const {
 		messages,
@@ -328,6 +331,44 @@ function ChatSession({
 				SERVER_TOOLS.has(toolCall.toolName)
 			)
 				return;
+			// search_document runs in the webview against the doc's local index.
+			if (toolCall.toolName === "search_document") {
+				const input = toolCall.input as { filename?: string; query?: string };
+				let result: unknown;
+				try {
+					const taskId = activeTaskIdRef.current;
+					if (!taskId || !input.filename || !input.query) {
+						result = { error: "missing task, filename, or query" };
+					} else {
+						const r = await searchDocument(taskId, input.filename, input.query);
+						result = r.ok
+							? {
+									filename: r.filename,
+									passages: r.passages.map((p) => ({
+										page: p.page,
+										text: p.text,
+									})),
+								}
+							: {
+									filename: r.filename,
+									error:
+										r.reason === "no-text"
+											? "no extractable text — extract or OCR this document first"
+											: "no relevant passages found",
+								};
+					}
+				} catch (err) {
+					result = {
+						error: err instanceof Error ? err.message : "search failed",
+					};
+				}
+				addToolResult({
+					tool: toolCall.toolName,
+					toolCallId: toolCall.toolCallId,
+					output: result,
+				});
+				return;
+			}
 			let output: unknown;
 			try {
 				output = executeToolCall(

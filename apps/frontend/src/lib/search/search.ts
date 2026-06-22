@@ -64,3 +64,49 @@ export function hybridRank(
 	const max = top[0]?.score ?? 1;
 	return top.map((c) => ({ ...c, score: c.score / max }));
 }
+
+/** A hit expanded to its neighbouring chunks, for coherent context. */
+export type Passage = { text: string; page: number; score: number };
+
+/**
+ * Expand each hit to a window of ±`window` neighbouring chunks and merge
+ * overlapping/adjacent windows — so a retrieved chunk arrives with the context
+ * around it (a lone chunk like "it comprises a widget" is ambiguous on its own).
+ * Standard sentence-window retrieval. Ordered best-first.
+ */
+export function expandNeighbors(
+	hits: SearchHit[],
+	chunks: Chunk[],
+	window = 1,
+): Passage[] {
+	const ranges = hits
+		.map((h) => ({
+			start: Math.max(0, h.index - window),
+			end: Math.min(chunks.length - 1, h.index + window),
+			score: h.score,
+		}))
+		.sort((a, b) => a.start - b.start);
+
+	const merged: { start: number; end: number; score: number }[] = [];
+	for (const r of ranges) {
+		const last = merged[merged.length - 1];
+		// Touching or overlapping windows fold together; keep the best score.
+		if (last && r.start <= last.end + 1) {
+			last.end = Math.max(last.end, r.end);
+			last.score = Math.max(last.score, r.score);
+		} else {
+			merged.push({ ...r });
+		}
+	}
+
+	return merged
+		.sort((a, b) => b.score - a.score)
+		.map((m) => ({
+			text: chunks
+				.slice(m.start, m.end + 1)
+				.map((c) => c.text)
+				.join("\n\n"),
+			page: chunks[m.start]?.page ?? 1,
+			score: m.score,
+		}));
+}

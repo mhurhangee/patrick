@@ -2,8 +2,9 @@ import type { SearchIndex } from "@patrick/shared";
 import { tasksApi } from "@/api/tasks";
 import { type Bm25Index, buildBm25 } from "./bm25";
 import { type Chunk, chunkPages } from "./chunk";
-import { embedPassages } from "./embed";
+import { embedPassages, embedQuery } from "./embed";
 import { EMBED_MODEL } from "./model";
+import { expandNeighbors, hybridRank, type Passage } from "./search";
 
 // The built, queryable index for one document. BM25 is rebuilt from chunks (cheap)
 // rather than persisted.
@@ -147,4 +148,56 @@ export function getDocIndex(
 
 	inflight.set(key, build);
 	return build;
+}
+
+/** Load a document's text for indexing, by type: a PDF's extracted text (null if it
+ *  hasn't been extracted yet), or a retrieved .md/.txt's raw content. */
+async function loadDocPages(
+	taskId: string,
+	filename: string,
+): Promise<{ text: string }[] | null> {
+	const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+	if (ext === ".pdf") {
+		try {
+			const doc = await tasksApi.extractedText(taskId, filename);
+			return doc.pages.map((p) => ({ text: p.text }));
+		} catch {
+			return null; // not extracted/OCR'd yet
+		}
+	}
+	if (ext === ".md" || ext === ".txt") {
+		try {
+			const res = await fetch(tasksApi.fileUrl(taskId, filename));
+			if (!res.ok) return null;
+			return [{ text: await res.text() }];
+		} catch {
+			return null;
+		}
+	}
+	return null; // docx drafts etc. aren't searchable sources
+}
+
+export type SearchOutcome =
+	| { ok: true; filename: string; passages: Passage[] }
+	| { ok: false; filename: string; reason: "no-text" | "no-results" };
+
+/**
+ * Search one document for the agent: indexes it on demand if needed (cache → disk →
+ * build), runs hybrid search, and returns the top passages expanded to their
+ * neighbours for context. The headline for the search_document tool.
+ */
+export async function searchDocument(
+	taskId: string,
+	filename: string,
+	query: string,
+	topK = 8,
+): Promise<SearchOutcome> {
+	const idx = await getDocIndex(taskId, filename, () =>
+		loadDocPages(taskId, filename),
+	);
+	if (!idx) return { ok: false, filename, reason: "no-text" };
+	const qv = await embedQuery(query);
+	const hits = hybridRank(qv, query, idx.chunks, idx.vectors, idx.bm25, topK);
+	if (hits.length === 0) return { ok: false, filename, reason: "no-results" };
+	return { ok: true, filename, passages: expandNeighbors(hits, idx.chunks) };
 }

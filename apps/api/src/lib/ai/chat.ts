@@ -127,6 +127,19 @@ const requestOpenFile = tool({
 	}),
 });
 
+// No-execute, but client-run (not HITL): the search runs in the webview against the
+// document's local index and returns passages directly — no accept/reject card.
+const searchDocument = tool({
+	description:
+		"Search ONE source document's full text and get back its most relevant passages (with page numbers) — instead of reading the whole document. Use this to find where a document discloses a feature, or to pull supporting evidence, without pinning the entire thing into context; ideal for long prior art. Pass an exact filename (from the pinned or available lists) and a natural-language query or the feature you're looking for. Call once per document. If it reports no extractable text, the PDF needs to be extracted/OCR'd first.",
+	inputSchema: z.object({
+		filename: z.string().describe("Exact filename of the document to search"),
+		query: z
+			.string()
+			.describe("What to look for — a feature, concept, or phrase"),
+	}),
+});
+
 const suggestLabel = tool({
 	description:
 		"Propose a short one-line label for a document — what it is, in a few words — plus a couple of follow-up prompts the attorney might next ask about THAT document. The attorney accepts to apply the label; the prompts become one-tap chips in the chat. Helpful for documents that have no label yet.",
@@ -425,7 +438,9 @@ function buildChatTools(opts: {
 		...(opts.webSearch
 			? webSearchTool(vendorOf(opts.provider, opts.modelId))
 			: {}),
-		...(opts.hasDocs ? { requestOpenFile } : {}),
+		...(opts.hasDocs
+			? { requestOpenFile, search_document: searchDocument }
+			: {}),
 	};
 }
 
