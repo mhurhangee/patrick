@@ -3,6 +3,7 @@ import {
 	type FeatureExtractionPipeline,
 	pipeline,
 } from "@huggingface/transformers";
+import { EMBED_MODEL } from "./model";
 
 // Embeddings run here, off the main thread, so indexing a long spec never freezes
 // the UI (the bug the first spike hit). Mirrors how tesseract OCR runs in a worker.
@@ -14,7 +15,6 @@ env.allowLocalModels = true;
 env.allowRemoteModels = true;
 env.localModelPath = `${self.location.origin}/models/`;
 
-const MODEL = "Xenova/bge-small-en-v1.5";
 // bge is asymmetric: a search query gets an instruction prefix; passages don't.
 const QUERY_PREFIX =
 	"Represent this sentence for searching relevant passages: ";
@@ -22,7 +22,7 @@ const BATCH = 32;
 
 let pipePromise: Promise<FeatureExtractionPipeline> | null = null;
 function getPipe(): Promise<FeatureExtractionPipeline> {
-	pipePromise ??= pipeline("feature-extraction", MODEL, { dtype: "q8" });
+	pipePromise ??= pipeline("feature-extraction", EMBED_MODEL, { dtype: "q8" });
 	return pipePromise;
 }
 

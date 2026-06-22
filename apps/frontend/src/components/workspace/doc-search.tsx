@@ -2,58 +2,32 @@ import { Loader2, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type Bm25Index, buildBm25 } from "@/lib/search/bm25";
-import { type Chunk, chunkPages } from "@/lib/search/chunk";
-import { embedPassages, embedQuery } from "@/lib/search/embed";
+import {
+	type DocIndex,
+	getDocIndex,
+	indexKey,
+	onIndexProgress,
+} from "@/lib/search/doc-index";
+import { embedQuery } from "@/lib/search/embed";
 import { hybridRank, type SearchHit } from "@/lib/search/search";
 
 type Status = "loading" | "no-text" | "ready" | "error";
-type Index = { chunks: Chunk[]; vectors: Float32Array[]; bm25: Bm25Index };
-
-// Built indexes live for the app session, keyed by document, so reopening the panel
-// (or switching back to a doc) never re-embeds — the slow part. `inflight` dedupes
-// concurrent builds (e.g. StrictMode's double-mount). Phase 1 persists this to disk.
-const indexCache = new Map<string, Index>();
-const inflight = new Map<string, Promise<Index | null>>();
-
-function buildIndex(
-	key: string,
-	loadPages: () => Promise<{ text: string }[] | null>,
-	onProgress: (done: number, total: number) => void,
-): Promise<Index | null> {
-	const cached = indexCache.get(key);
-	if (cached) return Promise.resolve(cached);
-	const existing = inflight.get(key);
-	if (existing) return existing;
-	const build = (async () => {
-		const pages = await loadPages();
-		if (!pages || pages.every((p) => !p.text.trim())) return null;
-		const chunks = chunkPages(pages);
-		const vectors = await embedPassages(
-			chunks.map((c) => c.text),
-			onProgress,
-		);
-		const idx: Index = { chunks, vectors, bm25: buildBm25(chunks) };
-		indexCache.set(key, idx);
-		return idx;
-	})().finally(() => inflight.delete(key));
-	inflight.set(key, build);
-	return build;
-}
 
 /**
- * Spike: in-document semantic search. Chunks the document's text, embeds every
- * chunk in the webview, and ranks passages by meaning against the query — so
- * "a car" surfaces "the vehicle", not just literal matches. Throwaway UI proving
- * the engine + model + speed; persistence, BM25/rerank, and the agent tool follow.
+ * In-document hybrid search. Chunks the document's text, embeds every chunk in the
+ * webview, and ranks passages by meaning + keyword against the query — so "a car"
+ * surfaces "the vehicle", not just literal matches. The index is built once and
+ * persisted (see getDocIndex); this panel is the search surface ahead of the agent tool.
  */
 export function DocSearchPanel({
-	cacheKey,
+	taskId,
+	filename,
 	loadPages,
 	onJump,
 	onClose,
 }: {
-	cacheKey: string;
+	taskId: string;
+	filename: string;
 	loadPages: () => Promise<{ text: string }[] | null>;
 	onJump?: (page: number) => void;
 	onClose: () => void;
@@ -66,23 +40,21 @@ export function DocSearchPanel({
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<SearchHit[]>([]);
 	const [searching, setSearching] = useState(false);
-	const indexRef = useRef<Index | null>(null);
+	const indexRef = useRef<DocIndex | null>(null);
 
-	// Get the index for this doc — instant on a cache hit (reopening), otherwise
-	// built once. Only embedding (a cold build) shows the loading/indexing status.
+	// Resolve the index for this doc — cache/disk hits are instant; only a cold build
+	// (embedding) shows the loading/indexing status, via the progress subscription.
 	useEffect(() => {
 		let cancelled = false;
-		const cached = indexCache.get(cacheKey);
-		if (cached) {
-			indexRef.current = cached;
-			setStatus("ready");
-			return;
-		}
 		setStatus("loading");
 		setProgress(null);
-		buildIndex(cacheKey, loadPages, (done, total) => {
-			if (!cancelled) setProgress({ done, total });
-		})
+		const unsubscribe = onIndexProgress(
+			indexKey(taskId, filename),
+			(done, total) => {
+				if (!cancelled) setProgress({ done, total });
+			},
+		);
+		getDocIndex(taskId, filename, loadPages)
 			.then((idx) => {
 				if (cancelled) return;
 				if (!idx) {
@@ -98,8 +70,9 @@ export function DocSearchPanel({
 			});
 		return () => {
 			cancelled = true;
+			unsubscribe();
 		};
-	}, [cacheKey, loadPages]);
+	}, [taskId, filename, loadPages]);
 
 	// Debounced semantic search over the built index.
 	useEffect(() => {
