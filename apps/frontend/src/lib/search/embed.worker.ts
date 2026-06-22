@@ -1,9 +1,11 @@
 import {
+	AutoModelForSequenceClassification,
+	AutoTokenizer,
 	env,
 	type FeatureExtractionPipeline,
 	pipeline,
 } from "@huggingface/transformers";
-import { EMBED_MODEL } from "./model";
+import { EMBED_MODEL, RERANK_MODEL } from "./model";
 
 // Embeddings run here, off the main thread, so indexing a long spec never freezes
 // the UI. Mirrors how tesseract OCR runs in a worker.
@@ -26,17 +28,52 @@ function getPipe(): Promise<FeatureExtractionPipeline> {
 	return pipePromise;
 }
 
-type Req = { id: number; texts: string[]; isQuery: boolean };
+// The cross-encoder reranker (tokenizer + sequence-classification model), loaded
+// lazily on the first rerank — only the agent path uses it.
+function loadReranker() {
+	return Promise.all([
+		AutoTokenizer.from_pretrained(RERANK_MODEL),
+		AutoModelForSequenceClassification.from_pretrained(RERANK_MODEL, {
+			dtype: "q8",
+		}),
+	]);
+}
+let rerankerPromise: ReturnType<typeof loadReranker> | null = null;
+function getReranker(): ReturnType<typeof loadReranker> {
+	rerankerPromise ??= loadReranker();
+	return rerankerPromise;
+}
+
+type Req =
+	| { id: number; kind: "embed"; texts: string[]; isQuery: boolean }
+	| { id: number; kind: "rerank"; query: string; passages: string[] };
 type Res =
 	| { id: number; type: "progress"; done: number; total: number }
 	| { id: number; type: "done"; vectors: number[][] }
+	| { id: number; type: "scores"; scores: number[] }
 	| { id: number; type: "error"; message: string };
 
 const post = (msg: Res) => (self as unknown as Worker).postMessage(msg);
 
 self.onmessage = async (e: MessageEvent<Req>) => {
-	const { id, texts, isQuery } = e.data;
+	const msg = e.data;
 	try {
+		if (msg.kind === "rerank") {
+			// Score each (query, passage) pair together — the cross-encoder reads both,
+			// unlike the bi-encoder embeddings. ms-marco emits one relevance logit/pair.
+			const [tokenizer, model] = await getReranker();
+			const inputs = tokenizer(new Array(msg.passages.length).fill(msg.query), {
+				text_pair: msg.passages,
+				padding: true,
+				truncation: true,
+			});
+			const { logits } = await model(inputs);
+			const scores = (logits.tolist() as number[][]).map((r) => r[0] ?? 0);
+			post({ id: msg.id, type: "scores", scores });
+			return;
+		}
+
+		const { id, texts, isQuery } = msg;
 		// The model loads once (cheap — ~350ms); embedding is the real cost. Time the
 		// first load just for the console, not as a UI phase.
 		const firstLoad = pipePromise === null;
@@ -77,7 +114,7 @@ self.onmessage = async (e: MessageEvent<Req>) => {
 		post({ id, type: "done", vectors });
 	} catch (err) {
 		post({
-			id,
+			id: msg.id,
 			type: "error",
 			message: err instanceof Error ? err.message : "embed failed",
 		});

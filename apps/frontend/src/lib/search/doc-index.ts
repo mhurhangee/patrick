@@ -2,9 +2,14 @@ import type { SearchIndex } from "@patrick/shared";
 import { tasksApi } from "@/api/tasks";
 import { type Bm25Index, buildBm25 } from "./bm25";
 import { type Chunk, chunkPages } from "./chunk";
-import { embedPassages, embedQuery } from "./embed";
+import { embedPassages, embedQuery, rerank } from "./embed";
 import { EMBED_MODEL } from "./model";
-import { expandNeighbors, hybridRank, type Passage } from "./search";
+import {
+	expandNeighbors,
+	hybridRank,
+	type Passage,
+	type SearchHit,
+} from "./search";
 
 // The built, queryable index for one document. BM25 is rebuilt from chunks (cheap)
 // rather than persisted.
@@ -197,10 +202,36 @@ export type SearchOutcome =
 	| { ok: true; filename: string; passages: Passage[] }
 	| { ok: false; filename: string; reason: "no-text" | "no-results" };
 
+// How many hybrid candidates the cross-encoder re-scores before we keep topK. The
+// cross-encoder is the precision step; it only sees a shortlist, not the whole doc.
+const RERANK_POOL = 24;
+
+// Re-score the hybrid shortlist with the cross-encoder (reads query+passage together)
+// and reorder. A precision boost, never a hard dependency: fall back to the hybrid
+// order if reranking fails.
+async function rerankHits(
+	query: string,
+	candidates: SearchHit[],
+): Promise<SearchHit[]> {
+	try {
+		const scores = await rerank(
+			query,
+			candidates.map((c) => c.text),
+		);
+		return candidates
+			.map((c, i) => ({ ...c, score: scores[i] ?? c.score }))
+			.sort((a, b) => b.score - a.score);
+	} catch (err) {
+		console.warn("[search] rerank failed — using hybrid order", err);
+		return candidates;
+	}
+}
+
 /**
  * Search one document for the agent: indexes it on demand if needed (cache → disk →
- * build), runs hybrid search, and returns the top passages expanded to their
- * neighbours for context. The headline for the search_document tool.
+ * build), runs hybrid search, reranks the shortlist with the cross-encoder, and
+ * returns the top passages expanded to their neighbours for context. The headline
+ * for the search_document tool.
  */
 export async function searchDocument(
 	taskId: string,
@@ -213,7 +244,16 @@ export async function searchDocument(
 	);
 	if (!idx) return { ok: false, filename, reason: "no-text" };
 	const qv = await embedQuery(query);
-	const hits = hybridRank(qv, query, idx.chunks, idx.vectors, idx.bm25, topK);
-	if (hits.length === 0) return { ok: false, filename, reason: "no-results" };
-	return { ok: true, filename, passages: expandNeighbors(hits, idx.chunks) };
+	const candidates = hybridRank(
+		qv,
+		query,
+		idx.chunks,
+		idx.vectors,
+		idx.bm25,
+		RERANK_POOL,
+	);
+	if (candidates.length === 0)
+		return { ok: false, filename, reason: "no-results" };
+	const top = (await rerankHits(query, candidates)).slice(0, topK);
+	return { ok: true, filename, passages: expandNeighbors(top, idx.chunks) };
 }
