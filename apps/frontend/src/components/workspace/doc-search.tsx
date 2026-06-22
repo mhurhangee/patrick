@@ -1,5 +1,5 @@
 import { Loader2, Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,55 @@ import { embedQuery } from "@/lib/search/embed";
 import { hybridRank, type SearchHit } from "@/lib/search/search";
 
 type Status = "loading" | "no-text" | "ready" | "error";
+
+const SNIPPET_LEN = 260;
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Show a short window around the first keyword match (not the whole chunk, which is
+// a wall of text), with the query terms highlighted so the relevant bit stands out.
+function highlightSnippet(text: string, query: string): ReactNode[] {
+	const terms = query
+		.toLowerCase()
+		.split(/[^a-z0-9]+/)
+		.filter((t) => t.length > 1);
+
+	let start = 0;
+	if (terms.length) {
+		const lower = text.toLowerCase();
+		let first = -1;
+		for (const t of terms) {
+			const i = lower.indexOf(t);
+			if (i >= 0 && (first < 0 || i < first)) first = i;
+		}
+		if (first > 60) start = first - 40;
+	}
+	const slice = text.slice(start, start + SNIPPET_LEN);
+	const body =
+		(start > 0 ? "…" : "") +
+		slice +
+		(start + SNIPPET_LEN < text.length ? "…" : "");
+
+	if (!terms.length) return [body];
+	const re = new RegExp(`(${terms.map(escapeRe).join("|")})`, "gi");
+	let offset = 0;
+	return body
+		.split(re)
+		.filter(Boolean)
+		.map((p) => {
+			const key = offset;
+			offset += p.length;
+			return terms.includes(p.toLowerCase()) ? (
+				<mark
+					key={key}
+					className="rounded bg-amber-200/70 text-foreground dark:bg-amber-300/30"
+				>
+					{p}
+				</mark>
+			) : (
+				<span key={key}>{p}</span>
+			);
+		});
+}
 
 /**
  * In-document hybrid search. Chunks the document's text, embeds every chunk in the
@@ -100,7 +149,7 @@ export function DocSearchPanel({
 	}, [query, status]);
 
 	return (
-		<div className="absolute inset-y-0 right-0 z-10 flex w-80 flex-col border-l bg-background shadow-lg">
+		<div className="flex h-full w-full flex-col bg-background">
 			<div className="flex items-center gap-2 border-b px-3 py-2">
 				<Search className="size-4 shrink-0 text-muted-foreground" />
 				<Input
@@ -109,7 +158,7 @@ export function DocSearchPanel({
 					onChange={(e) => setQuery(e.target.value)}
 					placeholder="Search this document…"
 					disabled={status !== "ready"}
-					className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+					className="h-8 border-0 bg-transparent shadow-none focus-visible:ring-0"
 				/>
 				<Button
 					variant="ghost"
@@ -161,14 +210,13 @@ export function DocSearchPanel({
 								onClick={() => onJump?.(hit.page)}
 								className="w-full rounded-md px-2 py-2 text-left text-xs hover:bg-muted"
 							>
-								<div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
-									<span>p. {hit.page}</span>
-									<span className="tabular-nums">
-										{(hit.score * 100).toFixed(0)}%
-									</span>
-								</div>
-								<p className="line-clamp-4 leading-snug text-foreground">
-									{hit.text}
+								{onJump && (
+									<div className="mb-1 text-[10px] text-muted-foreground">
+										p. {hit.page}
+									</div>
+								)}
+								<p className="line-clamp-3 leading-snug text-foreground">
+									{highlightSnippet(hit.text, query)}
 								</p>
 							</button>
 						</li>

@@ -1,4 +1,4 @@
-import { Info, Search } from "lucide-react";
+import { Info } from "lucide-react";
 import {
 	Fragment,
 	type ReactNode,
@@ -9,8 +9,7 @@ import {
 } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
-import { DocSearchPanel } from "@/components/workspace/doc-search";
+import { DocSearchLayout } from "@/components/workspace/doc-search-layout";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
 import { recordDocSize } from "@/lib/doc-size";
@@ -173,7 +172,6 @@ export function TextViewer({ filename }: { filename: string }) {
 	const { activeTaskId } = useActiveTask();
 	const [text, setText] = useState<string | null>(null);
 	const [error, setError] = useState(false);
-	const [searchOpen, setSearchOpen] = useState(false);
 
 	// Retrieved publications are already clean text, so search the markdown
 	// directly (no extraction step).
@@ -229,7 +227,11 @@ export function TextViewer({ filename }: { filename: string }) {
 	// Patrick-generated text, and the paper stays light in dark mode, which would
 	// leave the foreground-coloured text invisible.
 	return (
-		<div className="relative h-full">
+		<DocSearchLayout
+			taskId={activeTaskId ?? ""}
+			filename={filename}
+			loadPages={loadSearchPages}
+		>
 			<div className="h-full overflow-auto bg-background px-6 py-8 text-foreground">
 				<div className="mx-auto max-w-3xl text-sm">
 					{source && (
@@ -248,26 +250,6 @@ export function TextViewer({ filename }: { filename: string }) {
 					))}
 				</div>
 			</div>
-
-			{!searchOpen && (
-				<Button
-					variant="outline"
-					size="icon-sm"
-					tooltip="Search this document"
-					className="absolute top-3 right-3 z-10 bg-background/95 shadow-sm backdrop-blur"
-					onClick={() => setSearchOpen(true)}
-				>
-					<Search />
-				</Button>
-			)}
-			{searchOpen && (
-				<DocSearchPanel
-					taskId={activeTaskId ?? ""}
-					filename={filename}
-					loadPages={loadSearchPages}
-					onClose={() => setSearchOpen(false)}
-				/>
-			)}
-		</div>
+		</DocSearchLayout>
 	);
 }
