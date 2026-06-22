@@ -1,7 +1,16 @@
-import { Info } from "lucide-react";
-import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Info, Search } from "lucide-react";
+import {
+	Fragment,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
+import { Button } from "@/components/ui/button";
+import { DocSearchPanel } from "@/components/workspace/doc-search";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
 import { recordDocSize } from "@/lib/doc-size";
@@ -164,6 +173,14 @@ export function TextViewer({ filename }: { filename: string }) {
 	const { activeTaskId } = useActiveTask();
 	const [text, setText] = useState<string | null>(null);
 	const [error, setError] = useState(false);
+	const [searchOpen, setSearchOpen] = useState(false);
+
+	// Retrieved publications are already clean text, so search the markdown
+	// directly (no extraction step).
+	const loadSearchPages = useCallback(
+		async () => (text ? [{ text }] : null),
+		[text],
+	);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -212,23 +229,45 @@ export function TextViewer({ filename }: { filename: string }) {
 	// Patrick-generated text, and the paper stays light in dark mode, which would
 	// leave the foreground-coloured text invisible.
 	return (
-		<div className="h-full overflow-auto bg-background px-6 py-8 text-foreground">
-			<div className="mx-auto max-w-3xl text-sm">
-				{source && (
-					<div className="mb-4 flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
-						<Info className="mt-0.5 size-3.5 shrink-0" />
-						<span>
-							Retrieved from{" "}
-							<span className="font-medium text-foreground">{source}</span> —
-							verify against the original publication.
-						</span>
-					</div>
-				)}
-				{blocks.map((block, i) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: stable parsed order
-					<DocBlock key={i} block={block} k={`b${i}`} />
-				))}
+		<div className="relative h-full">
+			<div className="h-full overflow-auto bg-background px-6 py-8 text-foreground">
+				<div className="mx-auto max-w-3xl text-sm">
+					{source && (
+						<div className="mb-4 flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
+							<Info className="mt-0.5 size-3.5 shrink-0" />
+							<span>
+								Retrieved from{" "}
+								<span className="font-medium text-foreground">{source}</span> —
+								verify against the original publication.
+							</span>
+						</div>
+					)}
+					{blocks.map((block, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: stable parsed order
+						<DocBlock key={i} block={block} k={`b${i}`} />
+					))}
+				</div>
 			</div>
+
+			{!searchOpen && (
+				<Button
+					variant="outline"
+					size="icon-sm"
+					tooltip="Search this document"
+					className="absolute top-3 right-3 z-10 bg-background/95 shadow-sm backdrop-blur"
+					onClick={() => setSearchOpen(true)}
+				>
+					<Search />
+				</Button>
+			)}
+			{searchOpen && (
+				<DocSearchPanel
+					taskId={activeTaskId ?? ""}
+					filename={filename}
+					loadPages={loadSearchPages}
+					onClose={() => setSearchOpen(false)}
+				/>
+			)}
 		</div>
 	);
 }

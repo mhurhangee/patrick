@@ -7,6 +7,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tasksApi } from "@/api/tasks";
 import { extractText } from "@/lib/extract-text";
+import { clearDocIndex } from "@/lib/search/doc-index";
 
 const keys = {
 	list: ["tasks"] as const,
@@ -149,6 +150,9 @@ export function useExtractText(id: string) {
 		}) => {
 			const doc = await extractText(id, filename, onProgress);
 			await tasksApi.saveExtractedText(id, filename, doc);
+			// The session index cache is content-blind — drop it so search rebuilds
+			// against the freshly extracted text.
+			clearDocIndex(id, filename);
 			return doc;
 		},
 		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),

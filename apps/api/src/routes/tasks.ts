@@ -4,6 +4,7 @@ import {
 	createTask,
 	type DocumentMeta,
 	type ExtractedDoc,
+	type SearchIndex,
 	type Task,
 } from "@patrick/shared";
 import { Hono } from "hono";
@@ -23,10 +24,12 @@ import {
 	folderExists,
 	listDocuments,
 	readExtractedText,
+	readSearchIndex,
 	renameDocument,
 	saveDocumentBytes,
 	saveExtractedText,
 	saveRetrievedDocument,
+	saveSearchIndex,
 	unlockDocumentCopy,
 	writeDocumentMeta,
 } from "../lib/documents";
@@ -304,4 +307,24 @@ tasks.get("/:id/documents/:filename/text", async (c) => {
 		basename(c.req.param("filename")),
 	);
 	return doc ? c.json(doc) : c.json({ error: "not found" }, 404);
+});
+
+// Store / load the search-index sidecar for a document — the frontend builds it
+// (chunk + embed in the webview), the server just persists it under .patrick/index.
+tasks.put("/:id/documents/:filename/index", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const index = await c.req.json<SearchIndex>();
+	await saveSearchIndex(task.folder, basename(c.req.param("filename")), index);
+	return c.json({ ok: true });
+});
+
+tasks.get("/:id/documents/:filename/index", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const index = await readSearchIndex(
+		task.folder,
+		basename(c.req.param("filename")),
+	);
+	return index ? c.json(index) : c.json({ error: "not found" }, 404);
 });

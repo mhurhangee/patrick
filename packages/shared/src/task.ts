@@ -85,6 +85,17 @@ export type ExtractedDoc = {
 	pages: ExtractedPage[];
 };
 
+/** The search-index sidecar for a document (stored under .patrick/index/). Built in
+ *  the webview, persisted opaquely by the server. `vectors` is a base64 Float32Array
+ *  of chunks.length × dim; `model` stamps which embedder built it (a mismatch ⇒
+ *  rebuild). BM25 is cheap to rebuild from `chunks`, so it isn't stored. */
+export type SearchIndex = {
+	model: string;
+	dim: number;
+	chunks: { text: string; page: number }[];
+	vectors: string;
+};
+
 export function taskSummary(t: Task): TaskSummary {
 	return { id: t.id, name: t.name, folder: t.folder };
 }

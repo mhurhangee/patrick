@@ -8,7 +8,12 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
-import type { Document, DocumentMeta, ExtractedDoc } from "@patrick/shared";
+import type {
+	Document,
+	DocumentMeta,
+	ExtractedDoc,
+	SearchIndex,
+} from "@patrick/shared";
 import { parse, stringify } from "yaml";
 import { ensureParaIds } from "./docx";
 
@@ -134,6 +139,8 @@ export async function saveRetrievedDocument(
 			? await uniqueName(folder, filename)
 			: filename;
 	await writeFile(join(folder, name), content, "utf8");
+	// Overwriting an existing retrieved doc invalidates its search index.
+	await deleteSearchIndex(folder, name);
 	await mergeDocumentMeta(folder, name, {
 		createdInPatrick: true,
 		retrieved: true,
@@ -278,6 +285,8 @@ export async function saveExtractedText(
 	const path = extractedPath(folder, filename);
 	await mkdir(dirname(path), { recursive: true });
 	await writeFile(path, JSON.stringify(doc), "utf8");
+	// New text ⇒ any existing search index is stale.
+	await deleteSearchIndex(folder, filename);
 }
 
 /** Filenames that have an extracted-text sidecar (the source of truth for `extracted`). */
@@ -303,4 +312,48 @@ export async function readExtractedText(
 	} catch {
 		return null;
 	}
+}
+
+// .patrick/index/, keyed by the document's filename — the search-index sidecar,
+// built in the webview and stored opaquely here (like extracted text). Derived,
+// regenerable state; not a visible document.
+function indexDir(folder: string): string {
+	return join(folder, ".patrick", "index");
+}
+function indexPath(folder: string, filename: string): string {
+	return join(indexDir(folder), `${filename}.json`);
+}
+
+export async function saveSearchIndex(
+	folder: string,
+	filename: string,
+	index: SearchIndex,
+): Promise<void> {
+	if (!(await fileExists(folder, filename))) return;
+	const path = indexPath(folder, filename);
+	await mkdir(dirname(path), { recursive: true });
+	await writeFile(path, JSON.stringify(index), "utf8");
+}
+
+export async function readSearchIndex(
+	folder: string,
+	filename: string,
+): Promise<SearchIndex | null> {
+	try {
+		return JSON.parse(
+			await readFile(indexPath(folder, filename), "utf8"),
+		) as SearchIndex;
+	} catch {
+		return null;
+	}
+}
+
+// Drop a stale index when the document's text changes (re-extraction/OCR, or a
+// retrieved doc overwritten) so search rebuilds against the new text rather than
+// serving passages from superseded content.
+async function deleteSearchIndex(
+	folder: string,
+	filename: string,
+): Promise<void> {
+	await rm(indexPath(folder, filename), { force: true });
 }

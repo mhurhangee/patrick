@@ -4,6 +4,7 @@ import type {
 	Document,
 	DocumentMeta,
 	ExtractedDoc,
+	SearchIndex,
 	Task,
 	TaskSummary,
 } from "@patrick/shared";
@@ -59,6 +60,17 @@ export const tasksApi = {
 		api.put<{ ok: boolean }>(
 			`/tasks/${id}/documents/${encodeURIComponent(filename)}/text`,
 			doc,
+		),
+	/** The persisted search index for a document (chunks + embeddings); 404 if none. */
+	searchIndex: (id: string, filename: string) =>
+		api.get<SearchIndex>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/index`,
+		),
+	/** Persist a document's search index (the frontend builds it in the webview). */
+	saveSearchIndex: (id: string, filename: string, index: SearchIndex) =>
+		api.put<{ ok: boolean }>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/index`,
+			index,
 		),
 	/** Fetch an EP/WO publication's full text from EPO OPS → saved document.
 	 *  Surfaces the server's error message (bad number, US unsupported, missing
