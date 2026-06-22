@@ -37,9 +37,23 @@ const post = (msg: Res) => (self as unknown as Worker).postMessage(msg);
 self.onmessage = async (e: MessageEvent<Req>) => {
 	const { id, texts, isQuery } = e.data;
 	try {
+		// The model loads once (cheap — ~350ms); embedding is the real cost. Time the
+		// first load just for the console, not as a UI phase.
+		const firstLoad = pipePromise === null;
+		const loadStart = performance.now();
 		const extractor = await getPipe();
+		if (firstLoad) {
+			console.log(
+				`[search] model loaded in ${Math.round(performance.now() - loadStart)}ms`,
+			);
+		}
+
 		const input = isQuery ? texts.map((t) => QUERY_PREFIX + t) : texts;
 		const vectors: number[][] = [];
+		const embedStart = performance.now();
+		// Emit 0/N up front so the indexing counter appears the moment embedding
+		// starts, not only after the first batch returns.
+		post({ id, type: "progress", done: 0, total: input.length });
 		for (let i = 0; i < input.length; i += BATCH) {
 			const batch = input.slice(i, i + BATCH);
 			const tensor = await extractor(batch, {
@@ -53,6 +67,12 @@ self.onmessage = async (e: MessageEvent<Req>) => {
 				done: Math.min(i + BATCH, input.length),
 				total: input.length,
 			});
+		}
+		if (input.length > 1) {
+			const ms = Math.round(performance.now() - embedStart);
+			console.log(
+				`[search] embedded ${input.length} chunks in ${ms}ms (${(ms / input.length).toFixed(0)}ms/chunk)`,
+			);
 		}
 		post({ id, type: "done", vectors });
 	} catch (err) {

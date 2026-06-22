@@ -108,12 +108,16 @@ export function getDocIndex(
 	if (existing) return existing;
 
 	const build = (async (): Promise<DocIndex | null> => {
+		const t0 = performance.now();
 		// Persisted on disk (built in an earlier session)?
 		try {
 			const persisted = await tasksApi.searchIndex(taskId, filename);
 			if (persisted.model === EMBED_MODEL && persisted.dim > 0) {
 				const idx = deserialize(persisted);
 				cache.set(key, idx);
+				console.log(
+					`[search] ${filename}: loaded ${idx.chunks.length} chunks from disk in ${Math.round(performance.now() - t0)}ms`,
+				);
 				return idx;
 			}
 		} catch {
@@ -124,12 +128,18 @@ export function getDocIndex(
 		if (!pages || pages.every((p) => !p.text.trim())) return null;
 		const chunks = chunkPages(pages);
 		if (chunks.length === 0) return null;
+		console.log(
+			`[search] ${filename}: building index — ${chunks.length} chunks`,
+		);
 		const vectors = await embedPassages(
 			chunks.map((c) => c.text),
 			(d, t) => emitProgress(key, d, t),
 		);
 		const idx: DocIndex = { chunks, vectors, bm25: buildBm25(chunks) };
 		cache.set(key, idx);
+		console.log(
+			`[search] ${filename}: index built in ${Math.round(performance.now() - t0)}ms`,
+		);
 		// Persist for next time — best-effort, never blocks the result.
 		tasksApi.saveSearchIndex(taskId, filename, serialize(idx)).catch(() => {});
 		return idx;

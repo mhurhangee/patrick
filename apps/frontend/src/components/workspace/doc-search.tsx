@@ -127,7 +127,7 @@ export function DocSearchPanel({
 						<Loader2 className="size-3.5 animate-spin" />
 						{progress
 							? `Indexing… ${progress.done}/${progress.total}`
-							: "Loading search model…"}
+							: "Preparing…"}
 					</div>
 				)}
 				{status === "no-text" && (
