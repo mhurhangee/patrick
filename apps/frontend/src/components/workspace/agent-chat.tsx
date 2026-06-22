@@ -333,14 +333,23 @@ function ChatSession({
 				return;
 			// search_document runs in the webview against the doc's local index.
 			if (toolCall.toolName === "search_document") {
-				const input = toolCall.input as { filename?: string; query?: string };
+				const input = toolCall.input as {
+					filename?: string;
+					query?: string;
+					expansions?: string[];
+				};
 				let result: unknown;
 				try {
 					const taskId = activeTaskIdRef.current;
 					if (!taskId || !input.filename || !input.query) {
 						result = { error: "missing task, filename, or query" };
 					} else {
-						const r = await searchDocument(taskId, input.filename, input.query);
+						const r = await searchDocument(
+							taskId,
+							input.filename,
+							input.query,
+							input.expansions ?? [],
+						);
 						result = r.ok
 							? {
 									filename: r.filename,

@@ -131,12 +131,20 @@ const requestOpenFile = tool({
 // document's local index and returns passages directly — no accept/reject card.
 const searchDocument = tool({
 	description:
-		"Search ONE source document's full text and get back its most relevant passages (with page numbers) — instead of reading the whole document. Use this to find where a document discloses a feature, or to pull supporting evidence, without pinning the entire thing into context; ideal for long prior art. Pass an exact filename (from the pinned or available lists) and a natural-language query or the feature you're looking for. Call once per document. If it reports no extractable text, the PDF needs to be extracted/OCR'd first.",
+		"Search ONE source document's full text and get back its most relevant passages (with page numbers) — instead of reading the whole document. Use this to find where a document discloses a feature, or to pull supporting evidence, without pinning the entire thing into context; ideal for long prior art. Pass an exact filename (from the pinned or available lists). Give your actual question/need in `query`, and put synonyms and alternate phrasings of that SAME need in `expansions` — one call casts the wide net, so you don't need to fire several reworded searches. If it reports no extractable text, the PDF needs to be extracted/OCR'd first.",
 	inputSchema: z.object({
 		filename: z.string().describe("Exact filename of the document to search"),
 		query: z
 			.string()
-			.describe("What to look for — a feature, concept, or phrase"),
+			.describe(
+				"Your actual information need in natural language — the question or feature you're looking for. Results are ranked against THIS.",
+			),
+		expansions: z
+			.array(z.string())
+			.optional()
+			.describe(
+				"Synonyms, alternate phrasings, or related terms for the SAME need (e.g. for 'emergency or police vehicles': ['siren', 'ambulance', 'fire truck', 'police car']). They widen the candidate net in this one call — provide them up front instead of repeating the search with reworded queries.",
+			),
 	}),
 });
 

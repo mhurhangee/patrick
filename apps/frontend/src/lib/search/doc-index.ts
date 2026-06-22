@@ -202,9 +202,11 @@ export type SearchOutcome =
 	| { ok: true; filename: string; passages: Passage[] }
 	| { ok: false; filename: string; reason: "no-text" | "no-results" };
 
-// How many hybrid candidates the cross-encoder re-scores before we keep topK. The
-// cross-encoder is the precision step; it only sees a shortlist, not the whole doc.
+// Per-query hybrid depth, and the cap on the merged pool the cross-encoder re-scores
+// (so multiple expansions don't blow up rerank cost). The cross-encoder is the
+// precision step; it only sees a shortlist, not the whole doc.
 const RERANK_POOL = 24;
+const RERANK_MAX = 40;
 
 // Re-score the hybrid shortlist with the cross-encoder (reads query+passage together)
 // and reorder. A precision boost, never a hard dependency: fall back to the hybrid
@@ -227,31 +229,61 @@ async function rerankHits(
 	}
 }
 
+// Merge per-query hybrid results round-robin (fair representation across the query
+// and its expansions), deduped by chunk, capped at RERANK_MAX.
+function mergeCandidates(ranked: SearchHit[][]): SearchHit[] {
+	const seen = new Set<number>();
+	const pool: SearchHit[] = [];
+	for (let depth = 0; pool.length < RERANK_MAX; depth++) {
+		let any = false;
+		for (const list of ranked) {
+			const hit = list[depth];
+			if (!hit) continue;
+			any = true;
+			if (!seen.has(hit.index)) {
+				seen.add(hit.index);
+				pool.push(hit);
+				if (pool.length >= RERANK_MAX) break;
+			}
+		}
+		if (!any) break;
+	}
+	return pool;
+}
+
 /**
  * Search one document for the agent: indexes it on demand if needed (cache → disk →
- * build), runs hybrid search, reranks the shortlist with the cross-encoder, and
- * returns the top passages expanded to their neighbours for context. The headline
- * for the search_document tool.
+ * build), retrieves hybrid candidates for the query AND each expansion (a wider net
+ * for one information need), reranks the merged shortlist against the main query with
+ * the cross-encoder, and returns the top passages expanded to their neighbours for
+ * context. The headline for the search_document tool.
  */
 export async function searchDocument(
 	taskId: string,
 	filename: string,
 	query: string,
+	expansions: string[] = [],
 	topK = 8,
 ): Promise<SearchOutcome> {
 	const idx = await getDocIndex(taskId, filename, () =>
 		loadDocPages(taskId, filename),
 	);
 	if (!idx) return { ok: false, filename, reason: "no-text" };
-	const qv = await embedQuery(query);
-	const candidates = hybridRank(
-		qv,
-		query,
-		idx.chunks,
-		idx.vectors,
-		idx.bm25,
-		RERANK_POOL,
+	// Retrieve for the query and every expansion; rerank the union against the query
+	// only (the real intent) so the expansions widen recall without muddying ranking.
+	const queries = [query, ...expansions.filter((q) => q.trim())];
+	const qvs = await Promise.all(queries.map((q) => embedQuery(q)));
+	const ranked = qvs.map((qv, i) =>
+		hybridRank(
+			qv,
+			queries[i] ?? query,
+			idx.chunks,
+			idx.vectors,
+			idx.bm25,
+			RERANK_POOL,
+		),
 	);
+	const candidates = mergeCandidates(ranked);
 	if (candidates.length === 0)
 		return { ok: false, filename, reason: "no-results" };
 	const top = (await rerankHits(query, candidates)).slice(0, topK);
