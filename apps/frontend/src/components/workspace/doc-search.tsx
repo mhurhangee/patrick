@@ -1,7 +1,16 @@
-import { ChevronDown, ChevronUp, Loader2, Search, X } from "lucide-react";
+import { docKind } from "@patrick/shared";
+import {
+	ChevronDown,
+	ChevronUp,
+	Loader2,
+	ScanText,
+	Search,
+	X,
+} from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useExtractText, useTaskDocuments } from "@/hooks/use-tasks";
 import {
 	type DocIndex,
 	getDocIndex,
@@ -68,10 +77,10 @@ function highlightSnippet(text: string, query: string): ReactNode[] {
 }
 
 /**
- * In-document search with two modes: Smart (hybrid semantic + keyword over the index)
- * and Exact (literal occurrence scan — true Ctrl+F). Smart results sort by relevance
- * or document order; Exact lists every occurrence with prev/next. In-document
- * highlighting of matches lands in a follow-up step.
+ * In-document search with two modes: Semantic (hybrid meaning + keyword over the
+ * index) and Exact (literal occurrence scan — true Ctrl+F). Semantic results sort by
+ * relevance or document order; Exact lists every occurrence with prev/next; both
+ * highlight in the document. A PDF with no extracted text shows an extract prompt.
  */
 export function DocSearchPanel({
 	taskId,
@@ -103,9 +112,32 @@ export function DocSearchPanel({
 	const [pagesReady, setPagesReady] = useState(false);
 	const [truncated, setTruncated] = useState(false);
 
+	// A PDF with no extracted text can't be searched — offer to extract it (the same
+	// on-device extraction/OCR as the sidebar kebab) instead of a dead "no results".
+	const { data: documents } = useTaskDocuments(taskId);
+	const extracted =
+		documents?.find((d) => d.filename === filename)?.extracted ?? false;
+	const needsExtraction =
+		!!documents && docKind(filename) === "pdf" && !extracted;
+	const extract = useExtractText(taskId);
+	const [extractProgress, setExtractProgress] = useState<{
+		done: number;
+		total: number;
+	} | null>(null);
+	const onExtract = () => {
+		extract.mutate(
+			{
+				filename,
+				onProgress: (done, total) => setExtractProgress({ done, total }),
+			},
+			{ onSettled: () => setExtractProgress(null) },
+		);
+	};
+
 	// Resolve the index for this doc (Semantic mode) — cache/disk hits are instant; only a
 	// cold build (embedding) shows the loading/indexing status, via the subscription.
 	useEffect(() => {
+		if (needsExtraction) return;
 		let cancelled = false;
 		setStatus("loading");
 		setProgress(null);
@@ -133,7 +165,7 @@ export function DocSearchPanel({
 			cancelled = true;
 			unsubscribe();
 		};
-	}, [taskId, filename, loadPages]);
+	}, [taskId, filename, loadPages, needsExtraction]);
 
 	// Raw page text for Exact mode — loaded lazily the first time Exact is used (no
 	// model needed; the index isn't required).
@@ -249,6 +281,37 @@ export function DocSearchPanel({
 	useEffect(() => () => setHighlights([], null), [setHighlights]);
 
 	const inputDisabled = mode === "semantic" && status !== "ready";
+
+	if (needsExtraction) {
+		return (
+			<div className="flex h-full w-full flex-col bg-background">
+				<div className="flex items-center gap-2 border-b px-3 py-2">
+					<Search className="size-4 shrink-0 text-muted-foreground" />
+					<span className="flex-1 text-muted-foreground text-sm">Search</span>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						tooltip="Close search"
+						onClick={onClose}
+					>
+						<X />
+					</Button>
+				</div>
+				<div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+					<ScanText className="size-8 text-muted-foreground/40" />
+					<p className="text-muted-foreground text-xs">
+						This PDF has no extracted text yet. Extract it to search — scanned
+						pages are OCR'd on your device.
+					</p>
+					<Button size="sm" onClick={onExtract} disabled={extract.isPending}>
+						{extract.isPending
+							? `Extracting…${extractProgress ? ` ${extractProgress.done}/${extractProgress.total}` : ""}`
+							: "Extract text"}
+					</Button>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex h-full w-full flex-col bg-background">
