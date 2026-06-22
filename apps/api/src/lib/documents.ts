@@ -139,6 +139,8 @@ export async function saveRetrievedDocument(
 			? await uniqueName(folder, filename)
 			: filename;
 	await writeFile(join(folder, name), content, "utf8");
+	// Overwriting an existing retrieved doc invalidates its search index.
+	await deleteSearchIndex(folder, name);
 	await mergeDocumentMeta(folder, name, {
 		createdInPatrick: true,
 		retrieved: true,
@@ -283,6 +285,8 @@ export async function saveExtractedText(
 	const path = extractedPath(folder, filename);
 	await mkdir(dirname(path), { recursive: true });
 	await writeFile(path, JSON.stringify(doc), "utf8");
+	// New text ⇒ any existing search index is stale.
+	await deleteSearchIndex(folder, filename);
 }
 
 /** Filenames that have an extracted-text sidecar (the source of truth for `extracted`). */
@@ -342,4 +346,14 @@ export async function readSearchIndex(
 	} catch {
 		return null;
 	}
+}
+
+// Drop a stale index when the document's text changes (re-extraction/OCR, or a
+// retrieved doc overwritten) so search rebuilds against the new text rather than
+// serving passages from superseded content.
+async function deleteSearchIndex(
+	folder: string,
+	filename: string,
+): Promise<void> {
+	await rm(indexPath(folder, filename), { force: true });
 }

@@ -47,8 +47,8 @@ export function PdfViewer({ filename }: { filename: string }) {
 	const [searchOpen, setSearchOpen] = useState(false);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
-	// Spike search: chunk + embed this PDF's extracted text in the webview. Needs
-	// text — if it hasn't been extracted, the panel says so.
+	// Search over this PDF's extracted text. Needs text — if it hasn't been
+	// extracted, the panel says so.
 	const loadSearchPages = useCallback(async () => {
 		try {
 			const ext = await tasksApi.extractedText(activeTaskId ?? "", filename);

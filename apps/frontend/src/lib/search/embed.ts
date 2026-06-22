@@ -35,6 +35,17 @@ function getWorker(): Worker {
 			p.reject(new Error(msg.message));
 		}
 	};
+	// A fatal worker crash (e.g. a WASM/module load failure) surfaces here, not as a
+	// posted message — reject everything in flight and drop the worker so the next
+	// call rebuilds it, rather than leaving searches hung forever.
+	w.onerror = (e) => {
+		const err = new Error(e.message || "embedding worker crashed");
+		for (const [id, p] of pending) {
+			pending.delete(id);
+			p.reject(err);
+		}
+		worker = null;
+	};
 	worker = w;
 	return w;
 }

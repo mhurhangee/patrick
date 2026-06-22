@@ -84,16 +84,23 @@ export function expandNeighbors(
 			start: Math.max(0, h.index - window),
 			end: Math.min(chunks.length - 1, h.index + window),
 			score: h.score,
+			// Cite the hit's own page, not a neighbour's — neighbours only add context.
+			page: chunks[h.index]?.page ?? 1,
 		}))
 		.sort((a, b) => a.start - b.start);
 
-	const merged: { start: number; end: number; score: number }[] = [];
+	const merged: { start: number; end: number; score: number; page: number }[] =
+		[];
 	for (const r of ranges) {
 		const last = merged[merged.length - 1];
-		// Touching or overlapping windows fold together; keep the best score.
+		// Touching or overlapping windows fold together; keep the best hit's score
+		// and its page (the most relevant chunk in the merged passage).
 		if (last && r.start <= last.end + 1) {
 			last.end = Math.max(last.end, r.end);
-			last.score = Math.max(last.score, r.score);
+			if (r.score > last.score) {
+				last.score = r.score;
+				last.page = r.page;
+			}
 		} else {
 			merged.push({ ...r });
 		}
@@ -106,7 +113,7 @@ export function expandNeighbors(
 				.slice(m.start, m.end + 1)
 				.map((c) => c.text)
 				.join("\n\n"),
-			page: chunks[m.start]?.page ?? 1,
+			page: m.page,
 			score: m.score,
 		}));
 }

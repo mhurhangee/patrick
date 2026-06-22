@@ -48,6 +48,12 @@ function emitProgress(key: string, done: number, total: number): void {
 	for (const cb of progressListeners.get(key) ?? []) cb(done, total);
 }
 
+/** Drop a doc's cached index so the next search rebuilds it — call after its text
+ *  changes within a session (e.g. re-extraction), since the cache is content-blind. */
+export function clearDocIndex(taskId: string, filename: string): void {
+	cache.delete(indexKey(taskId, filename));
+}
+
 function bytesToBase64(bytes: Uint8Array): string {
 	let bin = "";
 	const CHUNK = 0x8000;
@@ -79,12 +85,22 @@ function serialize(idx: DocIndex): SearchIndex {
 }
 
 function deserialize(persisted: SearchIndex): DocIndex {
+	const bytes = base64ToBytes(persisted.vectors);
+	// Reject a corrupt/truncated sidecar (caught by getDocIndex → rebuild) rather
+	// than slice it into misaligned vectors that silently degrade ranking. Guards
+	// both Float32 alignment and the chunks↔vectors count, and dim>0 (no infinite loop).
+	if (
+		persisted.dim <= 0 ||
+		bytes.length !== persisted.chunks.length * persisted.dim * 4
+	) {
+		throw new Error("search index sidecar is inconsistent");
+	}
 	const chunks: Chunk[] = persisted.chunks.map((c, index) => ({
 		text: c.text,
 		page: c.page,
 		index,
 	}));
-	const flat = new Float32Array(base64ToBytes(persisted.vectors).buffer);
+	const flat = new Float32Array(bytes.buffer);
 	const vectors: Float32Array[] = [];
 	for (let i = 0; i < flat.length; i += persisted.dim) {
 		vectors.push(flat.slice(i, i + persisted.dim));

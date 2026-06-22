@@ -6,7 +6,7 @@ import {
 import { EMBED_MODEL } from "./model";
 
 // Embeddings run here, off the main thread, so indexing a long spec never freezes
-// the UI (the bug the first spike hit). Mirrors how tesseract OCR runs in a worker.
+// the UI. Mirrors how tesseract OCR runs in a worker.
 //
 // Prefer the bundled model under /models (populated by scripts/fetch-search-model.mjs)
 // so there's no first-use download; fall back to the HF hub if it isn't there, so dev

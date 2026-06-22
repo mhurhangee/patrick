@@ -175,8 +175,8 @@ export function TextViewer({ filename }: { filename: string }) {
 	const [error, setError] = useState(false);
 	const [searchOpen, setSearchOpen] = useState(false);
 
-	// Spike search: retrieved publications are already clean text, so chunk +
-	// embed the markdown directly (no extraction step).
+	// Retrieved publications are already clean text, so search the markdown
+	// directly (no extraction step).
 	const loadSearchPages = useCallback(
 		async () => (text ? [{ text }] : null),
 		[text],
