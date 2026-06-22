@@ -1,5 +1,5 @@
-import { Loader2, Search, X } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Loader2, Search, X } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,9 +9,13 @@ import {
 	onIndexProgress,
 } from "@/lib/search/doc-index";
 import { embedQuery } from "@/lib/search/embed";
+import { findOccurrences, type Occurrence } from "@/lib/search/exact";
 import { hybridRank, type SearchHit } from "@/lib/search/search";
+import { cn } from "@/lib/utils";
 
 type Status = "loading" | "no-text" | "ready" | "error";
+type Mode = "semantic" | "exact";
+type SortBy = "relevance" | "appearance";
 
 const SNIPPET_LEN = 260;
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -63,10 +67,10 @@ function highlightSnippet(text: string, query: string): ReactNode[] {
 }
 
 /**
- * In-document hybrid search. Chunks the document's text, embeds every chunk in the
- * webview, and ranks passages by meaning + keyword against the query — so "a car"
- * surfaces "the vehicle", not just literal matches. The index is built once and
- * persisted (see getDocIndex); this panel is the search surface ahead of the agent tool.
+ * In-document search with two modes: Smart (hybrid semantic + keyword over the index)
+ * and Exact (literal occurrence scan — true Ctrl+F). Smart results sort by relevance
+ * or document order; Exact lists every occurrence with prev/next. In-document
+ * highlighting of matches lands in a follow-up step.
  */
 export function DocSearchPanel({
 	taskId,
@@ -87,12 +91,19 @@ export function DocSearchPanel({
 		total: number;
 	} | null>(null);
 	const [query, setQuery] = useState("");
+	const [mode, setMode] = useState<Mode>("semantic");
+	const [sort, setSort] = useState<SortBy>("relevance");
 	const [results, setResults] = useState<SearchHit[]>([]);
+	const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
+	const [selected, setSelected] = useState(0);
 	const [searching, setSearching] = useState(false);
 	const indexRef = useRef<DocIndex | null>(null);
+	const pagesRef = useRef<{ text: string }[] | null>(null);
+	const [pagesReady, setPagesReady] = useState(false);
+	const [truncated, setTruncated] = useState(false);
 
-	// Resolve the index for this doc — cache/disk hits are instant; only a cold build
-	// (embedding) shows the loading/indexing status, via the progress subscription.
+	// Resolve the index for this doc (Semantic mode) — cache/disk hits are instant; only a
+	// cold build (embedding) shows the loading/indexing status, via the subscription.
 	useEffect(() => {
 		let cancelled = false;
 		setStatus("loading");
@@ -123,8 +134,24 @@ export function DocSearchPanel({
 		};
 	}, [taskId, filename, loadPages]);
 
-	// Debounced semantic search over the built index.
+	// Raw page text for Exact mode — loaded lazily the first time Exact is used (no
+	// model needed; the index isn't required).
 	useEffect(() => {
+		if (mode !== "exact" || pagesRef.current) return;
+		let cancelled = false;
+		loadPages().then((pages) => {
+			if (cancelled) return;
+			pagesRef.current = pages ?? [];
+			setPagesReady(true);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [mode, loadPages]);
+
+	// Smart: debounced hybrid search over the built index.
+	useEffect(() => {
+		if (mode !== "semantic") return;
 		const idx = indexRef.current;
 		const q = query.trim();
 		if (status !== "ready" || !idx || !q) {
@@ -136,8 +163,10 @@ export function DocSearchPanel({
 		const timer = setTimeout(async () => {
 			try {
 				const qv = await embedQuery(q);
-				if (!cancelled)
+				if (!cancelled) {
 					setResults(hybridRank(qv, q, idx.chunks, idx.vectors, idx.bm25, 15));
+					setSelected(0);
+				}
 			} finally {
 				if (!cancelled) setSearching(false);
 			}
@@ -146,82 +175,236 @@ export function DocSearchPanel({
 			cancelled = true;
 			clearTimeout(timer);
 		};
-	}, [query, status]);
+	}, [query, status, mode]);
+
+	// Exact: literal occurrence scan (no model), debounced — a single character on a
+	// long doc matches thousands, so we debounce and cap. Gated on pagesReady.
+	useEffect(() => {
+		if (mode !== "exact" || !pagesReady) return;
+		const q = query.trim();
+		if (!q) {
+			setOccurrences([]);
+			setTruncated(false);
+			return;
+		}
+		let cancelled = false;
+		const timer = setTimeout(() => {
+			if (cancelled) return;
+			const found = findOccurrences(pagesRef.current ?? [], q, 200);
+			setOccurrences(found.items);
+			setTruncated(found.truncated);
+			setSelected(0);
+		}, 200);
+		return () => {
+			cancelled = true;
+			clearTimeout(timer);
+		};
+	}, [query, mode, pagesReady]);
+
+	const sortedResults = useMemo(
+		() =>
+			sort === "appearance"
+				? [...results].sort((a, b) => a.index - b.index)
+				: results,
+		[results, sort],
+	);
+
+	// The list the prev/next + selection act on, for whichever mode is active.
+	const activeList: { page: number }[] =
+		mode === "semantic" ? sortedResults : occurrences;
+	const go = (delta: number) => {
+		if (!activeList.length) return;
+		const n = (selected + delta + activeList.length) % activeList.length;
+		setSelected(n);
+		onJump?.(activeList[n]?.page ?? 1);
+	};
+
+	const inputDisabled = mode === "semantic" && status !== "ready";
 
 	return (
 		<div className="flex h-full w-full flex-col bg-background">
-			<div className="flex items-center gap-2 border-b px-3 py-2">
-				<Search className="size-4 shrink-0 text-muted-foreground" />
-				<Input
-					autoFocus
-					value={query}
-					onChange={(e) => setQuery(e.target.value)}
-					placeholder="Search this document…"
-					disabled={status !== "ready"}
-					className="h-8 border-0 bg-transparent shadow-none focus-visible:ring-0"
-				/>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					tooltip="Close search"
-					onClick={onClose}
-				>
-					<X />
-				</Button>
+			<div className="border-b">
+				<div className="flex items-center gap-2 px-3 py-2">
+					<Search className="size-4 shrink-0 text-muted-foreground" />
+					<Input
+						autoFocus
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						placeholder={
+							mode === "exact" ? "Find exact text…" : "Search this document…"
+						}
+						disabled={inputDisabled}
+						className="h-8 border-0 bg-transparent shadow-none focus-visible:ring-0"
+					/>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						tooltip="Close search"
+						onClick={onClose}
+					>
+						<X />
+					</Button>
+				</div>
+				<div className="flex items-center justify-between gap-2 px-3 pb-2">
+					<div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+						{(["semantic", "exact"] as Mode[]).map((m) => (
+							<button
+								key={m}
+								type="button"
+								onClick={() => setMode(m)}
+								className={cn(
+									"rounded px-2 py-0.5 text-xs capitalize",
+									mode === m
+										? "bg-background text-foreground shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+							>
+								{m}
+							</button>
+						))}
+					</div>
+					<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+						{mode === "semantic" && (
+							<button
+								type="button"
+								onClick={() => {
+									setSort((s) =>
+										s === "relevance" ? "appearance" : "relevance",
+									);
+									setSelected(0);
+								}}
+								className="hover:text-foreground"
+							>
+								{sort === "relevance" ? "Relevance" : "Order"}
+							</button>
+						)}
+						{activeList.length > 0 && (
+							<>
+								<span className="tabular-nums">
+									{selected + 1}/{activeList.length}
+									{mode === "exact" && truncated ? "+" : ""}
+								</span>
+								<Button
+									variant="ghost"
+									size="icon-xxs"
+									tooltip="Previous"
+									onClick={() => go(-1)}
+								>
+									<ChevronUp />
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon-xxs"
+									tooltip="Next"
+									onClick={() => go(1)}
+								>
+									<ChevronDown />
+								</Button>
+							</>
+						)}
+					</div>
+				</div>
 			</div>
 
 			<div className="min-h-0 flex-1 overflow-auto p-2">
-				{status === "loading" && (
-					<div className="flex items-center gap-2 p-3 text-muted-foreground text-xs">
-						<Loader2 className="size-3.5 animate-spin" />
-						{progress
-							? `Indexing… ${progress.done}/${progress.total}`
-							: "Preparing…"}
-					</div>
+				{mode === "semantic" ? (
+					<>
+						{status === "loading" && (
+							<div className="flex items-center gap-2 p-3 text-muted-foreground text-xs">
+								<Loader2 className="size-3.5 animate-spin" />
+								{progress
+									? `Indexing… ${progress.done}/${progress.total}`
+									: "Preparing…"}
+							</div>
+						)}
+						{status === "no-text" && (
+							<p className="p-3 text-muted-foreground text-xs">
+								No extracted text yet — extract this document's text to enable
+								search.
+							</p>
+						)}
+						{status === "error" && (
+							<p className="p-3 text-muted-foreground text-xs">
+								Couldn't build the search index.
+							</p>
+						)}
+						{status === "ready" && !query.trim() && (
+							<p className="p-3 text-muted-foreground text-xs">
+								Search by meaning — synonyms and paraphrases match, not just
+								exact words.
+							</p>
+						)}
+						{status === "ready" &&
+							query.trim() &&
+							!searching &&
+							results.length === 0 && (
+								<p className="p-3 text-muted-foreground text-xs">No matches.</p>
+							)}
+						<ul className="space-y-1">
+							{sortedResults.map((hit, i) => (
+								<li key={hit.index}>
+									<button
+										type="button"
+										onClick={() => {
+											setSelected(i);
+											onJump?.(hit.page);
+										}}
+										className={cn(
+											"w-full rounded-md px-2 py-2 text-left text-xs hover:bg-muted",
+											i === selected && "bg-muted",
+										)}
+									>
+										{onJump && (
+											<div className="mb-1 text-[10px] text-muted-foreground">
+												p. {hit.page}
+											</div>
+										)}
+										<p className="line-clamp-3 leading-snug text-foreground">
+											{highlightSnippet(hit.text, query)}
+										</p>
+									</button>
+								</li>
+							))}
+						</ul>
+					</>
+				) : (
+					<>
+						{!query.trim() && (
+							<p className="p-3 text-muted-foreground text-xs">
+								Find every exact occurrence of a word or phrase.
+							</p>
+						)}
+						{query.trim() && occurrences.length === 0 && (
+							<p className="p-3 text-muted-foreground text-xs">No matches.</p>
+						)}
+						<ul className="space-y-1">
+							{occurrences.map((occ, i) => (
+								<li key={occ.id}>
+									<button
+										type="button"
+										onClick={() => {
+											setSelected(i);
+											onJump?.(occ.page);
+										}}
+										className={cn(
+											"w-full rounded-md px-2 py-2 text-left text-xs hover:bg-muted",
+											i === selected && "bg-muted",
+										)}
+									>
+										{onJump && (
+											<div className="mb-1 text-[10px] text-muted-foreground">
+												p. {occ.page}
+											</div>
+										)}
+										<p className="line-clamp-2 leading-snug text-foreground">
+											{highlightSnippet(occ.snippet, query)}
+										</p>
+									</button>
+								</li>
+							))}
+						</ul>
+					</>
 				)}
-				{status === "no-text" && (
-					<p className="p-3 text-muted-foreground text-xs">
-						No extracted text yet — extract this document's text to enable
-						search.
-					</p>
-				)}
-				{status === "error" && (
-					<p className="p-3 text-muted-foreground text-xs">
-						Couldn't build the search index.
-					</p>
-				)}
-				{status === "ready" && !query.trim() && (
-					<p className="p-3 text-muted-foreground text-xs">
-						Search by meaning — synonyms and paraphrases match, not just exact
-						words.
-					</p>
-				)}
-				{status === "ready" &&
-					query.trim() &&
-					!searching &&
-					results.length === 0 && (
-						<p className="p-3 text-muted-foreground text-xs">No matches.</p>
-					)}
-				<ul className="space-y-1">
-					{results.map((hit) => (
-						<li key={hit.index}>
-							<button
-								type="button"
-								onClick={() => onJump?.(hit.page)}
-								className="w-full rounded-md px-2 py-2 text-left text-xs hover:bg-muted"
-							>
-								{onJump && (
-									<div className="mb-1 text-[10px] text-muted-foreground">
-										p. {hit.page}
-									</div>
-								)}
-								<p className="line-clamp-3 leading-snug text-foreground">
-									{highlightSnippet(hit.text, query)}
-								</p>
-							</button>
-						</li>
-					))}
-				</ul>
 			</div>
 		</div>
 	);
