@@ -1,5 +1,11 @@
 import { Search } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import {
+	type ReactNode,
+	type RefObject,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -8,7 +14,25 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { DocSearchPanel } from "@/components/workspace/doc-search";
+import {
+	DocSearchHighlightProvider,
+	useDocSearchHighlights,
+} from "@/lib/search/doc-search-context";
+import { useDocHighlights } from "@/lib/search/use-doc-highlights";
 import { useWorkspace } from "@/lib/workspace";
+
+// Inside the provider: reads the panel's writes and highlights them in the document
+// container. Rendered as a sibling so the highlighting works for any viewer with no
+// per-viewer wiring.
+function HighlightBinder({
+	containerRef,
+}: {
+	containerRef: RefObject<HTMLDivElement | null>;
+}) {
+	const { texts, selected, scrollKey } = useDocSearchHighlights();
+	useDocHighlights(containerRef, texts, selected, scrollKey);
+	return null;
+}
 
 const MOD_LABEL =
 	typeof navigator !== "undefined" && navigator.userAgent.includes("Mac")
@@ -35,6 +59,7 @@ export function DocSearchLayout({
 	children: ReactNode;
 }) {
 	const [open, setOpen] = useState(false);
+	const contentRef = useRef<HTMLDivElement>(null);
 	const { focused } = useWorkspace();
 
 	// ⌘F / Ctrl+F opens search for the focused document only, so a multi-column
@@ -52,43 +77,46 @@ export function DocSearchLayout({
 	}, [focused, filename]);
 
 	return (
-		<ResizablePanelGroup orientation="horizontal" className="h-full">
-			<ResizablePanel id="doc-content" minSize="40%">
-				<div className="relative h-full">
-					{children}
-					{!open && (
-						<Button
-							variant="ghost"
-							size="sm"
-							tooltip="Search this document"
-							className="absolute top-3 right-3 z-10 h-7 gap-1.5 border bg-muted shadow-md hover:bg-muted/80"
-							onClick={() => setOpen(true)}
+		<DocSearchHighlightProvider>
+			<HighlightBinder containerRef={contentRef} />
+			<ResizablePanelGroup orientation="horizontal" className="h-full">
+				<ResizablePanel id="doc-content" minSize="40%">
+					<div ref={contentRef} className="relative h-full">
+						{children}
+						{!open && (
+							<Button
+								variant="ghost"
+								size="sm"
+								tooltip="Search this document"
+								className="absolute top-3 right-3 z-10 h-7 gap-1.5 border bg-muted shadow-md hover:bg-muted/80"
+								onClick={() => setOpen(true)}
+							>
+								<Search className="size-3.5" />
+								<Kbd className="bg-background">{MOD_LABEL}</Kbd>
+							</Button>
+						)}
+					</div>
+				</ResizablePanel>
+				{open && (
+					<>
+						<ResizableHandle />
+						<ResizablePanel
+							id="doc-search"
+							defaultSize="32%"
+							minSize="22%"
+							maxSize="48%"
 						>
-							<Search className="size-3.5" />
-							<Kbd className="bg-background">{MOD_LABEL}</Kbd>
-						</Button>
-					)}
-				</div>
-			</ResizablePanel>
-			{open && (
-				<>
-					<ResizableHandle />
-					<ResizablePanel
-						id="doc-search"
-						defaultSize="32%"
-						minSize="22%"
-						maxSize="48%"
-					>
-						<DocSearchPanel
-							taskId={taskId}
-							filename={filename}
-							loadPages={loadPages}
-							onJump={onJump}
-							onClose={() => setOpen(false)}
-						/>
-					</ResizablePanel>
-				</>
-			)}
-		</ResizablePanelGroup>
+							<DocSearchPanel
+								taskId={taskId}
+								filename={filename}
+								loadPages={loadPages}
+								onJump={onJump}
+								onClose={() => setOpen(false)}
+							/>
+						</ResizablePanel>
+					</>
+				)}
+			</ResizablePanelGroup>
+		</DocSearchHighlightProvider>
 	);
 }

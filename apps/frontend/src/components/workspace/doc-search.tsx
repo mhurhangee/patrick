@@ -8,6 +8,7 @@ import {
 	indexKey,
 	onIndexProgress,
 } from "@/lib/search/doc-index";
+import { useDocSearchHighlights } from "@/lib/search/doc-search-context";
 import { embedQuery } from "@/lib/search/embed";
 import { findOccurrences, type Occurrence } from "@/lib/search/exact";
 import { hybridRank, type SearchHit } from "@/lib/search/search";
@@ -218,6 +219,34 @@ export function DocSearchPanel({
 		setSelected(n);
 		onJump?.(activeList[n]?.page ?? 1);
 	};
+
+	// Push the current matches + selection to the viewer to highlight in the document.
+	// Scroll only when the change wasn't a query edit (i.e. on navigation/sort), so the
+	// doc doesn't jump on every keystroke.
+	const { setHighlights } = useDocSearchHighlights();
+	const prevQuery = useRef(query);
+	useEffect(() => {
+		const queryChanged = prevQuery.current !== query;
+		prevQuery.current = query;
+		if (mode === "semantic") {
+			const sel = sortedResults[selected];
+			setHighlights(
+				sortedResults.map((r) => r.text),
+				sel ? { text: sel.text, nth: 0 } : null,
+				!queryChanged,
+			);
+		} else {
+			const q = query.trim();
+			setHighlights(
+				q ? [q] : [],
+				occurrences[selected] ? { text: q, nth: selected } : null,
+				!queryChanged,
+			);
+		}
+	}, [mode, sortedResults, occurrences, selected, query, setHighlights]);
+
+	// Clear highlights when the panel closes (unmounts).
+	useEffect(() => () => setHighlights([], null), [setHighlights]);
 
 	const inputDisabled = mode === "semantic" && status !== "ready";
 
