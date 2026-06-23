@@ -21,10 +21,17 @@ import {
 	Plus,
 	Sparkles,
 	Trash2,
+	X,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -54,9 +61,8 @@ import { cn } from "@/lib/utils";
 // How many top passages to pull when sourcing a hybrid citation from a read's hint.
 const CITE_TOP_K = 2;
 
-// The phases of building a claim chart. Only "Spine" is interactive today; the rest
-// show the road ahead (the dev asked for a stepper even where steps aren't built).
-const STEPS = ["Spine", "References", "Cells", "Review"] as const;
+// The two real phases: build the limitations backbone, then analyse references against it.
+const STEPS = ["Spine", "Analysis"] as const;
 
 function Stepper({ current }: { current: number }) {
 	return (
@@ -114,7 +120,7 @@ export function ClaimChartViewer({ chartId }: { chartId: string }) {
 						onCancel={reparse ? () => setReparse(false) : undefined}
 					/>
 				) : chart.locked ? (
-					<AnalysisInspector chart={chart} />
+					<AnalysisView chart={chart} />
 				) : (
 					<SpineEditor
 						key={chartId}
@@ -371,7 +377,7 @@ function SpineEditor({
 						}
 					>
 						<Lock />
-						Lock spine
+						Lock &amp; analyse
 					</Button>
 				</div>
 			</div>
@@ -428,22 +434,29 @@ const METHODS: { value: ChartMethod; label: string }[] = [
 	{ value: "full-doc", label: "Full-doc (read gives cite)" },
 ];
 
-// The rough analysis inspector (the test bed): pick a reference, a method, an optional
-// primer, Run the whole-document read, and see every limitation's verdict + reasoning +
-// citation as VISIBLE columns. Presentation is deliberately bare until a method wins.
-function AnalysisInspector({ chart }: { chart: Chart }) {
+// The analysis surface: a 2-column claim chart per reference (Feature | Disclosure),
+// everything visible. Reference tabs switch documents; a draggable header handle resizes
+// the split. Readable over fancy — the test bed has to be testable.
+function AnalysisView({ chart }: { chart: Chart }) {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
 	const save = useSaveChart(activeTaskId);
 	const { data: documents } = useTaskDocuments(activeTaskId);
 
 	const [method, setMethod] = useState<ChartMethod>("hybrid");
-	const [reference, setReference] = useState(
+	const [activeRef, setActiveRef] = useState(
 		chart.references[0]?.filename ?? "",
 	);
+	const [split, setSplit] = useState(42);
 	const [running, setRunning] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const gridRef = useRef<HTMLDivElement>(null);
 
+	const reference = chart.references.some((r) => r.filename === activeRef)
+		? activeRef
+		: (chart.references[0]?.filename ?? "");
+	const refLabel =
+		chart.references.find((r) => r.filename === reference)?.label ?? reference;
 	const addable = (documents ?? []).filter(
 		(d) => !chart.references.some((r) => r.filename === d.filename),
 	);
@@ -463,7 +476,39 @@ function AnalysisInspector({ chart }: { chart: Chart }) {
 				{ filename, label: `D${chart.references.length + 1}` },
 			],
 		});
-		setReference(filename);
+		setActiveRef(filename);
+	};
+	const removeRef = (filename: string) =>
+		save.mutate({
+			...chart,
+			references: chart.references.filter((r) => r.filename !== filename),
+			cells: chart.cells.filter((c) => c.reference !== filename),
+		});
+	const setChecked = (target: ChartCell, value: boolean) =>
+		save.mutate({
+			...chart,
+			cells: chart.cells.map((c) =>
+				c.limitationId === target.limitationId &&
+				c.reference === target.reference &&
+				c.method === target.method
+					? { ...c, checked: value }
+					: c,
+			),
+		});
+
+	const startResize = () => {
+		const move = (ev: MouseEvent) => {
+			const rect = gridRef.current?.getBoundingClientRect();
+			if (!rect) return;
+			const pct = ((ev.clientX - rect.left) / rect.width) * 100;
+			setSplit(Math.min(70, Math.max(22, pct)));
+		};
+		const up = () => {
+			window.removeEventListener("mousemove", move);
+			window.removeEventListener("mouseup", up);
+		};
+		window.addEventListener("mousemove", move);
+		window.addEventListener("mouseup", up);
 	};
 
 	const run = async () => {
@@ -480,9 +525,8 @@ function AnalysisInspector({ chart }: { chart: Chart }) {
 				reads.map(async (r) => {
 					let citations: ChartCitation[] = [];
 					if (r.disclosed !== "Absent") {
-						if (method === "full-doc" && r.citation) {
-							citations = [r.citation];
-						} else if (method === "hybrid" && r.hint) {
+						if (method === "full-doc" && r.citation) citations = [r.citation];
+						else if (method === "hybrid" && r.hint) {
 							const outcome = await searchDocument(
 								activeTaskId,
 								reference,
@@ -524,86 +568,119 @@ function AnalysisInspector({ chart }: { chart: Chart }) {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
-				<Select value={reference} onValueChange={setReference}>
-					<SelectTrigger className="h-8 w-56 text-xs">
-						<SelectValue placeholder="Reference…" />
-					</SelectTrigger>
-					<SelectContent>
-						{chart.references.map((r) => (
-							<SelectItem key={r.filename} value={r.filename}>
-								{r.filename}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+			<div className="flex shrink-0 items-center gap-2 border-b px-2 py-1.5">
+				<div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+					{chart.references.map((r) => (
+						<div
+							key={r.filename}
+							className={cn(
+								"group flex shrink-0 items-center rounded text-xs",
+								r.filename === reference ? "bg-muted" : "hover:bg-muted/50",
+							)}
+						>
+							<button
+								type="button"
+								onClick={() => setActiveRef(r.filename)}
+								className={cn(
+									"flex items-center gap-1.5 py-1 pr-1 pl-2",
+									r.filename === reference
+										? "font-medium"
+										: "text-muted-foreground",
+								)}
+							>
+								<span className="font-mono">{r.label}</span>
+								<span className="max-w-40 truncate text-muted-foreground">
+									{r.filename}
+								</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => removeRef(r.filename)}
+								aria-label={`Remove ${r.label}`}
+								className="px-1 text-muted-foreground opacity-0 group-hover:opacity-100"
+							>
+								<X className="size-3" />
+							</button>
+						</div>
+					))}
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								tooltip="Add reference"
+								className="text-muted-foreground"
+							>
+								<Plus />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							{addable.length === 0 ? (
+								<div className="px-2 py-1.5 text-xs text-muted-foreground">
+									All documents added
+								</div>
+							) : (
+								addable.map((d) => (
+									<DropdownMenuItem
+										key={d.filename}
+										onSelect={() => addRef(d.filename)}
+									>
+										{d.filename}
+									</DropdownMenuItem>
+								))
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 
-				{addable.length > 0 && (
-					<Select value="" onValueChange={addRef}>
-						<SelectTrigger className="h-8 w-32 text-xs text-muted-foreground">
-							<SelectValue placeholder="+ Add ref" />
+				<div className="ml-auto flex shrink-0 items-center gap-1.5">
+					<Select
+						value={method}
+						onValueChange={(v) => setMethod(v as ChartMethod)}
+					>
+						<SelectTrigger className="h-8 w-48 text-xs">
+							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							{addable.map((d) => (
-								<SelectItem key={d.filename} value={d.filename}>
-									{d.filename}
+							{METHODS.map((m) => (
+								<SelectItem key={m.value} value={m.value}>
+									{m.label}
 								</SelectItem>
 							))}
 						</SelectContent>
 					</Select>
-				)}
-
-				<Select
-					value={method}
-					onValueChange={(v) => setMethod(v as ChartMethod)}
-				>
-					<SelectTrigger className="h-8 w-52 text-xs">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{METHODS.map((m) => (
-							<SelectItem key={m.value} value={m.value}>
-								{m.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-
-				<Select
-					value={chart.primer ?? "__none__"}
-					onValueChange={(v) =>
-						save.mutate({
-							...chart,
-							primer: v === "__none__" ? undefined : v,
-						})
-					}
-				>
-					<SelectTrigger className="h-8 w-44 text-xs">
-						<SelectValue placeholder="Primer: none" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="__none__">Primer: none</SelectItem>
-						{documents?.map((d) => (
-							<SelectItem key={d.filename} value={d.filename}>
-								Primer: {d.filename}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-
-				<Button size="sm" disabled={!reference || running} onClick={run}>
-					{running ? <Loader2 className="animate-spin" /> : <Sparkles />}
-					{running ? "Reading…" : "Run"}
-				</Button>
-
-				<div className="ml-auto">
+					<Select
+						value={chart.primer ?? "__none__"}
+						onValueChange={(v) =>
+							save.mutate({
+								...chart,
+								primer: v === "__none__" ? undefined : v,
+							})
+						}
+					>
+						<SelectTrigger className="h-8 w-40 text-xs">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="__none__">Primer: none</SelectItem>
+							{documents?.map((d) => (
+								<SelectItem key={d.filename} value={d.filename}>
+									Primer: {d.filename}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<Button size="sm" disabled={!reference || running} onClick={run}>
+						{running ? <Loader2 className="animate-spin" /> : <Sparkles />}
+						{running ? "Reading…" : "Run"}
+					</Button>
 					<Button
 						variant="outline"
 						size="sm"
 						onClick={() => save.mutate({ ...chart, locked: false })}
 					>
 						<LockOpen />
-						Unlock spine
+						Edit spine
 					</Button>
 				</div>
 			</div>
@@ -613,97 +690,132 @@ function AnalysisInspector({ chart }: { chart: Chart }) {
 			{chart.references.length === 0 ? (
 				<div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
 					<p className="max-w-sm">
-						Add a reference document to analyse this claim against it.
+						Add a reference document (the + above) to analyse this claim against
+						it.
 					</p>
 				</div>
 			) : (
-				<div className="min-h-0 flex-1 overflow-auto p-3">
-					<Table className="table-fixed">
-						<TableHeader>
-							<TableRow>
-								<TableHead className="w-[28%]">Limitation</TableHead>
-								<TableHead className="w-[18%]">Construction</TableHead>
-								<TableHead className="w-[30%]">Disclosure</TableHead>
-								<TableHead className="w-[24%]">Reasoning</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{chart.spine.map((lim) => {
-								const cell = cellFor(lim.id);
-								return (
-									<TableRow key={lim.id}>
-										<TableCell className="align-top">
-											<div className="whitespace-pre-wrap break-words text-sm">
-												<span className="mr-1 font-mono text-xs text-muted-foreground">
-													{lim.id}
-												</span>
-												{lim.text}
-											</div>
-										</TableCell>
-										<TableCell className="align-top whitespace-pre-wrap break-words text-sm text-muted-foreground">
-											{lim.construction || "—"}
-										</TableCell>
-										<TableCell className="align-top">
-											{cell ? (
-												<DisclosureCell cell={cell} running={running} />
-											) : (
-												<span className="text-xs text-muted-foreground">
-													{running ? "…" : "not run"}
-												</span>
-											)}
-										</TableCell>
-										<TableCell className="align-top whitespace-pre-wrap break-words text-sm">
-											{cell?.reasoning ?? (
-												<span className="text-muted-foreground">—</span>
-											)}
-										</TableCell>
-									</TableRow>
-								);
-							})}
-						</TableBody>
-					</Table>
+				<div ref={gridRef} className="relative min-h-0 flex-1 overflow-auto">
+					<div className="sticky top-0 z-[5] border-b bg-background">
+						<div className="flex text-xs font-medium text-muted-foreground">
+							<div
+								style={{ width: `${split}%` }}
+								className="border-r px-3 py-1.5"
+							>
+								Feature
+							</div>
+							<div className="flex-1 px-3 py-1.5">Disclosure in {refLabel}</div>
+						</div>
+						<button
+							type="button"
+							aria-label="Resize columns"
+							onMouseDown={(e) => {
+								e.preventDefault();
+								startResize();
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "ArrowLeft") setSplit((s) => Math.max(22, s - 2));
+								if (e.key === "ArrowRight")
+									setSplit((s) => Math.min(70, s + 2));
+							}}
+							style={{ left: `${split}%` }}
+							className="absolute top-0 bottom-0 -ml-1 w-2 cursor-col-resize hover:bg-primary/30"
+						/>
+					</div>
+					{chart.spine.map((lim) => {
+						const cell = cellFor(lim.id);
+						return (
+							<div key={lim.id} className="flex border-b">
+								<div
+									style={{ width: `${split}%` }}
+									className="space-y-1 border-r px-3 py-2"
+								>
+									<div className="whitespace-pre-wrap break-words text-sm">
+										<span className="mr-1.5 font-mono text-xs text-muted-foreground">
+											{lim.id}
+										</span>
+										{lim.text}
+									</div>
+									{lim.construction && (
+										<div className="break-words text-xs text-muted-foreground">
+											<span className="font-medium">Construction:</span>{" "}
+											{lim.construction}
+										</div>
+									)}
+								</div>
+								<div className="min-w-0 flex-1 px-3 py-2">
+									<DisclosureContent
+										cell={cell}
+										running={running}
+										onChecked={setChecked}
+									/>
+								</div>
+							</div>
+						);
+					})}
 				</div>
 			)}
 		</div>
 	);
 }
 
-function DisclosureCell({
+function DisclosureContent({
 	cell,
 	running,
+	onChecked,
 }: {
-	cell: ChartCell;
+	cell: ChartCell | undefined;
 	running: boolean;
+	onChecked: (cell: ChartCell, value: boolean) => void;
 }) {
+	if (!cell)
+		return (
+			<span className="text-xs text-muted-foreground">
+				{running ? "reading…" : "not run"}
+			</span>
+		);
 	return (
 		<div className="space-y-1.5">
-			<span
-				className={cn(
-					"text-xs font-medium",
-					DISCLOSURE_STYLE[cell.disclosureType],
-				)}
-			>
-				{cell.disclosureType}
-			</span>
-			{cell.teaching && (
-				<p className="text-xs text-muted-foreground italic">{cell.teaching}</p>
-			)}
-			{cell.citations.map((cit) => (
-				<div
-					key={cit.quote.slice(0, 40)}
-					className="border-muted border-l-2 pl-2 text-xs"
-				>
-					{cit.location && (
-						<div className="text-muted-foreground">{cit.location}</div>
+			<div className="flex items-center justify-between gap-2">
+				<span
+					className={cn(
+						"text-sm font-medium",
+						DISCLOSURE_STYLE[cell.disclosureType],
 					)}
-					<p className="whitespace-pre-wrap break-words">“{cit.quote}”</p>
+				>
+					● {cell.disclosureType}
+				</span>
+				<Button
+					variant={cell.checked ? "secondary" : "ghost"}
+					size="icon-xs"
+					tooltip={cell.checked ? "Verified" : "Mark verified"}
+					onClick={() => onChecked(cell, !cell.checked)}
+				>
+					<Check
+						className={
+							cell.checked
+								? "text-emerald-600 dark:text-emerald-400"
+								: "text-muted-foreground"
+						}
+					/>
+				</Button>
+			</div>
+			{cell.citations.map((cit) => (
+				<div key={cit.quote.slice(0, 48)} className="break-words text-xs">
+					<span className="font-medium">“{cit.quote}”</span>
+					{cit.location && (
+						<span className="text-muted-foreground"> — {cit.location}</span>
+					)}
 				</div>
 			))}
-			{running &&
-				cell.citations.length === 0 &&
-				cell.disclosureType !== "Absent" && (
-					<Loader2 className="size-3 animate-spin text-muted-foreground" />
-				)}
+			<p className="whitespace-pre-wrap break-words text-sm">
+				{cell.reasoning}
+			</p>
+			{cell.teaching && (
+				<p className="break-words text-xs text-muted-foreground italic">
+					Teaching: {cell.teaching}
+				</p>
+			)}
 		</div>
 	);
 }
