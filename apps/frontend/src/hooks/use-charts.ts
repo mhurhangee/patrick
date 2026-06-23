@@ -43,19 +43,14 @@ export function useCreateChart(taskId: string | undefined) {
 	});
 }
 
-/** Parse a claim from a document into the chart's spine; refreshes the open chart. */
+/** Parse a claim from a document into limitations; the editor appends them to the spine. */
 export function useParseChart(taskId: string | undefined, chartId: string) {
-	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (body: {
 			filename: string;
 			profileId: string;
 			claim: string;
 		}) => tasksApi.parseChart(taskId as string, chartId, body),
-		onSuccess: (chart: Chart) => {
-			qc.setQueryData(key.one(taskId ?? "", chartId), chart);
-			qc.invalidateQueries({ queryKey: key.list(taskId ?? "") });
-		},
 	});
 }
 

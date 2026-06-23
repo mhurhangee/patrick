@@ -162,14 +162,11 @@ tasks.post("/:id/charts/:chartId/meta", async (c) => {
 	return c.json({ ok: true });
 });
 
-// Parse a claim from a source document into a proposed spine (nodes 0–1). Fills
-// the chart's (still-unlocked) spine for the attorney to edit at the HITL gate.
+// Parse a claim from a source document into limitations (nodes 0–1). Returns them for
+// the client to append to the spine — building it up claim by claim at the HITL gate.
 tasks.post("/:id/charts/:chartId/parse", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const chart = await readChart(task.folder, c.req.param("chartId"));
-	if (!chart) return c.json({ error: "chart not found" }, 404);
-	if (chart.locked) return c.json({ error: "spine is locked" }, 409);
 	const { filename, profileId, claim } = await c.req.json<{
 		filename?: string;
 		profileId?: string;
@@ -190,11 +187,7 @@ tasks.post("/:id/charts/:chartId/parse", async (c) => {
 				{ error: "couldn't parse a claim from that document" },
 				400,
 			);
-		const saved = await saveChart(task.folder, {
-			...chart,
-			spine: parsed.limitations,
-		});
-		return c.json(saved);
+		return c.json({ limitations: parsed.limitations });
 	} catch (err) {
 		return c.json(
 			{ error: err instanceof Error ? err.message : "parse failed" },

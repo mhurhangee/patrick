@@ -51,7 +51,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useChart, useParseChart, useSaveChart } from "@/hooks/use-charts";
-import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
@@ -92,7 +91,6 @@ function Stepper({ current }: { current: number }) {
 export function ClaimChartViewer({ chartId }: { chartId: string }) {
 	const { activeTaskId } = useActiveTask();
 	const { data: chart, isLoading } = useChart(activeTaskId, chartId);
-	const [reparse, setReparse] = useState(false);
 
 	if (isLoading)
 		return (
@@ -107,122 +105,17 @@ export function ClaimChartViewer({ chartId }: { chartId: string }) {
 			</div>
 		);
 
-	const showParse = chart.spine.length === 0 || reparse;
-
 	return (
 		<div className="flex h-full flex-col bg-background">
 			<div className="flex h-10 shrink-0 items-center border-b px-3">
 				<Stepper current={chart.locked ? 1 : 0} />
 			</div>
 			<div className="min-h-0 flex-1 overflow-auto">
-				{showParse ? (
-					<SpineParsePanel
-						chartId={chartId}
-						onParsed={() => setReparse(false)}
-						onCancel={reparse ? () => setReparse(false) : undefined}
-					/>
-				) : chart.locked ? (
+				{chart.locked ? (
 					<AnalysisView chart={chart} />
 				) : (
-					<SpineEditor
-						key={chartId}
-						chart={chart}
-						onReparse={() => setReparse(true)}
-					/>
+					<SpineEditor key={chartId} chart={chart} />
 				)}
-			</div>
-		</div>
-	);
-}
-
-// The empty-state action: pick a source document + claim number → parse it into a
-// proposed spine (nodes 0–1). The attorney then edits and locks it.
-function SpineParsePanel({
-	chartId,
-	onParsed,
-	onCancel,
-}: {
-	chartId: string;
-	onParsed: () => void;
-	onCancel?: () => void;
-}) {
-	const { activeTaskId } = useActiveTask();
-	const { activeProfileId } = useActiveProfile();
-	const { data: profile } = useProfile(activeProfileId);
-	const { data: documents } = useTaskDocuments(activeTaskId);
-	const parse = useParseChart(activeTaskId, chartId);
-
-	const [filename, setFilename] = useState("");
-	const [claim, setClaim] = useState("1");
-
-	const run = () => {
-		if (!filename || !activeProfileId) return;
-		parse.mutate(
-			{ filename, profileId: activeProfileId, claim: claim || "1" },
-			{ onSuccess: onParsed },
-		);
-	};
-
-	return (
-		<div className="flex h-full items-center justify-center p-8">
-			<div className="w-full max-w-sm space-y-4">
-				<div className="space-y-1 text-center">
-					<p className="text-sm font-medium">Build the spine</p>
-					<p className="text-xs text-muted-foreground">
-						Parse a claim from one of this task's documents into its
-						limitations, then review and lock it.
-					</p>
-				</div>
-
-				<div className="space-y-2">
-					<Label htmlFor="spine-doc">Claims document</Label>
-					<Select value={filename} onValueChange={setFilename}>
-						<SelectTrigger id="spine-doc" className="w-full">
-							<SelectValue placeholder="Choose a document…" />
-						</SelectTrigger>
-						<SelectContent>
-							{documents?.map((d) => (
-								<SelectItem key={d.filename} value={d.filename}>
-									{d.filename}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
-				<div className="space-y-2">
-					<Label htmlFor="spine-claim">Claim number</Label>
-					<Input
-						id="spine-claim"
-						value={claim}
-						onChange={(e) => setClaim(e.target.value)}
-						className="w-24"
-					/>
-				</div>
-
-				{parse.isError && (
-					<p className="text-xs text-destructive">
-						{parse.error instanceof Error
-							? parse.error.message
-							: "Parse failed."}
-					</p>
-				)}
-
-				<div className="flex gap-2">
-					{onCancel && (
-						<Button variant="outline" onClick={onCancel} className="flex-1">
-							Cancel
-						</Button>
-					)}
-					<Button
-						onClick={run}
-						disabled={!filename || !profile || parse.isPending}
-						className="flex-1"
-					>
-						{parse.isPending && <Loader2 className="animate-spin" />}
-						{parse.isPending ? "Parsing…" : "Parse claim"}
-					</Button>
-				</div>
 			</div>
 		</div>
 	);
@@ -317,21 +210,38 @@ const COL_WIDTH: Record<string, string> = {
 	actions: "w-10",
 };
 
-function SpineEditor({
-	chart,
-	onReparse,
-}: {
-	chart: Chart;
-	onReparse: () => void;
-}) {
+function SpineEditor({ chart }: { chart: Chart }) {
 	const { activeTaskId } = useActiveTask();
+	const { activeProfileId } = useActiveProfile();
+	const { data: documents } = useTaskDocuments(activeTaskId);
 	const save = useSaveChart(activeTaskId);
+	const parse = useParseChart(activeTaskId, chart.id);
 	const [rows, setRows] = useState<ClaimLimitation[]>(chart.spine);
 	const rowsRef = useRef(rows);
 	rowsRef.current = rows;
 
+	const [addOpen, setAddOpen] = useState(false);
+	const [claimDoc, setClaimDoc] = useState("");
+	const [claimNo, setClaimNo] = useState("1");
+
 	const persist = (next: ClaimLimitation[], patch?: Partial<Chart>) =>
 		save.mutate({ ...chart, spine: next, ...patch });
+
+	// Build the spine claim by claim — parse appends, so you can add claim 1, then 2 …
+	// (the source doc is cached, so successive adds are cheap).
+	const addClaim = async () => {
+		if (!claimDoc || !activeProfileId) return;
+		const { limitations } = await parse.mutateAsync({
+			filename: claimDoc,
+			profileId: activeProfileId,
+			claim: claimNo || "1",
+		});
+		const next = [...rowsRef.current, ...limitations];
+		setRows(next);
+		persist(next);
+		setAddOpen(false);
+		setClaimNo((n) => String((Number.parseInt(n, 10) || 0) + 1));
+	};
 
 	const table = useReactTable({
 		data: rows,
@@ -362,12 +272,63 @@ function SpineEditor({
 		<div className="flex h-full flex-col">
 			<div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
 				<p className="text-xs text-muted-foreground">
-					Review the limitations and construction, then lock the spine.
+					Add claims, edit the limitations and construction, then lock the
+					spine.
 				</p>
 				<div className="flex items-center gap-1">
-					<Button variant="ghost" size="sm" onClick={onReparse}>
-						Re-parse
-					</Button>
+					<Popover open={addOpen} onOpenChange={setAddOpen}>
+						<PopoverTrigger asChild>
+							<Button variant="outline" size="sm">
+								<Plus />
+								Add claim
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent align="end" className="w-72 space-y-3">
+							<div className="space-y-1.5">
+								<Label className="text-xs">Claims document</Label>
+								<Select value={claimDoc} onValueChange={setClaimDoc}>
+									<SelectTrigger className="w-full text-xs">
+										<SelectValue placeholder="Choose a document…" />
+									</SelectTrigger>
+									<SelectContent>
+										{documents?.map((d) => (
+											<SelectItem key={d.filename} value={d.filename}>
+												{d.filename}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="space-y-1.5">
+								<Label className="text-xs">Claim number</Label>
+								<Input
+									value={claimNo}
+									onChange={(e) => setClaimNo(e.target.value)}
+									className="w-24"
+								/>
+							</div>
+							{parse.isError && (
+								<p className="text-xs text-destructive">
+									{parse.error instanceof Error
+										? parse.error.message
+										: "Parse failed."}
+								</p>
+							)}
+							<Button
+								size="sm"
+								className="w-full"
+								disabled={!claimDoc || parse.isPending}
+								onClick={addClaim}
+							>
+								{parse.isPending ? (
+									<Loader2 className="animate-spin" />
+								) : (
+									<Sparkles />
+								)}
+								{parse.isPending ? "Parsing…" : "Parse & add"}
+							</Button>
+						</PopoverContent>
+					</Popover>
 					<Button
 						size="sm"
 						disabled={rows.length === 0}
@@ -385,6 +346,13 @@ function SpineEditor({
 			</div>
 
 			<div className="min-h-0 flex-1 overflow-auto px-3 pb-3">
+				{rows.length === 0 && (
+					<p className="px-1 py-10 text-center text-sm text-muted-foreground">
+						No limitations yet — use{" "}
+						<span className="font-medium">Add claim</span> to parse a claim from
+						a document, or add one manually below.
+					</p>
+				)}
 				<Table className="table-fixed">
 					<TableHeader>
 						{table.getHeaderGroups().map((hg) => (

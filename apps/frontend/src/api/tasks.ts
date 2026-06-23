@@ -4,6 +4,7 @@ import type {
 	ChartSummary,
 	Chat,
 	ChatSummary,
+	ClaimLimitation,
 	Document,
 	DocumentMeta,
 	ExtractedDoc,
@@ -44,12 +45,16 @@ export const tasksApi = {
 	/** Create a blank claim chart; returns the new record. */
 	createChart: (id: string, title?: string) =>
 		api.post<Chart>(`/tasks/${id}/charts`, { title }),
-	/** Parse a claim from a source document into the chart's spine (nodes 0–1). */
+	/** Parse a claim from a source document into limitations (to append to the spine). */
 	parseChart: (
 		id: string,
 		chartId: string,
 		body: { filename: string; profileId: string; claim: string },
-	) => api.post<Chart>(`/tasks/${id}/charts/${chartId}/parse`, body),
+	) =>
+		api.post<{ limitations: ClaimLimitation[] }>(
+			`/tasks/${id}/charts/${chartId}/parse`,
+			body,
+		),
 	/** Save a chart record wholesale (the editor owns the full object). */
 	saveChart: (id: string, chartId: string, body: Chart) =>
 		api.put<Chart>(`/tasks/${id}/charts/${chartId}`, body),
