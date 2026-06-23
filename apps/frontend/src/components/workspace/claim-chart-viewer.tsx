@@ -2,6 +2,7 @@ import type {
 	Chart,
 	ChartCell,
 	ChartCitation,
+	ChartColumn,
 	ChartMethod,
 	ClaimLimitation,
 	DisclosureType,
@@ -26,14 +27,13 @@ import {
 import { useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -425,10 +425,10 @@ function SpineEditor({
 }
 
 const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
-	Express: "text-emerald-700 dark:text-emerald-400",
-	Derived: "text-sky-700 dark:text-sky-400",
-	Suggested: "text-amber-700 dark:text-amber-500",
-	Absent: "text-muted-foreground",
+	Express: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+	Derived: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+	Suggested: "bg-amber-500/10 text-amber-700 dark:text-amber-600",
+	Absent: "bg-muted text-muted-foreground",
 };
 
 const METHODS: { value: ChartMethod; label: string }[] = [
@@ -436,92 +436,59 @@ const METHODS: { value: ChartMethod; label: string }[] = [
 	{ value: "full-doc", label: "Full-doc (read gives cite)" },
 	{ value: "semantic", label: "Semantic (search → classify)" },
 ];
+const METHOD_SHORT: Record<ChartMethod, string> = {
+	hybrid: "hybrid",
+	"full-doc": "full-doc",
+	semantic: "semantic",
+};
 
-// The analysis surface: a 2-column claim chart per reference (Feature | Disclosure),
-// everything visible. Reference tabs switch documents; a draggable header handle resizes
-// the split. Readable over fancy — the test bed has to be testable.
+const colKey = (reference: string, method: ChartMethod) =>
+	`${reference}::${method}`;
+
+// The analysis grid: a sticky Feature column on the left, then one column per
+// (reference × method) run — so the same reference can be charted by different methods
+// side by side (the test bed), and different references become D1/D2 columns (the chart).
 function AnalysisView({ chart }: { chart: Chart }) {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
 	const save = useSaveChart(activeTaskId);
 	const { data: documents } = useTaskDocuments(activeTaskId);
 
-	const [method, setMethod] = useState<ChartMethod>("hybrid");
-	const [activeRef, setActiveRef] = useState(
-		chart.references[0]?.filename ?? "",
-	);
-	const [split, setSplit] = useState(42);
-	const [running, setRunning] = useState(false);
+	const [running, setRunning] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
-	const gridRef = useRef<HTMLDivElement>(null);
+	const [addOpen, setAddOpen] = useState(false);
+	const [newDoc, setNewDoc] = useState("");
+	const [newMethod, setNewMethod] = useState<ChartMethod>("full-doc");
 
-	const reference = chart.references.some((r) => r.filename === activeRef)
-		? activeRef
-		: (chart.references[0]?.filename ?? "");
-	const refLabel =
-		chart.references.find((r) => r.filename === reference)?.label ?? reference;
-	const addable = (documents ?? []).filter(
-		(d) => !chart.references.some((r) => r.filename === d.filename),
-	);
-	const cellFor = (limId: string) =>
+	const columns = chart.columns;
+	const distinctRefs = [...new Set(columns.map((c) => c.reference))];
+	const labelFor = (filename: string) =>
+		`D${distinctRefs.indexOf(filename) + 1}`;
+	const cellFor = (limId: string, c: ChartColumn) =>
 		chart.cells.find(
-			(c) =>
-				c.limitationId === limId &&
-				c.reference === reference &&
-				c.method === method,
+			(x) =>
+				x.limitationId === limId &&
+				x.reference === c.reference &&
+				x.method === c.method,
 		);
+	const isRunning = (c: ChartColumn) =>
+		running.has(colKey(c.reference, c.method));
 
-	const addRef = (filename: string) => {
-		save.mutate({
-			...chart,
-			references: [
-				...chart.references,
-				{ filename, label: `D${chart.references.length + 1}` },
-			],
-		});
-		setActiveRef(filename);
-	};
-	const removeRef = (filename: string) =>
-		save.mutate({
-			...chart,
-			references: chart.references.filter((r) => r.filename !== filename),
-			cells: chart.cells.filter((c) => c.reference !== filename),
-		});
 	const setChecked = (target: ChartCell, value: boolean) =>
 		save.mutate({
 			...chart,
-			cells: chart.cells.map((c) =>
-				c.limitationId === target.limitationId &&
-				c.reference === target.reference &&
-				c.method === target.method
-					? { ...c, checked: value }
-					: c,
+			cells: chart.cells.map((x) =>
+				x.limitationId === target.limitationId &&
+				x.reference === target.reference &&
+				x.method === target.method
+					? { ...x, checked: value }
+					: x,
 			),
 		});
 
-	const startResize = () => {
-		const move = (ev: MouseEvent) => {
-			const rect = gridRef.current?.getBoundingClientRect();
-			if (!rect) return;
-			const pct = ((ev.clientX - rect.left) / rect.width) * 100;
-			setSplit(Math.min(70, Math.max(22, pct)));
-		};
-		const up = () => {
-			window.removeEventListener("mousemove", move);
-			window.removeEventListener("mouseup", up);
-		};
-		window.addEventListener("mousemove", move);
-		window.addEventListener("mouseup", up);
-	};
-
-	const run = async () => {
-		if (!activeTaskId || !activeProfileId || !reference || running) return;
-		const taskId = activeTaskId;
-		const profileId = activeProfileId;
-		setRunning(true);
-		setError(null);
-
-		const cell = (
+	const buildCell =
+		(reference: string, method: ChartMethod) =>
+		(
 			limitationId: string,
 			disclosureType: DisclosureType,
 			reasoning: string,
@@ -539,87 +506,104 @@ function AnalysisView({ chart }: { chart: Chart }) {
 			spineVersion: chart.spineVersion,
 		});
 
-		// Whole-document read (hybrid / full-doc): one read, then source the citation.
-		const runRead = (): Promise<ChartCell[]> =>
-			tasksApi
-				.readReference(taskId, chart.id, {
-					profileId,
-					reference,
-					primer: chart.primer,
-				})
-				.then((reads) =>
-					Promise.all(
-						reads.map(async (r) => {
-							let citations: ChartCitation[] = [];
-							if (r.disclosed !== "Absent") {
-								if (method === "full-doc" && r.citation)
-									citations = [r.citation];
-								else if (r.hint) {
-									const outcome = await searchDocument(
-										taskId,
-										reference,
-										r.hint,
-										[],
-										CITE_TOP_K,
-									);
-									const p = outcome.ok ? outcome.passages[0] : undefined;
-									if (p)
-										citations = [{ quote: p.text, location: `Page ${p.page}` }];
-								}
+	const runRead = (
+		taskId: string,
+		profileId: string,
+		reference: string,
+		method: ChartMethod,
+	): Promise<ChartCell[]> => {
+		const mk = buildCell(reference, method);
+		return tasksApi
+			.readReference(taskId, chart.id, {
+				profileId,
+				reference,
+				primer: chart.primer,
+			})
+			.then((reads) =>
+				Promise.all(
+					reads.map(async (r) => {
+						let citations: ChartCitation[] = [];
+						if (r.disclosed !== "Absent") {
+							if (method === "full-doc" && r.citation) citations = [r.citation];
+							else if (r.hint) {
+								const o = await searchDocument(
+									taskId,
+									reference,
+									r.hint,
+									[],
+									CITE_TOP_K,
+								);
+								const p = o.ok ? o.passages[0] : undefined;
+								if (p)
+									citations = [{ quote: p.text, location: `Page ${p.page}` }];
 							}
-							return cell(
-								r.limitationId,
-								r.disclosed,
-								r.reasoning,
-								citations,
-								r.teaching,
-							);
-						}),
-					),
-				);
-
-		// Semantic baseline: per limitation, search → classify the retrieved passages.
-		const runSemantic = (): Promise<ChartCell[]> =>
-			Promise.all(
-				chart.spine.map(async (lim) => {
-					const outcome = await searchDocument(
-						taskId,
-						reference,
-						lim.text,
-						[],
-						SEMANTIC_TOP_K,
-					);
-					if (!outcome.ok)
-						return cell(
-							lim.id,
-							"Absent",
-							outcome.reason === "no-text"
-								? "No extractable text in this reference — extract or OCR it first."
-								: "No relevant passages retrieved.",
-							[],
+						}
+						return mk(
+							r.limitationId,
+							r.disclosed,
+							r.reasoning,
+							citations,
+							r.teaching,
 						);
-					const cls = await tasksApi.classifyCell(taskId, chart.id, {
-						profileId,
-						limitation: lim,
-						passages: outcome.passages.map((p) => ({
-							text: p.text,
-							page: p.page,
-						})),
-					});
-					const citations = cls.passages
-						.map((i) => outcome.passages[i])
-						.filter((p): p is NonNullable<typeof p> => !!p)
-						.map((p) => ({ quote: p.text, location: `Page ${p.page}` }));
-					return cell(lim.id, cls.disclosureType, cls.reasoning, citations);
-				}),
+					}),
+				),
 			);
+	};
 
+	const runSemantic = (
+		taskId: string,
+		profileId: string,
+		reference: string,
+		method: ChartMethod,
+	): Promise<ChartCell[]> => {
+		const mk = buildCell(reference, method);
+		return Promise.all(
+			chart.spine.map(async (lim) => {
+				const o = await searchDocument(
+					taskId,
+					reference,
+					lim.text,
+					[],
+					SEMANTIC_TOP_K,
+				);
+				if (!o.ok)
+					return mk(
+						lim.id,
+						"Absent",
+						o.reason === "no-text"
+							? "No extractable text in this reference — extract or OCR it first."
+							: "No relevant passages retrieved.",
+						[],
+					);
+				const cls = await tasksApi.classifyCell(taskId, chart.id, {
+					profileId,
+					limitation: lim,
+					passages: o.passages.map((p) => ({ text: p.text, page: p.page })),
+				});
+				const citations = cls.passages
+					.map((i) => o.passages[i])
+					.filter((p): p is NonNullable<typeof p> => !!p)
+					.map((p) => ({ quote: p.text, location: `Page ${p.page}` }));
+				return mk(lim.id, cls.disclosureType, cls.reasoning, citations);
+			}),
+		);
+	};
+
+	const runColumn = async (reference: string, method: ChartMethod) => {
+		const key = colKey(reference, method);
+		if (!activeTaskId || !activeProfileId || running.has(key)) return;
+		const taskId = activeTaskId;
+		const profileId = activeProfileId;
+		setRunning((s) => new Set(s).add(key));
+		setError(null);
 		try {
 			const cells =
-				method === "semantic" ? await runSemantic() : await runRead();
+				method === "semantic"
+					? await runSemantic(taskId, profileId, reference, method)
+					: await runRead(taskId, profileId, reference, method);
 			const merged = [
 				...chart.cells.filter(
-					(c) => !(c.reference === reference && c.method === method),
+					(x) => !(x.reference === reference && x.method === method),
 				),
 				...cells,
 			];
@@ -627,118 +611,120 @@ function AnalysisView({ chart }: { chart: Chart }) {
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Run failed.");
 		} finally {
-			setRunning(false);
+			setRunning((s) => {
+				const n = new Set(s);
+				n.delete(key);
+				return n;
+			});
 		}
 	};
+
+	const addColumn = () => {
+		setAddOpen(false);
+		if (!newDoc) return;
+		if (
+			!chart.columns.some(
+				(c) => c.reference === newDoc && c.method === newMethod,
+			)
+		) {
+			save.mutate({
+				...chart,
+				columns: [...chart.columns, { reference: newDoc, method: newMethod }],
+			});
+		}
+		runColumn(newDoc, newMethod);
+	};
+
+	const removeColumn = (c: ChartColumn) =>
+		save.mutate({
+			...chart,
+			columns: chart.columns.filter(
+				(x) => !(x.reference === c.reference && x.method === c.method),
+			),
+			cells: chart.cells.filter(
+				(x) => !(x.reference === c.reference && x.method === c.method),
+			),
+		});
 
 	return (
 		<div className="flex h-full flex-col">
 			<div className="flex shrink-0 items-center gap-2 border-b px-2 py-1.5">
-				<div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
-					{chart.references.map((r) => (
-						<div
-							key={r.filename}
-							className={cn(
-								"group flex shrink-0 items-center rounded text-xs",
-								r.filename === reference ? "bg-muted" : "hover:bg-muted/50",
-							)}
-						>
-							<button
-								type="button"
-								onClick={() => setActiveRef(r.filename)}
-								className={cn(
-									"flex items-center gap-1.5 py-1 pr-1 pl-2",
-									r.filename === reference
-										? "font-medium"
-										: "text-muted-foreground",
-								)}
-							>
-								<span className="font-mono">{r.label}</span>
-								<span className="max-w-40 truncate text-muted-foreground">
-									{r.filename}
-								</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => removeRef(r.filename)}
-								aria-label={`Remove ${r.label}`}
-								className="px-1 text-muted-foreground opacity-0 group-hover:opacity-100"
-							>
-								<X className="size-3" />
-							</button>
+				<Popover open={addOpen} onOpenChange={setAddOpen}>
+					<PopoverTrigger asChild>
+						<Button variant="outline" size="sm">
+							<Plus />
+							Add column
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent align="start" className="w-72 space-y-3">
+						<div className="space-y-1.5">
+							<Label className="text-xs">Reference document</Label>
+							<Select value={newDoc} onValueChange={setNewDoc}>
+								<SelectTrigger className="w-full text-xs">
+									<SelectValue placeholder="Choose a document…" />
+								</SelectTrigger>
+								<SelectContent>
+									{documents?.map((d) => (
+										<SelectItem key={d.filename} value={d.filename}>
+											{d.filename}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
-					))}
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-xs"
-								tooltip="Add reference"
-								className="text-muted-foreground"
+						<div className="space-y-1.5">
+							<Label className="text-xs">Method</Label>
+							<Select
+								value={newMethod}
+								onValueChange={(v) => setNewMethod(v as ChartMethod)}
 							>
-								<Plus />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="start">
-							{addable.length === 0 ? (
-								<div className="px-2 py-1.5 text-xs text-muted-foreground">
-									All documents added
-								</div>
-							) : (
-								addable.map((d) => (
-									<DropdownMenuItem
-										key={d.filename}
-										onSelect={() => addRef(d.filename)}
-									>
-										{d.filename}
-									</DropdownMenuItem>
-								))
-							)}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+								<SelectTrigger className="w-full text-xs">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{METHODS.map((m) => (
+										<SelectItem key={m.value} value={m.value}>
+											{m.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<Button
+							size="sm"
+							className="w-full"
+							disabled={!newDoc}
+							onClick={addColumn}
+						>
+							<Sparkles />
+							Add &amp; run
+						</Button>
+					</PopoverContent>
+				</Popover>
 
-				<div className="ml-auto flex shrink-0 items-center gap-1.5">
-					<Select
-						value={method}
-						onValueChange={(v) => setMethod(v as ChartMethod)}
-					>
-						<SelectTrigger className="h-8 w-48 text-xs">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{METHODS.map((m) => (
-								<SelectItem key={m.value} value={m.value}>
-									{m.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<Select
-						value={chart.primer ?? "__none__"}
-						onValueChange={(v) =>
-							save.mutate({
-								...chart,
-								primer: v === "__none__" ? undefined : v,
-							})
-						}
-					>
-						<SelectTrigger className="h-8 w-40 text-xs">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="__none__">Primer: none</SelectItem>
-							{documents?.map((d) => (
-								<SelectItem key={d.filename} value={d.filename}>
-									Primer: {d.filename}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<Button size="sm" disabled={!reference || running} onClick={run}>
-						{running ? <Loader2 className="animate-spin" /> : <Sparkles />}
-						{running ? "Reading…" : "Run"}
-					</Button>
+				<Select
+					value={chart.primer ?? "__none__"}
+					onValueChange={(v) =>
+						save.mutate({
+							...chart,
+							primer: v === "__none__" ? undefined : v,
+						})
+					}
+				>
+					<SelectTrigger className="h-8 w-40 text-xs">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="__none__">Primer: none</SelectItem>
+						{documents?.map((d) => (
+							<SelectItem key={d.filename} value={d.filename}>
+								Primer: {d.filename}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
+				<div className="ml-auto">
 					<Button
 						variant="outline"
 						size="sm"
@@ -752,74 +738,127 @@ function AnalysisView({ chart }: { chart: Chart }) {
 
 			{error && <p className="px-3 py-1 text-xs text-destructive">{error}</p>}
 
-			{chart.references.length === 0 ? (
+			{columns.length === 0 ? (
 				<div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
 					<p className="max-w-sm">
-						Add a reference document (the + above) to analyse this claim against
-						it.
+						Add a column — a reference + a method — to analyse this claim. Add
+						the same reference with different methods to compare them side by
+						side.
 					</p>
 				</div>
 			) : (
-				<div ref={gridRef} className="relative min-h-0 flex-1 overflow-auto">
-					<div className="sticky top-0 z-[5] border-b bg-background">
-						<div className="flex text-xs font-medium text-muted-foreground">
-							<div
-								style={{ width: `${split}%` }}
-								className="border-r px-3 py-1.5"
-							>
-								Feature
-							</div>
-							<div className="flex-1 px-3 py-1.5">Disclosure in {refLabel}</div>
-						</div>
-						<button
-							type="button"
-							aria-label="Resize columns"
-							onMouseDown={(e) => {
-								e.preventDefault();
-								startResize();
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "ArrowLeft") setSplit((s) => Math.max(22, s - 2));
-								if (e.key === "ArrowRight")
-									setSplit((s) => Math.min(70, s + 2));
-							}}
-							style={{ left: `${split}%` }}
-							className="absolute top-0 bottom-0 -ml-1 w-2 cursor-col-resize hover:bg-primary/30"
-						/>
-					</div>
-					{chart.spine.map((lim) => {
-						const cell = cellFor(lim.id);
-						return (
-							<div key={lim.id} className="flex border-b">
-								<div
-									style={{ width: `${split}%` }}
-									className="space-y-1 border-r px-3 py-2"
-								>
-									<div className="whitespace-pre-wrap break-words text-sm">
-										<span className="mr-1.5 font-mono text-xs text-muted-foreground">
-											{lim.id}
-										</span>
-										{lim.text}
-									</div>
-									{lim.construction && (
-										<div className="break-words text-xs text-muted-foreground">
-											<span className="font-medium">Construction:</span>{" "}
-											{lim.construction}
+				<div className="min-h-0 flex-1 overflow-auto">
+					<table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+						<thead>
+							<tr>
+								<th className="sticky top-0 left-0 z-30 w-[20rem] min-w-[20rem] border-r border-b bg-background px-3 py-2 text-left align-top font-medium text-muted-foreground text-xs">
+									Feature
+								</th>
+								{columns.map((c) => (
+									<th
+										key={colKey(c.reference, c.method)}
+										className="sticky top-0 z-20 w-[22rem] min-w-[22rem] border-r border-b bg-background px-3 py-2 text-left align-top font-normal"
+									>
+										<ColumnHeader
+											label={labelFor(c.reference)}
+											reference={c.reference}
+											method={c.method}
+											running={isRunning(c)}
+											onRun={() => runColumn(c.reference, c.method)}
+											onRemove={() => removeColumn(c)}
+										/>
+									</th>
+								))}
+							</tr>
+						</thead>
+						<tbody>
+							{chart.spine.map((lim) => (
+								<tr key={lim.id}>
+									<td className="sticky left-0 z-10 w-[20rem] min-w-[20rem] border-r border-b bg-background px-3 py-2 align-top">
+										<div className="break-words text-sm">
+											<span className="mr-1.5 font-mono text-muted-foreground text-xs">
+												{lim.id}
+											</span>
+											{lim.text}
 										</div>
-									)}
-								</div>
-								<div className="min-w-0 flex-1 px-3 py-2">
-									<DisclosureContent
-										cell={cell}
-										running={running}
-										onChecked={setChecked}
-									/>
-								</div>
-							</div>
-						);
-					})}
+										{lim.construction && (
+											<div className="mt-1 break-words text-muted-foreground text-xs">
+												<span className="font-medium">Construction:</span>{" "}
+												{lim.construction}
+											</div>
+										)}
+									</td>
+									{columns.map((c) => (
+										<td
+											key={colKey(c.reference, c.method)}
+											className="w-[22rem] min-w-[22rem] border-r border-b px-3 py-2 align-top"
+										>
+											<DisclosureContent
+												cell={cellFor(lim.id, c)}
+												running={isRunning(c)}
+												onChecked={setChecked}
+											/>
+										</td>
+									))}
+								</tr>
+							))}
+						</tbody>
+					</table>
 				</div>
 			)}
+		</div>
+	);
+}
+
+function ColumnHeader({
+	label,
+	reference,
+	method,
+	running,
+	onRun,
+	onRemove,
+}: {
+	label: string;
+	reference: string;
+	method: ChartMethod;
+	running: boolean;
+	onRun: () => void;
+	onRemove: () => void;
+}) {
+	return (
+		<div className="flex items-start justify-between gap-1">
+			<div className="min-w-0">
+				<div className="text-xs">
+					<span className="font-medium font-mono text-foreground">{label}</span>
+					<span className="ml-1.5 text-muted-foreground">
+						{METHOD_SHORT[method]}
+					</span>
+				</div>
+				<div className="truncate text-[10px] text-muted-foreground">
+					{reference}
+				</div>
+			</div>
+			<div className="flex shrink-0 items-center">
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					tooltip="Re-run"
+					disabled={running}
+					onClick={onRun}
+					className="text-muted-foreground"
+				>
+					{running ? <Loader2 className="animate-spin" /> : <Sparkles />}
+				</Button>
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					tooltip="Remove column"
+					onClick={onRemove}
+					className="text-muted-foreground"
+				>
+					<X />
+				</Button>
+			</div>
 		</div>
 	);
 }
@@ -840,15 +879,15 @@ function DisclosureContent({
 			</span>
 		);
 	return (
-		<div className="space-y-1.5">
+		<div className="space-y-2">
 			<div className="flex items-center justify-between gap-2">
 				<span
 					className={cn(
-						"text-sm font-medium",
+						"rounded px-1.5 py-0.5 font-medium text-xs",
 						DISCLOSURE_STYLE[cell.disclosureType],
 					)}
 				>
-					● {cell.disclosureType}
+					{cell.disclosureType}
 				</span>
 				<Button
 					variant={cell.checked ? "secondary" : "ghost"}
@@ -866,19 +905,20 @@ function DisclosureContent({
 				</Button>
 			</div>
 			{cell.citations.map((cit) => (
-				<div key={cit.quote.slice(0, 48)} className="break-words text-xs">
-					<span className="font-medium">“{cit.quote}”</span>
+				<div
+					key={cit.quote.slice(0, 48)}
+					className="break-words rounded border-primary/30 border-l-2 bg-muted/40 px-2 py-1 text-xs"
+				>
+					<span className="italic">“{cit.quote}”</span>
 					{cit.location && (
 						<span className="text-muted-foreground"> — {cit.location}</span>
 					)}
 				</div>
 			))}
-			<p className="whitespace-pre-wrap break-words text-sm">
-				{cell.reasoning}
-			</p>
+			<p className="break-words text-sm">{cell.reasoning}</p>
 			{cell.teaching && (
-				<p className="break-words text-xs text-muted-foreground italic">
-					Teaching: {cell.teaching}
+				<p className="break-words border-t pt-1.5 text-muted-foreground text-xs">
+					<span className="font-medium">Teaching:</span> {cell.teaching}
 				</p>
 			)}
 		</div>

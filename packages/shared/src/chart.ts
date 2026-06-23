@@ -100,6 +100,10 @@ export type LimitationRead = {
 	citation: ChartCitation | null;
 };
 
+/** A column of the analysis grid: one reference analysed by one method. Multiple
+ *  columns can share a reference (e.g. D1 by full-doc and by hybrid) for comparison. */
+export type ChartColumn = { reference: string; method: ChartMethod };
+
 export type ClaimChart = ChartBase & {
 	type: "claim-chart";
 	/** The limitations backbone. Locked at the HITL gate. */
@@ -109,8 +113,10 @@ export type ClaimChart = ChartBase & {
 	spineVersion: number;
 	/** True once the attorney approves the spine; cells build only against a locked spine. */
 	locked: boolean;
-	/** The references being charted (the columns). */
+	/** The reference docs known to this chart (labels D1, D2 …). */
 	references: ChartReference[];
+	/** The analysis columns — each a (reference × method) run, shown side by side. */
+	columns: ChartColumn[];
 	/** Optional primer document (filename) fed into the whole read to shape the analysis
 	 *  — the examiner's report (OA mode), a product description (FTO), etc. The "mode" is
 	 *  just which primer. */
@@ -159,6 +165,7 @@ export function createClaimChart(
 		spineVersion: 0,
 		locked: false,
 		references: [],
+		columns: [],
 		cells: [],
 	};
 }
