@@ -14,6 +14,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { handleChat } from "../lib/ai/chat";
 import { generateDocumentLabel } from "../lib/ai/label";
 import { parseClaimSpine } from "../lib/ai/parse-claim";
+import { readReference } from "../lib/ai/read-reference";
 import {
 	deleteChart,
 	listCharts,
@@ -196,6 +197,44 @@ tasks.post("/:id/charts/:chartId/parse", async (c) => {
 	} catch (err) {
 		return c.json(
 			{ error: err instanceof Error ? err.message : "parse failed" },
+			500,
+		);
+	}
+});
+
+// Whole-document read of one reference (hybrid / full-doc methods): judge each
+// limitation of the locked spine over the full reference text (+ optional primer).
+// Returns the per-limitation reads; the client sources citations and saves the cells.
+tasks.post("/:id/charts/:chartId/read", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const chart = await readChart(task.folder, c.req.param("chartId"));
+	if (!chart) return c.json({ error: "chart not found" }, 404);
+	const { profileId, reference, primer } = await c.req.json<{
+		profileId?: string;
+		reference?: string;
+		primer?: string;
+	}>();
+	if (!reference) return c.json({ error: "missing reference" }, 400);
+	const profile = profileId ? await readProfile(profileId) : null;
+	if (!profile) return c.json({ error: "profile not found" }, 404);
+	try {
+		const reads = await readReference(
+			task.folder,
+			profile.ai,
+			basename(reference),
+			primer ? basename(primer) : undefined,
+			chart.spine,
+		);
+		if (!reads)
+			return c.json(
+				{ error: "couldn't read that reference (no extractable text?)" },
+				400,
+			);
+		return c.json(reads);
+	} catch (err) {
+		return c.json(
+			{ error: err instanceof Error ? err.message : "read failed" },
 			500,
 		);
 	}

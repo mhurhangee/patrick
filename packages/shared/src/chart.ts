@@ -53,36 +53,51 @@ export type ChartReference = {
  *  toward it, below the threshold (obviousness-only, non-anticipatory); Absent. */
 export type DisclosureType = "Express" | "Derived" | "Suggested" | "Absent";
 
-/** Evidence for a cell — a retrieved chunk the agent pointed at (by reference, so it
- *  can't be fabricated). The chunk text is embedded so the chart survives the search
- *  index being rebuilt or deleted. */
+/** The extraction method used to fill a cell — the test-bed knob (see CLAIM-CHARTING.md):
+ *  semantic = search-then-classify; hybrid = whole-read then search-for-citation;
+ *  full-doc = whole-read with model-given citation. */
+export type ChartMethod = "semantic" | "hybrid" | "full-doc";
+
+/** A grounded citation: a verbatim passage from the reference + its location. Search-
+ *  found (semantic/hybrid) or model-given (full-doc). */
 export type ChartCitation = {
-	/** The retrieved chunk's text, embedded for durability. */
-	chunkText: string;
-	/** Best-effort source position (page / locator), for the jump-to-source link. */
+	quote: string;
+	/** Best-effort source position (page / locator). */
 	location?: string;
-	/** Sub-spans worth emphasising. Lenient-matched against chunkText; on a miss the
-	 *  whole chunk is shown. */
-	highlights: string[];
 };
 
-/** One cell of the chart — a (limitation × reference) judgement. Four orthogonal
- *  fields, none a derivation of another: model verdict, model argument, grounded
- *  evidence, human sign-off. */
+/** One cell — a (limitation × reference × method) judgement. Cells are tagged by method
+ *  so a chart can hold and toggle between methods (the test bed). */
 export type ChartCell = {
 	limitationId: string;
 	/** The reference's filename (keys to a ChartReference). */
 	reference: string;
+	method: ChartMethod;
 	disclosureType: DisclosureType;
-	/** Self-contained reasoning ("limitation X, construed as Y, is disclosed by …
-	 *  because …") — argument, not the citation of record. */
+	/** What the reference teaches re: this limitation (the whole-read summary; absent for
+	 *  the semantic method). */
+	teaching?: string;
+	/** Self-contained reasoning ("limitation X, construed as Y, is disclosed by … because …"). */
 	reasoning: string;
 	citations: ChartCitation[];
-	/** The attorney has manually verified this cell's citations. */
+	/** The attorney has manually verified this cell. */
 	checked: boolean;
-	/** The spine version this cell was built against; a mismatch with the chart's
-	 *  spineVersion flags the cell as stale after the construction changes. */
+	/** The spine version this cell was built against; a mismatch flags it as stale. */
 	spineVersion: number;
+};
+
+/** The per-limitation result of a whole-document read (hybrid / full-doc). The read
+ *  judges disclosure from the reference as a whole; the method then sources the citation
+ *  from `citation` (full-doc, model-given) or by searching `hint` (hybrid). */
+export type LimitationRead = {
+	limitationId: string;
+	disclosed: DisclosureType;
+	teaching: string;
+	reasoning: string;
+	/** A short phrase to locate the supporting passage via search (hybrid). */
+	hint: string;
+	/** The model's own verbatim citation (full-doc); null if Absent. */
+	citation: ChartCitation | null;
 };
 
 export type ClaimChart = ChartBase & {
@@ -96,7 +111,11 @@ export type ClaimChart = ChartBase & {
 	locked: boolean;
 	/** The references being charted (the columns). */
 	references: ChartReference[];
-	/** The filled cells (sparse — one per analysed limitation × reference). */
+	/** Optional primer document (filename) fed into the whole read to shape the analysis
+	 *  — the examiner's report (OA mode), a product description (FTO), etc. The "mode" is
+	 *  just which primer. */
+	primer?: string;
+	/** The filled cells (sparse — one per analysed limitation × reference × method). */
 	cells: ChartCell[];
 };
 
