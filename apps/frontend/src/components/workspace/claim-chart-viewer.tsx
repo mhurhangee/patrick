@@ -7,23 +7,7 @@ import type {
 	ClaimLimitation,
 	DisclosureType,
 } from "@patrick/shared";
-import {
-	type CellContext,
-	createColumnHelper,
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
-import {
-	Check,
-	Loader2,
-	Lock,
-	LockOpen,
-	Plus,
-	Sparkles,
-	Trash2,
-	X,
-} from "lucide-react";
+import { Check, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Button } from "@/components/ui/button";
@@ -41,14 +25,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useChart, useParseChart, useSaveChart } from "@/hooks/use-charts";
 import { useTaskDocuments } from "@/hooks/use-tasks";
@@ -57,36 +33,32 @@ import { useActiveTask } from "@/lib/active-task";
 import { searchDocument } from "@/lib/search/doc-index";
 import { cn } from "@/lib/utils";
 
-// How many top passages to pull when sourcing a hybrid citation from a read's hint,
-// and when retrieving for the semantic baseline.
 const CITE_TOP_K = 2;
 const SEMANTIC_TOP_K = 8;
 
-// The two real phases: build the limitations backbone, then analyse references against it.
-const STEPS = ["Spine", "Analysis"] as const;
+const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
+	Express: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+	Derived: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+	Suggested: "bg-amber-500/10 text-amber-700 dark:text-amber-600",
+	Absent: "bg-muted text-muted-foreground",
+};
 
-function Stepper({ current }: { current: number }) {
-	return (
-		<div className="flex items-center gap-1.5 text-xs">
-			{STEPS.map((label, i) => (
-				<div key={label} className="flex items-center gap-1.5">
-					{i > 0 && <span className="text-muted-foreground/40">›</span>}
-					<span
-						className={cn(
-							"flex items-center gap-1",
-							i < current && "text-muted-foreground",
-							i === current && "font-medium text-foreground",
-							i > current && "text-muted-foreground/40",
-						)}
-					>
-						{i < current && <Check className="size-3" />}
-						{label}
-					</span>
-				</div>
-			))}
-		</div>
-	);
-}
+const METHODS: { value: ChartMethod; label: string }[] = [
+	{ value: "full-doc", label: "Full-doc (read gives cite)" },
+	{ value: "hybrid", label: "Hybrid (read → search cite)" },
+	{ value: "semantic", label: "Semantic (search → classify)" },
+];
+const METHOD_SHORT: Record<ChartMethod, string> = {
+	hybrid: "hybrid",
+	"full-doc": "full-doc",
+	semantic: "semantic",
+};
+
+const colKey = (reference: string, method: ChartMethod) =>
+	`${reference}::${method}`;
+
+const EDIT_CLASS =
+	"min-h-0 w-full resize-y border-transparent bg-transparent px-1.5 py-1 text-sm hover:border-input focus-visible:border-input";
 
 export function ClaimChartViewer({ chartId }: { chartId: string }) {
 	const { activeTaskId } = useActiveTask();
@@ -104,334 +76,35 @@ export function ClaimChartViewer({ chartId }: { chartId: string }) {
 				Couldn't load this chart.
 			</div>
 		);
-
-	return (
-		<div className="flex h-full flex-col bg-background">
-			<div className="flex h-10 shrink-0 items-center border-b px-3">
-				<Stepper current={chart.locked ? 1 : 0} />
-			</div>
-			<div className="min-h-0 flex-1 overflow-auto">
-				{chart.locked ? (
-					<AnalysisView chart={chart} />
-				) : (
-					<SpineEditor key={chartId} chart={chart} />
-				)}
-			</div>
-		</div>
-	);
+	return <ChartTable key={chartId} chart={chart} />;
 }
 
-// Meta threaded into the table so cell renderers can edit the local spine draft.
-type SpineMeta = {
-	locked: boolean;
-	update: (rowIndex: number, key: keyof ClaimLimitation, value: string) => void;
-	remove: (rowIndex: number) => void;
-	commit: () => void;
-};
-
-function SpineField({
-	ctx,
-	field,
-	mono,
-}: {
-	ctx: CellContext<ClaimLimitation, unknown>;
-	field: keyof ClaimLimitation;
-	mono?: boolean;
-}) {
-	const meta = ctx.table.options.meta as SpineMeta;
-	const value = (ctx.getValue() as string) ?? "";
-	if (meta.locked)
-		return (
-			<div
-				className={cn(
-					"whitespace-pre-wrap break-words py-1 text-sm",
-					mono && "font-mono text-xs",
-				)}
-			>
-				{value || <span className="text-muted-foreground">—</span>}
-			</div>
-		);
-	return (
-		<Textarea
-			value={value}
-			onChange={(e) => meta.update(ctx.row.index, field, e.target.value)}
-			onBlur={meta.commit}
-			rows={field === "id" ? 1 : 2}
-			placeholder={field === "construction" ? "—" : undefined}
-			className={cn(
-				"min-h-0 w-full resize-y border-transparent bg-transparent px-1.5 py-1 text-sm hover:border-input focus-visible:border-input",
-				mono && "font-mono text-xs",
-			)}
-		/>
-	);
-}
-
-const col = createColumnHelper<ClaimLimitation>();
-const columns = [
-	col.accessor("id", {
-		header: "ID",
-		cell: (ctx) => <SpineField ctx={ctx} field="id" mono />,
-	}),
-	col.accessor("text", {
-		header: "Limitation",
-		cell: (ctx) => <SpineField ctx={ctx} field="text" />,
-	}),
-	col.accessor("construction", {
-		header: "Construction",
-		cell: (ctx) => <SpineField ctx={ctx} field="construction" />,
-	}),
-	col.display({
-		id: "actions",
-		header: "",
-		cell: (ctx) => {
-			const meta = ctx.table.options.meta as SpineMeta;
-			if (meta.locked) return null;
-			return (
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					tooltip="Delete limitation"
-					className="text-muted-foreground"
-					onClick={() => meta.remove(ctx.row.index)}
-				>
-					<Trash2 />
-				</Button>
-			);
-		},
-	}),
-];
-
-// Fixed widths so long verbatim text wraps within the view instead of stretching
-// the table absurdly wide.
-const COL_WIDTH: Record<string, string> = {
-	id: "w-16",
-	text: "w-[44%]",
-	construction: "w-[44%]",
-	actions: "w-10",
-};
-
-function SpineEditor({ chart }: { chart: Chart }) {
+// One table. Rows are limitations (editable); columns are (reference × method)
+// analyses. Add a row, add a column, see the result. Nothing else.
+function ChartTable({ chart }: { chart: Chart }) {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
 	const { data: documents } = useTaskDocuments(activeTaskId);
 	const save = useSaveChart(activeTaskId);
 	const parse = useParseChart(activeTaskId, chart.id);
+
 	const [rows, setRows] = useState<ClaimLimitation[]>(chart.spine);
 	const rowsRef = useRef(rows);
 	rowsRef.current = rows;
-
-	const [addOpen, setAddOpen] = useState(false);
-	const [claimDoc, setClaimDoc] = useState("");
-	const [claimNo, setClaimNo] = useState("1");
-
-	const persist = (next: ClaimLimitation[], patch?: Partial<Chart>) =>
-		save.mutate({ ...chart, spine: next, ...patch });
-
-	// Build the spine claim by claim — parse appends, so you can add claim 1, then 2 …
-	// (the source doc is cached, so successive adds are cheap).
-	const addClaim = async () => {
-		if (!claimDoc || !activeProfileId) return;
-		const { limitations } = await parse.mutateAsync({
-			filename: claimDoc,
-			profileId: activeProfileId,
-			claim: claimNo || "1",
-		});
-		const next = [...rowsRef.current, ...limitations];
-		setRows(next);
-		persist(next);
-		setAddOpen(false);
-		setClaimNo((n) => String((Number.parseInt(n, 10) || 0) + 1));
-	};
-
-	const table = useReactTable({
-		data: rows,
-		columns,
-		getCoreRowModel: getCoreRowModel(),
-		meta: {
-			locked: false,
-			update: (i, key, value) =>
-				setRows((r) =>
-					r.map((row, idx) => (idx === i ? { ...row, [key]: value } : row)),
-				),
-			remove: (i) => {
-				const next = rows.filter((_, idx) => idx !== i);
-				setRows(next);
-				persist(next);
-			},
-			commit: () => persist(rowsRef.current),
-		} satisfies SpineMeta,
-	});
-
-	const addRow = () => {
-		const next = [...rows, { id: "", text: "", construction: "" }];
-		setRows(next);
-		persist(next);
-	};
-
-	return (
-		<div className="flex h-full flex-col">
-			<div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
-				<p className="text-xs text-muted-foreground">
-					Add claims, edit the limitations and construction, then lock the
-					spine.
-				</p>
-				<div className="flex items-center gap-1">
-					<Popover open={addOpen} onOpenChange={setAddOpen}>
-						<PopoverTrigger asChild>
-							<Button variant="outline" size="sm">
-								<Plus />
-								Add claim
-							</Button>
-						</PopoverTrigger>
-						<PopoverContent align="end" className="w-72 space-y-3">
-							<div className="space-y-1.5">
-								<Label className="text-xs">Claims document</Label>
-								<Select value={claimDoc} onValueChange={setClaimDoc}>
-									<SelectTrigger className="w-full text-xs">
-										<SelectValue placeholder="Choose a document…" />
-									</SelectTrigger>
-									<SelectContent>
-										{documents?.map((d) => (
-											<SelectItem key={d.filename} value={d.filename}>
-												{d.filename}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="space-y-1.5">
-								<Label className="text-xs">Claim number</Label>
-								<Input
-									value={claimNo}
-									onChange={(e) => setClaimNo(e.target.value)}
-									className="w-24"
-								/>
-							</div>
-							{parse.isError && (
-								<p className="text-xs text-destructive">
-									{parse.error instanceof Error
-										? parse.error.message
-										: "Parse failed."}
-								</p>
-							)}
-							<Button
-								size="sm"
-								className="w-full"
-								disabled={!claimDoc || parse.isPending}
-								onClick={addClaim}
-							>
-								{parse.isPending ? (
-									<Loader2 className="animate-spin" />
-								) : (
-									<Sparkles />
-								)}
-								{parse.isPending ? "Parsing…" : "Parse & add"}
-							</Button>
-						</PopoverContent>
-					</Popover>
-					<Button
-						size="sm"
-						disabled={rows.length === 0}
-						onClick={() =>
-							persist(rows, {
-								locked: true,
-								spineVersion: chart.spineVersion + 1,
-							})
-						}
-					>
-						<Lock />
-						Lock &amp; analyse
-					</Button>
-				</div>
-			</div>
-
-			<div className="min-h-0 flex-1 overflow-auto px-3 pb-3">
-				{rows.length === 0 && (
-					<p className="px-1 py-10 text-center text-sm text-muted-foreground">
-						No limitations yet — use{" "}
-						<span className="font-medium">Add claim</span> to parse a claim from
-						a document, or add one manually below.
-					</p>
-				)}
-				<Table className="table-fixed">
-					<TableHeader>
-						{table.getHeaderGroups().map((hg) => (
-							<TableRow key={hg.id}>
-								{hg.headers.map((h) => (
-									<TableHead key={h.id} className={COL_WIDTH[h.column.id]}>
-										{flexRender(h.column.columnDef.header, h.getContext())}
-									</TableHead>
-								))}
-							</TableRow>
-						))}
-					</TableHeader>
-					<TableBody>
-						{table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id} className="align-top">
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={addRow}
-					className="mt-2 text-muted-foreground"
-				>
-					<Plus />
-					Add limitation
-				</Button>
-			</div>
-		</div>
-	);
-}
-
-const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
-	Express: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-	Derived: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
-	Suggested: "bg-amber-500/10 text-amber-700 dark:text-amber-600",
-	Absent: "bg-muted text-muted-foreground",
-};
-
-const METHODS: { value: ChartMethod; label: string }[] = [
-	{ value: "hybrid", label: "Hybrid (read → search cite)" },
-	{ value: "full-doc", label: "Full-doc (read gives cite)" },
-	{ value: "semantic", label: "Semantic (search → classify)" },
-];
-const METHOD_SHORT: Record<ChartMethod, string> = {
-	hybrid: "hybrid",
-	"full-doc": "full-doc",
-	semantic: "semantic",
-};
-
-const colKey = (reference: string, method: ChartMethod) =>
-	`${reference}::${method}`;
-
-// The analysis grid: a sticky Feature column on the left, then one column per
-// (reference × method) run — so the same reference can be charted by different methods
-// side by side (the test bed), and different references become D1/D2 columns (the chart).
-function AnalysisView({ chart }: { chart: Chart }) {
-	const { activeTaskId } = useActiveTask();
-	const { activeProfileId } = useActiveProfile();
-	const save = useSaveChart(activeTaskId);
-	const { data: documents } = useTaskDocuments(activeTaskId);
-
 	const [running, setRunning] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
-	const [addOpen, setAddOpen] = useState(false);
+
+	const [colOpen, setColOpen] = useState(false);
 	const [newDoc, setNewDoc] = useState("");
 	const [newMethod, setNewMethod] = useState<ChartMethod>("full-doc");
 
+	const [claimOpen, setClaimOpen] = useState(false);
+	const [claimDoc, setClaimDoc] = useState("");
+	const [claimNo, setClaimNo] = useState("1");
+
 	const columns = chart.columns;
 	const distinctRefs = [...new Set(columns.map((c) => c.reference))];
-	const labelFor = (filename: string) =>
-		`D${distinctRefs.indexOf(filename) + 1}`;
+	const labelFor = (f: string) => `D${distinctRefs.indexOf(f) + 1}`;
 	const cellFor = (limId: string, c: ChartColumn) =>
 		chart.cells.find(
 			(x) =>
@@ -442,17 +115,38 @@ function AnalysisView({ chart }: { chart: Chart }) {
 	const isRunning = (c: ChartColumn) =>
 		running.has(colKey(c.reference, c.method));
 
-	const setChecked = (target: ChartCell, value: boolean) =>
-		save.mutate({
-			...chart,
-			cells: chart.cells.map((x) =>
-				x.limitationId === target.limitationId &&
-				x.reference === target.reference &&
-				x.method === target.method
-					? { ...x, checked: value }
-					: x,
-			),
+	// Always persist the current rows, so editing and column ops never clobber each other.
+	const saveRows = (next: ClaimLimitation[], patch: Partial<Chart> = {}) =>
+		save.mutate({ ...chart, spine: next, ...patch });
+
+	const updateField = (i: number, key: keyof ClaimLimitation, value: string) =>
+		setRows((r) =>
+			r.map((row, idx) => (idx === i ? { ...row, [key]: value } : row)),
+		);
+	const addRow = () => {
+		const next = [...rowsRef.current, { id: "", text: "", construction: "" }];
+		setRows(next);
+		saveRows(next);
+	};
+	const removeRow = (i: number) => {
+		const next = rowsRef.current.filter((_, idx) => idx !== i);
+		setRows(next);
+		saveRows(next);
+	};
+
+	const addClaim = async () => {
+		if (!claimDoc || !activeProfileId) return;
+		const { limitations } = await parse.mutateAsync({
+			filename: claimDoc,
+			profileId: activeProfileId,
+			claim: claimNo || "1",
 		});
+		const next = [...rowsRef.current, ...limitations];
+		setRows(next);
+		saveRows(next);
+		setClaimOpen(false);
+		setClaimNo((n) => String((Number.parseInt(n, 10) || 0) + 1));
+	};
 
 	const buildCell =
 		(reference: string, method: ChartMethod) =>
@@ -486,6 +180,7 @@ function AnalysisView({ chart }: { chart: Chart }) {
 				profileId,
 				reference,
 				primer: chart.primer,
+				limitations: rowsRef.current,
 			})
 			.then((reads) =>
 				Promise.all(
@@ -526,7 +221,7 @@ function AnalysisView({ chart }: { chart: Chart }) {
 	): Promise<ChartCell[]> => {
 		const mk = buildCell(reference, method);
 		return Promise.all(
-			chart.spine.map(async (lim) => {
+			rowsRef.current.map(async (lim) => {
 				const o = await searchDocument(
 					taskId,
 					reference,
@@ -539,7 +234,7 @@ function AnalysisView({ chart }: { chart: Chart }) {
 						lim.id,
 						"Absent",
 						o.reason === "no-text"
-							? "No extractable text in this reference — extract or OCR it first."
+							? "No extractable text — extract or OCR this reference first."
 							: "No relevant passages retrieved.",
 						[],
 					);
@@ -569,13 +264,14 @@ function AnalysisView({ chart }: { chart: Chart }) {
 				method === "semantic"
 					? await runSemantic(taskId, profileId, reference, method)
 					: await runRead(taskId, profileId, reference, method);
-			const merged = [
-				...chart.cells.filter(
-					(x) => !(x.reference === reference && x.method === method),
-				),
-				...cells,
-			];
-			await save.mutateAsync({ ...chart, cells: merged });
+			saveRows(rowsRef.current, {
+				cells: [
+					...chart.cells.filter(
+						(x) => !(x.reference === reference && x.method === method),
+					),
+					...cells,
+				],
+			});
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Run failed.");
 		} finally {
@@ -588,24 +284,20 @@ function AnalysisView({ chart }: { chart: Chart }) {
 	};
 
 	const addColumn = () => {
-		setAddOpen(false);
+		setColOpen(false);
 		if (!newDoc) return;
 		if (
 			!chart.columns.some(
 				(c) => c.reference === newDoc && c.method === newMethod,
 			)
-		) {
-			save.mutate({
-				...chart,
+		)
+			saveRows(rowsRef.current, {
 				columns: [...chart.columns, { reference: newDoc, method: newMethod }],
 			});
-		}
 		runColumn(newDoc, newMethod);
 	};
-
 	const removeColumn = (c: ChartColumn) =>
-		save.mutate({
-			...chart,
+		saveRows(rowsRef.current, {
 			columns: chart.columns.filter(
 				(x) => !(x.reference === c.reference && x.method === c.method),
 			),
@@ -613,11 +305,21 @@ function AnalysisView({ chart }: { chart: Chart }) {
 				(x) => !(x.reference === c.reference && x.method === c.method),
 			),
 		});
+	const setChecked = (target: ChartCell, value: boolean) =>
+		saveRows(rowsRef.current, {
+			cells: chart.cells.map((x) =>
+				x.limitationId === target.limitationId &&
+				x.reference === target.reference &&
+				x.method === target.method
+					? { ...x, checked: value }
+					: x,
+			),
+		});
 
 	return (
-		<div className="flex h-full flex-col">
+		<div className="flex h-full flex-col bg-background">
 			<div className="flex shrink-0 items-center gap-2 border-b px-2 py-1.5">
-				<Popover open={addOpen} onOpenChange={setAddOpen}>
+				<Popover open={colOpen} onOpenChange={setColOpen}>
 					<PopoverTrigger asChild>
 						<Button variant="outline" size="sm">
 							<Plus />
@@ -673,8 +375,7 @@ function AnalysisView({ chart }: { chart: Chart }) {
 				<Select
 					value={chart.primer ?? "__none__"}
 					onValueChange={(v) =>
-						save.mutate({
-							...chart,
+						saveRows(rowsRef.current, {
 							primer: v === "__none__" ? undefined : v,
 						})
 					}
@@ -692,88 +393,175 @@ function AnalysisView({ chart }: { chart: Chart }) {
 					</SelectContent>
 				</Select>
 
-				<div className="ml-auto">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => save.mutate({ ...chart, locked: false })}
-					>
-						<LockOpen />
-						Edit spine
-					</Button>
-				</div>
+				{error && (
+					<span className="truncate text-xs text-destructive">{error}</span>
+				)}
 			</div>
 
-			{error && <p className="px-3 py-1 text-xs text-destructive">{error}</p>}
-
-			{columns.length === 0 ? (
-				<div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
-					<p className="max-w-sm">
-						Add a column — a reference + a method — to analyse this claim. Add
-						the same reference with different methods to compare them side by
-						side.
-					</p>
-				</div>
-			) : (
-				<div className="min-h-0 flex-1 overflow-auto">
-					<table className="w-max min-w-full border-separate border-spacing-0 text-sm">
-						<thead>
-							<tr>
-								<th className="sticky top-0 left-0 z-30 w-[20rem] min-w-[20rem] border-r border-b bg-background px-3 py-2 text-left align-top font-medium text-muted-foreground text-xs">
-									Feature
+			<div className="min-h-0 flex-1 overflow-auto">
+				<table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+					<thead>
+						<tr>
+							<th className="w-8 border-b bg-background" />
+							<th className="w-16 border-r border-b bg-background px-2 py-2 text-left font-medium text-muted-foreground text-xs">
+								ID
+							</th>
+							<th className="w-[24rem] border-r border-b bg-background px-3 py-2 text-left font-medium text-muted-foreground text-xs">
+								Limitation
+							</th>
+							<th className="w-[18rem] border-r border-b bg-background px-3 py-2 text-left font-medium text-muted-foreground text-xs">
+								Construction
+							</th>
+							{columns.map((c) => (
+								<th
+									key={colKey(c.reference, c.method)}
+									className="w-[22rem] min-w-[22rem] border-r border-b bg-background px-3 py-2 text-left align-top font-normal"
+								>
+									<ColumnHeader
+										label={labelFor(c.reference)}
+										reference={c.reference}
+										method={c.method}
+										running={isRunning(c)}
+										onRun={() => runColumn(c.reference, c.method)}
+										onRemove={() => removeColumn(c)}
+									/>
 								</th>
-								{columns.map((c) => (
-									<th
-										key={colKey(c.reference, c.method)}
-										className="sticky top-0 z-20 w-[22rem] min-w-[22rem] border-r border-b bg-background px-3 py-2 text-left align-top font-normal"
+							))}
+						</tr>
+					</thead>
+					<tbody>
+						{rows.map((lim, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: editable rows have no stable id
+							<tr key={i} className="group">
+								<td className="border-b px-1 align-top">
+									<Button
+										variant="ghost"
+										size="icon-xs"
+										tooltip="Delete row"
+										className="text-muted-foreground opacity-0 group-hover:opacity-100"
+										onClick={() => removeRow(i)}
 									>
-										<ColumnHeader
-											label={labelFor(c.reference)}
-											reference={c.reference}
-											method={c.method}
+										<Trash2 />
+									</Button>
+								</td>
+								<td className="border-r border-b px-1 align-top">
+									<Textarea
+										value={lim.id}
+										onChange={(e) => updateField(i, "id", e.target.value)}
+										onBlur={() => saveRows(rowsRef.current)}
+										rows={1}
+										placeholder="1a"
+										className={cn(EDIT_CLASS, "font-mono text-xs")}
+									/>
+								</td>
+								<td className="border-r border-b px-1 align-top">
+									<Textarea
+										value={lim.text}
+										onChange={(e) => updateField(i, "text", e.target.value)}
+										onBlur={() => saveRows(rowsRef.current)}
+										rows={2}
+										placeholder="Verbatim limitation…"
+										className={EDIT_CLASS}
+									/>
+								</td>
+								<td className="border-r border-b px-1 align-top">
+									<Textarea
+										value={lim.construction}
+										onChange={(e) =>
+											updateField(i, "construction", e.target.value)
+										}
+										onBlur={() => saveRows(rowsRef.current)}
+										rows={2}
+										placeholder="Construction…"
+										className={EDIT_CLASS}
+									/>
+								</td>
+								{columns.map((c) => (
+									<td
+										key={colKey(c.reference, c.method)}
+										className="w-[22rem] min-w-[22rem] border-r border-b px-3 py-2 align-top"
+									>
+										<DisclosureContent
+											cell={cellFor(lim.id, c)}
 											running={isRunning(c)}
-											onRun={() => runColumn(c.reference, c.method)}
-											onRemove={() => removeColumn(c)}
+											onChecked={setChecked}
 										/>
-									</th>
+									</td>
 								))}
 							</tr>
-						</thead>
-						<tbody>
-							{chart.spine.map((lim) => (
-								<tr key={lim.id}>
-									<td className="sticky left-0 z-10 w-[20rem] min-w-[20rem] border-r border-b bg-background px-3 py-2 align-top">
-										<div className="break-words text-sm">
-											<span className="mr-1.5 font-mono text-muted-foreground text-xs">
-												{lim.id}
-											</span>
-											{lim.text}
-										</div>
-										{lim.construction && (
-											<div className="mt-1 break-words text-muted-foreground text-xs">
-												<span className="font-medium">Construction:</span>{" "}
-												{lim.construction}
-											</div>
-										)}
-									</td>
-									{columns.map((c) => (
-										<td
-											key={colKey(c.reference, c.method)}
-											className="w-[22rem] min-w-[22rem] border-r border-b px-3 py-2 align-top"
-										>
-											<DisclosureContent
-												cell={cellFor(lim.id, c)}
-												running={isRunning(c)}
-												onChecked={setChecked}
-											/>
-										</td>
-									))}
-								</tr>
-							))}
-						</tbody>
-					</table>
+						))}
+					</tbody>
+				</table>
+
+				<div className="flex items-center gap-1 p-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={addRow}
+						className="text-muted-foreground"
+					>
+						<Plus />
+						Add row
+					</Button>
+					<Popover open={claimOpen} onOpenChange={setClaimOpen}>
+						<PopoverTrigger asChild>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="text-muted-foreground"
+							>
+								<Plus />
+								Add claim
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent align="start" className="w-72 space-y-3">
+							<div className="space-y-1.5">
+								<Label className="text-xs">Claims document</Label>
+								<Select value={claimDoc} onValueChange={setClaimDoc}>
+									<SelectTrigger className="w-full text-xs">
+										<SelectValue placeholder="Choose a document…" />
+									</SelectTrigger>
+									<SelectContent>
+										{documents?.map((d) => (
+											<SelectItem key={d.filename} value={d.filename}>
+												{d.filename}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="space-y-1.5">
+								<Label className="text-xs">Claim number</Label>
+								<Input
+									value={claimNo}
+									onChange={(e) => setClaimNo(e.target.value)}
+									className="w-24"
+								/>
+							</div>
+							{parse.isError && (
+								<p className="text-xs text-destructive">
+									{parse.error instanceof Error
+										? parse.error.message
+										: "Parse failed."}
+								</p>
+							)}
+							<Button
+								size="sm"
+								className="w-full"
+								disabled={!claimDoc || parse.isPending}
+								onClick={addClaim}
+							>
+								{parse.isPending ? (
+									<Loader2 className="animate-spin" />
+								) : (
+									<Sparkles />
+								)}
+								{parse.isPending ? "Parsing…" : "Parse & add rows"}
+							</Button>
+						</PopoverContent>
+					</Popover>
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }
@@ -843,7 +631,7 @@ function DisclosureContent({
 	if (!cell)
 		return (
 			<span className="text-xs text-muted-foreground">
-				{running ? "reading…" : "not run"}
+				{running ? "reading…" : "—"}
 			</span>
 		);
 	return (

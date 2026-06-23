@@ -62,7 +62,12 @@ export const tasksApi = {
 	readReference: (
 		id: string,
 		chartId: string,
-		body: { profileId: string; reference: string; primer?: string },
+		body: {
+			profileId: string;
+			reference: string;
+			primer?: string;
+			limitations: ClaimLimitation[];
+		},
 	) => api.post<LimitationRead[]>(`/tasks/${id}/charts/${chartId}/read`, body),
 	/** Classify one cell over retrieved passages (semantic baseline). */
 	classifyCell: (

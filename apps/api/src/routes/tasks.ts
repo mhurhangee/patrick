@@ -2,6 +2,7 @@ import { basename, extname, join } from "node:path";
 import {
 	type Chart,
 	type Chat,
+	type ClaimLimitation,
 	createClaimChart,
 	createTask,
 	type DocumentMeta,
@@ -196,20 +197,20 @@ tasks.post("/:id/charts/:chartId/parse", async (c) => {
 	}
 });
 
-// Whole-document read of one reference (hybrid / full-doc methods): judge each
-// limitation of the locked spine over the full reference text (+ optional primer).
-// Returns the per-limitation reads; the client sources citations and saves the cells.
+// Whole-document read of one reference (hybrid / full-doc methods): judge each of the
+// given limitations over the full reference text (+ optional primer). Returns the
+// per-limitation reads; the client sources citations and saves the cells.
 tasks.post("/:id/charts/:chartId/read", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const chart = await readChart(task.folder, c.req.param("chartId"));
-	if (!chart) return c.json({ error: "chart not found" }, 404);
-	const { profileId, reference, primer } = await c.req.json<{
+	const { profileId, reference, primer, limitations } = await c.req.json<{
 		profileId?: string;
 		reference?: string;
 		primer?: string;
+		limitations?: ClaimLimitation[];
 	}>();
 	if (!reference) return c.json({ error: "missing reference" }, 400);
+	if (!limitations?.length) return c.json({ error: "no rows to analyse" }, 400);
 	const profile = profileId ? await readProfile(profileId) : null;
 	if (!profile) return c.json({ error: "profile not found" }, 404);
 	try {
@@ -218,7 +219,7 @@ tasks.post("/:id/charts/:chartId/read", async (c) => {
 			profile.ai,
 			basename(reference),
 			primer ? basename(primer) : undefined,
-			chart.spine,
+			limitations,
 		);
 		if (!reads)
 			return c.json(
