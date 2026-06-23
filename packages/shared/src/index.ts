@@ -1,4 +1,5 @@
 export * from "./ai-models";
+export * from "./chart";
 export * from "./chat";
 export * from "./law";
 export * from "./patrick-docs.generated";

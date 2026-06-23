@@ -1,6 +1,8 @@
 import { basename, extname, join } from "node:path";
 import {
+	type Chart,
 	type Chat,
+	createClaimChart,
 	createTask,
 	type DocumentMeta,
 	type ExtractedDoc,
@@ -11,6 +13,14 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { handleChat } from "../lib/ai/chat";
 import { generateDocumentLabel } from "../lib/ai/label";
+import { parseClaimSpine } from "../lib/ai/parse-claim";
+import {
+	deleteChart,
+	listCharts,
+	readChart,
+	saveChart,
+	updateChartMeta,
+} from "../lib/charts";
 import {
 	deleteChat,
 	listChats,
@@ -91,6 +101,104 @@ tasks.post("/:id/chats/:chatId/meta", async (c) => {
 	);
 	if (!updated) return c.json({ error: "chat not found" }, 404);
 	return c.json({ ok: true });
+});
+
+// Charts — Patrick-generated analysis objects (claim charts first) under
+// <folder>/.patrick/charts. Canonical JSON; the editor saves the full record.
+tasks.get("/:id/charts", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	return c.json(await listCharts(task.folder));
+});
+tasks.get("/:id/charts/:chartId", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const chart = await readChart(task.folder, c.req.param("chartId"));
+	return chart ? c.json(chart) : c.json({ error: "not found" }, 404);
+});
+// Create a blank claim chart — the spine is filled by the parse/construe nodes.
+tasks.post("/:id/charts", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const { title } = await c.req
+		.json<{ title?: string }>()
+		.catch(() => ({ title: undefined }));
+	const chart = await saveChart(
+		task.folder,
+		createClaimChart(crypto.randomUUID(), title?.trim() || undefined),
+	);
+	return c.json(chart, 201);
+});
+// Save a chart wholesale (the editor owns the full object).
+tasks.put("/:id/charts/:chartId", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const body = await c.req.json<Chart>();
+	const chart = await saveChart(task.folder, {
+		...body,
+		id: c.req.param("chartId"),
+	});
+	return c.json(chart);
+});
+tasks.delete("/:id/charts/:chartId", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	await deleteChart(task.folder, c.req.param("chartId"));
+	return c.json({ ok: true });
+});
+// Attorney-set chart meta — star and rename.
+tasks.post("/:id/charts/:chartId/meta", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const patch = await c.req.json<{ starred?: boolean; title?: string }>();
+	const updated = await updateChartMeta(
+		task.folder,
+		c.req.param("chartId"),
+		patch,
+	);
+	if (!updated) return c.json({ error: "chart not found" }, 404);
+	return c.json({ ok: true });
+});
+
+// Parse a claim from a source document into a proposed spine (nodes 0–1). Fills
+// the chart's (still-unlocked) spine for the attorney to edit at the HITL gate.
+tasks.post("/:id/charts/:chartId/parse", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const chart = await readChart(task.folder, c.req.param("chartId"));
+	if (!chart) return c.json({ error: "chart not found" }, 404);
+	if (chart.locked) return c.json({ error: "spine is locked" }, 409);
+	const { filename, profileId, claim } = await c.req.json<{
+		filename?: string;
+		profileId?: string;
+		claim?: string;
+	}>();
+	if (!filename) return c.json({ error: "missing document" }, 400);
+	const profile = profileId ? await readProfile(profileId) : null;
+	if (!profile) return c.json({ error: "profile not found" }, 404);
+	try {
+		const parsed = await parseClaimSpine(
+			task.folder,
+			basename(filename),
+			profile.ai,
+			(claim ?? "1").trim() || "1",
+		);
+		if (!parsed || parsed.limitations.length === 0)
+			return c.json(
+				{ error: "couldn't parse a claim from that document" },
+				400,
+			);
+		const saved = await saveChart(task.folder, {
+			...chart,
+			spine: parsed.limitations,
+		});
+		return c.json(saved);
+	} catch (err) {
+		return c.json(
+			{ error: err instanceof Error ? err.message : "parse failed" },
+			500,
+		);
+	}
 });
 
 tasks.get("/", async (c) => c.json(await listTasks()));

@@ -1,4 +1,5 @@
 import { useActiveTask } from "@/lib/active-task";
+import { ChartsNav } from "./sidebar/charts-nav";
 import { ChatsNav } from "./sidebar/chats-nav";
 import { DocumentsNav } from "./sidebar/documents-nav";
 import { NotesNav } from "./sidebar/notes-nav";
@@ -16,6 +17,7 @@ export function AppSidebar() {
 					<div className="space-y-5 p-2">
 						<NotesNav />
 						<DocumentsNav />
+						<ChartsNav />
 						<ChatsNav />
 					</div>
 				) : (

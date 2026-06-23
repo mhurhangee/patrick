@@ -2,7 +2,7 @@ import { SortableKeyboardPlugin } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { Columns2, X } from "lucide-react";
+import { Columns2, Table2, X } from "lucide-react";
 import { Fragment } from "react";
 import { DocIcon } from "@/components/doc-icon";
 import { PanelToggleButton } from "@/components/shell/panel-toggle-button";
@@ -12,6 +12,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { ClaimChartViewer } from "@/components/workspace/claim-chart-viewer";
 import { DocxViewer } from "@/components/workspace/docx-viewer";
 import { PdfViewer } from "@/components/workspace/pdf-viewer";
 import { TextViewer } from "@/components/workspace/text-viewer";
@@ -147,9 +148,10 @@ function Tab({
 		accept: "tab",
 		plugins: [SortableKeyboardPlugin],
 	});
-	const { getDoc } = useWorkspace();
+	const { getDoc, getChart } = useWorkspace();
 	const doc = getDoc(id);
-	if (!doc) return null;
+	const chart = getChart(id);
+	if (!doc && !chart) return null;
 
 	return (
 		<div
@@ -172,8 +174,12 @@ function Tab({
 				isDragging && "opacity-50",
 			)}
 		>
-			<DocIcon kind={doc.kind} editable={doc.editable} className="size-3.5" />
-			<span className="max-w-44 truncate">{doc.label}</span>
+			{doc ? (
+				<DocIcon kind={doc.kind} editable={doc.editable} className="size-3.5" />
+			) : (
+				<Table2 className="size-3.5 shrink-0 text-amber-600/80" />
+			)}
+			<span className="max-w-44 truncate">{doc?.label ?? chart?.label}</span>
 			<Button
 				variant="ghost"
 				size="icon-xxs"
@@ -191,9 +197,12 @@ function Tab({
 }
 
 function DocContent({ id }: { id: string }) {
-	const { getDoc } = useWorkspace();
+	const { getDoc, getChart } = useWorkspace();
 	const doc = getDoc(id);
-	if (!doc) return null;
+	if (!doc) {
+		// A chart tab (uuid, not a filename) → the structured analysis viewer.
+		return getChart(id) ? <ClaimChartViewer key={id} chartId={id} /> : null;
+	}
 	if (doc.kind === "pdf") return <PdfViewer filename={doc.id} />;
 	if (doc.kind === "text") return <TextViewer key={doc.id} filename={doc.id} />;
 	// key per file so autosave + buffer state never leak across tab switches.
