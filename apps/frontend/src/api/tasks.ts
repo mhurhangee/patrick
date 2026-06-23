@@ -6,6 +6,7 @@ import type {
 	Document,
 	DocumentMeta,
 	ExtractedDoc,
+	LimitationRead,
 	SearchIndex,
 	Task,
 	TaskSummary,
@@ -51,6 +52,12 @@ export const tasksApi = {
 	/** Save a chart record wholesale (the editor owns the full object). */
 	saveChart: (id: string, chartId: string, body: Chart) =>
 		api.put<Chart>(`/tasks/${id}/charts/${chartId}`, body),
+	/** Whole-document read of one reference → per-limitation judgements (hybrid/full-doc). */
+	readReference: (
+		id: string,
+		chartId: string,
+		body: { profileId: string; reference: string; primer?: string },
+	) => api.post<LimitationRead[]>(`/tasks/${id}/charts/${chartId}/read`, body),
 	removeChart: (id: string, chartId: string) =>
 		api.del<{ ok: boolean }>(`/tasks/${id}/charts/${chartId}`),
 	/** Star / rename a chart (attorney-set meta). */

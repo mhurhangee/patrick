@@ -1,4 +1,11 @@
-import type { Chart, ClaimLimitation } from "@patrick/shared";
+import type {
+	Chart,
+	ChartCell,
+	ChartCitation,
+	ChartMethod,
+	ClaimLimitation,
+	DisclosureType,
+} from "@patrick/shared";
 import {
 	type CellContext,
 	createColumnHelper,
@@ -6,8 +13,17 @@ import {
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Check, Loader2, Lock, LockOpen, Plus, Trash2 } from "lucide-react";
+import {
+	Check,
+	Loader2,
+	Lock,
+	LockOpen,
+	Plus,
+	Sparkles,
+	Trash2,
+} from "lucide-react";
 import { useRef, useState } from "react";
+import { tasksApi } from "@/api/tasks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +48,11 @@ import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { searchDocument } from "@/lib/search/doc-index";
 import { cn } from "@/lib/utils";
+
+// How many top passages to pull when sourcing a hybrid citation from a read's hint.
+const CITE_TOP_K = 2;
 
 // The phases of building a claim chart. Only "Spine" is interactive today; the rest
 // show the road ahead (the dev asked for a stepper even where steps aren't built).
@@ -93,6 +113,8 @@ export function ClaimChartViewer({ chartId }: { chartId: string }) {
 						onParsed={() => setReparse(false)}
 						onCancel={reparse ? () => setReparse(false) : undefined}
 					/>
+				) : chart.locked ? (
+					<AnalysisInspector chart={chart} />
 				) : (
 					<SpineEditor
 						key={chartId}
@@ -299,7 +321,6 @@ function SpineEditor({
 	const [rows, setRows] = useState<ClaimLimitation[]>(chart.spine);
 	const rowsRef = useRef(rows);
 	rowsRef.current = rows;
-	const locked = chart.locked;
 
 	const persist = (next: ClaimLimitation[], patch?: Partial<Chart>) =>
 		save.mutate({ ...chart, spine: next, ...patch });
@@ -309,7 +330,7 @@ function SpineEditor({
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 		meta: {
-			locked,
+			locked: false,
 			update: (i, key, value) =>
 				setRows((r) =>
 					r.map((row, idx) => (idx === i ? { ...row, [key]: value } : row)),
@@ -333,40 +354,25 @@ function SpineEditor({
 		<div className="flex h-full flex-col">
 			<div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
 				<p className="text-xs text-muted-foreground">
-					{locked
-						? "Spine locked. Unlock to edit; cells build on the locked construction."
-						: "Review the limitations and construction, then lock the spine."}
+					Review the limitations and construction, then lock the spine.
 				</p>
 				<div className="flex items-center gap-1">
-					{locked ? (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => persist(rows, { locked: false })}
-						>
-							<LockOpen />
-							Unlock
-						</Button>
-					) : (
-						<>
-							<Button variant="ghost" size="sm" onClick={onReparse}>
-								Re-parse
-							</Button>
-							<Button
-								size="sm"
-								disabled={rows.length === 0}
-								onClick={() =>
-									persist(rows, {
-										locked: true,
-										spineVersion: chart.spineVersion + 1,
-									})
-								}
-							>
-								<Lock />
-								Lock spine
-							</Button>
-						</>
-					)}
+					<Button variant="ghost" size="sm" onClick={onReparse}>
+						Re-parse
+					</Button>
+					<Button
+						size="sm"
+						disabled={rows.length === 0}
+						onClick={() =>
+							persist(rows, {
+								locked: true,
+								spineVersion: chart.spineVersion + 1,
+							})
+						}
+					>
+						<Lock />
+						Lock spine
+					</Button>
 				</div>
 			</div>
 
@@ -396,18 +402,308 @@ function SpineEditor({
 					</TableBody>
 				</Table>
 
-				{!locked && (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={addRow}
-						className="mt-2 text-muted-foreground"
-					>
-						<Plus />
-						Add limitation
-					</Button>
-				)}
+				<Button
+					variant="ghost"
+					size="sm"
+					onClick={addRow}
+					className="mt-2 text-muted-foreground"
+				>
+					<Plus />
+					Add limitation
+				</Button>
 			</div>
+		</div>
+	);
+}
+
+const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
+	Express: "text-emerald-700 dark:text-emerald-400",
+	Derived: "text-sky-700 dark:text-sky-400",
+	Suggested: "text-amber-700 dark:text-amber-500",
+	Absent: "text-muted-foreground",
+};
+
+const METHODS: { value: ChartMethod; label: string }[] = [
+	{ value: "hybrid", label: "Hybrid (read → search cite)" },
+	{ value: "full-doc", label: "Full-doc (read gives cite)" },
+];
+
+// The rough analysis inspector (the test bed): pick a reference, a method, an optional
+// primer, Run the whole-document read, and see every limitation's verdict + reasoning +
+// citation as VISIBLE columns. Presentation is deliberately bare until a method wins.
+function AnalysisInspector({ chart }: { chart: Chart }) {
+	const { activeTaskId } = useActiveTask();
+	const { activeProfileId } = useActiveProfile();
+	const save = useSaveChart(activeTaskId);
+	const { data: documents } = useTaskDocuments(activeTaskId);
+
+	const [method, setMethod] = useState<ChartMethod>("hybrid");
+	const [reference, setReference] = useState(
+		chart.references[0]?.filename ?? "",
+	);
+	const [running, setRunning] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const addable = (documents ?? []).filter(
+		(d) => !chart.references.some((r) => r.filename === d.filename),
+	);
+	const cellFor = (limId: string) =>
+		chart.cells.find(
+			(c) =>
+				c.limitationId === limId &&
+				c.reference === reference &&
+				c.method === method,
+		);
+
+	const addRef = (filename: string) => {
+		save.mutate({
+			...chart,
+			references: [
+				...chart.references,
+				{ filename, label: `D${chart.references.length + 1}` },
+			],
+		});
+		setReference(filename);
+	};
+
+	const run = async () => {
+		if (!activeTaskId || !activeProfileId || !reference || running) return;
+		setRunning(true);
+		setError(null);
+		try {
+			const reads = await tasksApi.readReference(activeTaskId, chart.id, {
+				profileId: activeProfileId,
+				reference,
+				primer: chart.primer,
+			});
+			const cells: ChartCell[] = await Promise.all(
+				reads.map(async (r) => {
+					let citations: ChartCitation[] = [];
+					if (r.disclosed !== "Absent") {
+						if (method === "full-doc" && r.citation) {
+							citations = [r.citation];
+						} else if (method === "hybrid" && r.hint) {
+							const outcome = await searchDocument(
+								activeTaskId,
+								reference,
+								r.hint,
+								[],
+								CITE_TOP_K,
+							);
+							const p = outcome.ok ? outcome.passages[0] : undefined;
+							if (p)
+								citations = [{ quote: p.text, location: `Page ${p.page}` }];
+						}
+					}
+					return {
+						limitationId: r.limitationId,
+						reference,
+						method,
+						disclosureType: r.disclosed,
+						teaching: r.teaching,
+						reasoning: r.reasoning,
+						citations,
+						checked: false,
+						spineVersion: chart.spineVersion,
+					};
+				}),
+			);
+			const merged = [
+				...chart.cells.filter(
+					(c) => !(c.reference === reference && c.method === method),
+				),
+				...cells,
+			];
+			await save.mutateAsync({ ...chart, cells: merged });
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Run failed.");
+		} finally {
+			setRunning(false);
+		}
+	};
+
+	return (
+		<div className="flex h-full flex-col">
+			<div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
+				<Select value={reference} onValueChange={setReference}>
+					<SelectTrigger className="h-8 w-56 text-xs">
+						<SelectValue placeholder="Reference…" />
+					</SelectTrigger>
+					<SelectContent>
+						{chart.references.map((r) => (
+							<SelectItem key={r.filename} value={r.filename}>
+								{r.filename}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
+				{addable.length > 0 && (
+					<Select value="" onValueChange={addRef}>
+						<SelectTrigger className="h-8 w-32 text-xs text-muted-foreground">
+							<SelectValue placeholder="+ Add ref" />
+						</SelectTrigger>
+						<SelectContent>
+							{addable.map((d) => (
+								<SelectItem key={d.filename} value={d.filename}>
+									{d.filename}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				)}
+
+				<Select
+					value={method}
+					onValueChange={(v) => setMethod(v as ChartMethod)}
+				>
+					<SelectTrigger className="h-8 w-52 text-xs">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{METHODS.map((m) => (
+							<SelectItem key={m.value} value={m.value}>
+								{m.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
+				<Select
+					value={chart.primer ?? "__none__"}
+					onValueChange={(v) =>
+						save.mutate({
+							...chart,
+							primer: v === "__none__" ? undefined : v,
+						})
+					}
+				>
+					<SelectTrigger className="h-8 w-44 text-xs">
+						<SelectValue placeholder="Primer: none" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="__none__">Primer: none</SelectItem>
+						{documents?.map((d) => (
+							<SelectItem key={d.filename} value={d.filename}>
+								Primer: {d.filename}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
+				<Button size="sm" disabled={!reference || running} onClick={run}>
+					{running ? <Loader2 className="animate-spin" /> : <Sparkles />}
+					{running ? "Reading…" : "Run"}
+				</Button>
+
+				<div className="ml-auto">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => save.mutate({ ...chart, locked: false })}
+					>
+						<LockOpen />
+						Unlock spine
+					</Button>
+				</div>
+			</div>
+
+			{error && <p className="px-3 py-1 text-xs text-destructive">{error}</p>}
+
+			{chart.references.length === 0 ? (
+				<div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
+					<p className="max-w-sm">
+						Add a reference document to analyse this claim against it.
+					</p>
+				</div>
+			) : (
+				<div className="min-h-0 flex-1 overflow-auto p-3">
+					<Table className="table-fixed">
+						<TableHeader>
+							<TableRow>
+								<TableHead className="w-[28%]">Limitation</TableHead>
+								<TableHead className="w-[18%]">Construction</TableHead>
+								<TableHead className="w-[30%]">Disclosure</TableHead>
+								<TableHead className="w-[24%]">Reasoning</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{chart.spine.map((lim) => {
+								const cell = cellFor(lim.id);
+								return (
+									<TableRow key={lim.id}>
+										<TableCell className="align-top">
+											<div className="whitespace-pre-wrap break-words text-sm">
+												<span className="mr-1 font-mono text-xs text-muted-foreground">
+													{lim.id}
+												</span>
+												{lim.text}
+											</div>
+										</TableCell>
+										<TableCell className="align-top whitespace-pre-wrap break-words text-sm text-muted-foreground">
+											{lim.construction || "—"}
+										</TableCell>
+										<TableCell className="align-top">
+											{cell ? (
+												<DisclosureCell cell={cell} running={running} />
+											) : (
+												<span className="text-xs text-muted-foreground">
+													{running ? "…" : "not run"}
+												</span>
+											)}
+										</TableCell>
+										<TableCell className="align-top whitespace-pre-wrap break-words text-sm">
+											{cell?.reasoning ?? (
+												<span className="text-muted-foreground">—</span>
+											)}
+										</TableCell>
+									</TableRow>
+								);
+							})}
+						</TableBody>
+					</Table>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function DisclosureCell({
+	cell,
+	running,
+}: {
+	cell: ChartCell;
+	running: boolean;
+}) {
+	return (
+		<div className="space-y-1.5">
+			<span
+				className={cn(
+					"text-xs font-medium",
+					DISCLOSURE_STYLE[cell.disclosureType],
+				)}
+			>
+				{cell.disclosureType}
+			</span>
+			{cell.teaching && (
+				<p className="text-xs text-muted-foreground italic">{cell.teaching}</p>
+			)}
+			{cell.citations.map((cit) => (
+				<div
+					key={cit.quote.slice(0, 40)}
+					className="border-muted border-l-2 pl-2 text-xs"
+				>
+					{cit.location && (
+						<div className="text-muted-foreground">{cit.location}</div>
+					)}
+					<p className="whitespace-pre-wrap break-words">“{cit.quote}”</p>
+				</div>
+			))}
+			{running &&
+				cell.citations.length === 0 &&
+				cell.disclosureType !== "Absent" && (
+					<Loader2 className="size-3 animate-spin text-muted-foreground" />
+				)}
 		</div>
 	);
 }
