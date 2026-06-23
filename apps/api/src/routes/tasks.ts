@@ -12,6 +12,7 @@ import {
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { handleChat } from "../lib/ai/chat";
+import { classifyCell } from "../lib/ai/classify-cell";
 import { generateDocumentLabel } from "../lib/ai/label";
 import { parseClaimSpine } from "../lib/ai/parse-claim";
 import { readReference } from "../lib/ai/read-reference";
@@ -235,6 +236,27 @@ tasks.post("/:id/charts/:chartId/read", async (c) => {
 	} catch (err) {
 		return c.json(
 			{ error: err instanceof Error ? err.message : "read failed" },
+			500,
+		);
+	}
+});
+
+// Classify one cell over client-retrieved passages (the semantic baseline method).
+tasks.post("/:id/charts/:chartId/classify", async (c) => {
+	const { profileId, limitation, passages } = await c.req.json<{
+		profileId?: string;
+		limitation?: { id: string; text: string; construction: string };
+		passages?: { text: string; page: number }[];
+	}>();
+	if (!limitation || !passages)
+		return c.json({ error: "missing limitation or passages" }, 400);
+	const profile = profileId ? await readProfile(profileId) : null;
+	if (!profile) return c.json({ error: "profile not found" }, 404);
+	try {
+		return c.json(await classifyCell(profile.ai, limitation, passages));
+	} catch (err) {
+		return c.json(
+			{ error: err instanceof Error ? err.message : "classify failed" },
 			500,
 		);
 	}

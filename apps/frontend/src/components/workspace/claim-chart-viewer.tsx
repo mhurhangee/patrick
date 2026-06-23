@@ -58,8 +58,10 @@ import { useActiveTask } from "@/lib/active-task";
 import { searchDocument } from "@/lib/search/doc-index";
 import { cn } from "@/lib/utils";
 
-// How many top passages to pull when sourcing a hybrid citation from a read's hint.
+// How many top passages to pull when sourcing a hybrid citation from a read's hint,
+// and when retrieving for the semantic baseline.
 const CITE_TOP_K = 2;
+const SEMANTIC_TOP_K = 8;
 
 // The two real phases: build the limitations backbone, then analyse references against it.
 const STEPS = ["Spine", "Analysis"] as const;
@@ -432,6 +434,7 @@ const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
 const METHODS: { value: ChartMethod; label: string }[] = [
 	{ value: "hybrid", label: "Hybrid (read → search cite)" },
 	{ value: "full-doc", label: "Full-doc (read gives cite)" },
+	{ value: "semantic", label: "Semantic (search → classify)" },
 ];
 
 // The analysis surface: a 2-column claim chart per reference (Feature | Disclosure),
@@ -513,45 +516,107 @@ function AnalysisView({ chart }: { chart: Chart }) {
 
 	const run = async () => {
 		if (!activeTaskId || !activeProfileId || !reference || running) return;
+		const taskId = activeTaskId;
+		const profileId = activeProfileId;
 		setRunning(true);
 		setError(null);
-		try {
-			const reads = await tasksApi.readReference(activeTaskId, chart.id, {
-				profileId: activeProfileId,
-				reference,
-				primer: chart.primer,
-			});
-			const cells: ChartCell[] = await Promise.all(
-				reads.map(async (r) => {
-					let citations: ChartCitation[] = [];
-					if (r.disclosed !== "Absent") {
-						if (method === "full-doc" && r.citation) citations = [r.citation];
-						else if (method === "hybrid" && r.hint) {
-							const outcome = await searchDocument(
-								activeTaskId,
-								reference,
-								r.hint,
-								[],
-								CITE_TOP_K,
+
+		const cell = (
+			limitationId: string,
+			disclosureType: DisclosureType,
+			reasoning: string,
+			citations: ChartCitation[],
+			teaching?: string,
+		): ChartCell => ({
+			limitationId,
+			reference,
+			method,
+			disclosureType,
+			teaching,
+			reasoning,
+			citations,
+			checked: false,
+			spineVersion: chart.spineVersion,
+		});
+
+		// Whole-document read (hybrid / full-doc): one read, then source the citation.
+		const runRead = (): Promise<ChartCell[]> =>
+			tasksApi
+				.readReference(taskId, chart.id, {
+					profileId,
+					reference,
+					primer: chart.primer,
+				})
+				.then((reads) =>
+					Promise.all(
+						reads.map(async (r) => {
+							let citations: ChartCitation[] = [];
+							if (r.disclosed !== "Absent") {
+								if (method === "full-doc" && r.citation)
+									citations = [r.citation];
+								else if (r.hint) {
+									const outcome = await searchDocument(
+										taskId,
+										reference,
+										r.hint,
+										[],
+										CITE_TOP_K,
+									);
+									const p = outcome.ok ? outcome.passages[0] : undefined;
+									if (p)
+										citations = [{ quote: p.text, location: `Page ${p.page}` }];
+								}
+							}
+							return cell(
+								r.limitationId,
+								r.disclosed,
+								r.reasoning,
+								citations,
+								r.teaching,
 							);
-							const p = outcome.ok ? outcome.passages[0] : undefined;
-							if (p)
-								citations = [{ quote: p.text, location: `Page ${p.page}` }];
-						}
-					}
-					return {
-						limitationId: r.limitationId,
+						}),
+					),
+				);
+
+		// Semantic baseline: per limitation, search → classify the retrieved passages.
+		const runSemantic = (): Promise<ChartCell[]> =>
+			Promise.all(
+				chart.spine.map(async (lim) => {
+					const outcome = await searchDocument(
+						taskId,
 						reference,
-						method,
-						disclosureType: r.disclosed,
-						teaching: r.teaching,
-						reasoning: r.reasoning,
-						citations,
-						checked: false,
-						spineVersion: chart.spineVersion,
-					};
+						lim.text,
+						[],
+						SEMANTIC_TOP_K,
+					);
+					if (!outcome.ok)
+						return cell(
+							lim.id,
+							"Absent",
+							outcome.reason === "no-text"
+								? "No extractable text in this reference — extract or OCR it first."
+								: "No relevant passages retrieved.",
+							[],
+						);
+					const cls = await tasksApi.classifyCell(taskId, chart.id, {
+						profileId,
+						limitation: lim,
+						passages: outcome.passages.map((p) => ({
+							text: p.text,
+							page: p.page,
+						})),
+					});
+					const citations = cls.passages
+						.map((i) => outcome.passages[i])
+						.filter((p): p is NonNullable<typeof p> => !!p)
+						.map((p) => ({ quote: p.text, location: `Page ${p.page}` }));
+					return cell(lim.id, cls.disclosureType, cls.reasoning, citations);
 				}),
 			);
+
+		try {
+			const cells =
+				method === "semantic" ? await runSemantic() : await runRead();
 			const merged = [
 				...chart.cells.filter(
 					(c) => !(c.reference === reference && c.method === method),

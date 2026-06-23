@@ -119,6 +119,15 @@ export type ClaimChart = ChartBase & {
 	cells: ChartCell[];
 };
 
+/** The semantic baseline's classification of one cell over retrieved passages: the
+ *  verdict + reasoning + which passages (by index) it relied on. The client turns the
+ *  indices into citations against the passages it retrieved. */
+export type CellClassification = {
+	disclosureType: DisclosureType;
+	reasoning: string;
+	passages: number[];
+};
+
 /** The persisted analysis object. A discriminated union (over `type`) as new chart
  *  kinds land; one member today. */
 export type Chart = ClaimChart;
