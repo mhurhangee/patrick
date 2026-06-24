@@ -84,6 +84,14 @@ export type ChartCell = {
 	reasoning: string;
 	citations: ChartCitation[];
 	status: CellStatus;
+	/** Issues raised by the reviewer pass (empty/absent = sound or not reviewed). */
+	issues?: string[];
+};
+
+/** One limitation's findings from the reviewer pass, echoing its label. */
+export type LimitationReview = {
+	limitationLabel: string;
+	issues: string[];
 };
 
 /** The per-limitation result of a whole-document read. Echoes the limitation's `label`

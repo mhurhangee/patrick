@@ -15,6 +15,7 @@ import {
 	RotateCcw,
 	Sparkles,
 	Trash2,
+	TriangleAlert,
 	X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -132,6 +133,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 	rowsRef.current = rows;
 	const [widths, setWidths] = useState<Record<string, number>>({});
 	const [running, setRunning] = useState<Set<string>>(new Set());
+	const [reviewing, setReviewing] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
 
 	const [colOpen, setColOpen] = useState(false);
@@ -295,6 +297,48 @@ function ChartTable({ chart }: { chart: Chart }) {
 			columns: chartRef.current.columns.filter((x) => x.id !== column.id),
 			cells: chartRef.current.cells.filter((x) => x.columnId !== column.id),
 		});
+
+	const reviewColumn = async (column: ChartColumn) => {
+		if (!activeTaskId || !activeProfileId || reviewing.has(column.id)) return;
+		const colCells = chartRef.current.cells.filter(
+			(c) => c.columnId === column.id,
+		);
+		if (colCells.length === 0) return;
+		const taskId = activeTaskId;
+		const profileId = activeProfileId;
+		setReviewing((s) => new Set(s).add(column.id));
+		setError(null);
+		try {
+			const reviews = await tasksApi.reviewColumn(taskId, chart.id, {
+				profileId,
+				reference: column.reference,
+				primer: column.primer,
+				limitations: rowsRef.current,
+				cells: colCells,
+			});
+			const byLabel = new Map(rowsRef.current.map((l) => [l.label, l.uid]));
+			const issuesByUid = new Map<string, string[]>();
+			for (const rv of reviews) {
+				const uid = byLabel.get(rv.limitationLabel);
+				if (uid) issuesByUid.set(uid, rv.issues);
+			}
+			update({
+				cells: chartRef.current.cells.map((c) =>
+					c.columnId === column.id
+						? { ...c, issues: issuesByUid.get(c.limitationUid) ?? [] }
+						: c,
+				),
+			});
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Review failed.");
+		} finally {
+			setReviewing((s) => {
+				const n = new Set(s);
+				n.delete(column.id);
+				return n;
+			});
+		}
+	};
 	const sameCell = (a: ChartCell, b: ChartCell) =>
 		a.limitationUid === b.limitationUid && a.columnId === b.columnId;
 	// Any human edit flips the cell to "edited" (clearing approval).
@@ -345,9 +389,10 @@ function ChartTable({ chart }: { chart: Chart }) {
 										label={labelFor(c.reference)}
 										reference={c.reference}
 										primer={c.primer}
-										running={running.has(c.id)}
+										busy={running.has(c.id) || reviewing.has(c.id)}
 										onRun={() => runColumn(c)}
 										onForceRun={() => runColumn(c, true)}
+										onReview={() => reviewColumn(c)}
 										onRemove={() => removeColumn(c)}
 									/>
 									<ResizeHandle
@@ -790,17 +835,19 @@ function ColumnHeader({
 	label,
 	reference,
 	primer,
-	running,
+	busy,
 	onRun,
 	onForceRun,
+	onReview,
 	onRemove,
 }: {
 	label: string;
 	reference: string;
 	primer?: string;
-	running: boolean;
+	busy: boolean;
 	onRun: () => void;
 	onForceRun: () => void;
+	onReview: () => void;
 	onRemove: () => void;
 }) {
 	return (
@@ -819,7 +866,7 @@ function ColumnHeader({
 				)}
 			</div>
 			<div className="flex shrink-0 items-center">
-				{running ? (
+				{busy ? (
 					<Loader2 className="size-3.5 animate-spin text-muted-foreground" />
 				) : (
 					<DropdownMenu>
@@ -834,6 +881,10 @@ function ColumnHeader({
 							<DropdownMenuItem onSelect={onForceRun}>
 								<RotateCcw />
 								Re-run &amp; overwrite edits
+							</DropdownMenuItem>
+							<DropdownMenuItem onSelect={onReview}>
+								<TriangleAlert />
+								Review this column
 							</DropdownMenuItem>
 							<DropdownMenuSeparator />
 							<DropdownMenuItem onSelect={onRemove} variant="destructive">
@@ -904,7 +955,31 @@ function DisclosureContent({
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
-				<div>
+				<div className="flex shrink-0 items-center gap-0.5">
+					{cell.issues && cell.issues.length > 0 && (
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									tooltip={`${cell.issues.length} reviewer issue(s)`}
+									className="text-amber-600 dark:text-amber-500"
+								>
+									<TriangleAlert />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent align="end" className="w-72 space-y-1.5 text-xs">
+								<p className="font-medium text-muted-foreground">
+									Reviewer issues
+								</p>
+								<ul className="list-disc space-y-1 pl-4">
+									{cell.issues.map((iss) => (
+										<li key={iss}>{iss}</li>
+									))}
+								</ul>
+							</PopoverContent>
+						</Popover>
+					)}
 					<Button
 						variant="bare"
 						size="xs"
