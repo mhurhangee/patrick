@@ -28,7 +28,11 @@ do. So:
 - The engine reads the **whole reference** (+ optional primer) in one pass — Patrick-native (the
   reference rides as a pinned, cached source), cheap after the first read.
 - For each limitation it returns: **verdict** (Express / Derived / Suggested / Absent),
-  **citation(s)** (model-given, verbatim + location), and **reasoning**.
+  **citation(s)** (a checkable **location** + a hidden snippet — see the trust model), and
+  **reasoning**.
+- The analysis **model is picked per chart** (`Chart.model`, defaulting to the profile's), because
+  quality is model-sensitive — a weak model mischaracterises disclosures. The header carries the
+  picker with that warning.
 - Hybrid + semantic methods and the classify endpoint are **removed** (the local search stack stays
   for the separate Search feature, not for charting).
 
@@ -47,9 +51,16 @@ different settings — e.g. D1 with and without the search report as primer), a 
 **`ChartCell`** (limitation × column): `verdict` (DisclosureType), `citations`, `reasoning`,
 `status` (see state machine). **`teaching` is dropped** — it overlapped reasoning almost entirely.
 
-**`ChartCitation`**: a primary verbatim `quote` + `location`; a cell may hold one primary citation
-plus additional supporting **locations** (shown as chips). Locations are structured where possible
-(`[0001]` for retrieved text, page/¶ for PDFs).
+**`ChartCitation`**: a checkable **`location`** (`[0021]` for retrieved text, page/column/line for
+PDFs) — the *only* thing shown — plus an optional hidden **`snippet`** (a few exact words) kept
+solely to anchor click-to-highlight later. **No verbatim quote is displayed** (see the trust model).
+A cell may hold several citations, most on-point first.
+
+**`Chart.model`** (optional): the analysis model for this chart; unset ⇒ the profile's default.
+
+**Prompts** live on the **profile** (`prompts.claimConstruction`, `prompts.claimAnalysis`), edited in
+`/profile` → AI. Unset ⇒ the built-in default. **Not** per-chart (same lesson as the chat system
+prompt — want a variant, make another profile); the chart header links to them.
 
 **Two kinds of supporting document — keep them distinct:**
 - **Construction-support** (per *row*, used at *parse* time): the description / application as
@@ -93,14 +104,23 @@ freetext. Any edit flips status to **Edited** and clears **Approved**.
 - The prompt **construes in light of the description** (Art 69 / Protocol), using the
   construction-support doc — this is the fix for the over-narrow constructions we were seeing.
 
-## Reviewer pass (the new "judge")
+## Trust model — checkable locations, not flags (the reviewer is gone)
 
-The method-comparison judge is obsolete. Its replacement is a **per-column Reviewer** — an optional
-"Review" action that runs a second model over a finished column to improve accuracy (the
-self-critique / verifier pattern): flag (and optionally fix) **malformed or missing citations**,
-internal contradictions, and over/under-reading. It is the natural place to **validate that each
-cited location actually exists in the reference** (exact-search), which also de-risks the deferred
-citation-jump feature.
+We built a second-model **Reviewer** that flagged suspect cells, then **removed it**. Surfacing
+"this analysis might be wrong" without *resolving* it erodes trust rather than building it — and a
+verbatim-quote auditor is the wrong shape: a displayed quote invites "is this fabricated?" distrust
+and travels badly across languages (a German reference quoted in German helps nobody).
+
+The trust model instead:
+- **Citations are locations, not quotes.** Nothing is shown that could be a fabricated quote; the
+  attorney **clicks the location to check the source** — verification built into the workflow.
+- **A standing banner** ("AI-generated — always verify each citation against the source") sets honest
+  global expectations. Global, not a per-cell "suspect" flag.
+- **Strong model + tunable prompts** minimise error *at the source* (the per-chart model picker with
+  its mischaracterisation warning; the profile's editable rubrics). Mischaracterisation is a
+  model-quality problem, not something we try to catch mechanically.
+- The hidden `snippet` exists only to make the upcoming **click-to-highlight** land on the exact
+  passage, not just the paragraph.
 
 ## Agent tools
 
@@ -116,8 +136,10 @@ is already pinned in the chat's context, the tool should **reuse it** rather tha
   buttons, no dangling borders.
 - **Feature cell** = ID + verbatim limitation + construction in one cell. Construction is indented,
   smaller and muted (no "Constr." label — the indent + style says it).
-- **Disclosure cell** = verdict pill + status chip; primary verbatim citation (italic block) +
-  supporting location chips; reasoning.
+- **Disclosure cell** = verdict pill + status chip; reasoning; **location citations** (a pin + the
+  location, click-to-check later) — no verbatim quote shown.
+- **Header bar** = the verify banner + the per-chart model picker (with the mischaracterisation
+  hint) + a link to the profile prompts.
 - Document dropdowns show **doc-type icons + colours** (PDF red, etc.).
 - **Controls** are consistent: row and column actions live in matching affordances (a hover `⋯`
   menu each, not delete-on-hover for rows vs always-on for columns).
@@ -126,34 +148,32 @@ is already pinned in the chat's context, the tool should **reuse it** rather tha
 
 **Built (green on the branch):** the Chart object + `.patrick/charts/` persistence + CRUD; the
 "Charts" sidebar + workspace-tab integration; the one editable table (rows + columns, inline-edit
-Feature cell, resizable columns, add row / claim / column); the whole-document read engine (plus
-the hybrid/semantic methods that are now to be removed); parse → limitations.
+Feature cell, resizable columns, add row / claim / column, the permanent dashed ghost row+column);
+the whole-document read engine (full-doc only — hybrid/semantic/classify removed); stable `uid`;
+the status model + editable cells (verdict dropdown, editable citations, freetext reasoning,
+AI/Edited/Approved/Stale, stale-on-edit, re-run-preserves-human); the two supporting docs + Art 69
+multi-claim parse; row/column kebab menus; **location citations** (verbatim dropped); the **header
+bar** (verify banner + per-chart model picker + prompts link); **profile-editable prompts**.
 
-**To build:** everything in the locked design above — full-doc collapse, stable `uid`, status model
-+ editable analysis cells, the two supporting docs + Art 69 parse, multi-claim parse, multiple
-citations, sticky header + the UI polish, the reviewer pass, agent tools.
+**To build:** **citation navigation** (the next pass) and **agent tools**.
 
-## Suggested build order
+## Build order — done, and what's left
 
-1. **Schema + simplify (foundational):** collapse to full-doc (delete hybrid/semantic + the method
-   tag + classify); drop `teaching`; add the stable `uid` + `label` to limitations and re-key
-   cells; give columns their own id + a `primer` field; add the `construction-support` field.
-2. **Construction correctness (#9 — the only *correctness* item, do near-first):** Art 69 parse
-   prompt + construction-support doc + multi-claim parse.
-3. **Quick UI wins:** drop "Constr." label, doc icons, consistent labelled add-buttons (kill the
-   dangling borders), sticky header.
-4. **Editable cells + status model:** verdict dropdown / editable citations / freetext reasoning;
-   the AI/Edited/Approved/Stale chip; stale-on-row-edit; re-run preserves human cells; unified
-   row/column controls.
-5. **Multiple citations:** primary verbatim + supporting location chips.
-6. **Reviewer pass.**
-7. **Agent tools.**
+Steps 1–5 (schema/full-doc collapse, Art 69 construction correctness, UI polish + sticky header,
+editable cells + status model, multiple citations) are **done**. The reviewer pass was built then
+**removed** (see the trust model). The trust rework (locations not quotes, banner, per-chart model,
+profile prompts) is **done**. Remaining:
+
+1. **Citation navigation** — click a location → open the reference in the workspace, scroll to and
+   highlight the passage (using the hidden snippet for precision). Its own pass: it shares the
+   in-document search-highlighting machinery (currently flaky on some docs), so fixing that *is*
+   building this. The whole trust model leans on click-to-check being smooth, so it's the highest
+   value remaining.
+2. **Agent tools** — Patrick drives the chart: `create_chart`, `parse_claim`, `add_reference`,
+   `run_analysis` …. Open question: reuse an already-pinned reference rather than re-load/re-pay.
 
 ## Deferred (on the map, not now)
 
-- **Citation → source** (click a location to open the reference and highlight the passage; reuses
-  the search highlighting). Substantial, shell-touching, fragile on odd locations. Keep verbatim
-  citations for now; revisit whether verbatim is still needed *once the jump exists*.
 - **Combining references** (inventive step / problem-solution — mosaicing across columns).
 - **Export** (xlsx / docx / pdf).
 
@@ -173,3 +193,11 @@ citations, sticky header + the UI polish, the reviewer pass, agent tools.
   in isolation — the silent correctness bug behind over-narrow constructions.
 - **Two supporting docs, kept distinct:** construction-support (parse-time, the description) vs
   primer (read-time, the exam/search report).
+- **Citations are checkable locations, not verbatim quotes.** A shown quote invites
+  fabricated-quote distrust and breaks across languages; a location is what an attorney clicks to
+  verify. A hidden snippet rides along only to sharpen the (coming) click-to-highlight.
+- **No flag-based reviewer.** Telling the attorney "this might be wrong" without fixing it erodes
+  trust. We minimise error at the source (strong model + tunable prompts) and make verification
+  one click, under a standing "always verify" banner.
+- **Per-chart model, profile-wide prompts.** The model is model-sensitive so it's chosen per chart;
+  the rubrics are profile-wide (a variant → a new profile), not per-chart (the chat-prompt lesson).
