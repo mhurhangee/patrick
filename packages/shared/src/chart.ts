@@ -92,8 +92,8 @@ export type LimitationRead = {
 	limitationLabel: string;
 	disclosed: DisclosureType;
 	reasoning: string;
-	/** The model's verbatim citation; null if Absent. */
-	citation: ChartCitation | null;
+	/** The passages evidencing the disclosure, most on-point first; empty if Absent. */
+	citations: ChartCitation[];
 };
 
 export type ClaimChart = ChartBase & {

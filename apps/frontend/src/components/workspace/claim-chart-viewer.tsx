@@ -256,7 +256,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 						columnId: column.id,
 						disclosureType: r.disclosed,
 						reasoning: r.reasoning,
-						citations: r.citation ? [r.citation] : [],
+						citations: r.citations ?? [],
 						status: "ai",
 					});
 				}

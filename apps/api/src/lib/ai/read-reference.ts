@@ -27,7 +27,7 @@ For each claim limitation (given verbatim with its assumed construction, and lab
 For each limitation also give:
 - limitationLabel: echo back the limitation's label exactly.
 - reasoning: a self-contained explanation a colleague could read on its own ("limitation X, construed as Y, is [disclosed by … because … | not disclosed because …]").
-- citation: the single best VERBATIM passage from the reference evidencing the disclosure, with its location (paragraph number or page if identifiable). null if Absent.
+- citations: the passage(s) from the reference that evidence the disclosure — the MOST ON-POINT first, then any further supporting passages (typically 1–3). Each is a VERBATIM passage with its location (paragraph number, or page/column if identifiable). Empty if Absent.
 
 Return one entry per limitation, in the order given. Work only from the reference's actual text — never invent passages.`;
 
@@ -37,9 +37,7 @@ const schema = z.object({
 			limitationLabel: z.string(),
 			disclosed: z.enum(["Express", "Derived", "Suggested", "Absent"]),
 			reasoning: z.string(),
-			citation: z
-				.object({ quote: z.string(), location: z.string() })
-				.nullable(),
+			citations: z.array(z.object({ quote: z.string(), location: z.string() })),
 		}),
 	),
 });
