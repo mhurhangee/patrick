@@ -22,6 +22,10 @@ type ChartBase = {
 	schemaVersion: number;
 	/** Floated to the top of the sidebar list when set. */
 	starred?: boolean;
+	/** The model the analysis runs on (parse + read). Unset ⇒ the profile's default model.
+	 *  Picked per chart because analysis quality is model-sensitive (weak models
+	 *  mischaracterise disclosures). */
+	model?: string;
 };
 
 // ─── Claim chart ─────────────────────────────────────────────────────────────────

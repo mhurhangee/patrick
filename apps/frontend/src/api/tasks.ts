@@ -53,6 +53,7 @@ export const tasksApi = {
 			profileId: string;
 			claims: string;
 			constructionSupport?: string;
+			model?: string;
 		},
 	) =>
 		api.post<{ limitations: ClaimLimitation[] }>(
@@ -71,6 +72,7 @@ export const tasksApi = {
 			reference: string;
 			primer?: string;
 			limitations: ClaimLimitation[];
+			model?: string;
 		},
 	) => api.post<LimitationRead[]>(`/tasks/${id}/charts/${chartId}/read`, body),
 	removeChart: (id: string, chartId: string) =>

@@ -9,6 +9,7 @@ import type {
 } from "@patrick/shared";
 import { docKind } from "@patrick/shared";
 import {
+	Info,
 	MapPin,
 	MoreHorizontal,
 	Play,
@@ -20,6 +21,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { DocIcon } from "@/components/doc-icon";
+import { ModelPicker } from "@/components/model-picker";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -43,6 +45,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useChart, useParseChart, useSaveChart } from "@/hooks/use-charts";
+import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
@@ -122,9 +125,15 @@ export function ClaimChartViewer({ chartId }: { chartId: string }) {
 function ChartTable({ chart }: { chart: Chart }) {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
+	const { data: profile } = useProfile(activeProfileId);
 	const { data: documents } = useTaskDocuments(activeTaskId);
 	const save = useSaveChart(activeTaskId);
 	const parse = useParseChart(activeTaskId, chart.id);
+
+	// The analysis model: the chart's pick, else the profile default. Provider gates which
+	// models the picker offers (BYOK).
+	const provider = profile?.ai.provider ?? "anthropic";
+	const analysisModel = chart.model ?? profile?.ai.model ?? "";
 
 	// chartRef holds the freshest chart so async ops never save against a stale copy.
 	const chartRef = useRef(chart);
@@ -211,6 +220,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 			profileId: activeProfileId,
 			claims: claimsSpec || "1",
 			constructionSupport: support,
+			model: chartRef.current.model,
 		});
 		const next = [...rowsRef.current, ...limitations];
 		setRows(next);
@@ -234,6 +244,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 				reference: column.reference,
 				primer: column.primer,
 				limitations: rowsRef.current,
+				model: chartRef.current.model,
 			});
 			const byLabel = new Map(rowsRef.current.map((l) => [l.label, l.uid]));
 			const existing = new Map(
@@ -317,6 +328,33 @@ function ChartTable({ chart }: { chart: Chart }) {
 
 	return (
 		<div className="flex h-full flex-col bg-background">
+			<div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-1.5">
+				<p className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+					<Info className="size-3.5 shrink-0" />
+					<span className="truncate">
+						AI-generated — always verify each citation against the source.
+					</span>
+				</p>
+				<div className="flex shrink-0 items-center gap-1">
+					<span className="text-[11px] text-muted-foreground">Model</span>
+					<ModelPicker
+						value={analysisModel}
+						onChange={(id) => update({ model: id })}
+						provider={provider}
+						variant="ghost"
+						align="end"
+						className="h-7 gap-1.5 px-2 text-xs"
+					/>
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						className="text-muted-foreground"
+						tooltip="Analysis quality is model-sensitive — pick a strong model; weaker ones mischaracterise disclosures."
+					>
+						<Info />
+					</Button>
+				</div>
+			</div>
 			{error && (
 				<p className="shrink-0 border-b px-3 py-1.5 text-xs text-destructive">
 					{error}

@@ -167,12 +167,13 @@ tasks.post("/:id/charts/:chartId/meta", async (c) => {
 tasks.post("/:id/charts/:chartId/parse", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const { filename, profileId, claims, constructionSupport } =
+	const { filename, profileId, claims, constructionSupport, model } =
 		await c.req.json<{
 			filename?: string;
 			profileId?: string;
 			claims?: string;
 			constructionSupport?: string;
+			model?: string;
 		}>();
 	if (!filename) return c.json({ error: "missing document" }, 400);
 	const profile = profileId ? await readProfile(profileId) : null;
@@ -181,7 +182,7 @@ tasks.post("/:id/charts/:chartId/parse", async (c) => {
 		const parsed = await parseClaimSpine(
 			task.folder,
 			basename(filename),
-			profile.ai,
+			{ ...profile.ai, model: model || profile.ai.model },
 			(claims ?? "1").trim() || "1",
 			constructionSupport ? basename(constructionSupport) : undefined,
 		);
@@ -205,12 +206,14 @@ tasks.post("/:id/charts/:chartId/parse", async (c) => {
 tasks.post("/:id/charts/:chartId/read", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const { profileId, reference, primer, limitations } = await c.req.json<{
-		profileId?: string;
-		reference?: string;
-		primer?: string;
-		limitations?: ClaimLimitation[];
-	}>();
+	const { profileId, reference, primer, limitations, model } =
+		await c.req.json<{
+			profileId?: string;
+			reference?: string;
+			primer?: string;
+			limitations?: ClaimLimitation[];
+			model?: string;
+		}>();
 	if (!reference) return c.json({ error: "missing reference" }, 400);
 	if (!limitations?.length) return c.json({ error: "no rows to analyse" }, 400);
 	const profile = profileId ? await readProfile(profileId) : null;
@@ -218,7 +221,7 @@ tasks.post("/:id/charts/:chartId/read", async (c) => {
 	try {
 		const reads = await readReference(
 			task.folder,
-			profile.ai,
+			{ ...profile.ai, model: model || profile.ai.model },
 			basename(reference),
 			primer ? basename(primer) : undefined,
 			limitations,

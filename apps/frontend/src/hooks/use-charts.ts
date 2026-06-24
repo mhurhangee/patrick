@@ -51,6 +51,7 @@ export function useParseChart(taskId: string | undefined, chartId: string) {
 			profileId: string;
 			claims: string;
 			constructionSupport?: string;
+			model?: string;
 		}) => tasksApi.parseChart(taskId as string, chartId, body),
 	});
 }
