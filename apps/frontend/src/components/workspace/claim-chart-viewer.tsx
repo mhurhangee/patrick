@@ -247,20 +247,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 				</p>
 			)}
 
-			<div className="flex shrink-0 justify-end border-b px-2 py-1.5">
-				<AddColumn
-					open={colOpen}
-					onOpenChange={setColOpen}
-					documents={documents?.map((d) => d.filename) ?? []}
-					doc={newDoc}
-					setDoc={setNewDoc}
-					primer={newPrimer}
-					setPrimer={setNewPrimer}
-					onAdd={addColumn}
-				/>
-			</div>
-
-			<div className="min-h-0 flex-1 overflow-auto">
+			<div className="flex min-h-0 flex-1 flex-col overflow-auto">
 				<table className="w-max border-separate border-spacing-0 text-sm">
 					<colgroup>
 						<col style={{ width: widthOf("feature", FEATURE_W) }} />
@@ -296,6 +283,18 @@ function ChartTable({ chart }: { chart: Chart }) {
 									/>
 								</th>
 							))}
+							<th className="sticky top-0 z-20 bg-background p-1 align-top">
+								<AddColumn
+									open={colOpen}
+									onOpenChange={setColOpen}
+									documents={documents?.map((d) => d.filename) ?? []}
+									doc={newDoc}
+									setDoc={setNewDoc}
+									primer={newPrimer}
+									setPrimer={setNewPrimer}
+									onAdd={addColumn}
+								/>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -416,6 +415,18 @@ function ChartTable({ chart }: { chart: Chart }) {
 						</PopoverContent>
 					</Popover>
 				</div>
+
+				{rows.length === 0 && (
+					<div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
+						<p className="max-w-sm">
+							This chart is empty. Use{" "}
+							<span className="font-medium">Add claim</span> to parse a claim
+							from a document (or <span className="font-medium">Add row</span>{" "}
+							manually), then <span className="font-medium">Add column</span> to
+							analyse the claim against a reference.
+						</p>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -558,13 +569,21 @@ function FeatureCell({
 					placeholder="Verbatim limitation…"
 					className="text-sm leading-snug"
 				/>
-				<div className="pl-3">
+				<div className="space-y-0.5 pl-3">
 					<InlineEdit
 						value={lim.construction}
 						onCommit={(v) => onCommit("construction", v)}
 						placeholder="add construction…"
 						className="text-muted-foreground text-xs"
 					/>
+					{lim.construction && (
+						<InlineEdit
+							value={lim.constructionBasis ?? ""}
+							onCommit={(v) => onCommit("constructionBasis", v)}
+							placeholder="+ basis in spec"
+							className="text-[11px] text-muted-foreground/70 italic"
+						/>
+					)}
 				</div>
 			</div>
 			<Button
@@ -602,7 +621,7 @@ function AddColumn({
 	return (
 		<Popover open={open} onOpenChange={onOpenChange}>
 			<PopoverTrigger asChild>
-				<Button variant="outline" size="sm">
+				<Button variant="ghost" size="sm" className="text-muted-foreground">
 					<Plus />
 					Add column
 				</Button>

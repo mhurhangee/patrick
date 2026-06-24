@@ -4,20 +4,27 @@ import { z } from "zod";
 import { pinnedSourcesMessage } from "./chat";
 import { createModel } from "./model";
 
-// Parse the requested claim(s) into limitations, construed in light of the description
-// (Art 69 EPC + Protocol). One read covers all requested claims. See CLAIM-CHARTING.md.
+// Parse the requested claim(s) into limitations and construe each in light of the
+// description (Art 69 EPC + Protocol), in one pass. See CLAIM-CHARTING.md.
 //
 // DRAFT PROMPT — the splitting granularity and the construction approach are legally
 // load-bearing and meant for the attorney to tune.
-const SYSTEM = `You parse patent claims into their limitations for a claim chart, for a European patent attorney.
+const SYSTEM = `You parse patent claims into their limitations for a claim chart, for a European patent attorney, and construe each limitation.
 
-From the attorney's document(s), find the requested claim(s) and break each into its constituent limitations:
-- Split at the natural clause boundaries a practitioner would use (the preamble, then each element/step). Granularity = feature analysis: not so coarse that one limitation bundles several distinct features, not so fine that a single feature is fragmented.
-- Label them by claim: claim 1 → 1a, 1b, 1c …; claim 2 → 2a, 2b …. Keep them in claim order.
-- The limitation text MUST be VERBATIM from the claim — transcribe exactly, never paraphrase, summarise or correct. Where a long enumerated list is elided in the claim, you may use "[…]".
-- Construe each limitation in light of the DESCRIPTION (Art 69 EPC and its Protocol on Interpretation): the description and drawings inform the scope of the claim terms — do NOT construe from the literal wording of the claims in isolation. Give a short construction of any key term(s) whose scope matters; leave empty if nothing needs construing.
+SPLIT each requested claim into its constituent limitations:
+- Split at the natural clause boundaries a practitioner would use (the preamble, then each element/step). Feature-analysis granularity: not so coarse that one limitation bundles several distinct features, not so fine that a single feature is fragmented.
+- Label by claim: claim 1 → 1a, 1b, 1c …; claim 2 → 2a, 2b …. Keep them in claim order.
+- The limitation text MUST be VERBATIM from the claim — transcribe exactly, never paraphrase, summarise or correct. Use "[…]" only to elide a long enumerated list.
 
-Work only from the documents' actual text. Return no limitations for a claim that isn't present.`;
+CONSTRUE each limitation. Produce a SELF-CONTAINED construction: a standalone statement of what the limitation means, usable by a downstream system that will NOT have the description (it compares the construction against prior art for novelty). So do NOT refer to the description in the construction text itself (no "as described in [0021]") — bake the result in.
+- Construe through the eyes of the person skilled in the art, reading the limitation in light of the description (Art 69 EPC + Protocol), then write a standalone statement.
+- Start from the ORDINARY meaning of the key term(s). Override it ONLY where the description requires: (a) lexicography — the patentee defined the term, so bake the definition in; (b) disclaimer/disavowal — scope was narrowed or surrendered, so bake the limit in.
+- Resolve internal references ("said housing", "the first member") by restating what they refer to, so the construction does not dangle.
+- State scope-defining terms explicitly (e.g. "comprising" is open-ended; a numerical term's stated range or tolerance).
+- Do NOT invent scope. If the description is silent, default to ordinary meaning. Leave the construction empty only if no term in the limitation needs construing.
+- constructionBasis: a short pointer to where in the description the construction is supported (paragraph numbers / figures), so the attorney can check it. Empty if it rests on ordinary meaning alone.
+
+Work only from the documents' actual text. Parse ONLY the claims specified — do not include others.`;
 
 const schema = z.object({
 	limitations: z
@@ -28,7 +35,12 @@ const schema = z.object({
 				construction: z
 					.string()
 					.describe(
-						"Construction of key term(s) read in light of the description; empty if none.",
+						"A self-contained construction of the key term(s); empty if none needs construing.",
+					),
+				constructionBasis: z
+					.string()
+					.describe(
+						"Where in the description the construction is supported (paragraphs / figures); empty if ordinary meaning.",
 					),
 			}),
 		)
@@ -72,7 +84,7 @@ export async function parseClaimSpine(
 		messages: [
 			{
 				role: "user",
-				content: `Parse the following claim(s) into limitations: ${claims}.${supportNote}`,
+				content: `Parse exactly these claim(s): ${claims}. Interpret the spec literally — "1" means claim 1 only; "1-3" means claims 1, 2 and 3; "1, 4" means claims 1 and 4; "all independent" means every independent claim; "all" means every claim. Do not parse any claim not specified.${supportNote}`,
 			},
 			content,
 		],
@@ -83,5 +95,6 @@ export async function parseClaimSpine(
 		label: l.id,
 		text: l.text,
 		construction: l.construction,
+		constructionBasis: l.constructionBasis || undefined,
 	}));
 }

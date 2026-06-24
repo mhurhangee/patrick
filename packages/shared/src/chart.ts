@@ -34,8 +34,13 @@ export type ClaimLimitation = {
 	label: string;
 	/** Verbatim claim text. */
 	text: string;
-	/** Assumed scope of the key term(s), construed in light of the description. */
+	/** A SELF-CONTAINED construction of the key term(s) — a standalone statement of
+	 *  meaning (read in light of the description, but usable without it; it's sent to the
+	 *  rows for the novelty analysis). */
 	construction: string;
+	/** Where in the description the construction is supported (paragraphs / figures), so
+	 *  the attorney can check it. */
+	constructionBasis?: string;
 };
 
 /** A column of the table: one reference analysed against the limitations, optionally
