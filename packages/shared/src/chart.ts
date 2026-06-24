@@ -112,6 +112,9 @@ export type ClaimChart = ChartBase & {
 	columns: ChartColumn[];
 	/** The filled cells (sparse — one per analysed limitation × column). */
 	cells: ChartCell[];
+	/** Persisted column widths (px), keyed by column id (and "feature" for the first
+	 *  column). Absent ⇒ the defaults. */
+	columnWidths?: Record<string, number>;
 	/** Last-used construction-support doc (the description), to default the parse popover. */
 	constructionSupport?: string;
 };

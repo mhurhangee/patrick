@@ -20,7 +20,7 @@ import {
 	TriangleAlert,
 	X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { DocIcon } from "@/components/doc-icon";
 import { ModelPicker } from "@/components/model-picker";
@@ -145,7 +145,9 @@ function ChartTable({ chart }: { chart: Chart }) {
 	const [rows, setRows] = useState<ClaimLimitation[]>(chart.limitations ?? []);
 	const rowsRef = useRef(rows);
 	rowsRef.current = rows;
-	const [widths, setWidths] = useState<Record<string, number>>({});
+	const [widths, setWidths] = useState<Record<string, number>>(
+		chart.columnWidths ?? {},
+	);
 	const [running, setRunning] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
 
@@ -163,12 +165,27 @@ function ChartTable({ chart }: { chart: Chart }) {
 	const cells = chart.cells ?? [];
 	const distinctRefs = [...new Set(columns.map((c) => c.reference))];
 	const labelFor = (ref: string) => `D${distinctRefs.indexOf(ref) + 1}`;
+	// One lookup map per render instead of a linear find per rendered cell (the sparse
+	// cells array can hold rows×columns entries).
+	const cellByKey = useMemo(() => {
+		const m = new Map<string, ChartCell>();
+		for (const c of cells) m.set(`${c.limitationUid}|${c.columnId}`, c);
+		return m;
+	}, [cells]);
 	const cellFor = (uid: string, columnId: string) =>
-		cells.find((x) => x.limitationUid === uid && x.columnId === columnId);
+		cellByKey.get(`${uid}|${columnId}`);
 
 	const widthOf = (id: string, fallback: number) => widths[id] ?? fallback;
 	const setWidth = (id: string, w: number) =>
 		setWidths((p) => ({ ...p, [id]: Math.max(140, w) }));
+	// Persist on drag-end (not per mousemove) so a resize survives reload.
+	const persistWidth = (id: string, w: number) =>
+		update({
+			columnWidths: {
+				...(chartRef.current.columnWidths ?? {}),
+				[id]: Math.max(140, w),
+			},
+		});
 
 	const update = (patch: Partial<Chart>) =>
 		save.mutate({
@@ -400,6 +417,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 								<ResizeHandle
 									width={widthOf("feature", FEATURE_W)}
 									onResize={(w) => setWidth("feature", w)}
+									onCommit={(w) => persistWidth("feature", w)}
 								/>
 							</th>
 							{columns.map((c) => (
@@ -419,6 +437,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 									<ResizeHandle
 										width={widthOf(c.id, COLUMN_W)}
 										onResize={(w) => setWidth(c.id, w)}
+										onCommit={(w) => persistWidth(c.id, w)}
 									/>
 								</th>
 							))}
@@ -590,9 +609,12 @@ function ChartTable({ chart }: { chart: Chart }) {
 function ResizeHandle({
 	width,
 	onResize,
+	onCommit,
 }: {
 	width: number;
 	onResize: (w: number) => void;
+	/** Fired once on drag-end / keypress with the final width — to persist it. */
+	onCommit: (w: number) => void;
 }) {
 	return (
 		<button
@@ -602,17 +624,28 @@ function ResizeHandle({
 				e.preventDefault();
 				const startX = e.clientX;
 				const startW = width;
-				const move = (ev: MouseEvent) => onResize(startW + ev.clientX - startX);
+				let latest = startW;
+				const move = (ev: MouseEvent) => {
+					latest = startW + ev.clientX - startX;
+					onResize(latest);
+				};
 				const up = () => {
 					window.removeEventListener("mousemove", move);
 					window.removeEventListener("mouseup", up);
+					onCommit(latest);
 				};
 				window.addEventListener("mousemove", move);
 				window.addEventListener("mouseup", up);
 			}}
 			onKeyDown={(e) => {
-				if (e.key === "ArrowLeft") onResize(width - 16);
-				if (e.key === "ArrowRight") onResize(width + 16);
+				if (e.key === "ArrowLeft") {
+					onResize(width - 16);
+					onCommit(width - 16);
+				}
+				if (e.key === "ArrowRight") {
+					onResize(width + 16);
+					onCommit(width + 16);
+				}
 			}}
 			className="absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-primary/40"
 		/>
