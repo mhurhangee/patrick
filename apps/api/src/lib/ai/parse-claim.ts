@@ -40,18 +40,14 @@ const schema = z.object({
 		),
 });
 
-export type ParsedSpine = {
-	claimNumber: string;
-	limitations: ClaimLimitation[];
-};
-
-/** Parse + construe one claim from a source document into a proposed spine. */
+/** Parse + construe one claim from a source document into limitations (each with a
+ *  stable uid). The client appends them as table rows. */
 export async function parseClaimSpine(
 	folder: string,
 	filename: string,
 	ai: { provider: Provider; apiKey: string; model: string },
 	claim: string,
-): Promise<ParsedSpine | null> {
+): Promise<ClaimLimitation[] | null> {
 	const content = await pinnedSourcesMessage(folder, [
 		{ filename, kind: docKind(filename) },
 	]);
@@ -73,12 +69,10 @@ export async function parseClaimSpine(
 		],
 	});
 
-	return {
-		claimNumber: object.claimNumber,
-		limitations: object.limitations.map((l) => ({
-			id: l.id,
-			text: l.text,
-			construction: l.construction,
-		})),
-	};
+	return object.limitations.map((l) => ({
+		uid: crypto.randomUUID(),
+		label: l.id,
+		text: l.text,
+		construction: l.construction,
+	}));
 }

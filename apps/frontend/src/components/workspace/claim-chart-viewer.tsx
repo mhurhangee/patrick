@@ -1,9 +1,7 @@
 import type {
 	Chart,
 	ChartCell,
-	ChartCitation,
 	ChartColumn,
-	ChartMethod,
 	ClaimLimitation,
 	DisclosureType,
 } from "@patrick/shared";
@@ -30,11 +28,8 @@ import { useChart, useParseChart, useSaveChart } from "@/hooks/use-charts";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
-import { searchDocument } from "@/lib/search/doc-index";
 import { cn } from "@/lib/utils";
 
-const CITE_TOP_K = 2;
-const SEMANTIC_TOP_K = 8;
 const FEATURE_W = 380;
 const COLUMN_W = 360;
 
@@ -45,19 +40,8 @@ const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
 	Absent: "bg-muted text-muted-foreground",
 };
 
-const METHODS: { value: ChartMethod; label: string }[] = [
-	{ value: "full-doc", label: "Full-doc (read gives cite)" },
-	{ value: "hybrid", label: "Hybrid (read → search cite)" },
-	{ value: "semantic", label: "Semantic (search → classify)" },
-];
-const METHOD_SHORT: Record<ChartMethod, string> = {
-	hybrid: "hybrid",
-	"full-doc": "full-doc",
-	semantic: "semantic",
-};
-
-const colKey = (reference: string, method: ChartMethod) =>
-	`${reference}::${method}`;
+const uuid = () => crypto.randomUUID();
+const NONE = "__none__";
 
 export function ClaimChartViewer({ chartId }: { chartId: string }) {
 	const { activeTaskId } = useActiveTask();
@@ -78,8 +62,8 @@ export function ClaimChartViewer({ chartId }: { chartId: string }) {
 	return <ChartTable key={chartId} chart={chart} />;
 }
 
-// One table. Rows are limitations; columns are (reference × method) analyses. Click a
-// cell to edit it, drag a column border to resize, add a column on the right.
+// One table. Rows are limitations; columns are references (each read as a whole, with an
+// optional primer). Click a cell to edit, drag a column border to resize.
 function ChartTable({ chart }: { chart: Chart }) {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
@@ -87,11 +71,11 @@ function ChartTable({ chart }: { chart: Chart }) {
 	const save = useSaveChart(activeTaskId);
 	const parse = useParseChart(activeTaskId, chart.id);
 
-	// chartRef always holds the freshest chart (the prop tracks the query cache), so
-	// async ops (add column → run → save) never save against a stale copy and clobber.
+	// chartRef holds the freshest chart so async ops never save against a stale copy.
 	const chartRef = useRef(chart);
 	chartRef.current = chart;
-	const [rows, setRows] = useState<ClaimLimitation[]>(chart.spine);
+	// Defensive defaults so a pre-v2 chart on disk degrades to empty rather than crashing.
+	const [rows, setRows] = useState<ClaimLimitation[]>(chart.limitations ?? []);
 	const rowsRef = useRef(rows);
 	rowsRef.current = rows;
 	const [widths, setWidths] = useState<Record<string, number>>({});
@@ -100,32 +84,30 @@ function ChartTable({ chart }: { chart: Chart }) {
 
 	const [colOpen, setColOpen] = useState(false);
 	const [newDoc, setNewDoc] = useState("");
-	const [newMethod, setNewMethod] = useState<ChartMethod>("full-doc");
+	const [newPrimer, setNewPrimer] = useState(NONE);
 	const [claimOpen, setClaimOpen] = useState(false);
 	const [claimDoc, setClaimDoc] = useState("");
 	const [claimNo, setClaimNo] = useState("1");
 
-	const columns = chart.columns;
+	const columns = chart.columns ?? [];
+	const cells = chart.cells ?? [];
 	const distinctRefs = [...new Set(columns.map((c) => c.reference))];
-	const labelFor = (f: string) => `D${distinctRefs.indexOf(f) + 1}`;
-	const cellFor = (limId: string, c: ChartColumn) =>
-		chart.cells.find(
-			(x) =>
-				x.limitationId === limId &&
-				x.reference === c.reference &&
-				x.method === c.method,
-		);
-	const isRunning = (c: ChartColumn) =>
-		running.has(colKey(c.reference, c.method));
+	const labelFor = (ref: string) => `D${distinctRefs.indexOf(ref) + 1}`;
+	const cellFor = (uid: string, columnId: string) =>
+		cells.find((x) => x.limitationUid === uid && x.columnId === columnId);
+
 	const widthOf = (id: string, fallback: number) => widths[id] ?? fallback;
 	const setWidth = (id: string, w: number) =>
 		setWidths((p) => ({ ...p, [id]: Math.max(140, w) }));
 
-	// Every save is based on chartRef.current (fresh) + the live rows.
 	const update = (patch: Partial<Chart>) =>
-		save.mutate({ ...chartRef.current, spine: rowsRef.current, ...patch });
-	const saveSpine = (next: ClaimLimitation[]) =>
-		save.mutate({ ...chartRef.current, spine: next });
+		save.mutate({
+			...chartRef.current,
+			limitations: rowsRef.current,
+			...patch,
+		});
+	const saveLimitations = (next: ClaimLimitation[]) =>
+		save.mutate({ ...chartRef.current, limitations: next });
 
 	const commitField = (
 		i: number,
@@ -136,17 +118,20 @@ function ChartTable({ chart }: { chart: Chart }) {
 			idx === i ? { ...r, [key]: value } : r,
 		);
 		setRows(next);
-		saveSpine(next);
+		saveLimitations(next);
 	};
 	const addRow = () => {
-		const next = [...rowsRef.current, { id: "", text: "", construction: "" }];
+		const next = [
+			...rowsRef.current,
+			{ uid: uuid(), label: "", text: "", construction: "" },
+		];
 		setRows(next);
-		saveSpine(next);
+		saveLimitations(next);
 	};
 	const removeRow = (i: number) => {
 		const next = rowsRef.current.filter((_, idx) => idx !== i);
 		setRows(next);
-		saveSpine(next);
+		saveLimitations(next);
 	};
 	const addClaim = async () => {
 		if (!claimDoc || !activeProfileId) return;
@@ -157,112 +142,41 @@ function ChartTable({ chart }: { chart: Chart }) {
 		});
 		const next = [...rowsRef.current, ...limitations];
 		setRows(next);
-		saveSpine(next);
+		saveLimitations(next);
 		setClaimOpen(false);
 		setClaimNo((n) => String((Number.parseInt(n, 10) || 0) + 1));
 	};
 
-	const mkCell =
-		(reference: string, method: ChartMethod) =>
-		(
-			limitationId: string,
-			disclosureType: DisclosureType,
-			reasoning: string,
-			citations: ChartCitation[],
-			teaching?: string,
-		): ChartCell => ({
-			limitationId,
-			reference,
-			method,
-			disclosureType,
-			teaching,
-			reasoning,
-			citations,
-			checked: false,
-			spineVersion: chart.spineVersion,
-		});
-
-	const runColumn = async (reference: string, method: ChartMethod) => {
-		const key = colKey(reference, method);
-		if (!activeTaskId || !activeProfileId || running.has(key)) return;
+	const runColumn = async (column: ChartColumn) => {
+		if (!activeTaskId || !activeProfileId || running.has(column.id)) return;
 		const taskId = activeTaskId;
 		const profileId = activeProfileId;
-		const mk = mkCell(reference, method);
-		setRunning((s) => new Set(s).add(key));
+		setRunning((s) => new Set(s).add(column.id));
 		setError(null);
 		try {
-			let cells: ChartCell[];
-			if (method === "semantic") {
-				cells = await Promise.all(
-					rowsRef.current.map(async (lim) => {
-						const o = await searchDocument(
-							taskId,
-							reference,
-							lim.text,
-							[],
-							SEMANTIC_TOP_K,
-						);
-						if (!o.ok)
-							return mk(
-								lim.id,
-								"Absent",
-								o.reason === "no-text"
-									? "No extractable text — extract or OCR this reference first."
-									: "No relevant passages retrieved.",
-								[],
-							);
-						const cls = await tasksApi.classifyCell(taskId, chart.id, {
-							profileId,
-							limitation: lim,
-							passages: o.passages.map((p) => ({ text: p.text, page: p.page })),
-						});
-						const cites = cls.passages
-							.map((i) => o.passages[i])
-							.filter((p): p is NonNullable<typeof p> => !!p)
-							.map((p) => ({ quote: p.text, location: `Page ${p.page}` }));
-						return mk(lim.id, cls.disclosureType, cls.reasoning, cites);
-					}),
-				);
-			} else {
-				const reads = await tasksApi.readReference(taskId, chart.id, {
-					profileId,
-					reference,
-					primer: chartRef.current.primer,
-					limitations: rowsRef.current,
+			const reads = await tasksApi.readReference(taskId, chart.id, {
+				profileId,
+				reference: column.reference,
+				primer: column.primer,
+				limitations: rowsRef.current,
+			});
+			const byLabel = new Map(rowsRef.current.map((l) => [l.label, l.uid]));
+			const cells: ChartCell[] = [];
+			for (const r of reads) {
+				const uid = byLabel.get(r.limitationLabel);
+				if (!uid) continue;
+				cells.push({
+					limitationUid: uid,
+					columnId: column.id,
+					disclosureType: r.disclosed,
+					reasoning: r.reasoning,
+					citations: r.citation ? [r.citation] : [],
+					checked: false,
 				});
-				cells = await Promise.all(
-					reads.map(async (r) => {
-						let cites: ChartCitation[] = [];
-						if (r.disclosed !== "Absent") {
-							if (method === "full-doc" && r.citation) cites = [r.citation];
-							else if (r.hint) {
-								const o = await searchDocument(
-									taskId,
-									reference,
-									r.hint,
-									[],
-									CITE_TOP_K,
-								);
-								const p = o.ok ? o.passages[0] : undefined;
-								if (p) cites = [{ quote: p.text, location: `Page ${p.page}` }];
-							}
-						}
-						return mk(
-							r.limitationId,
-							r.disclosed,
-							r.reasoning,
-							cites,
-							r.teaching,
-						);
-					}),
-				);
 			}
-			// Merge into the FRESH chart so the column (added just before) survives.
 			update({
 				cells: [
-					...chartRef.current.cells.filter(
-						(x) => !(x.reference === reference && x.method === method),
-					),
+					...chartRef.current.cells.filter((x) => x.columnId !== column.id),
 					...cells,
 				],
 			});
@@ -271,7 +185,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 		} finally {
 			setRunning((s) => {
 				const n = new Set(s);
-				n.delete(key);
+				n.delete(column.id);
 				return n;
 			});
 		}
@@ -280,34 +194,25 @@ function ChartTable({ chart }: { chart: Chart }) {
 	const addColumn = () => {
 		setColOpen(false);
 		if (!newDoc) return;
-		if (
-			!chartRef.current.columns.some(
-				(c) => c.reference === newDoc && c.method === newMethod,
-			)
-		)
-			update({
-				columns: [
-					...chartRef.current.columns,
-					{ reference: newDoc, method: newMethod },
-				],
-			});
-		runColumn(newDoc, newMethod);
+		const column: ChartColumn = {
+			id: uuid(),
+			reference: newDoc,
+			primer: newPrimer === NONE ? undefined : newPrimer,
+		};
+		update({ columns: [...chartRef.current.columns, column] });
+		runColumn(column);
+		setNewPrimer(NONE);
 	};
-	const removeColumn = (c: ChartColumn) =>
+	const removeColumn = (column: ChartColumn) =>
 		update({
-			columns: chartRef.current.columns.filter(
-				(x) => !(x.reference === c.reference && x.method === c.method),
-			),
-			cells: chartRef.current.cells.filter(
-				(x) => !(x.reference === c.reference && x.method === c.method),
-			),
+			columns: chartRef.current.columns.filter((x) => x.id !== column.id),
+			cells: chartRef.current.cells.filter((x) => x.columnId !== column.id),
 		});
 	const setChecked = (target: ChartCell, value: boolean) =>
 		update({
 			cells: chartRef.current.cells.map((x) =>
-				x.limitationId === target.limitationId &&
-				x.reference === target.reference &&
-				x.method === target.method
+				x.limitationUid === target.limitationUid &&
+				x.columnId === target.columnId
 					? { ...x, checked: value }
 					: x,
 			),
@@ -315,41 +220,18 @@ function ChartTable({ chart }: { chart: Chart }) {
 
 	return (
 		<div className="flex h-full flex-col bg-background">
-			<div className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5">
-				<Select
-					value={chart.primer ?? "__none__"}
-					onValueChange={(v) =>
-						update({ primer: v === "__none__" ? undefined : v })
-					}
-				>
-					<SelectTrigger className="h-7 w-40 text-xs">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="__none__">Primer: none</SelectItem>
-						{documents?.map((d) => (
-							<SelectItem key={d.filename} value={d.filename}>
-								Primer: {d.filename}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				{error && (
-					<span className="truncate text-xs text-destructive">{error}</span>
-				)}
-			</div>
+			{error && (
+				<p className="shrink-0 border-b px-3 py-1.5 text-xs text-destructive">
+					{error}
+				</p>
+			)}
 
 			<div className="min-h-0 flex-1 overflow-auto">
 				<table className="w-max border-separate border-spacing-0 text-sm">
 					<colgroup>
 						<col style={{ width: widthOf("feature", FEATURE_W) }} />
 						{columns.map((c) => (
-							<col
-								key={colKey(c.reference, c.method)}
-								style={{
-									width: widthOf(colKey(c.reference, c.method), COLUMN_W),
-								}}
-							/>
+							<col key={c.id} style={{ width: widthOf(c.id, COLUMN_W) }} />
 						))}
 						<col style={{ width: 48 }} />
 					</colgroup>
@@ -364,20 +246,20 @@ function ChartTable({ chart }: { chart: Chart }) {
 							</th>
 							{columns.map((c) => (
 								<th
-									key={colKey(c.reference, c.method)}
+									key={c.id}
 									className="relative border-r border-b bg-background px-3 py-2 text-left align-top font-normal"
 								>
 									<ColumnHeader
 										label={labelFor(c.reference)}
 										reference={c.reference}
-										method={c.method}
-										running={isRunning(c)}
-										onRun={() => runColumn(c.reference, c.method)}
+										primer={c.primer}
+										running={running.has(c.id)}
+										onRun={() => runColumn(c)}
 										onRemove={() => removeColumn(c)}
 									/>
 									<ResizeHandle
-										width={widthOf(colKey(c.reference, c.method), COLUMN_W)}
-										onResize={(w) => setWidth(colKey(c.reference, c.method), w)}
+										width={widthOf(c.id, COLUMN_W)}
+										onResize={(w) => setWidth(c.id, w)}
 									/>
 								</th>
 							))}
@@ -388,8 +270,8 @@ function ChartTable({ chart }: { chart: Chart }) {
 									documents={documents?.map((d) => d.filename) ?? []}
 									doc={newDoc}
 									setDoc={setNewDoc}
-									method={newMethod}
-									setMethod={setNewMethod}
+									primer={newPrimer}
+									setPrimer={setNewPrimer}
 									onAdd={addColumn}
 								/>
 							</th>
@@ -397,8 +279,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 					</thead>
 					<tbody>
 						{rows.map((lim, i) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: editable rows have no stable id
-							<tr key={i} className="group">
+							<tr key={lim.uid} className="group">
 								<td className="border-r border-b px-2 py-1.5 align-top">
 									<FeatureCell
 										lim={lim}
@@ -408,12 +289,12 @@ function ChartTable({ chart }: { chart: Chart }) {
 								</td>
 								{columns.map((c) => (
 									<td
-										key={colKey(c.reference, c.method)}
+										key={c.id}
 										className="border-r border-b px-3 py-2 align-top"
 									>
 										<DisclosureContent
-											cell={cellFor(lim.id, c)}
-											running={isRunning(c)}
+											cell={cellFor(lim.uid, c.id)}
+											running={running.has(c.id)}
 											onChecked={setChecked}
 										/>
 									</td>
@@ -497,7 +378,6 @@ function ChartTable({ chart }: { chart: Chart }) {
 	);
 }
 
-// Drag handle on a column's right border.
 function ResizeHandle({
 	width,
 	onResize,
@@ -530,7 +410,6 @@ function ResizeHandle({
 	);
 }
 
-// Click-to-edit text: looks like content, becomes a field on click, commits on blur.
 function InlineEdit({
 	value,
 	onCommit,
@@ -609,7 +488,6 @@ function InlineField({
 	);
 }
 
-// The Feature cell — ID, verbatim limitation and construction together (one cell).
 function FeatureCell({
 	lim,
 	onCommit,
@@ -623,8 +501,8 @@ function FeatureCell({
 		<div className="flex items-start gap-1.5">
 			<div className="w-9 shrink-0 pt-0.5">
 				<InlineEdit
-					value={lim.id}
-					onCommit={(v) => onCommit("id", v)}
+					value={lim.label}
+					onCommit={(v) => onCommit("label", v)}
 					placeholder="1a"
 					mono
 					className="text-muted-foreground text-xs"
@@ -637,13 +515,12 @@ function FeatureCell({
 					placeholder="Verbatim limitation…"
 					className="text-sm leading-snug"
 				/>
-				<div className="flex items-start gap-1 text-xs text-muted-foreground">
-					<span className="shrink-0 pt-0.5 font-medium">Constr.</span>
+				<div className="pl-3">
 					<InlineEdit
 						value={lim.construction}
 						onCommit={(v) => onCommit("construction", v)}
 						placeholder="add construction…"
-						className="text-xs"
+						className="text-muted-foreground text-xs"
 					/>
 				</div>
 			</div>
@@ -666,8 +543,8 @@ function AddColumn({
 	documents,
 	doc,
 	setDoc,
-	method,
-	setMethod,
+	primer,
+	setPrimer,
 	onAdd,
 }: {
 	open: boolean;
@@ -675,8 +552,8 @@ function AddColumn({
 	documents: string[];
 	doc: string;
 	setDoc: (v: string) => void;
-	method: ChartMethod;
-	setMethod: (v: ChartMethod) => void;
+	primer: string;
+	setPrimer: (v: string) => void;
 	onAdd: () => void;
 }) {
 	return (
@@ -703,18 +580,16 @@ function AddColumn({
 					</Select>
 				</div>
 				<div className="space-y-1.5">
-					<Label className="text-xs">Method</Label>
-					<Select
-						value={method}
-						onValueChange={(v) => setMethod(v as ChartMethod)}
-					>
+					<Label className="text-xs">Primer (optional)</Label>
+					<Select value={primer} onValueChange={setPrimer}>
 						<SelectTrigger className="w-full text-xs">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							{METHODS.map((m) => (
-								<SelectItem key={m.value} value={m.value}>
-									{m.label}
+							<SelectItem value={NONE}>None</SelectItem>
+							{documents.map((d) => (
+								<SelectItem key={d} value={d}>
+									{d}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -732,14 +607,14 @@ function AddColumn({
 function ColumnHeader({
 	label,
 	reference,
-	method,
+	primer,
 	running,
 	onRun,
 	onRemove,
 }: {
 	label: string;
 	reference: string;
-	method: ChartMethod;
+	primer?: string;
 	running: boolean;
 	onRun: () => void;
 	onRemove: () => void;
@@ -747,15 +622,17 @@ function ColumnHeader({
 	return (
 		<div className="flex items-start justify-between gap-1">
 			<div className="min-w-0">
-				<div className="text-xs">
-					<span className="font-medium font-mono text-foreground">{label}</span>
-					<span className="ml-1.5 text-muted-foreground">
-						{METHOD_SHORT[method]}
-					</span>
+				<div className="font-medium font-mono text-foreground text-xs">
+					{label}
 				</div>
 				<div className="truncate text-[10px] text-muted-foreground">
 					{reference}
 				</div>
+				{primer && (
+					<div className="truncate text-[10px] text-muted-foreground/70">
+						+ {primer}
+					</div>
+				)}
 			</div>
 			<div className="flex shrink-0 items-center">
 				<Button
@@ -837,14 +714,6 @@ function DisclosureContent({
 				</blockquote>
 			))}
 			<p className="break-words text-sm leading-snug">{cell.reasoning}</p>
-			{cell.teaching && (
-				<p className="break-words border-border/60 border-t pt-1.5 text-[11px] text-muted-foreground">
-					<span className="font-semibold uppercase tracking-wide">
-						Teaching
-					</span>
-					<span className="mt-0.5 block">{cell.teaching}</span>
-				</p>
-			)}
 		</div>
 	);
 }

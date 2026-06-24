@@ -9,9 +9,8 @@
 /** The kind of analysis. The union grows as new chart types land. */
 export type ChartType = "claim-chart";
 
-/** Bumped when the on-disk shape changes, so the JSON stays portable (a stored
- *  chart records the schema it was written with). */
-export const CHART_SCHEMA_VERSION = 1;
+/** Bumped when the on-disk shape changes, so the JSON stays portable. */
+export const CHART_SCHEMA_VERSION = 2;
 
 type ChartBase = {
 	id: string;
@@ -27,111 +26,75 @@ type ChartBase = {
 
 // ─── Claim chart ─────────────────────────────────────────────────────────────────
 
-/** One claim limitation — a row of the spine: the write-once, HITL-locked backbone
- *  every block reads and none re-decides. */
+/** One claim limitation — a row of the table. */
 export type ClaimLimitation = {
-	/** Stable key across every block (e.g. "1a", "1b"). */
-	id: string;
-	/** Verbatim claim text — never paraphrased. */
+	/** Stable internal id. Cells key off THIS, never the label (which is editable). */
+	uid: string;
+	/** Display id ("1a", "1b" …), editable. */
+	label: string;
+	/** Verbatim claim text. */
 	text: string;
-	/** Assumed scope of the key term(s), construed in light of the spec. Locked at
-	 *  the HITL gate; cells read it, never edit it. */
+	/** Assumed scope of the key term(s), construed in light of the description. */
 	construction: string;
 };
 
-/** A reference document being charted (a doc in the task). */
-export type ChartReference = {
-	/** The document's filename in the task folder. */
-	filename: string;
-	/** Short handle shown as the column header (e.g. "D1"); falls back to the label. */
-	label?: string;
+/** A column of the table: one reference analysed against the limitations, optionally
+ *  shaped by a primer (exam/search report …). Has its own id so the same reference can
+ *  appear twice with different primers. */
+export type ChartColumn = {
+	id: string;
+	/** The reference document's filename. */
+	reference: string;
+	/** Optional primer document (filename) fed into the read to shape the analysis. */
+	primer?: string;
 };
 
-/** How a reference discloses a limitation (document-as-a-whole verdict). EP
- *  thresholds: Express = verbatim/near-verbatim; Derived = directly & unambiguously
- *  derivable (the anticipation threshold); Suggested = points the skilled person
- *  toward it, below the threshold (obviousness-only, non-anticipatory); Absent. */
+/** How a reference discloses a limitation, read as a whole. EP thresholds: Express =
+ *  verbatim/near-verbatim; Derived = directly & unambiguously derivable (anticipation
+ *  threshold); Suggested = points the skilled person toward it, below the threshold
+ *  (inventive step, not novelty); Absent. */
 export type DisclosureType = "Express" | "Derived" | "Suggested" | "Absent";
 
-/** The extraction method used to fill a cell — the test-bed knob (see CLAIM-CHARTING.md):
- *  semantic = search-then-classify; hybrid = whole-read then search-for-citation;
- *  full-doc = whole-read with model-given citation. */
-export type ChartMethod = "semantic" | "hybrid" | "full-doc";
-
-/** A grounded citation: a verbatim passage from the reference + its location. Search-
- *  found (semantic/hybrid) or model-given (full-doc). */
+/** A grounded citation: a verbatim passage from the reference + its location. */
 export type ChartCitation = {
 	quote: string;
-	/** Best-effort source position (page / locator). */
+	/** Location (e.g. `[0021]` for retrieved text, page/¶ for PDFs). */
 	location?: string;
 };
 
-/** One cell — a (limitation × reference × method) judgement. Cells are tagged by method
- *  so a chart can hold and toggle between methods (the test bed). */
+/** One cell — a (limitation × column) judgement, keyed by the limitation's uid and the
+ *  column's id. */
 export type ChartCell = {
-	limitationId: string;
-	/** The reference's filename (keys to a ChartReference). */
-	reference: string;
-	method: ChartMethod;
+	limitationUid: string;
+	columnId: string;
 	disclosureType: DisclosureType;
-	/** What the reference teaches re: this limitation (the whole-read summary; absent for
-	 *  the semantic method). */
-	teaching?: string;
-	/** Self-contained reasoning ("limitation X, construed as Y, is disclosed by … because …"). */
+	/** Self-contained reasoning. */
 	reasoning: string;
 	citations: ChartCitation[];
-	/** The attorney has manually verified this cell. */
+	/** The attorney has signed off on this cell. (Becomes a status enum in a later step.) */
 	checked: boolean;
-	/** The spine version this cell was built against; a mismatch flags it as stale. */
-	spineVersion: number;
 };
 
-/** The per-limitation result of a whole-document read (hybrid / full-doc). The read
- *  judges disclosure from the reference as a whole; the method then sources the citation
- *  from `citation` (full-doc, model-given) or by searching `hint` (hybrid). */
+/** The per-limitation result of a whole-document read. Echoes the limitation's `label`
+ *  so the client can map it back to the row. */
 export type LimitationRead = {
-	limitationId: string;
+	limitationLabel: string;
 	disclosed: DisclosureType;
-	teaching: string;
 	reasoning: string;
-	/** A short phrase to locate the supporting passage via search (hybrid). */
-	hint: string;
-	/** The model's own verbatim citation (full-doc); null if Absent. */
+	/** The model's verbatim citation; null if Absent. */
 	citation: ChartCitation | null;
 };
 
-/** A column of the analysis grid: one reference analysed by one method. Multiple
- *  columns can share a reference (e.g. D1 by full-doc and by hybrid) for comparison. */
-export type ChartColumn = { reference: string; method: ChartMethod };
-
 export type ClaimChart = ChartBase & {
 	type: "claim-chart";
-	/** The limitations backbone. Locked at the HITL gate. */
-	spine: ClaimLimitation[];
-	/** Stamp bumped whenever the locked spine changes; cells carry the version they
-	 *  were built against (stale-cell detection). */
-	spineVersion: number;
-	/** True once the attorney approves the spine; cells build only against a locked spine. */
-	locked: boolean;
-	/** The reference docs known to this chart (labels D1, D2 …). */
-	references: ChartReference[];
-	/** The analysis columns — each a (reference × method) run, shown side by side. */
+	/** The rows. */
+	limitations: ClaimLimitation[];
+	/** The analysis columns (each a reference × optional primer). */
 	columns: ChartColumn[];
-	/** Optional primer document (filename) fed into the whole read to shape the analysis
-	 *  — the examiner's report (OA mode), a product description (FTO), etc. The "mode" is
-	 *  just which primer. */
-	primer?: string;
-	/** The filled cells (sparse — one per analysed limitation × reference × method). */
+	/** The filled cells (sparse — one per analysed limitation × column). */
 	cells: ChartCell[];
-};
-
-/** The semantic baseline's classification of one cell over retrieved passages: the
- *  verdict + reasoning + which passages (by index) it relied on. The client turns the
- *  indices into citations against the passages it retrieved. */
-export type CellClassification = {
-	disclosureType: DisclosureType;
-	reasoning: string;
-	passages: number[];
+	/** Last-used construction-support doc (the description), to default the parse popover. */
+	constructionSupport?: string;
 };
 
 /** The persisted analysis object. A discriminated union (over `type`) as new chart
@@ -147,8 +110,6 @@ export type ChartSummary = {
 	starred?: boolean;
 };
 
-/** A blank claim chart — the spine is filled by the parse/construe nodes, then
- *  locked at the HITL gate before any cell is built. */
 export function createClaimChart(
 	id: string,
 	title = "Untitled claim chart",
@@ -161,10 +122,7 @@ export function createClaimChart(
 		createdAt: now,
 		updatedAt: now,
 		schemaVersion: CHART_SCHEMA_VERSION,
-		spine: [],
-		spineVersion: 0,
-		locked: false,
-		references: [],
+		limitations: [],
 		columns: [],
 		cells: [],
 	};

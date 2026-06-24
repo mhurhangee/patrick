@@ -1,5 +1,4 @@
 import type {
-	CellClassification,
 	Chart,
 	ChartSummary,
 	Chat,
@@ -69,20 +68,6 @@ export const tasksApi = {
 			limitations: ClaimLimitation[];
 		},
 	) => api.post<LimitationRead[]>(`/tasks/${id}/charts/${chartId}/read`, body),
-	/** Classify one cell over retrieved passages (semantic baseline). */
-	classifyCell: (
-		id: string,
-		chartId: string,
-		body: {
-			profileId: string;
-			limitation: { id: string; text: string; construction: string };
-			passages: { text: string; page: number }[];
-		},
-	) =>
-		api.post<CellClassification>(
-			`/tasks/${id}/charts/${chartId}/classify`,
-			body,
-		),
 	removeChart: (id: string, chartId: string) =>
 		api.del<{ ok: boolean }>(`/tasks/${id}/charts/${chartId}`),
 	/** Star / rename a chart (attorney-set meta). */
