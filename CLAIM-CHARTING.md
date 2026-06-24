@@ -59,8 +59,10 @@ A cell may hold several citations, most on-point first.
 **`Chart.model`** (optional): the analysis model for this chart; unset ⇒ the profile's default.
 
 **Prompts** live on the **profile** (`prompts.claimConstruction`, `prompts.claimAnalysis`), edited in
-`/profile` → AI. Unset ⇒ the built-in default. **Not** per-chart (same lesson as the chat system
-prompt — want a variant, make another profile); the chart header links to them.
+`/profile` → **Prompts** (alongside Patrick's system prompt), via the same `RichEditor` + draft
+autosave as the brief and system prompt — no bespoke widget. Unset ⇒ the built-in default runs.
+**Not** per-chart (same lesson as the chat system prompt — want a variant, make another profile);
+the chart header links to them.
 
 **Two kinds of supporting document — keep them distinct:**
 - **Construction-support** (per *row*, used at *parse* time): the description / application as

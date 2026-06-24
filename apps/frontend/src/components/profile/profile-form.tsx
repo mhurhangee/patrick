@@ -24,7 +24,7 @@ const SECTIONS: readonly SettingsSectionDef[] = [
 	{ id: "identity", label: "Identity" },
 	{ id: "ai", label: "AI" },
 	{ id: "ops", label: "Patent data" },
-	{ id: "prompt", label: "Prompt" },
+	{ id: "prompt", label: "Prompts" },
 	{ id: "appearance", label: "Appearance" },
 ];
 
@@ -110,23 +110,6 @@ export function ProfileForm({
 					description="Patrick runs on your own AI key, on your machine. Choose a provider, connect your key, then set how it behaves."
 				>
 					<AiSection value={draft.ai} onChange={(ai) => set({ ai })} />
-					<div className="mt-6 space-y-3 border-t pt-6">
-						<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-							Claim charting
-						</p>
-						<p className="text-sm text-muted-foreground">
-							The rubrics behind claim charts — claim construction and
-							disclosure analysis. Profile-wide; edit per jurisdiction or house
-							style. A different approach for another matter → a separate
-							profile.
-						</p>
-						<ClaimPromptsSection
-							value={draft.prompts}
-							onChange={(prompts) =>
-								set({ prompts: { ...draft.prompts, ...prompts } })
-							}
-						/>
-					</div>
 				</SettingsSection>
 				<SettingsSection
 					id="ops"
@@ -153,21 +136,47 @@ export function ProfileForm({
 				</SettingsSection>
 				<SettingsSection
 					id="prompt"
-					title="Prompt"
-					description="Patrick's standing instructions — practice context, do's and don'ts, response style. Each chat freezes them when it starts."
+					title="Prompts"
+					description="What Patrick is told. The system prompt that frames every chat (frozen when a chat starts), and the claim-charting rubrics (read live by each chart)."
 				>
-					{activeTaskId && (
-						<Hint className="mb-4" title="Patrick can help">
-							Ask in the chat and Patrick will draft or refine any section —
-							practice context, do's and don'ts, response style.
-						</Hint>
-					)}
-					<PromptSection
-						value={draft.prompts.agentpat}
-						onChange={(agentpat) =>
-							set({ prompts: { ...draft.prompts, agentpat } })
-						}
-					/>
+					<div className="space-y-10">
+						<div className="space-y-4">
+							<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+								Patrick (system)
+							</p>
+							{activeTaskId && (
+								<Hint title="Patrick can help">
+									Ask in the chat and Patrick will draft or refine any section —
+									practice context, do's and don'ts, response style.
+								</Hint>
+							)}
+							<PromptSection
+								value={draft.prompts.agentpat}
+								onChange={(agentpat) =>
+									set({ prompts: { ...draft.prompts, agentpat } })
+								}
+							/>
+						</div>
+						<div className="space-y-4 border-t pt-8">
+							<div className="space-y-1">
+								<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+									Claim charting
+								</p>
+								<p className="text-sm text-muted-foreground">
+									The rubrics behind claim charts — claim construction and
+									disclosure analysis. Profile-wide; edit per jurisdiction or
+									house style. A different approach for another matter → a
+									separate profile.
+								</p>
+							</div>
+							<ClaimPromptsSection
+								value={draft.prompts}
+								onChange={(prompts) =>
+									set({ prompts: { ...draft.prompts, ...prompts } })
+								}
+							/>
+						</div>
+					</div>
 				</SettingsSection>
 				<SettingsSection
 					id="appearance"

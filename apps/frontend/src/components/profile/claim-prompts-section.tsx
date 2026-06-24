@@ -3,24 +3,20 @@ import {
 	DEFAULT_CLAIM_CONSTRUCTION_PROMPT,
 	type Profile,
 } from "@patrick/shared";
-import { ChevronDown, Pencil, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+import { RichEditor } from "@/components/rich-editor/rich-editor";
 import { Button } from "@/components/ui/button";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { FieldDescription } from "@/components/ui/field";
-import { Textarea } from "@/components/ui/textarea";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 
 type ClaimPrompts = Pick<
 	Profile["prompts"],
 	"claimConstruction" | "claimAnalysis"
 >;
 
-// One collapsible prompt. Unset ⇒ the built-in default runs; we show that default
-// (read-only) so the attorney can see what's in force, and "Customise" loads it for
-// editing. A customised prompt edits freely; "Reset to default" clears back to unset.
+// One claim prompt — the same RichEditor + draft-autosave the rest of the app uses (the
+// task brief, the system-prompt blocks). Unset ⇒ the built-in default is shown and runs
+// live (so default improvements still reach untouched profiles); the first edit seeds it,
+// and "Reset to default" clears back to unset.
 function PromptField({
 	label,
 	description,
@@ -36,55 +32,41 @@ function PromptField({
 }) {
 	const customised = value !== undefined && value.trim() !== "";
 	return (
-		<Collapsible className="rounded-lg border">
-			<CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm">
-				<span className="flex items-center gap-2 font-medium">
+		<Field>
+			<div className="flex items-center justify-between">
+				<FieldLabel>
 					{label}
-					<span className="text-xs font-normal text-muted-foreground">
+					<span className="ml-2 font-normal text-muted-foreground">
 						{customised ? "Customised" : "Default"}
 					</span>
-				</span>
-				<ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-			</CollapsibleTrigger>
-			<CollapsibleContent className="space-y-2 border-t px-3 py-3">
-				<div className="flex justify-end">
-					{customised ? (
-						<Button
-							variant="ghost"
-							size="xs"
-							className="text-muted-foreground"
-							onClick={() => onChange(undefined)}
-						>
-							<RotateCcw />
-							Reset to default
-						</Button>
-					) : (
-						<Button
-							variant="ghost"
-							size="xs"
-							className="text-muted-foreground"
-							onClick={() => onChange(def)}
-						>
-							<Pencil />
-							Customise
-						</Button>
-					)}
-				</div>
-				<Textarea
+				</FieldLabel>
+				{customised && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-muted-foreground"
+						onClick={() => onChange(undefined)}
+					>
+						<RotateCcw />
+						Reset to default
+					</Button>
+				)}
+			</div>
+			<div className="rounded-md border px-3 py-2">
+				<RichEditor
 					value={customised ? value : def}
-					readOnly={!customised}
-					onChange={(e) => onChange(e.target.value)}
-					className="min-h-56 font-mono text-xs leading-relaxed"
+					onChange={onChange}
+					className="max-h-96 min-h-40 overflow-auto text-sm"
 				/>
-				<FieldDescription>{description}</FieldDescription>
-			</CollapsibleContent>
-		</Collapsible>
+			</div>
+			<FieldDescription>{description}</FieldDescription>
+		</Field>
 	);
 }
 
-/** The claim-chart prompts — the parse/construe rubric and the disclosure-analysis rubric.
- *  Profile-wide defaults (no per-chart override by design); a chart freezes nothing, it
- *  reads these live. Want a different rubric for another jurisdiction → a second profile. */
+/** The claim-chart rubrics — the parse/construe prompt and the disclosure-analysis prompt.
+ *  Profile-wide defaults (no per-chart override by design); a chart reads them live. Want a
+ *  different rubric for another jurisdiction → a second profile. */
 export function ClaimPromptsSection({
 	value,
 	onChange,
@@ -93,7 +75,7 @@ export function ClaimPromptsSection({
 	onChange: (value: ClaimPrompts) => void;
 }) {
 	return (
-		<div className="space-y-3">
+		<div className="space-y-6">
 			<PromptField
 				label="Claim construction"
 				description="How claims are split into limitations and construed (Art 69 EPC). Drives Add claim."

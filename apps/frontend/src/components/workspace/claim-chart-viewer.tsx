@@ -11,13 +11,13 @@ import { docKind } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
 import {
 	Info,
-	MapPin,
+	Locate,
 	MoreHorizontal,
 	Play,
 	Plus,
 	RotateCcw,
-	SlidersHorizontal,
 	Trash2,
+	TriangleAlert,
 	X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -333,13 +333,20 @@ function ChartTable({ chart }: { chart: Chart }) {
 		<div className="flex h-full flex-col bg-background">
 			<div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-1.5">
 				<p className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-					<Info className="size-3.5 shrink-0" />
+					<TriangleAlert className="size-4 shrink-0" />
 					<span className="truncate">
-						AI-generated — always verify each citation against the source.
+						AI-generated — always verify each citation against the source.{" "}
+						<Button
+							variant="link"
+							className="text-[11px] text-muted-foreground px-0"
+							onClick={() => navigate({ to: "/profile", hash: "prompt" })}
+						>
+							See prompts
+						</Button>
+						.
 					</span>
 				</p>
 				<div className="flex shrink-0 items-center gap-1">
-					<span className="text-[11px] text-muted-foreground">Model</span>
 					<ModelPicker
 						value={analysisModel}
 						onChange={(id) => update({ model: id })}
@@ -352,19 +359,9 @@ function ChartTable({ chart }: { chart: Chart }) {
 						variant="ghost"
 						size="icon-xs"
 						className="text-muted-foreground"
-						tooltip="Analysis quality is model-sensitive — pick a strong model; weaker ones mischaracterise disclosures."
+						tooltip="Analysis quality is model dependent; we recommend choosing a stronger model."
 					>
 						<Info />
-					</Button>
-					<Button
-						variant="ghost"
-						size="xs"
-						className="text-muted-foreground"
-						tooltip="Edit the construction & analysis prompts in your profile"
-						onClick={() => navigate({ to: "/profile", hash: "ai" })}
-					>
-						<SlidersHorizontal />
-						Prompts
 					</Button>
 				</div>
 			</div>
@@ -1021,7 +1018,7 @@ function CitationList({
 					key={i}
 					className="group/c flex items-center gap-1 text-muted-foreground"
 				>
-					<MapPin className="size-3 shrink-0 opacity-60" />
+					<Locate className="size-3 shrink-0 opacity-60" />
 					<div className="min-w-0 flex-1">
 						<InlineEdit
 							value={cit.location}
