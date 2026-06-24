@@ -8,7 +8,15 @@ import type {
 	DisclosureType,
 } from "@patrick/shared";
 import { docKind } from "@patrick/shared";
-import { Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import {
+	Loader2,
+	MoreHorizontal,
+	Plus,
+	RotateCcw,
+	Sparkles,
+	Trash2,
+	X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { DocIcon } from "@/components/doc-icon";
@@ -17,6 +25,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -210,7 +219,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 		setClaimOpen(false);
 	};
 
-	const runColumn = async (column: ChartColumn) => {
+	const runColumn = async (column: ChartColumn, force = false) => {
 		if (!activeTaskId || !activeProfileId || running.has(column.id)) return;
 		const taskId = activeTaskId;
 		const profileId = activeProfileId;
@@ -234,8 +243,12 @@ function ChartTable({ chart }: { chart: Chart }) {
 				const uid = byLabel.get(r.limitationLabel);
 				if (!uid) continue;
 				const prev = existing.get(uid);
-				// Preserve human work; refresh AI / stale / new cells.
-				if (prev && (prev.status === "edited" || prev.status === "approved")) {
+				// Preserve human work (unless forced); refresh AI / stale / new cells.
+				if (
+					!force &&
+					prev &&
+					(prev.status === "edited" || prev.status === "approved")
+				) {
 					cells.push(prev);
 				} else {
 					cells.push({
@@ -334,6 +347,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 										primer={c.primer}
 										running={running.has(c.id)}
 										onRun={() => runColumn(c)}
+										onForceRun={() => runColumn(c, true)}
 										onRemove={() => removeColumn(c)}
 									/>
 									<ResizeHandle
@@ -668,16 +682,39 @@ function FeatureCell({
 					)}
 				</div>
 			</div>
-			<Button
-				variant="ghost"
-				size="icon-xs"
-				tooltip="Delete row"
-				className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100"
-				onClick={onRemove}
-			>
-				<Trash2 />
-			</Button>
+			<div className="shrink-0 opacity-0 group-hover:opacity-100">
+				<RowMenu onDelete={onRemove} />
+			</div>
 		</div>
+	);
+}
+
+function Kebab({ tooltip }: { tooltip: string }) {
+	return (
+		<Button
+			variant="ghost"
+			size="icon-xs"
+			tooltip={tooltip}
+			className="text-muted-foreground"
+		>
+			<MoreHorizontal />
+		</Button>
+	);
+}
+
+function RowMenu({ onDelete }: { onDelete: () => void }) {
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Kebab tooltip="Row actions" />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				<DropdownMenuItem onSelect={onDelete} variant="destructive">
+					<Trash2 />
+					Delete row
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
@@ -755,6 +792,7 @@ function ColumnHeader({
 	primer,
 	running,
 	onRun,
+	onForceRun,
 	onRemove,
 }: {
 	label: string;
@@ -762,6 +800,7 @@ function ColumnHeader({
 	primer?: string;
 	running: boolean;
 	onRun: () => void;
+	onForceRun: () => void;
 	onRemove: () => void;
 }) {
 	return (
@@ -780,25 +819,30 @@ function ColumnHeader({
 				)}
 			</div>
 			<div className="flex shrink-0 items-center">
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					tooltip="Re-run"
-					disabled={running}
-					onClick={onRun}
-					className="text-muted-foreground"
-				>
-					{running ? <Loader2 className="animate-spin" /> : <Sparkles />}
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					tooltip="Remove column"
-					onClick={onRemove}
-					className="text-muted-foreground"
-				>
-					<X />
-				</Button>
+				{running ? (
+					<Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+				) : (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Kebab tooltip="Column actions" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onSelect={onRun}>
+								<Sparkles />
+								Re-run
+							</DropdownMenuItem>
+							<DropdownMenuItem onSelect={onForceRun}>
+								<RotateCcw />
+								Re-run &amp; overwrite edits
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem onSelect={onRemove} variant="destructive">
+								<Trash2 />
+								Remove column
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				)}
 			</div>
 		</div>
 	);
