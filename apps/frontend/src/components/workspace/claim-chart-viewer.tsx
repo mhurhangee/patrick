@@ -1,6 +1,8 @@
 import type {
+	CellStatus,
 	Chart,
 	ChartCell,
+	ChartCitation,
 	ChartColumn,
 	ClaimLimitation,
 	DisclosureType,
@@ -40,6 +42,29 @@ const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
 	Derived: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
 	Suggested: "bg-amber-500/15 text-amber-700 dark:text-amber-600",
 	Absent: "bg-muted text-muted-foreground",
+};
+
+const VERDICTS: DisclosureType[] = [
+	"Express",
+	"Derived",
+	"Suggested",
+	"Absent",
+];
+
+const STATUS_STYLE: Record<CellStatus, { label: string; className: string }> = {
+	ai: { label: "AI", className: "bg-muted text-muted-foreground" },
+	edited: {
+		label: "Edited",
+		className: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
+	},
+	approved: {
+		label: "Approved",
+		className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+	},
+	stale: {
+		label: "Stale",
+		className: "bg-amber-500/15 text-amber-700 dark:text-amber-600",
+	},
 };
 
 const uuid = () => crypto.randomUUID();
@@ -134,7 +159,19 @@ function ChartTable({ chart }: { chart: Chart }) {
 			idx === i ? { ...r, [key]: value } : r,
 		);
 		setRows(next);
-		saveLimitations(next);
+		// Changing the limitation text or construction makes that row's cells stale.
+		if (key === "text" || key === "construction") {
+			const uid = next[i]?.uid;
+			save.mutate({
+				...chartRef.current,
+				limitations: next,
+				cells: chartRef.current.cells.map((c) =>
+					c.limitationUid === uid ? { ...c, status: "stale" } : c,
+				),
+			});
+		} else {
+			saveLimitations(next);
+		}
 	};
 	const addRow = () => {
 		const next = [
@@ -182,18 +219,29 @@ function ChartTable({ chart }: { chart: Chart }) {
 				limitations: rowsRef.current,
 			});
 			const byLabel = new Map(rowsRef.current.map((l) => [l.label, l.uid]));
+			const existing = new Map(
+				chartRef.current.cells
+					.filter((c) => c.columnId === column.id)
+					.map((c) => [c.limitationUid, c]),
+			);
 			const cells: ChartCell[] = [];
 			for (const r of reads) {
 				const uid = byLabel.get(r.limitationLabel);
 				if (!uid) continue;
-				cells.push({
-					limitationUid: uid,
-					columnId: column.id,
-					disclosureType: r.disclosed,
-					reasoning: r.reasoning,
-					citations: r.citation ? [r.citation] : [],
-					checked: false,
-				});
+				const prev = existing.get(uid);
+				// Preserve human work; refresh AI / stale / new cells.
+				if (prev && (prev.status === "edited" || prev.status === "approved")) {
+					cells.push(prev);
+				} else {
+					cells.push({
+						limitationUid: uid,
+						columnId: column.id,
+						disclosureType: r.disclosed,
+						reasoning: r.reasoning,
+						citations: r.citation ? [r.citation] : [],
+						status: "ai",
+					});
+				}
 			}
 			update({
 				cells: [
@@ -229,13 +277,19 @@ function ChartTable({ chart }: { chart: Chart }) {
 			columns: chartRef.current.columns.filter((x) => x.id !== column.id),
 			cells: chartRef.current.cells.filter((x) => x.columnId !== column.id),
 		});
-	const setChecked = (target: ChartCell, value: boolean) =>
+	const sameCell = (a: ChartCell, b: ChartCell) =>
+		a.limitationUid === b.limitationUid && a.columnId === b.columnId;
+	// Any human edit flips the cell to "edited" (clearing approval).
+	const editCell = (target: ChartCell, patch: Partial<ChartCell>) =>
 		update({
 			cells: chartRef.current.cells.map((x) =>
-				x.limitationUid === target.limitationUid &&
-				x.columnId === target.columnId
-					? { ...x, checked: value }
-					: x,
+				sameCell(x, target) ? { ...x, ...patch, status: "edited" } : x,
+			),
+		});
+	const setCellStatus = (target: ChartCell, status: CellStatus) =>
+		update({
+			cells: chartRef.current.cells.map((x) =>
+				sameCell(x, target) ? { ...x, status } : x,
 			),
 		});
 
@@ -283,6 +337,11 @@ function ChartTable({ chart }: { chart: Chart }) {
 									/>
 								</th>
 							))}
+							{columns.length === 0 && (
+								<th className="sticky top-0 z-20 border-r border-b border-dashed bg-background px-3 py-2 text-left align-top font-normal text-muted-foreground/40 text-xs">
+									Disclosure
+								</th>
+							)}
 							<th className="sticky top-0 z-20 bg-background p-1 align-top">
 								<AddColumn
 									open={colOpen}
@@ -315,10 +374,14 @@ function ChartTable({ chart }: { chart: Chart }) {
 										<DisclosureContent
 											cell={cellFor(lim.uid, c.id)}
 											running={running.has(c.id)}
-											onChecked={setChecked}
+											onEdit={editCell}
+											onSetStatus={setCellStatus}
 										/>
 									</td>
 								))}
+								{columns.length === 0 && (
+									<td className="border-r border-b border-dashed" />
+								)}
 							</tr>
 						))}
 					</tbody>
@@ -725,11 +788,13 @@ function ColumnHeader({
 function DisclosureContent({
 	cell,
 	running,
-	onChecked,
+	onEdit,
+	onSetStatus,
 }: {
 	cell: ChartCell | undefined;
 	running: boolean;
-	onChecked: (cell: ChartCell, value: boolean) => void;
+	onEdit: (cell: ChartCell, patch: Partial<ChartCell>) => void;
+	onSetStatus: (cell: ChartCell, status: CellStatus) => void;
 }) {
 	if (!cell)
 		return (
@@ -737,46 +802,125 @@ function DisclosureContent({
 				{running ? "reading…" : "—"}
 			</span>
 		);
+	const status = cell.status ?? "ai";
+	const approved = status === "approved";
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center justify-between gap-2">
-				<span
-					className={cn(
-						"rounded px-1.5 py-0.5 font-semibold text-xs uppercase tracking-wide",
-						DISCLOSURE_STYLE[cell.disclosureType],
-					)}
-				>
-					{cell.disclosureType}
-				</span>
+				<div className="flex min-w-0 flex-wrap items-center gap-1.5">
+					<Select
+						value={cell.disclosureType}
+						onValueChange={(v) =>
+							onEdit(cell, { disclosureType: v as DisclosureType })
+						}
+					>
+						<SelectTrigger
+							className={cn(
+								"h-auto gap-1 rounded border-0 px-1.5 py-0.5 font-semibold text-xs uppercase tracking-wide focus:ring-0",
+								DISCLOSURE_STYLE[cell.disclosureType],
+							)}
+						>
+							{cell.disclosureType}
+						</SelectTrigger>
+						<SelectContent>
+							{VERDICTS.map((t) => (
+								<SelectItem key={t} value={t}>
+									{t}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<span
+						className={cn(
+							"rounded px-1 py-0.5 font-medium text-[10px] uppercase tracking-wide",
+							STATUS_STYLE[status].className,
+						)}
+					>
+						{STATUS_STYLE[status].label}
+					</span>
+				</div>
 				<Button
-					variant={cell.checked ? "secondary" : "ghost"}
+					variant={approved ? "secondary" : "ghost"}
 					size="icon-xs"
-					tooltip={cell.checked ? "Verified" : "Mark verified"}
-					onClick={() => onChecked(cell, !cell.checked)}
+					tooltip={approved ? "Approved — click to unapprove" : "Approve"}
+					onClick={() => onSetStatus(cell, approved ? "ai" : "approved")}
 				>
 					<Check
 						className={
-							cell.checked
+							approved
 								? "text-emerald-600 dark:text-emerald-400"
 								: "text-muted-foreground"
 						}
 					/>
 				</Button>
 			</div>
-			{cell.citations.map((cit) => (
-				<blockquote
-					key={cit.quote.slice(0, 48)}
-					className="break-words rounded-sm border-primary/40 border-l-2 bg-muted/50 px-2 py-1 text-xs italic"
+			<CitationList
+				citations={cell.citations}
+				onChange={(c) => onEdit(cell, { citations: c })}
+			/>
+			<InlineEdit
+				value={cell.reasoning}
+				onCommit={(v) => onEdit(cell, { reasoning: v })}
+				placeholder="reasoning…"
+				className="text-sm leading-snug"
+			/>
+		</div>
+	);
+}
+
+function CitationList({
+	citations,
+	onChange,
+}: {
+	citations: ChartCitation[];
+	onChange: (citations: ChartCitation[]) => void;
+}) {
+	const set = (i: number, patch: Partial<ChartCitation>) =>
+		onChange(citations.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+	return (
+		<div className="space-y-1.5">
+			{citations.map((cit, i) => (
+				<div
+					// biome-ignore lint/suspicious/noArrayIndexKey: citations have no stable id
+					key={i}
+					className="group/c rounded-sm border-primary/40 border-l-2 bg-muted/50 py-1 pr-1 pl-2 text-xs"
 				>
-					“{cit.quote}”
-					{cit.location && (
-						<span className="mt-0.5 block text-[11px] text-muted-foreground not-italic">
-							{cit.location}
-						</span>
-					)}
-				</blockquote>
+					<div className="flex items-start gap-1">
+						<div className="min-w-0 flex-1">
+							<InlineEdit
+								value={cit.quote}
+								onCommit={(v) => set(i, { quote: v })}
+								placeholder="quote…"
+								className="italic"
+							/>
+							<InlineEdit
+								value={cit.location ?? ""}
+								onCommit={(v) => set(i, { location: v })}
+								placeholder="location"
+								className="text-[11px] text-muted-foreground"
+							/>
+						</div>
+						<Button
+							variant="ghost"
+							size="icon-xxs"
+							tooltip="Remove citation"
+							className="shrink-0 text-muted-foreground opacity-0 group-hover/c:opacity-100"
+							onClick={() => onChange(citations.filter((_, idx) => idx !== i))}
+						>
+							<X />
+						</Button>
+					</div>
+				</div>
 			))}
-			<p className="break-words text-sm leading-snug">{cell.reasoning}</p>
+			<Button
+				variant="ghost"
+				size="sm"
+				className="h-6 gap-1 px-1 text-[11px] text-muted-foreground"
+				onClick={() => onChange([...citations, { quote: "", location: "" }])}
+			>
+				<Plus className="size-3" />
+				citation
+			</Button>
 		</div>
 	);
 }

@@ -67,6 +67,13 @@ export type ChartCitation = {
 	location?: string;
 };
 
+/** The trust/provenance state of a cell:
+ *  - ai: drafted by the read, not yet approved.
+ *  - edited: a human changed the verdict / citations / reasoning.
+ *  - approved: a human signed off.
+ *  - stale: the row's text or construction changed since this cell was produced. */
+export type CellStatus = "ai" | "edited" | "approved" | "stale";
+
 /** One cell — a (limitation × column) judgement, keyed by the limitation's uid and the
  *  column's id. */
 export type ChartCell = {
@@ -76,8 +83,7 @@ export type ChartCell = {
 	/** Self-contained reasoning. */
 	reasoning: string;
 	citations: ChartCitation[];
-	/** The attorney has signed off on this cell. (Becomes a status enum in a later step.) */
-	checked: boolean;
+	status: CellStatus;
 };
 
 /** The per-limitation result of a whole-document read. Echoes the limitation's `label`
