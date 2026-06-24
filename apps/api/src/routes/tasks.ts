@@ -1,12 +1,14 @@
 import { basename, extname, join } from "node:path";
 import {
+	assembleClaimAnalysisPrompt,
+	assembleClaimConstructionPrompt,
 	type Chart,
 	type Chat,
 	type ClaimLimitation,
 	createClaimChart,
 	createTask,
-	DEFAULT_CLAIM_ANALYSIS_PROMPT,
-	DEFAULT_CLAIM_CONSTRUCTION_PROMPT,
+	DEFAULT_CLAIM_ANALYSIS_RUBRIC,
+	DEFAULT_CLAIM_CONSTRUCTION_RUBRIC,
 	type DocumentMeta,
 	type ExtractedDoc,
 	type SearchIndex,
@@ -185,8 +187,10 @@ tasks.post("/:id/charts/:chartId/parse", async (c) => {
 			task.folder,
 			basename(filename),
 			{ ...profile.ai, model: model || profile.ai.model },
-			profile.prompts.claimConstruction?.trim() ||
-				DEFAULT_CLAIM_CONSTRUCTION_PROMPT,
+			assembleClaimConstructionPrompt(
+				profile.prompts.claimConstruction?.trim() ||
+					DEFAULT_CLAIM_CONSTRUCTION_RUBRIC,
+			),
 			(claims ?? "1").trim() || "1",
 			constructionSupport ? basename(constructionSupport) : undefined,
 		);
@@ -226,7 +230,9 @@ tasks.post("/:id/charts/:chartId/read", async (c) => {
 		const reads = await readReference(
 			task.folder,
 			{ ...profile.ai, model: model || profile.ai.model },
-			profile.prompts.claimAnalysis?.trim() || DEFAULT_CLAIM_ANALYSIS_PROMPT,
+			assembleClaimAnalysisPrompt(
+				profile.prompts.claimAnalysis?.trim() || DEFAULT_CLAIM_ANALYSIS_RUBRIC,
+			),
 			basename(reference),
 			primer ? basename(primer) : undefined,
 			limitations,

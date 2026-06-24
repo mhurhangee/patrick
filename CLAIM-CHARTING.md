@@ -64,6 +64,14 @@ autosave as the brief and system prompt — no bespoke widget. Unset ⇒ the bui
 **Not** per-chart (same lesson as the chat system prompt — want a variant, make another profile);
 the chart header links to them.
 
+Each prompt is split into an editable **rubric** + a locked **format** (`packages/shared/claim-prompts.ts`):
+- **Rubric** — the tunable legal methodology (split philosophy, construction approach, disclosure
+  thresholds). This is what `prompts.claim*` stores and the attorney edits.
+- **Format** — the output mechanics that MUST match the tool schema (labels, the verbatim rule, the
+  citation location/snippet shape). Shown read-only (a locked "Output format" ghost, mirroring the
+  system-prompt builder's ghost cards) and **always appended by the assembler**, so editing the
+  rubric can't break structured output. The `assembleClaim*Prompt(rubric)` helpers do rubric+format.
+
 **Two kinds of supporting document — keep them distinct:**
 - **Construction-support** (per *row*, used at *parse* time): the description / application as
   filed. Construction must be done in light of it, not the literal claim wording in isolation. Post
