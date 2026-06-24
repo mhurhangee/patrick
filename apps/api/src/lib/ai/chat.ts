@@ -411,6 +411,30 @@ export async function pinnedSourcesMessage(
 	return { role: "user", content } as ModelMessage;
 }
 
+/** Like pinnedSourcesMessage but the PRIMARY source MUST load — returns null if it didn't,
+ *  so an unreadable reference with a readable secondary (primer / description) can't slip
+ *  through and have the model analyse the wrong document. The secondary stays best-effort
+ *  (omitted if it fails). */
+export async function pinnedWithRequiredPrimary(
+	folder: string,
+	primary: PinnedSource,
+	secondary?: PinnedSource,
+): Promise<ModelMessage | null> {
+	const main = await pinnedSourcesMessage(folder, [primary]);
+	// Header-only ⇒ the primary couldn't be read (missing / un-extracted PDF / empty).
+	if (!main || !Array.isArray(main.content) || main.content.length <= 1)
+		return null;
+	if (!secondary) return main;
+	const extra = await pinnedSourcesMessage(folder, [secondary]);
+	if (!extra || !Array.isArray(extra.content) || extra.content.length <= 1)
+		return main; // secondary unreadable — proceed with the primary alone.
+	// Drop the secondary message's duplicate "Pinned sources" header (its first part).
+	return {
+		role: "user",
+		content: [...main.content, ...extra.content.slice(1)],
+	} as ModelMessage;
+}
+
 // The tools Patrick gets for a turn: editor tools (no execute — they run against
 // the live editor client-side) + the law/search/HITL tools. Web search and the
 // open-a-file proposal are conditional. Built in one place so the inspection

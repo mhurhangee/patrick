@@ -1,5 +1,7 @@
 export * from "./ai-models";
+export * from "./chart";
 export * from "./chat";
+export * from "./claim-prompts";
 export * from "./law";
 export * from "./patrick-docs.generated";
 export * from "./profile";

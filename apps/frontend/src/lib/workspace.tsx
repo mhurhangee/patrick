@@ -1,4 +1,4 @@
-import { docKind } from "@patrick/shared";
+import { type ChartType, docKind } from "@patrick/shared";
 import {
 	createContext,
 	type Dispatch,
@@ -10,6 +10,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useCharts } from "@/hooks/use-charts";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";
 
@@ -24,6 +25,9 @@ export type WorkspaceDoc = {
 	suggestions?: string[];
 };
 
+/** A chart open as a tab in the content surface (alongside documents). */
+export type WorkspaceChart = { id: string; label: string; type: ChartType };
+
 export type Columns = Record<string, string[]>;
 export type WorkspaceColumn = { id: string; tabs: string[] };
 
@@ -33,6 +37,8 @@ type WorkspaceContextValue = {
 	focused: string | null;
 	/** Resolve an open doc id (filename) to its display shape. */
 	getDoc: (id: string) => WorkspaceDoc | undefined;
+	/** Resolve an open chart id (uuid) to its display shape. */
+	getChart: (id: string) => WorkspaceChart | undefined;
 	isOpen: (id: string) => boolean;
 	open: (id: string) => void;
 	focus: (id: string) => void;
@@ -68,6 +74,7 @@ function firstOpenDoc(columns: Columns, order: string[]): string | null {
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const { activeTaskId } = useActiveTask();
 	const { data: documents } = useTaskDocuments(activeTaskId);
+	const { data: charts } = useCharts(activeTaskId);
 
 	const docMap = useMemo(() => {
 		const map = new Map<string, WorkspaceDoc>();
@@ -83,6 +90,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		}
 		return map;
 	}, [documents]);
+
+	const chartMap = useMemo(() => {
+		const map = new Map<string, WorkspaceChart>();
+		for (const c of charts ?? []) {
+			map.set(c.id, { id: c.id, label: c.title, type: c.type });
+		}
+		return map;
+	}, [charts]);
 
 	const [columns, setColumns] = useState<Columns>({ "col-0": [] });
 	const [order, setOrder] = useState<string[]>(["col-0"]);
@@ -111,6 +126,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			focused,
 			setColumns,
 			getDoc: (id) => docMap.get(id),
+			getChart: (id) => chartMap.get(id),
 			isOpen: (id) => findColumnOf(columns, id) !== undefined,
 			open: (id) => {
 				setColumns((cols) => {
@@ -146,7 +162,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				setFocused(id);
 			},
 		};
-	}, [columns, order, focused, docMap]);
+	}, [columns, order, focused, docMap, chartMap]);
 
 	return (
 		<WorkspaceContext.Provider value={value}>

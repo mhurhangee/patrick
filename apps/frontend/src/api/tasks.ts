@@ -1,9 +1,13 @@
 import type {
+	Chart,
+	ChartSummary,
 	Chat,
 	ChatSummary,
+	ClaimLimitation,
 	Document,
 	DocumentMeta,
 	ExtractedDoc,
+	LimitationRead,
 	SearchIndex,
 	Task,
 	TaskSummary,
@@ -32,6 +36,53 @@ export const tasksApi = {
 		chatId: string,
 		body: Pick<Chat, "systemTemplate" | "model" | "pinnedSources" | "messages">,
 	) => api.put<Chat>(`/tasks/${id}/chats/${chatId}`, body),
+	/** Charts (claim charts + future analysis types) for a task — sidebar list. */
+	charts: (id: string) => api.get<ChartSummary[]>(`/tasks/${id}/charts`),
+	/** Load a full chart record. */
+	chart: (id: string, chartId: string) =>
+		api.get<Chart>(`/tasks/${id}/charts/${chartId}`),
+	/** Create a blank claim chart; returns the new record. */
+	createChart: (id: string, title?: string) =>
+		api.post<Chart>(`/tasks/${id}/charts`, { title }),
+	/** Parse the requested claim(s) into limitations (rows), construed re: the description. */
+	parseChart: (
+		id: string,
+		chartId: string,
+		body: {
+			filename: string;
+			profileId: string;
+			claims: string;
+			constructionSupport?: string;
+			model?: string;
+		},
+	) =>
+		api.post<{ limitations: ClaimLimitation[] }>(
+			`/tasks/${id}/charts/${chartId}/parse`,
+			body,
+		),
+	/** Save a chart record wholesale (the editor owns the full object). */
+	saveChart: (id: string, chartId: string, body: Chart) =>
+		api.put<Chart>(`/tasks/${id}/charts/${chartId}`, body),
+	/** Whole-document read of one reference → per-limitation judgements (hybrid/full-doc). */
+	readReference: (
+		id: string,
+		chartId: string,
+		body: {
+			profileId: string;
+			reference: string;
+			primer?: string;
+			limitations: ClaimLimitation[];
+			model?: string;
+		},
+	) => api.post<LimitationRead[]>(`/tasks/${id}/charts/${chartId}/read`, body),
+	removeChart: (id: string, chartId: string) =>
+		api.del<{ ok: boolean }>(`/tasks/${id}/charts/${chartId}`),
+	/** Star / rename a chart (attorney-set meta). */
+	updateChartMeta: (
+		id: string,
+		chartId: string,
+		patch: { starred?: boolean; title?: string },
+	) => api.post<{ ok: boolean }>(`/tasks/${id}/charts/${chartId}/meta`, patch),
 	/** Raw URL for a document's bytes (for the PDF/docx viewers). */
 	fileUrl: (id: string, filename: string) =>
 		`${BASE_URL}/tasks/${id}/documents/${encodeURIComponent(filename)}`,

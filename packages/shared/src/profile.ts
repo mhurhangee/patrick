@@ -46,6 +46,12 @@ export type Profile = {
 	prompts: {
 		/** The prompt "middle" — markdown `## Header` blocks (see packages/shared/prompt). */
 		agentpat: string;
+		/** Claim-chart parse/construe RUBRIC (the editable methodology; the locked output
+		 *  format is appended by the assembler). Empty/absent ⇒ the built-in default. */
+		claimConstruction?: string;
+		/** Claim-chart disclosure-analysis RUBRIC (the editable methodology; locked format
+		 *  appended by the assembler). Empty/absent ⇒ the built-in default. */
+		claimAnalysis?: string;
 	};
 	appearance: Appearance;
 };
