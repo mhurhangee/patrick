@@ -241,15 +241,21 @@ function ChartTable({ chart }: { chart: Chart }) {
 		const profileId = activeProfileId;
 		setRunning((s) => new Set(s).add(column.id));
 		setError(null);
+		// Snapshot the rows this read judges, so a row edited mid-read lands as Stale, not a
+		// fresh verdict computed against the now-changed text/construction.
+		const sent = rowsRef.current;
+		const sentByUid = new Map(sent.map((l) => [l.uid, l]));
 		try {
 			const reads = await tasksApi.readReference(taskId, chart.id, {
 				profileId,
 				reference: column.reference,
 				primer: column.primer,
-				limitations: rowsRef.current,
+				limitations: sent,
 				model: chartRef.current.model,
 			});
-			const byLabel = new Map(rowsRef.current.map((l) => [l.label, l.uid]));
+			// Map reads back by the stable uid the read echoes — NOT the label, which is
+			// editable and non-unique (two blank rows, or the same claim parsed twice).
+			const current = new Map(rowsRef.current.map((l) => [l.uid, l]));
 			const existing = new Map(
 				chartRef.current.cells
 					.filter((c) => c.columnId === column.id)
@@ -257,8 +263,9 @@ function ChartTable({ chart }: { chart: Chart }) {
 			);
 			const cells: ChartCell[] = [];
 			for (const r of reads) {
-				const uid = byLabel.get(r.limitationLabel);
-				if (!uid) continue;
+				const uid = r.limitationUid;
+				const now = current.get(uid);
+				if (!now) continue;
 				const prev = existing.get(uid);
 				// Preserve human work (unless forced); refresh AI / stale / new cells.
 				if (
@@ -268,13 +275,19 @@ function ChartTable({ chart }: { chart: Chart }) {
 				) {
 					cells.push(prev);
 				} else {
+					// If the row's text/construction changed while the read was in flight, the
+					// verdict is already out of date — flag it Stale, don't pass it off as fresh.
+					const at = sentByUid.get(uid);
+					const stale =
+						!!at &&
+						(at.text !== now.text || at.construction !== now.construction);
 					cells.push({
 						limitationUid: uid,
 						columnId: column.id,
 						disclosureType: r.disclosed,
 						reasoning: r.reasoning,
 						citations: r.citations ?? [],
-						status: "ai",
+						status: stale ? "stale" : "ai",
 					});
 				}
 			}

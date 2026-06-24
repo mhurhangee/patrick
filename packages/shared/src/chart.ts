@@ -94,10 +94,10 @@ export type ChartCell = {
 	status: CellStatus;
 };
 
-/** The per-limitation result of a whole-document read. Echoes the limitation's `label`
- *  so the client can map it back to the row. */
+/** The per-limitation result of a whole-document read. Echoes the limitation's stable
+ *  `uid` (not the editable, non-unique label) so the client maps it back to the right row. */
 export type LimitationRead = {
-	limitationLabel: string;
+	limitationUid: string;
 	disclosed: DisclosureType;
 	reasoning: string;
 	/** The passages evidencing the disclosure, most on-point first; empty if Absent. */

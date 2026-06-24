@@ -1,7 +1,7 @@
 import { type ClaimLimitation, docKind, type Provider } from "@patrick/shared";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { pinnedSourcesMessage } from "./chat";
+import { pinnedWithRequiredPrimary } from "./chat";
 import { createModel } from "./model";
 
 // Parse the requested claim(s) into limitations and construe each in light of the
@@ -41,20 +41,18 @@ export async function parseClaimSpine(
 	claims: string,
 	constructionSupport: string | undefined,
 ): Promise<ClaimLimitation[] | null> {
-	const sources = [{ filename, kind: docKind(filename) }];
-	if (constructionSupport && constructionSupport !== filename)
-		sources.push({
-			filename: constructionSupport,
-			kind: docKind(constructionSupport),
-		});
-	const content = await pinnedSourcesMessage(folder, sources);
-	// Header-only ⇒ the source couldn't be read; don't invent a claim.
-	if (
-		!content ||
-		!Array.isArray(content.content) ||
-		content.content.length <= 1
-	)
-		return null;
+	// The claims document MUST load; the description (construction support) is best-effort.
+	const support =
+		constructionSupport && constructionSupport !== filename
+			? { filename: constructionSupport, kind: docKind(constructionSupport) }
+			: undefined;
+	const content = await pinnedWithRequiredPrimary(
+		folder,
+		{ filename, kind: docKind(filename) },
+		support,
+	);
+	// Couldn't read the claims document ⇒ don't invent a claim.
+	if (!content) return null;
 
 	const supportNote =
 		constructionSupport && constructionSupport !== filename

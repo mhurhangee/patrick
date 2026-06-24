@@ -49,8 +49,9 @@ export async function readChart(
 }
 
 // Upsert a chart wholesale (the editor owns the full object): preserve createdAt,
-// refresh updatedAt. starred survives a content save in case a star landed via the
-// meta route in the same instant (a few-ms race, accepted as in chats).
+// refresh updatedAt. title + starred are meta-owned (set at creation, then only via the
+// meta route) — a content save carries a possibly-stale copy, so keep the on-disk values so
+// a concurrent rename/star isn't reverted by an autosave landing just after it.
 export async function saveChart(folder: string, chart: Chart): Promise<Chart> {
 	const existing = await readChart(folder, chart.id);
 	const now = new Date().toISOString();
@@ -58,6 +59,7 @@ export async function saveChart(folder: string, chart: Chart): Promise<Chart> {
 		...chart,
 		createdAt: existing?.createdAt ?? chart.createdAt ?? now,
 		updatedAt: now,
+		title: existing?.title ?? chart.title,
 		starred: chart.starred ?? existing?.starred,
 	};
 	await mkdir(chartsDir(folder), { recursive: true });

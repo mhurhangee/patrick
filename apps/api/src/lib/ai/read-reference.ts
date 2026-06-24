@@ -2,12 +2,11 @@ import {
 	type ClaimLimitation,
 	docKind,
 	type LimitationRead,
-	type PinnedSource,
 	type Provider,
 } from "@patrick/shared";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { pinnedSourcesMessage } from "./chat";
+import { pinnedWithRequiredPrimary } from "./chat";
 import { createModel } from "./model";
 
 // The whole-document read: read the reference IN FULL and judge disclosure per limitation
@@ -19,7 +18,7 @@ import { createModel } from "./model";
 const schema = z.object({
 	reads: z.array(
 		z.object({
-			limitationLabel: z.string(),
+			limitationUid: z.string(),
 			disclosed: z.enum(["Express", "Derived", "Suggested", "Absent"]),
 			reasoning: z.string(),
 			citations: z.array(
@@ -39,23 +38,19 @@ export async function readReference(
 	primer: string | undefined,
 	limitations: ClaimLimitation[],
 ): Promise<LimitationRead[] | null> {
-	const sources: PinnedSource[] = [
+	// The reference MUST load; the primer is best-effort. (A primer-only context would have
+	// the model judge disclosure against the wrong document.)
+	const content = await pinnedWithRequiredPrimary(
+		folder,
 		{ filename: reference, kind: docKind(reference) },
-	];
-	if (primer) sources.push({ filename: primer, kind: docKind(primer) });
-	const content = await pinnedSourcesMessage(folder, sources);
-	// Header-only ⇒ the reference couldn't be read (e.g. an un-extracted PDF).
-	if (
-		!content ||
-		!Array.isArray(content.content) ||
-		content.content.length <= 1
-	)
-		return null;
+		primer ? { filename: primer, kind: docKind(primer) } : undefined,
+	);
+	if (!content) return null;
 
 	const list = limitations
 		.map(
 			(l) =>
-				`${l.label}: ${l.text}${l.construction ? `\n    Construction: ${l.construction}` : ""}`,
+				`[id: ${l.uid}] ${l.label}: ${l.text}${l.construction ? `\n    Construction: ${l.construction}` : ""}`,
 		)
 		.join("\n");
 	const primerNote = primer
@@ -75,5 +70,8 @@ export async function readReference(
 		],
 	});
 
+	// An empty result is a model failure, not "nothing disclosed" (Absent is an explicit
+	// verdict). Treat it as an error so the caller doesn't silently blank the column.
+	if (object.reads.length === 0) return null;
 	return object.reads;
 }

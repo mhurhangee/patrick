@@ -35,7 +35,7 @@ For each claim limitation (given verbatim with its assumed construction, and lab
 Give self-contained reasoning a colleague could read on its own ("limitation X, construed as Y, is [disclosed by … because … | not disclosed because …]").`;
 
 export const CLAIM_ANALYSIS_FORMAT = `Output requirements (fixed):
-- Return one entry per limitation, in the order given. limitationLabel: echo back the limitation's label exactly. Use exactly the verdicts Express / Derived / Suggested / Absent.
+- Return one entry per limitation, in the order given. limitationUid: echo back, exactly, the id given in brackets ([id: …]) before that limitation — it identifies the row, so copy it character-for-character. Use exactly the verdicts Express / Derived / Suggested / Absent.
 - citations: the location(s) in the reference that evidence the disclosure — the MOST ON-POINT first, then any further supporting locations (typically 1–3). Each gives:
     - location: where it is — the paragraph number (e.g. [0021]), or the page / column / line if that is how the reference is laid out. This is what the reader will click to check the source, so make it precise.
     - snippet: a SHORT verbatim phrase (a few exact words) from that spot. It is used only to locate and highlight the passage and is NOT shown to the reader, so keep it brief and copy it exactly from the text.
