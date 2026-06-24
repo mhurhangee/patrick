@@ -5,9 +5,11 @@ import type {
 	ClaimLimitation,
 	DisclosureType,
 } from "@patrick/shared";
+import { docKind } from "@patrick/shared";
 import { Check, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
+import { DocIcon } from "@/components/doc-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +44,17 @@ const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
 
 const uuid = () => crypto.randomUUID();
 const NONE = "__none__";
+
+function DocSelectItem({ filename }: { filename: string }) {
+	return (
+		<SelectItem value={filename}>
+			<span className="flex items-center gap-2">
+				<DocIcon kind={docKind(filename)} className="size-3.5" />
+				{filename}
+			</span>
+		</SelectItem>
+	);
+}
 
 export function ClaimChartViewer({ chartId }: { chartId: string }) {
 	const { activeTaskId } = useActiveTask();
@@ -234,6 +247,19 @@ function ChartTable({ chart }: { chart: Chart }) {
 				</p>
 			)}
 
+			<div className="flex shrink-0 justify-end border-b px-2 py-1.5">
+				<AddColumn
+					open={colOpen}
+					onOpenChange={setColOpen}
+					documents={documents?.map((d) => d.filename) ?? []}
+					doc={newDoc}
+					setDoc={setNewDoc}
+					primer={newPrimer}
+					setPrimer={setNewPrimer}
+					onAdd={addColumn}
+				/>
+			</div>
+
 			<div className="min-h-0 flex-1 overflow-auto">
 				<table className="w-max border-separate border-spacing-0 text-sm">
 					<colgroup>
@@ -241,11 +267,10 @@ function ChartTable({ chart }: { chart: Chart }) {
 						{columns.map((c) => (
 							<col key={c.id} style={{ width: widthOf(c.id, COLUMN_W) }} />
 						))}
-						<col style={{ width: 48 }} />
 					</colgroup>
 					<thead>
 						<tr>
-							<th className="relative border-r border-b bg-background px-3 py-2 text-left font-medium text-muted-foreground text-xs">
+							<th className="sticky top-0 z-20 border-r border-b bg-background px-3 py-2 text-left font-medium text-muted-foreground text-xs">
 								Feature
 								<ResizeHandle
 									width={widthOf("feature", FEATURE_W)}
@@ -255,7 +280,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 							{columns.map((c) => (
 								<th
 									key={c.id}
-									className="relative border-r border-b bg-background px-3 py-2 text-left align-top font-normal"
+									className="sticky top-0 z-20 border-r border-b bg-background px-3 py-2 text-left align-top font-normal"
 								>
 									<ColumnHeader
 										label={labelFor(c.reference)}
@@ -271,18 +296,6 @@ function ChartTable({ chart }: { chart: Chart }) {
 									/>
 								</th>
 							))}
-							<th className="border-b bg-background p-1 align-top">
-								<AddColumn
-									open={colOpen}
-									onOpenChange={setColOpen}
-									documents={documents?.map((d) => d.filename) ?? []}
-									doc={newDoc}
-									setDoc={setNewDoc}
-									primer={newPrimer}
-									setPrimer={setNewPrimer}
-									onAdd={addColumn}
-								/>
-							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -307,7 +320,6 @@ function ChartTable({ chart }: { chart: Chart }) {
 										/>
 									</td>
 								))}
-								<td className="border-b" />
 							</tr>
 						))}
 					</tbody>
@@ -343,9 +355,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 									</SelectTrigger>
 									<SelectContent>
 										{documents?.map((d) => (
-											<SelectItem key={d.filename} value={d.filename}>
-												{d.filename}
-											</SelectItem>
+											<DocSelectItem key={d.filename} filename={d.filename} />
 										))}
 									</SelectContent>
 								</Select>
@@ -361,9 +371,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 									<SelectContent>
 										<SelectItem value={NONE}>None</SelectItem>
 										{documents?.map((d) => (
-											<SelectItem key={d.filename} value={d.filename}>
-												{d.filename}
-											</SelectItem>
+											<DocSelectItem key={d.filename} filename={d.filename} />
 										))}
 									</SelectContent>
 								</Select>
@@ -594,11 +602,12 @@ function AddColumn({
 	return (
 		<Popover open={open} onOpenChange={onOpenChange}>
 			<PopoverTrigger asChild>
-				<Button variant="ghost" size="icon-sm" tooltip="Add column">
+				<Button variant="outline" size="sm">
 					<Plus />
+					Add column
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent align="end" className="w-72 space-y-3">
+			<PopoverContent align="end" className="w-80 space-y-3">
 				<div className="space-y-1.5">
 					<Label className="text-xs">Reference document</Label>
 					<Select value={doc} onValueChange={setDoc}>
@@ -607,9 +616,7 @@ function AddColumn({
 						</SelectTrigger>
 						<SelectContent>
 							{documents.map((d) => (
-								<SelectItem key={d} value={d}>
-									{d}
-								</SelectItem>
+								<DocSelectItem key={d} filename={d} />
 							))}
 						</SelectContent>
 					</Select>
@@ -623,12 +630,14 @@ function AddColumn({
 						<SelectContent>
 							<SelectItem value={NONE}>None</SelectItem>
 							{documents.map((d) => (
-								<SelectItem key={d} value={d}>
-									{d}
-								</SelectItem>
+								<DocSelectItem key={d} filename={d} />
 							))}
 						</SelectContent>
 					</Select>
+					<p className="text-[11px] text-muted-foreground leading-snug">
+						An exam report, search report or product description — shapes how
+						this reference is assessed (the analysis lens for this column).
+					</p>
 				</div>
 				<Button size="sm" className="w-full" disabled={!doc} onClick={onAdd}>
 					<Sparkles />
