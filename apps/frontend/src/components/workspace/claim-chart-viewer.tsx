@@ -8,11 +8,17 @@ import type {
 	DisclosureType,
 } from "@patrick/shared";
 import { docKind } from "@patrick/shared";
-import { Check, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { DocIcon } from "@/components/doc-icon";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,7 +33,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useChart, useParseChart, useSaveChart } from "@/hooks/use-charts";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
@@ -52,18 +57,18 @@ const VERDICTS: DisclosureType[] = [
 ];
 
 const STATUS_STYLE: Record<CellStatus, { label: string; className: string }> = {
-	ai: { label: "AI", className: "bg-muted text-muted-foreground" },
+	ai: { label: "AI", className: "text-[var(--patrick-coral)]" },
 	edited: {
 		label: "Edited",
-		className: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
+		className: "text-primary-foreground",
 	},
 	approved: {
-		label: "Approved",
-		className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+		label: "Checked",
+		className: "text-primary",
 	},
 	stale: {
 		label: "Stale",
-		className: "bg-amber-500/15 text-amber-700 dark:text-amber-600",
+		className: "text-destructive",
 	},
 };
 
@@ -547,6 +552,7 @@ function InlineEdit({
 				initial={value}
 				mono={mono}
 				className={className}
+				placeholder={placeholder}
 				onDone={(v) => {
 					setEditing(false);
 					if (v !== value) onCommit(v);
@@ -574,11 +580,13 @@ function InlineField({
 	onDone,
 	className,
 	mono,
+	placeholder,
 }: {
 	initial: string;
 	onDone: (value: string) => void;
 	className?: string;
 	mono?: boolean;
+	placeholder?: string;
 }) {
 	const ref = useRef<HTMLTextAreaElement>(null);
 	const [draft, setDraft] = useState(initial);
@@ -587,17 +595,28 @@ function InlineField({
 		if (el) {
 			el.focus();
 			el.setSelectionRange(el.value.length, el.value.length);
+			el.style.height = "0px";
+			el.style.height = `${el.scrollHeight}px`;
 		}
 	}, []);
+	const autosize = (el: HTMLTextAreaElement) => {
+		el.style.height = "0px";
+		el.style.height = `${el.scrollHeight}px`;
+	};
+	// A plain textarea pixel-matched to the display button (same font/padding via the
+	// shared className, auto-grown to content) so click-to-edit doesn't shift the layout.
 	return (
-		<Textarea
+		<textarea
 			ref={ref}
 			value={draft}
-			onChange={(e) => setDraft(e.target.value)}
+			placeholder={placeholder}
+			onChange={(e) => {
+				setDraft(e.target.value);
+				autosize(e.target);
+			}}
 			onBlur={() => onDone(draft)}
-			rows={1}
 			className={cn(
-				"min-h-0 w-full resize-y px-1 py-0.5",
+				"block w-full resize-none overflow-hidden whitespace-pre-wrap break-words rounded bg-transparent px-1 py-0.5 text-left outline-none ring-1 ring-ring/60",
 				mono && "font-mono",
 				className,
 			)}
@@ -796,73 +815,79 @@ function DisclosureContent({
 	onEdit: (cell: ChartCell, patch: Partial<ChartCell>) => void;
 	onSetStatus: (cell: ChartCell, status: CellStatus) => void;
 }) {
+	const reading = (
+		<span className="flex items-center gap-1.5 text-muted-foreground text-xs">
+			<Loader2 className="size-3 animate-spin" />
+			reading…
+		</span>
+	);
 	if (!cell)
-		return (
-			<span className="text-muted-foreground text-xs">
-				{running ? "reading…" : "—"}
-			</span>
+		return running ? (
+			reading
+		) : (
+			<span className="text-muted-foreground text-xs">—</span>
 		);
 	const status = cell.status ?? "ai";
 	const approved = status === "approved";
+	// During a run the cells that will be refreshed (AI / stale) blank to a spinner so you
+	// can see them get replaced; edited/approved cells stay put.
+	if (running && (status === "ai" || status === "stale")) return reading;
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex min-w-0 flex-wrap items-center gap-1.5">
-					<Select
-						value={cell.disclosureType}
-						onValueChange={(v) =>
-							onEdit(cell, { disclosureType: v as DisclosureType })
-						}
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								type="button"
+								className={cn(
+									"rounded px-1.5 py-0.5 font-semibold text-xs uppercase tracking-wide",
+									DISCLOSURE_STYLE[cell.disclosureType],
+								)}
+							>
+								{cell.disclosureType}
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							{VERDICTS.map((t) => (
+								<DropdownMenuItem
+									key={t}
+									onSelect={() => onEdit(cell, { disclosureType: t })}
+								>
+									{t}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+				<div>
+					<Button
+						variant="bare"
+						size="xs"
+						tooltip={approved ? "Click to mark unchecked" : "Mark as checked"}
+						onClick={() => onSetStatus(cell, approved ? "ai" : "approved")}
 					>
-						<SelectTrigger
+						<span
 							className={cn(
-								"h-auto gap-1 rounded border-0 px-1.5 py-0.5 font-semibold text-xs uppercase tracking-wide focus:ring-0",
-								DISCLOSURE_STYLE[cell.disclosureType],
+								"rounded px-1 py-0.5 font-medium text-[10px] uppercase tracking-wide",
+								STATUS_STYLE[status].className,
 							)}
 						>
-							{cell.disclosureType}
-						</SelectTrigger>
-						<SelectContent>
-							{VERDICTS.map((t) => (
-								<SelectItem key={t} value={t}>
-									{t}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<span
-						className={cn(
-							"rounded px-1 py-0.5 font-medium text-[10px] uppercase tracking-wide",
-							STATUS_STYLE[status].className,
-						)}
-					>
-						{STATUS_STYLE[status].label}
-					</span>
+							{STATUS_STYLE[status].label}
+						</span>
+					</Button>
 				</div>
-				<Button
-					variant={approved ? "secondary" : "ghost"}
-					size="icon-xs"
-					tooltip={approved ? "Approved — click to unapprove" : "Approve"}
-					onClick={() => onSetStatus(cell, approved ? "ai" : "approved")}
-				>
-					<Check
-						className={
-							approved
-								? "text-emerald-600 dark:text-emerald-400"
-								: "text-muted-foreground"
-						}
-					/>
-				</Button>
 			</div>
-			<CitationList
-				citations={cell.citations}
-				onChange={(c) => onEdit(cell, { citations: c })}
-			/>
+
 			<InlineEdit
 				value={cell.reasoning}
 				onCommit={(v) => onEdit(cell, { reasoning: v })}
 				placeholder="reasoning…"
-				className="text-sm leading-snug"
+				className="text-xs leading-snug"
+			/>
+			<CitationList
+				citations={cell.citations}
+				onChange={(c) => onEdit(cell, { citations: c })}
 			/>
 		</div>
 	);
@@ -883,7 +908,7 @@ function CitationList({
 				<div
 					// biome-ignore lint/suspicious/noArrayIndexKey: citations have no stable id
 					key={i}
-					className="group/c rounded-sm border-primary/40 border-l-2 bg-muted/50 py-1 pr-1 pl-2 text-xs"
+					className="group/c rounded-sm text-muted-foreground bg-muted/50 py-1 pr-1 pl-2 text-xs italic"
 				>
 					<div className="flex items-start gap-1">
 						<div className="min-w-0 flex-1">
@@ -891,13 +916,12 @@ function CitationList({
 								value={cit.quote}
 								onCommit={(v) => set(i, { quote: v })}
 								placeholder="quote…"
-								className="italic"
 							/>
 							<InlineEdit
 								value={cit.location ?? ""}
 								onCommit={(v) => set(i, { location: v })}
 								placeholder="location"
-								className="text-[11px] text-muted-foreground"
+								className="text-[11px]"
 							/>
 						</div>
 						<Button
