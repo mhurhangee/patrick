@@ -9,13 +9,12 @@ import type {
 } from "@patrick/shared";
 import { docKind } from "@patrick/shared";
 import {
-	Loader2,
+	MapPin,
 	MoreHorizontal,
+	Play,
 	Plus,
 	RotateCcw,
-	Sparkles,
 	Trash2,
-	TriangleAlert,
 	X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -48,9 +47,12 @@ import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { cn } from "@/lib/utils";
+import { Patrick } from "../patrick";
+import { Skeleton } from "../ui/skeleton";
 
 const FEATURE_W = 380;
 const COLUMN_W = 360;
+const ADD_W = 220;
 
 const DISCLOSURE_STYLE: Record<DisclosureType, string> = {
 	Express: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
@@ -133,7 +135,6 @@ function ChartTable({ chart }: { chart: Chart }) {
 	rowsRef.current = rows;
 	const [widths, setWidths] = useState<Record<string, number>>({});
 	const [running, setRunning] = useState<Set<string>>(new Set());
-	const [reviewing, setReviewing] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
 
 	const [colOpen, setColOpen] = useState(false);
@@ -298,47 +299,6 @@ function ChartTable({ chart }: { chart: Chart }) {
 			cells: chartRef.current.cells.filter((x) => x.columnId !== column.id),
 		});
 
-	const reviewColumn = async (column: ChartColumn) => {
-		if (!activeTaskId || !activeProfileId || reviewing.has(column.id)) return;
-		const colCells = chartRef.current.cells.filter(
-			(c) => c.columnId === column.id,
-		);
-		if (colCells.length === 0) return;
-		const taskId = activeTaskId;
-		const profileId = activeProfileId;
-		setReviewing((s) => new Set(s).add(column.id));
-		setError(null);
-		try {
-			const reviews = await tasksApi.reviewColumn(taskId, chart.id, {
-				profileId,
-				reference: column.reference,
-				primer: column.primer,
-				limitations: rowsRef.current,
-				cells: colCells,
-			});
-			const byLabel = new Map(rowsRef.current.map((l) => [l.label, l.uid]));
-			const issuesByUid = new Map<string, string[]>();
-			for (const rv of reviews) {
-				const uid = byLabel.get(rv.limitationLabel);
-				if (uid) issuesByUid.set(uid, rv.issues);
-			}
-			update({
-				cells: chartRef.current.cells.map((c) =>
-					c.columnId === column.id
-						? { ...c, issues: issuesByUid.get(c.limitationUid) ?? [] }
-						: c,
-				),
-			});
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Review failed.");
-		} finally {
-			setReviewing((s) => {
-				const n = new Set(s);
-				n.delete(column.id);
-				return n;
-			});
-		}
-	};
 	const sameCell = (a: ChartCell, b: ChartCell) =>
 		a.limitationUid === b.limitationUid && a.columnId === b.columnId;
 	// Any human edit flips the cell to "edited" (clearing approval).
@@ -370,6 +330,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 						{columns.map((c) => (
 							<col key={c.id} style={{ width: widthOf(c.id, COLUMN_W) }} />
 						))}
+						<col style={{ width: ADD_W }} />
 					</colgroup>
 					<thead>
 						<tr>
@@ -389,10 +350,9 @@ function ChartTable({ chart }: { chart: Chart }) {
 										label={labelFor(c.reference)}
 										reference={c.reference}
 										primer={c.primer}
-										busy={running.has(c.id) || reviewing.has(c.id)}
+										busy={running.has(c.id)}
 										onRun={() => runColumn(c)}
 										onForceRun={() => runColumn(c, true)}
-										onReview={() => reviewColumn(c)}
 										onRemove={() => removeColumn(c)}
 									/>
 									<ResizeHandle
@@ -401,12 +361,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 									/>
 								</th>
 							))}
-							{columns.length === 0 && (
-								<th className="sticky top-0 z-20 border-r border-b border-dashed bg-background px-3 py-2 text-left align-top font-normal text-muted-foreground/40 text-xs">
-									Disclosure
-								</th>
-							)}
-							<th className="sticky top-0 z-20 bg-background p-1 align-top">
+							<th className="sticky top-0 z-20 border-r border-b border-dashed bg-background p-1 text-left align-top">
 								<AddColumn
 									open={colOpen}
 									onOpenChange={setColOpen}
@@ -443,105 +398,117 @@ function ChartTable({ chart }: { chart: Chart }) {
 										/>
 									</td>
 								))}
-								{columns.length === 0 && (
-									<td className="border-r border-b border-dashed" />
-								)}
+								<td className="border-r border-b border-dashed" />
 							</tr>
 						))}
+						<tr>
+							<td className="border-l border-b border-r border-dashed">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={addRow}
+									className="text-muted-foreground"
+								>
+									<Plus />
+									Add row
+								</Button>
+								<Popover open={claimOpen} onOpenChange={setClaimOpen}>
+									<PopoverTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="text-muted-foreground"
+										>
+											<Plus />
+											Add claim
+										</Button>
+									</PopoverTrigger>
+									<PopoverContent align="start" className="w-80 space-y-3">
+										<div className="space-y-1.5">
+											<Label className="text-xs">Claims document</Label>
+											<Select value={claimDoc} onValueChange={setClaimDoc}>
+												<SelectTrigger className="w-full text-xs">
+													<SelectValue placeholder="Choose a document…" />
+												</SelectTrigger>
+												<SelectContent>
+													{documents?.map((d) => (
+														<DocSelectItem
+															key={d.filename}
+															filename={d.filename}
+														/>
+													))}
+												</SelectContent>
+											</Select>
+										</div>
+										<div className="space-y-1.5">
+											<Label className="text-xs">
+												Construction support (optional)
+											</Label>
+											<Select
+												value={claimSupport}
+												onValueChange={setClaimSupport}
+											>
+												<SelectTrigger className="w-full text-xs">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value={NONE}>None</SelectItem>
+													{documents?.map((d) => (
+														<DocSelectItem
+															key={d.filename}
+															filename={d.filename}
+														/>
+													))}
+												</SelectContent>
+											</Select>
+											<p className="text-[11px] text-muted-foreground leading-snug">
+												The description / application as filed — claims are
+												construed in light of it (Art 69 EPC). Leave as None if
+												the claims document already includes the description.
+											</p>
+										</div>
+										<div className="space-y-1.5">
+											<Label className="text-xs">Claims</Label>
+											<Input
+												value={claimsSpec}
+												onChange={(e) => setClaimsSpec(e.target.value)}
+												placeholder="1"
+											/>
+											<p className="text-[11px] text-muted-foreground leading-snug">
+												e.g. <code>1</code> · <code>1-3</code> ·{" "}
+												<code>1, 4</code> · <code>all independent</code>
+											</p>
+										</div>
+										{parse.isError && (
+											<p className="text-xs text-destructive">
+												{parse.error instanceof Error
+													? parse.error.message
+													: "Parse failed."}
+											</p>
+										)}
+										<Button
+											size="sm"
+											className="w-full"
+											disabled={!claimDoc || parse.isPending}
+											onClick={addClaim}
+											variant={parse.isPending ? "secondary" : "default"}
+										>
+											{parse.isPending ? (
+												<Patrick variant="scanning" />
+											) : (
+												<Play />
+											)}
+											{parse.isPending ? "Parsing…" : "Parse & add rows"}
+										</Button>
+									</PopoverContent>
+								</Popover>
+							</td>
+							<td className="border border-dashed"></td>
+						</tr>
 					</tbody>
 				</table>
 
-				<div className="flex items-center gap-1 p-2">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={addRow}
-						className="text-muted-foreground"
-					>
-						<Plus />
-						Add row
-					</Button>
-					<Popover open={claimOpen} onOpenChange={setClaimOpen}>
-						<PopoverTrigger asChild>
-							<Button
-								variant="ghost"
-								size="sm"
-								className="text-muted-foreground"
-							>
-								<Plus />
-								Add claim
-							</Button>
-						</PopoverTrigger>
-						<PopoverContent align="start" className="w-80 space-y-3">
-							<div className="space-y-1.5">
-								<Label className="text-xs">Claims document</Label>
-								<Select value={claimDoc} onValueChange={setClaimDoc}>
-									<SelectTrigger className="w-full text-xs">
-										<SelectValue placeholder="Choose a document…" />
-									</SelectTrigger>
-									<SelectContent>
-										{documents?.map((d) => (
-											<DocSelectItem key={d.filename} filename={d.filename} />
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="space-y-1.5">
-								<Label className="text-xs">
-									Construction support (optional)
-								</Label>
-								<Select value={claimSupport} onValueChange={setClaimSupport}>
-									<SelectTrigger className="w-full text-xs">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={NONE}>None</SelectItem>
-										{documents?.map((d) => (
-											<DocSelectItem key={d.filename} filename={d.filename} />
-										))}
-									</SelectContent>
-								</Select>
-								<p className="text-[11px] text-muted-foreground leading-snug">
-									The description / application as filed — claims are construed
-									in light of it (Art 69 EPC). Leave as None if the claims
-									document already includes the description.
-								</p>
-							</div>
-							<div className="space-y-1.5">
-								<Label className="text-xs">Claims</Label>
-								<Input
-									value={claimsSpec}
-									onChange={(e) => setClaimsSpec(e.target.value)}
-									placeholder="1"
-								/>
-								<p className="text-[11px] text-muted-foreground leading-snug">
-									e.g. <code>1</code> · <code>1-3</code> · <code>1, 4</code> ·{" "}
-									<code>all independent</code>
-								</p>
-							</div>
-							{parse.isError && (
-								<p className="text-xs text-destructive">
-									{parse.error instanceof Error
-										? parse.error.message
-										: "Parse failed."}
-								</p>
-							)}
-							<Button
-								size="sm"
-								className="w-full"
-								disabled={!claimDoc || parse.isPending}
-								onClick={addClaim}
-							>
-								{parse.isPending ? (
-									<Loader2 className="animate-spin" />
-								) : (
-									<Sparkles />
-								)}
-								{parse.isPending ? "Parsing…" : "Parse & add rows"}
-							</Button>
-						</PopoverContent>
-					</Popover>
-				</div>
+				<div className="flex items-center gap-1 p-2"></div>
 
 				{rows.length === 0 && (
 					<div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
@@ -734,24 +701,18 @@ function FeatureCell({
 	);
 }
 
-function Kebab({ tooltip }: { tooltip: string }) {
-	return (
-		<Button
-			variant="ghost"
-			size="icon-xs"
-			tooltip={tooltip}
-			className="text-muted-foreground"
-		>
-			<MoreHorizontal />
-		</Button>
-	);
-}
-
 function RowMenu({ onDelete }: { onDelete: () => void }) {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Kebab tooltip="Row actions" />
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					tooltip="Row actions"
+					className="text-muted-foreground"
+				>
+					<MoreHorizontal />
+				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
 				<DropdownMenuItem onSelect={onDelete} variant="destructive">
@@ -823,7 +784,7 @@ function AddColumn({
 					</p>
 				</div>
 				<Button size="sm" className="w-full" disabled={!doc} onClick={onAdd}>
-					<Sparkles />
+					<Play />
 					Add &amp; run
 				</Button>
 			</PopoverContent>
@@ -838,7 +799,6 @@ function ColumnHeader({
 	busy,
 	onRun,
 	onForceRun,
-	onReview,
 	onRemove,
 }: {
 	label: string;
@@ -847,7 +807,6 @@ function ColumnHeader({
 	busy: boolean;
 	onRun: () => void;
 	onForceRun: () => void;
-	onReview: () => void;
 	onRemove: () => void;
 }) {
 	return (
@@ -867,24 +826,27 @@ function ColumnHeader({
 			</div>
 			<div className="flex shrink-0 items-center">
 				{busy ? (
-					<Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+					<Patrick variant="scanning" className="w-4 h-4" />
 				) : (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Kebab tooltip="Column actions" />
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								tooltip="Column actions"
+								className="text-muted-foreground"
+							>
+								<MoreHorizontal />
+							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
+						<DropdownMenuContent align="end" className="w-48">
 							<DropdownMenuItem onSelect={onRun}>
-								<Sparkles />
+								<Play />
 								Re-run
 							</DropdownMenuItem>
 							<DropdownMenuItem onSelect={onForceRun}>
 								<RotateCcw />
 								Re-run &amp; overwrite edits
-							</DropdownMenuItem>
-							<DropdownMenuItem onSelect={onReview}>
-								<TriangleAlert />
-								Review this column
 							</DropdownMenuItem>
 							<DropdownMenuSeparator />
 							<DropdownMenuItem onSelect={onRemove} variant="destructive">
@@ -910,11 +872,14 @@ function DisclosureContent({
 	onEdit: (cell: ChartCell, patch: Partial<ChartCell>) => void;
 	onSetStatus: (cell: ChartCell, status: CellStatus) => void;
 }) {
+	// h-full would collapse here — a <td> is content-height (auto), so 100% has nothing to
+	// resolve against. Explicit-height lines that echo the cell shape (pill + reasoning).
 	const reading = (
-		<span className="flex items-center gap-1.5 text-muted-foreground text-xs">
-			<Loader2 className="size-3 animate-spin" />
-			reading…
-		</span>
+		<div className="space-y-2">
+			<Skeleton className="h-5 w-16 rounded" />
+			<Skeleton className="h-3 w-full" />
+			<Skeleton className="h-3 w-4/5" />
+		</div>
 	);
 	if (!cell)
 		return running ? (
@@ -955,31 +920,7 @@ function DisclosureContent({
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
-				<div className="flex shrink-0 items-center gap-0.5">
-					{cell.issues && cell.issues.length > 0 && (
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									tooltip={`${cell.issues.length} reviewer issue(s)`}
-									className="text-amber-600 dark:text-amber-500"
-								>
-									<TriangleAlert />
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent align="end" className="w-72 space-y-1.5 text-xs">
-								<p className="font-medium text-muted-foreground">
-									Reviewer issues
-								</p>
-								<ul className="list-disc space-y-1 pl-4">
-									{cell.issues.map((iss) => (
-										<li key={iss}>{iss}</li>
-									))}
-								</ul>
-							</PopoverContent>
-						</Popover>
-					)}
+				<div>
 					<Button
 						variant="bare"
 						size="xs"
@@ -1022,44 +963,39 @@ function CitationList({
 	const set = (i: number, patch: Partial<ChartCitation>) =>
 		onChange(citations.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
 	return (
-		<div className="space-y-1.5">
+		<div className="space-y-1">
 			{citations.map((cit, i) => (
 				<div
 					// biome-ignore lint/suspicious/noArrayIndexKey: citations have no stable id
 					key={i}
-					className="group/c rounded-sm text-muted-foreground bg-muted/50 py-1 pr-1 pl-2 text-xs italic"
+					className="group/c flex items-center gap-1 text-muted-foreground"
 				>
-					<div className="flex items-start gap-1">
-						<div className="min-w-0 flex-1">
-							<InlineEdit
-								value={cit.quote}
-								onCommit={(v) => set(i, { quote: v })}
-								placeholder="quote…"
-							/>
-							<InlineEdit
-								value={cit.location ?? ""}
-								onCommit={(v) => set(i, { location: v })}
-								placeholder="location"
-								className="text-[11px]"
-							/>
-						</div>
-						<Button
-							variant="ghost"
-							size="icon-xxs"
-							tooltip="Remove citation"
-							className="shrink-0 text-muted-foreground opacity-0 group-hover/c:opacity-100"
-							onClick={() => onChange(citations.filter((_, idx) => idx !== i))}
-						>
-							<X />
-						</Button>
+					<MapPin className="size-3 shrink-0 opacity-60" />
+					<div className="min-w-0 flex-1">
+						<InlineEdit
+							value={cit.location}
+							onCommit={(v) => set(i, { location: v })}
+							placeholder="location…"
+							mono
+							className="text-[11px]"
+						/>
 					</div>
+					<Button
+						variant="ghost"
+						size="icon-xxs"
+						tooltip="Remove citation"
+						className="shrink-0 text-muted-foreground opacity-0 group-hover/c:opacity-100"
+						onClick={() => onChange(citations.filter((_, idx) => idx !== i))}
+					>
+						<X />
+					</Button>
 				</div>
 			))}
 			<Button
 				variant="ghost"
 				size="sm"
 				className="h-6 gap-1 px-1 text-[11px] text-muted-foreground"
-				onClick={() => onChange([...citations, { quote: "", location: "" }])}
+				onClick={() => onChange([...citations, { location: "" }])}
 			>
 				<Plus className="size-3" />
 				citation

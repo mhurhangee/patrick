@@ -10,7 +10,7 @@
 export type ChartType = "claim-chart";
 
 /** Bumped when the on-disk shape changes, so the JSON stays portable. */
-export const CHART_SCHEMA_VERSION = 2;
+export const CHART_SCHEMA_VERSION = 3;
 
 type ChartBase = {
 	id: string;
@@ -60,11 +60,15 @@ export type ChartColumn = {
  *  (inventive step, not novelty); Absent. */
 export type DisclosureType = "Express" | "Derived" | "Suggested" | "Absent";
 
-/** A grounded citation: a verbatim passage from the reference + its location. */
+/** A citation to a passage in the reference. We show a human-checkable LOCATION (not a
+ *  verbatim quote — that travels badly across languages and invites fabricated-quote
+ *  distrust); the attorney clicks it to read the source. The optional `snippet` is a short
+ *  verbatim phrase kept ONLY to anchor click-to-highlight precisely; it is never displayed. */
 export type ChartCitation = {
-	quote: string;
-	/** Location (e.g. `[0021]` for retrieved text, page/¶ for PDFs). */
-	location?: string;
+	/** Where in the reference: `[0021]` for numbered text, page/column/line for PDFs. Shown. */
+	location: string;
+	/** A few exact words from the passage, to sharpen highlight/scroll. Not shown. */
+	snippet?: string;
 };
 
 /** The trust/provenance state of a cell:
@@ -84,14 +88,6 @@ export type ChartCell = {
 	reasoning: string;
 	citations: ChartCitation[];
 	status: CellStatus;
-	/** Issues raised by the reviewer pass (empty/absent = sound or not reviewed). */
-	issues?: string[];
-};
-
-/** One limitation's findings from the reviewer pass, echoing its label. */
-export type LimitationReview = {
-	limitationLabel: string;
-	issues: string[];
 };
 
 /** The per-limitation result of a whole-document read. Echoes the limitation's `label`

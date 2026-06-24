@@ -1,6 +1,5 @@
 import type {
 	Chart,
-	ChartCell,
 	ChartSummary,
 	Chat,
 	ChatSummary,
@@ -9,7 +8,6 @@ import type {
 	DocumentMeta,
 	ExtractedDoc,
 	LimitationRead,
-	LimitationReview,
 	SearchIndex,
 	Task,
 	TaskSummary,
@@ -75,19 +73,6 @@ export const tasksApi = {
 			limitations: ClaimLimitation[];
 		},
 	) => api.post<LimitationRead[]>(`/tasks/${id}/charts/${chartId}/read`, body),
-	/** Reviewer pass over a column's cells → issues per limitation. */
-	reviewColumn: (
-		id: string,
-		chartId: string,
-		body: {
-			profileId: string;
-			reference: string;
-			primer?: string;
-			limitations: ClaimLimitation[];
-			cells: ChartCell[];
-		},
-	) =>
-		api.post<LimitationReview[]>(`/tasks/${id}/charts/${chartId}/review`, body),
 	removeChart: (id: string, chartId: string) =>
 		api.del<{ ok: boolean }>(`/tasks/${id}/charts/${chartId}`),
 	/** Star / rename a chart (attorney-set meta). */

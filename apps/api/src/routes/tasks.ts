@@ -1,7 +1,6 @@
 import { basename, extname, join } from "node:path";
 import {
 	type Chart,
-	type ChartCell,
 	type Chat,
 	type ClaimLimitation,
 	createClaimChart,
@@ -17,7 +16,6 @@ import { handleChat } from "../lib/ai/chat";
 import { generateDocumentLabel } from "../lib/ai/label";
 import { parseClaimSpine } from "../lib/ai/parse-claim";
 import { readReference } from "../lib/ai/read-reference";
-import { reviewColumn } from "../lib/ai/review-column";
 import {
 	deleteChart,
 	listCharts,
@@ -234,42 +232,6 @@ tasks.post("/:id/charts/:chartId/read", async (c) => {
 	} catch (err) {
 		return c.json(
 			{ error: err instanceof Error ? err.message : "read failed" },
-			500,
-		);
-	}
-});
-
-// Reviewer pass: a second model critiques a column's cells against the reference,
-// returning issues per limitation (advisory; the client flags the cells).
-tasks.post("/:id/charts/:chartId/review", async (c) => {
-	const task = await readTask(c.req.param("id"));
-	if (!task) return c.json({ error: "not found" }, 404);
-	const { profileId, reference, primer, limitations, cells } =
-		await c.req.json<{
-			profileId?: string;
-			reference?: string;
-			primer?: string;
-			limitations?: ClaimLimitation[];
-			cells?: ChartCell[];
-		}>();
-	if (!reference || !limitations?.length || !cells?.length)
-		return c.json({ error: "nothing to review" }, 400);
-	const profile = profileId ? await readProfile(profileId) : null;
-	if (!profile) return c.json({ error: "profile not found" }, 404);
-	try {
-		const reviews = await reviewColumn(
-			task.folder,
-			profile.ai,
-			basename(reference),
-			primer ? basename(primer) : undefined,
-			limitations,
-			cells,
-		);
-		if (!reviews) return c.json({ error: "couldn't read that reference" }, 400);
-		return c.json(reviews);
-	} catch (err) {
-		return c.json(
-			{ error: err instanceof Error ? err.message : "review failed" },
 			500,
 		);
 	}

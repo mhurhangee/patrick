@@ -27,9 +27,12 @@ For each claim limitation (given verbatim with its assumed construction, and lab
 For each limitation also give:
 - limitationLabel: echo back the limitation's label exactly.
 - reasoning: a self-contained explanation a colleague could read on its own ("limitation X, construed as Y, is [disclosed by … because … | not disclosed because …]").
-- citations: the passage(s) from the reference that evidence the disclosure — the MOST ON-POINT first, then any further supporting passages (typically 1–3). Each is a VERBATIM passage with its location (paragraph number, or page/column if identifiable). Empty if Absent.
+- citations: the location(s) in the reference that evidence the disclosure — the MOST ON-POINT first, then any further supporting locations (typically 1–3). Each gives:
+    - location: where it is — the paragraph number (e.g. [0021]), or the page / column / line if that is how the reference is laid out. This is what the reader will click to check the source, so make it precise.
+    - snippet: a SHORT verbatim phrase (a few exact words) from that spot. It is used only to locate and highlight the passage and is NOT shown to the reader, so keep it brief and copy it exactly from the text.
+  Empty if Absent.
 
-Return one entry per limitation, in the order given. Work only from the reference's actual text — never invent passages.`;
+Return one entry per limitation, in the order given. Work only from the reference's actual text — never invent passages or locations.`;
 
 const schema = z.object({
 	reads: z.array(
@@ -37,7 +40,9 @@ const schema = z.object({
 			limitationLabel: z.string(),
 			disclosed: z.enum(["Express", "Derived", "Suggested", "Absent"]),
 			reasoning: z.string(),
-			citations: z.array(z.object({ quote: z.string(), location: z.string() })),
+			citations: z.array(
+				z.object({ location: z.string(), snippet: z.string() }),
+			),
 		}),
 	),
 });
