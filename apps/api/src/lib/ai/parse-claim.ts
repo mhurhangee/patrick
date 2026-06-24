@@ -4,53 +4,55 @@ import { z } from "zod";
 import { pinnedSourcesMessage } from "./chat";
 import { createModel } from "./model";
 
-// Nodes 0–1 of the claim-charting pipeline: parse a claim into limitations and
-// propose a construction, in one pass over the source document (which carries both
-// the claims and the spec). The result is a *proposed* spine — the attorney edits
-// and locks it at the HITL gate before any cell is built. See CLAIM-CHARTING.md.
+// Parse the requested claim(s) into limitations, construed in light of the description
+// (Art 69 EPC + Protocol). One read covers all requested claims. See CLAIM-CHARTING.md.
 //
-// DRAFT PROMPT — the claim-splitting granularity and the construction approach are
-// legally load-bearing and meant for the attorney to tune.
-const SYSTEM = `You parse a patent claim into its limitations for a claim chart, for a European patent attorney.
+// DRAFT PROMPT — the splitting granularity and the construction approach are legally
+// load-bearing and meant for the attorney to tune.
+const SYSTEM = `You parse patent claims into their limitations for a claim chart, for a European patent attorney.
 
-From the attorney's document, find the requested independent claim and break it into its constituent limitations:
-- Split at the natural clause boundaries a practitioner would use (the preamble, then each element/step). Keep splits at the granularity used in feature analysis — not so coarse that one limitation bundles several distinct features, not so fine that a single feature is fragmented.
-- Label them 1a, 1b, 1c … in order (use the claim number, so claim 2 → 2a, 2b …).
-- The limitation text MUST be VERBATIM from the claim — transcribe exactly, never paraphrase, summarise, or correct.
-- For each limitation, propose a short construction of any key term(s) whose scope matters, read in light of the specification. If nothing in the limitation needs construing, leave the construction empty.
+From the attorney's document(s), find the requested claim(s) and break each into its constituent limitations:
+- Split at the natural clause boundaries a practitioner would use (the preamble, then each element/step). Granularity = feature analysis: not so coarse that one limitation bundles several distinct features, not so fine that a single feature is fragmented.
+- Label them by claim: claim 1 → 1a, 1b, 1c …; claim 2 → 2a, 2b …. Keep them in claim order.
+- The limitation text MUST be VERBATIM from the claim — transcribe exactly, never paraphrase, summarise or correct. Where a long enumerated list is elided in the claim, you may use "[…]".
+- Construe each limitation in light of the DESCRIPTION (Art 69 EPC and its Protocol on Interpretation): the description and drawings inform the scope of the claim terms — do NOT construe from the literal wording of the claims in isolation. Give a short construction of any key term(s) whose scope matters; leave empty if nothing needs construing.
 
-Work only from the document's actual text. If the requested claim isn't present, return no limitations.`;
+Work only from the documents' actual text. Return no limitations for a claim that isn't present.`;
 
 const schema = z.object({
-	claimNumber: z
-		.string()
-		.describe("The claim number parsed (echo back what was found, e.g. '1')."),
 	limitations: z
 		.array(
 			z.object({
-				id: z.string().describe("Stable label, e.g. '1a'."),
+				id: z.string().describe("Label, e.g. '1a' (claim number + letter)."),
 				text: z.string().describe("Verbatim claim text for this limitation."),
 				construction: z
 					.string()
-					.describe("Proposed construction of key term(s); empty if none."),
+					.describe(
+						"Construction of key term(s) read in light of the description; empty if none.",
+					),
 			}),
 		)
-		.describe(
-			"The limitations in claim order. Empty if the claim isn't found.",
-		),
+		.describe("The limitations across the requested claims, in claim order."),
 });
 
-/** Parse + construe one claim from a source document into limitations (each with a
- *  stable uid). The client appends them as table rows. */
+/** Parse + construe the requested claim(s) into limitations (each with a stable uid).
+ *  `claims` is a spec like "1", "1-3", "1, 4" or "all independent". `constructionSupport`
+ *  (optional) is a description doc to construe in light of (Art 69) when the claims doc
+ *  doesn't itself carry the description (e.g. amended claims). */
 export async function parseClaimSpine(
 	folder: string,
 	filename: string,
 	ai: { provider: Provider; apiKey: string; model: string },
-	claim: string,
+	claims: string,
+	constructionSupport: string | undefined,
 ): Promise<ClaimLimitation[] | null> {
-	const content = await pinnedSourcesMessage(folder, [
-		{ filename, kind: docKind(filename) },
-	]);
+	const sources = [{ filename, kind: docKind(filename) }];
+	if (constructionSupport && constructionSupport !== filename)
+		sources.push({
+			filename: constructionSupport,
+			kind: docKind(constructionSupport),
+		});
+	const content = await pinnedSourcesMessage(folder, sources);
 	// Header-only ⇒ the source couldn't be read; don't invent a claim.
 	if (
 		!content ||
@@ -59,12 +61,19 @@ export async function parseClaimSpine(
 	)
 		return null;
 
+	const supportNote =
+		constructionSupport && constructionSupport !== filename
+			? " A separate description/specification document is also provided above — construe the claims in light of it."
+			: "";
 	const { object } = await generateObject({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
 		schema,
 		system: SYSTEM,
 		messages: [
-			{ role: "user", content: `Parse claim ${claim} into its limitations.` },
+			{
+				role: "user",
+				content: `Parse the following claim(s) into limitations: ${claims}.${supportNote}`,
+			},
 			content,
 		],
 	});

@@ -87,7 +87,10 @@ function ChartTable({ chart }: { chart: Chart }) {
 	const [newPrimer, setNewPrimer] = useState(NONE);
 	const [claimOpen, setClaimOpen] = useState(false);
 	const [claimDoc, setClaimDoc] = useState("");
-	const [claimNo, setClaimNo] = useState("1");
+	const [claimsSpec, setClaimsSpec] = useState("1");
+	const [claimSupport, setClaimSupport] = useState(
+		chart.constructionSupport ?? NONE,
+	);
 
 	const columns = chart.columns ?? [];
 	const cells = chart.cells ?? [];
@@ -135,16 +138,21 @@ function ChartTable({ chart }: { chart: Chart }) {
 	};
 	const addClaim = async () => {
 		if (!claimDoc || !activeProfileId) return;
+		const support = claimSupport === NONE ? undefined : claimSupport;
 		const { limitations } = await parse.mutateAsync({
 			filename: claimDoc,
 			profileId: activeProfileId,
-			claim: claimNo || "1",
+			claims: claimsSpec || "1",
+			constructionSupport: support,
 		});
 		const next = [...rowsRef.current, ...limitations];
 		setRows(next);
-		saveLimitations(next);
+		save.mutate({
+			...chartRef.current,
+			limitations: next,
+			constructionSupport: support,
+		});
 		setClaimOpen(false);
-		setClaimNo((n) => String((Number.parseInt(n, 10) || 0) + 1));
 	};
 
 	const runColumn = async (column: ChartColumn) => {
@@ -326,7 +334,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 								Add claim
 							</Button>
 						</PopoverTrigger>
-						<PopoverContent align="start" className="w-72 space-y-3">
+						<PopoverContent align="start" className="w-80 space-y-3">
 							<div className="space-y-1.5">
 								<Label className="text-xs">Claims document</Label>
 								<Select value={claimDoc} onValueChange={setClaimDoc}>
@@ -343,12 +351,39 @@ function ChartTable({ chart }: { chart: Chart }) {
 								</Select>
 							</div>
 							<div className="space-y-1.5">
-								<Label className="text-xs">Claim number</Label>
+								<Label className="text-xs">
+									Construction support (optional)
+								</Label>
+								<Select value={claimSupport} onValueChange={setClaimSupport}>
+									<SelectTrigger className="w-full text-xs">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={NONE}>None</SelectItem>
+										{documents?.map((d) => (
+											<SelectItem key={d.filename} value={d.filename}>
+												{d.filename}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<p className="text-[11px] text-muted-foreground leading-snug">
+									The description / application as filed — claims are construed
+									in light of it (Art 69 EPC). Leave as None if the claims
+									document already includes the description.
+								</p>
+							</div>
+							<div className="space-y-1.5">
+								<Label className="text-xs">Claims</Label>
 								<Input
-									value={claimNo}
-									onChange={(e) => setClaimNo(e.target.value)}
-									className="w-24"
+									value={claimsSpec}
+									onChange={(e) => setClaimsSpec(e.target.value)}
+									placeholder="1"
 								/>
+								<p className="text-[11px] text-muted-foreground leading-snug">
+									e.g. <code>1</code> · <code>1-3</code> · <code>1, 4</code> ·{" "}
+									<code>all independent</code>
+								</p>
 							</div>
 							{parse.isError && (
 								<p className="text-xs text-destructive">

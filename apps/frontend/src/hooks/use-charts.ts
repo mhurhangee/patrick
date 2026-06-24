@@ -43,13 +43,14 @@ export function useCreateChart(taskId: string | undefined) {
 	});
 }
 
-/** Parse a claim from a document into limitations; the editor appends them to the spine. */
+/** Parse the requested claim(s) into limitations; the editor appends them as rows. */
 export function useParseChart(taskId: string | undefined, chartId: string) {
 	return useMutation({
 		mutationFn: (body: {
 			filename: string;
 			profileId: string;
-			claim: string;
+			claims: string;
+			constructionSupport?: string;
 		}) => tasksApi.parseChart(taskId as string, chartId, body),
 	});
 }

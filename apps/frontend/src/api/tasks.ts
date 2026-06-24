@@ -44,11 +44,16 @@ export const tasksApi = {
 	/** Create a blank claim chart; returns the new record. */
 	createChart: (id: string, title?: string) =>
 		api.post<Chart>(`/tasks/${id}/charts`, { title }),
-	/** Parse a claim from a source document into limitations (to append to the spine). */
+	/** Parse the requested claim(s) into limitations (rows), construed re: the description. */
 	parseChart: (
 		id: string,
 		chartId: string,
-		body: { filename: string; profileId: string; claim: string },
+		body: {
+			filename: string;
+			profileId: string;
+			claims: string;
+			constructionSupport?: string;
+		},
 	) =>
 		api.post<{ limitations: ClaimLimitation[] }>(
 			`/tasks/${id}/charts/${chartId}/parse`,

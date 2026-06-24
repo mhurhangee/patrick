@@ -167,11 +167,13 @@ tasks.post("/:id/charts/:chartId/meta", async (c) => {
 tasks.post("/:id/charts/:chartId/parse", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const { filename, profileId, claim } = await c.req.json<{
-		filename?: string;
-		profileId?: string;
-		claim?: string;
-	}>();
+	const { filename, profileId, claims, constructionSupport } =
+		await c.req.json<{
+			filename?: string;
+			profileId?: string;
+			claims?: string;
+			constructionSupport?: string;
+		}>();
 	if (!filename) return c.json({ error: "missing document" }, 400);
 	const profile = profileId ? await readProfile(profileId) : null;
 	if (!profile) return c.json({ error: "profile not found" }, 404);
@@ -180,7 +182,8 @@ tasks.post("/:id/charts/:chartId/parse", async (c) => {
 			task.folder,
 			basename(filename),
 			profile.ai,
-			(claim ?? "1").trim() || "1",
+			(claims ?? "1").trim() || "1",
+			constructionSupport ? basename(constructionSupport) : undefined,
 		);
 		if (!parsed || parsed.length === 0)
 			return c.json(
