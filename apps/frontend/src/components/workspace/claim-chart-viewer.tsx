@@ -8,6 +8,7 @@ import type {
 	DisclosureType,
 } from "@patrick/shared";
 import { docKind } from "@patrick/shared";
+import { useNavigate } from "@tanstack/react-router";
 import {
 	Info,
 	MapPin,
@@ -15,6 +16,7 @@ import {
 	Play,
 	Plus,
 	RotateCcw,
+	SlidersHorizontal,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -123,6 +125,7 @@ export function ClaimChartViewer({ chartId }: { chartId: string }) {
 // One table. Rows are limitations; columns are references (each read as a whole, with an
 // optional primer). Click a cell to edit, drag a column border to resize.
 function ChartTable({ chart }: { chart: Chart }) {
+	const navigate = useNavigate();
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
 	const { data: profile } = useProfile(activeProfileId);
@@ -352,6 +355,16 @@ function ChartTable({ chart }: { chart: Chart }) {
 						tooltip="Analysis quality is model-sensitive — pick a strong model; weaker ones mischaracterise disclosures."
 					>
 						<Info />
+					</Button>
+					<Button
+						variant="ghost"
+						size="xs"
+						className="text-muted-foreground"
+						tooltip="Edit the construction & analysis prompts in your profile"
+						onClick={() => navigate({ to: "/profile", hash: "ai" })}
+					>
+						<SlidersHorizontal />
+						Prompts
 					</Button>
 				</div>
 			</div>

@@ -15,6 +15,7 @@ import { useAutosavedDraft } from "@/hooks/use-autosave";
 import { useActiveTask } from "@/lib/active-task";
 import { AiSection } from "./ai-section";
 import { AppearanceSection } from "./appearance-section";
+import { ClaimPromptsSection } from "./claim-prompts-section";
 import { IdentitySection } from "./identity-section";
 import { OpsSection } from "./ops-section";
 import { PromptSection } from "./prompt-section";
@@ -109,6 +110,23 @@ export function ProfileForm({
 					description="Patrick runs on your own AI key, on your machine. Choose a provider, connect your key, then set how it behaves."
 				>
 					<AiSection value={draft.ai} onChange={(ai) => set({ ai })} />
+					<div className="mt-6 space-y-3 border-t pt-6">
+						<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+							Claim charting
+						</p>
+						<p className="text-sm text-muted-foreground">
+							The rubrics behind claim charts — claim construction and
+							disclosure analysis. Profile-wide; edit per jurisdiction or house
+							style. A different approach for another matter → a separate
+							profile.
+						</p>
+						<ClaimPromptsSection
+							value={draft.prompts}
+							onChange={(prompts) =>
+								set({ prompts: { ...draft.prompts, ...prompts } })
+							}
+						/>
+					</div>
 				</SettingsSection>
 				<SettingsSection
 					id="ops"
@@ -146,7 +164,9 @@ export function ProfileForm({
 					)}
 					<PromptSection
 						value={draft.prompts.agentpat}
-						onChange={(agentpat) => set({ prompts: { agentpat } })}
+						onChange={(agentpat) =>
+							set({ prompts: { ...draft.prompts, agentpat } })
+						}
 					/>
 				</SettingsSection>
 				<SettingsSection

@@ -13,26 +13,8 @@ import { createModel } from "./model";
 // The whole-document read: read the reference IN FULL and judge disclosure per limitation
 // — fixing the myopia of per-passage search, which construes too narrowly and misses the
 // paragraph that broadens everything. The reference (and optional primer) ride as a
-// pinned, cached message — Patrick-native.
-//
-// DRAFT PROMPT — the disclosure rubric is the attorney's to tune. See CLAIM-CHARTING.md.
-const SYSTEM = `You are an experienced European patent attorney assessing a prior-art reference for a novelty analysis. Read the reference IN FULL — it must be read as a whole, since a later passage may broaden, qualify or clarify an earlier one.
-
-For each claim limitation (given verbatim with its assumed construction, and labelled), give a fair, practitioner's assessment of whether the reference discloses it under that construction — neither straining to find disclosure nor dismissing a genuine one. Classify:
-- Express — stated explicitly (verbatim or near-verbatim).
-- Derived — not stated in words, but directly and unambiguously derivable by the skilled person from the reference read as a whole (the EPO anticipation standard).
-- Suggested — the reference would point the skilled person toward it, but stops short of the anticipation standard (relevant to inventive step, not novelty).
-- Absent — not disclosed.
-
-For each limitation also give:
-- limitationLabel: echo back the limitation's label exactly.
-- reasoning: a self-contained explanation a colleague could read on its own ("limitation X, construed as Y, is [disclosed by … because … | not disclosed because …]").
-- citations: the location(s) in the reference that evidence the disclosure — the MOST ON-POINT first, then any further supporting locations (typically 1–3). Each gives:
-    - location: where it is — the paragraph number (e.g. [0021]), or the page / column / line if that is how the reference is laid out. This is what the reader will click to check the source, so make it precise.
-    - snippet: a SHORT verbatim phrase (a few exact words) from that spot. It is used only to locate and highlight the passage and is NOT shown to the reader, so keep it brief and copy it exactly from the text.
-  Empty if Absent.
-
-Return one entry per limitation, in the order given. Work only from the reference's actual text — never invent passages or locations.`;
+// pinned, cached message — Patrick-native. The system prompt is passed in (the profile's,
+// or the built-in default) — the disclosure rubric is the attorney's to tune.
 
 const schema = z.object({
 	reads: z.array(
@@ -52,6 +34,7 @@ const schema = z.object({
 export async function readReference(
 	folder: string,
 	ai: { provider: Provider; apiKey: string; model: string },
+	system: string,
 	reference: string,
 	primer: string | undefined,
 	limitations: ClaimLimitation[],
@@ -82,7 +65,7 @@ export async function readReference(
 	const { object } = await generateObject({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
 		schema,
-		system: SYSTEM,
+		system,
 		messages: [
 			content,
 			{

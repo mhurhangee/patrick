@@ -5,26 +5,8 @@ import { pinnedSourcesMessage } from "./chat";
 import { createModel } from "./model";
 
 // Parse the requested claim(s) into limitations and construe each in light of the
-// description (Art 69 EPC + Protocol), in one pass. See CLAIM-CHARTING.md.
-//
-// DRAFT PROMPT — the splitting granularity and the construction approach are legally
-// load-bearing and meant for the attorney to tune.
-const SYSTEM = `You parse patent claims into their limitations for a claim chart, for a European patent attorney, and construe each limitation.
-
-SPLIT each requested claim into its constituent limitations:
-- Split at the natural clause boundaries a practitioner would use (the preamble, then each element/step). Feature-analysis granularity: not so coarse that one limitation bundles several distinct features, not so fine that a single feature is fragmented.
-- Label by claim: claim 1 → 1a, 1b, 1c …; claim 2 → 2a, 2b …. Keep them in claim order.
-- The limitation text MUST be VERBATIM from the claim — transcribe exactly, never paraphrase, summarise or correct. Use "[…]" only to elide a long enumerated list.
-
-CONSTRUE each limitation. Produce a SELF-CONTAINED construction: a standalone statement of what the limitation means, usable by a downstream system that will NOT have the description (it compares the construction against prior art for novelty). So do NOT refer to the description in the construction text itself (no "as described in [0021]") — bake the result in.
-- Construe through the eyes of the person skilled in the art, reading the limitation in light of the description (Art 69 EPC + Protocol), then write a standalone statement.
-- Start from the ORDINARY meaning of the key term(s). Override it ONLY where the description requires: (a) lexicography — the patentee defined the term, so bake the definition in; (b) disclaimer/disavowal — scope was narrowed or surrendered, so bake the limit in.
-- Resolve internal references ("said housing", "the first member") by restating what they refer to, so the construction does not dangle.
-- State scope-defining terms explicitly (e.g. "comprising" is open-ended; a numerical term's stated range or tolerance).
-- Do NOT invent scope. If the description is silent, default to ordinary meaning. Leave the construction empty only if no term in the limitation needs construing.
-- constructionBasis: a short pointer to where in the description the construction is supported (paragraph numbers / figures), so the attorney can check it. Empty if it rests on ordinary meaning alone.
-
-Work only from the documents' actual text. Parse ONLY the claims specified — do not include others.`;
+// description (Art 69 EPC + Protocol), in one pass. The system prompt is passed in (the
+// profile's, or the built-in default) — it's the attorney's to tune. See CLAIM-CHARTING.md.
 
 const schema = z.object({
 	limitations: z
@@ -55,6 +37,7 @@ export async function parseClaimSpine(
 	folder: string,
 	filename: string,
 	ai: { provider: Provider; apiKey: string; model: string },
+	system: string,
 	claims: string,
 	constructionSupport: string | undefined,
 ): Promise<ClaimLimitation[] | null> {
@@ -80,7 +63,7 @@ export async function parseClaimSpine(
 	const { object } = await generateObject({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
 		schema,
-		system: SYSTEM,
+		system,
 		messages: [
 			{
 				role: "user",
