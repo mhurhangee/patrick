@@ -1,146 +1,175 @@
 # Claim Charting — design & build plan
 
-> Working design note for claim charting (`feat/claim-charting`). This is the **second**
-> design, after the first one (search-as-novelty) was built far enough to prove it answered the
-> wrong question. Read the **Reframe** first — it's the load-bearing lesson, and the reason the
-> rest of this doc looks nothing like a "search the prior art" tool.
+> The locked design for claim charting (`feat/claim-charting`). It has been through two big
+> reframes (search-as-novelty → whole-document read; then a 3-method test bed → full-doc only);
+> this doc is the current truth. The condensed history is in **Decisions log** at the end so we
+> don't relitigate.
 
-## The reframe (what we got wrong, and why)
+## What it is
 
-The first design charted a claim by **searching each reference for each limitation and classifying
-the retrieved passages**. Built end-to-end, it disproved itself on a real Office Action:
+A **claim chart is one editable table**. Rows are claim **limitations**; columns are **references**
+(prior art) analysed against them; each cell is the disclosure analysis of that limitation in that
+reference. You add rows, add columns, and see the result. Nothing else — no phases, no stepper, no
+lock gate, no placeholder pages.
 
-- **A novelty OA response is an assessment of the *examiner's* mapping**, keyed to *their*
-  citations ("feature [a] is disclosed at col 10:17-31"). Fresh semantic search re-derives a
-  *different* mapping — so an "Absent" that never engages the examiner's actual citation is
-  useless for a response.
-- **Semantic search structurally cannot verify a pin-cite.** "Col 10 line 17" (or EP `[0021]`)
-  is a pointer into the document, not a similarity query. To test the examiner you need the
-  passage they cited — i.e. the **reference as a whole**, not search snippets.
-- **Reading retrieved paragraphs is myopic.** It construes/maps too narrowly and misses the
-  paragraph that broadens everything. Search can *find*; it can't *conclude*.
+The chart is a **Chart** object (its own class, like a chat): canonical JSON at
+`<folder>/.patrick/charts/<id>.json`, a generic envelope discriminated on `type` (claim-chart
+first; timelines / FTO / decision-trees later), listed in the "Charts" sidebar section, opened as a
+tab in the workspace content surface. xlsx/docx/pdf are one-way exports (later).
 
-So search is the wrong engine for novelty. It isn't worthless — it's the **find/triage** layer
-(D2 hunting, an invalidity sweep across many candidates). But the **definitive read is always
-whole-document.**
+## The engine — full-document read only
 
-## The engine: whole-document read, primed
+We tested three extraction methods (semantic search→classify, hybrid read→search-cite, full-doc
+read). **Full-doc won and is the only method.** The reasoning is principled, not just empirical: a
+novelty/construction analysis must read the reference *as a whole* (Art 69 EPC + the Protocol; a
+later passage may broaden or qualify an earlier one), which per-passage search structurally cannot
+do. So:
 
-The definitive analysis reads the reference **as a whole** — which is *Patrick's native context
-model*, not a divergence from it: the reference is a **pinned, cached** source. For a typical
-matter (1–2 cited references) this is one cached read per document, cheap after the first pass and
-far more accurate than per-cell search.
+- The engine reads the **whole reference** (+ optional primer) in one pass — Patrick-native (the
+  reference rides as a pinned, cached source), cheap after the first read.
+- For each limitation it returns: **verdict** (Express / Derived / Suggested / Absent),
+  **citation(s)** (model-given, verbatim + location), and **reasoning**.
+- Hybrid + semantic methods and the classify endpoint are **removed** (the local search stack stays
+  for the separate Search feature, not for charting).
 
-**Search's correct, smaller role** is *citation grounding*, not judgement: given a disclosure the
-whole-read already established, retrieve the **verbatim passage** that evidences it. (Hypothesis
-we're testing: *bigger context → vaguer citations* — a whole-doc call is great at *what* is
-disclosed and bad at *precise* cites; search is the reverse. Use each for its strength.)
+## Data model (locked)
 
-## The primer — one engine, many modes
+**`ClaimLimitation`** (a row):
+- `uid` — stable internal id (uuid). **Cells key off this**, never off the label.
+- `label` — the display id ("1a"), editable.
+- `text` — verbatim claim text.
+- `construction` — assumed scope, construed *in light of the description* (see below).
 
-A **primer** is a document fed into the read that *shapes the analysis*. It's the thing that makes
-the output fit-for-purpose — and it **collapses the "modes" into a single parameter**:
+**`ChartColumn`** (a column): has its own `id` (so the same reference can appear twice with
+different settings — e.g. D1 with and without the search report as primer), a `reference`
+(filename), and an optional `primer` (filename).
 
-| Mode | Primer | The question |
-|------|--------|--------------|
-| OA response (novelty) | the examination report / OA | "the examiner says it's disclosed *here* — are they right?" |
-| Invalidity / fresh novelty | none | "is my claim novel over this reference?" |
-| Infringement / FTO | a product description | "does the product read on the claim?" |
-| WO/PCT strategy | the search report | "how do I draft around what was found?" |
+**`ChartCell`** (limitation × column): `verdict` (DisclosureType), `citations`, `reasoning`,
+`status` (see state machine). **`teaching` is dropped** — it overlapped reasoning almost entirely.
 
-One whole-doc read engine; the primer is the lens. This is what the original "claim chart" seed
-was too narrow to see: the real primitive is **the examiner's report (or other primer) as
-structured data, analysed iteratively against the prior art.**
+**`ChartCitation`**: a primary verbatim `quote` + `location`; a cell may hold one primary citation
+plus additional supporting **locations** (shown as chips). Locations are structured where possible
+(`[0001]` for retrieved text, page/¶ for PDFs).
 
-## The method test bed (we measure, we don't guess)
+**Two kinds of supporting document — keep them distinct:**
+- **Construction-support** (per *row*, used at *parse* time): the description / application as
+  filed. Construction must be done in light of it, not the literal claim wording in isolation. Post
+  amendment this is two docs: *Amended Claims* (the claims) + *Application as filed* (the
+  description). Optional.
+- **Primer** (per *column*, used at *read* time): exam report, search report, product description
+  — shapes the disclosure assessment / mode. Optional.
+Each is chosen in its own popover with a sentence of explanation.
 
-We don't know which extraction method is best, and there are too many variables to settle by
-eyeballing. So we **build the methods and let the data decide** (the dev judges legal correctness
-directly, and already runs the benchmark pipelines this way). Each chart runs **one method**,
-saved + displayed behind a method toggle:
+## Cell status — one chip, a small state machine
 
-1. **pure-semantic** — per limitation: search → classify the passages. Myopic, cheap. (The thing
-   we built; kept as a baseline.)
-2. **hybrid** — whole read → per-limitation `{disclosed, teaching, reasoning, hint}` → search the
-   `hint` → verbatim citation.
-3. **pure-full-doc** — whole read produces everything *including* the citation (no search).
+A cell carries **two** chips: the **verdict** (the legal answer) and a **status** (the trust
+state). Status is a single enum:
 
-Methods 2 and 3 **share one whole-read call** and differ only in **where the citation comes
-from** (search-found vs model-given) — which directly tests the citation hypothesis above.
+- **AI** — drafted by the read, not yet approved.
+- **Edited** — a human changed the verdict / citations / reasoning.
+- **Approved** — a human signed off.
+- **Stale** — the row's `text` or `construction` changed since this cell was produced.
+- (**Error** — the run failed for this cell.)
 
-Methods run **in the app** (saving their JSON); no headless scaffolding (pure-semantic's retrieval
-is webview-only anyway). Presentation stays a **rough inspector** — we don't design the final form
-until a method wins.
+Transitions: run → AI · edit → Edited · approve → Approved · *edit an Approved cell → Edited* ·
+re-run → AI · *commit a change to the row's text/construction → all that row's cells → Stale*.
 
-## The judge — the experiment has a ground truth
+**Re-run must preserve human work:** re-running a column refreshes only **AI / Stale / empty** cells
+and leaves **Edited / Approved** untouched, with an explicit "re-run all (overwrite)" escape hatch.
+A per-cell re-run exists for a single stale cell (it still costs a whole-doc read, so the column
+batch stays primary).
 
-The reason this is a *designable* experiment: **the examiner already gave us a labelled answer
-key.** The exam report cites real passages in D1 per feature. So:
+## Editable cells
 
-- Run a method **with no primer** (un-tipped-off) → **judge against the exam report**:
-  - **citation precision** — do our cites exist in the reference (exact-search) and support the
-    disclosure (LLM judge)?
-  - **citation coverage** — of the examiner's cited passages, how many did we find / miss?
-  - **verdict agreement** — where the examiner says disclosed, do we?
-- A separate **comparative judge** scores two runs head-to-head (fast-follow).
-- The judge is a tack-on **step**, model-swappable (it can use a stronger model than the methods).
+The attorney owns the final analysis, so cells are editable inline (same click-to-edit pattern as
+the Feature cell): **verdict** = a dropdown; **citations** = an editable list; **reasoning** =
+freetext. Any edit flips status to **Edited** and clears **Approved**.
 
-**Keep the exam report's two roles separate.** As a *primer* it *shapes* the analysis (product
-mode); as *ground truth* it *scores* a **no-primer** run (the experiment). Scoring a *primed* run
-against the same examiner is teaching to the test — invalid. So **method comparison is always
-no-primer**, exam report held out.
+## Parse — multi-claim, construction-aware
 
-The judge needs the exam report **parsed into the examiner's citations** — which is exactly the
-parser the OA-anchored product mode needs. Nothing here is throwaway: the eval *is* product
-infrastructure.
+- One read of the source returns **all requested claims'** limitations (a range / "all
+  independent + dependents") — not one read per claim (token-wasteful, especially for short
+  dependents).
+- The prompt **construes in light of the description** (Art 69 / Protocol), using the
+  construction-support doc — this is the fix for the over-narrow constructions we were seeing.
 
-## Data model
+## Reviewer pass (the new "judge")
 
-**Spine** (kept from the foundation — `packages/shared/src/chart.ts`): the write-once,
-HITL-locked backbone of limitations (`id`, verbatim `text`, `construction`).
+The method-comparison judge is obsolete. Its replacement is a **per-column Reviewer** — an optional
+"Review" action that runs a second model over a finished column to improve accuracy (the
+self-critique / verifier pattern): flag (and optionally fix) **malformed or missing citations**,
+internal contradictions, and over/under-reading. It is the natural place to **validate that each
+cited location actually exists in the reference** (exact-search), which also de-risks the deferred
+citation-jump feature.
 
-**Extensions for the engine** (to add):
-- `primer?` on the chart — an optional document filename fed into the read.
-- a `method` tag on each run/cell, so a chart can hold (and toggle between) results from different
-  methods.
-- the per-limitation **read object**: `{ disclosed, teaching, reasoning, hint, modelCitation }`,
-  with citations resolved to `{ quote, location }` (search-found for hybrid, model-given for
-  full-doc).
+## Agent tools
 
-The canonical artifact stays the JSON at `<folder>/.patrick/charts/<id>.json` (open, versioned).
+Patrick drives the chart: `create_chart`, `parse_claim`, `add_reference`, `run_analysis` …
+(agent-first payoff, clean now there's one method). Open question for that phase: if the reference
+is already pinned in the chat's context, the tool should **reuse it** rather than re-load/re-pay.
 
-## Built (the ported foundation) vs to build
+## UI specifics
 
-**Built** — the chart object + `.patrick/charts/` persistence + CRUD routes; the "Charts" sidebar
-section + workspace-tab integration (charts open beside sources); the spine **parse → edit → lock**
-flow (`parse-claim.ts`, the spine editor, the HITL gate). All approach-agnostic, all green.
+- **One table.** Sticky header (`Feature | D1 | D2 …` stays visible on scroll). **Resizable**
+  columns (drag the right border). **Add column** is a labelled button at the *right* of the
+  header; **Add row** (instant) and **Add claim** (popover) at the bottom — all consistent labelled
+  buttons, no dangling borders.
+- **Feature cell** = ID + verbatim limitation + construction in one cell. Construction is indented,
+  smaller and muted (no "Constr." label — the indent + style says it).
+- **Disclosure cell** = verdict pill + status chip; primary verbatim citation (italic block) +
+  supporting location chips; reasoning.
+- Document dropdowns show **doc-type icons + colours** (PDF red, etc.).
+- **Controls** are consistent: row and column actions live in matching affordances (a hover `⋯`
+  menu each, not delete-on-hover for rows vs always-on for columns).
 
-**To build**
-1. Schema extensions — `primer`, `method` tag, the read object.
-2. The **whole-read engine** (whole doc + optional primer, pinned/cached) → per-limitation object;
-   `hint`→search for the hybrid citation, model-given for full-doc. Keep pure-semantic as the
-   baseline method.
-3. A **minimal run/display** surface (rough inspector — method picker, run, show one).
-4. The **judge** — parse the exam report → score a no-primer run for precision / coverage /
-   agreement. Comparative judge as a fast-follow.
+## Built vs to build
 
-## Decisions log (don't relitigate)
+**Built (green on the branch):** the Chart object + `.patrick/charts/` persistence + CRUD; the
+"Charts" sidebar + workspace-tab integration; the one editable table (rows + columns, inline-edit
+Feature cell, resizable columns, add row / claim / column); the whole-document read engine (plus
+the hybrid/semantic methods that are now to be removed); parse → limitations.
 
-- **Search ≠ novelty.** Novelty prosecution assesses the examiner's citation-anchored mapping;
-  fresh search answers a different question and can't verify a pin-cite. Search is the find/triage
-  layer; the definitive read is whole-document.
-- **Whole-document read = Patrick-native** (pinned, cached source), not a divergence. Cheap after
-  cache for the few references that matter.
-- **Search's role is citation grounding**, not judgement (bigger context → vaguer cites; search
-  retrieves verbatim).
-- **The primer unifies the modes** (mode = which primer); the real primitive is the examiner's
-  report as structured data, analysed against the prior art.
-- **Measure, don't guess** — build pure-semantic / hybrid / full-doc; the exam report is the
-  ground-truth answer key; the **method comparison is no-primer** with the report held out.
+**To build:** everything in the locked design above — full-doc collapse, stable `uid`, status model
++ editable analysis cells, the two supporting docs + Art 69 parse, multi-claim parse, multiple
+citations, sticky header + the UI polish, the reviewer pass, agent tools.
 
-## Scope
+## Suggested build order
 
-EP-first, novelty first. Claims are rows (no special multi-claim machinery). Charts consume any
-indexed/extracted document in the task. Deferred until a method wins: the final presentation, the
-pivot/summary view, multi-reference combination (inventive step / problem-solution), export
-(xlsx/docx/pdf).
+1. **Schema + simplify (foundational):** collapse to full-doc (delete hybrid/semantic + the method
+   tag + classify); drop `teaching`; add the stable `uid` + `label` to limitations and re-key
+   cells; give columns their own id + a `primer` field; add the `construction-support` field.
+2. **Construction correctness (#9 — the only *correctness* item, do near-first):** Art 69 parse
+   prompt + construction-support doc + multi-claim parse.
+3. **Quick UI wins:** drop "Constr." label, doc icons, consistent labelled add-buttons (kill the
+   dangling borders), sticky header.
+4. **Editable cells + status model:** verdict dropdown / editable citations / freetext reasoning;
+   the AI/Edited/Approved/Stale chip; stale-on-row-edit; re-run preserves human cells; unified
+   row/column controls.
+5. **Multiple citations:** primary verbatim + supporting location chips.
+6. **Reviewer pass.**
+7. **Agent tools.**
+
+## Deferred (on the map, not now)
+
+- **Citation → source** (click a location to open the reference and highlight the passage; reuses
+  the search highlighting). Substantial, shell-touching, fragile on odd locations. Keep verbatim
+  citations for now; revisit whether verbatim is still needed *once the jump exists*.
+- **Combining references** (inventive step / problem-solution — mosaicing across columns).
+- **Export** (xlsx / docx / pdf).
+
+## Decisions log (the why — don't relitigate)
+
+- **Search ≠ novelty.** Per-passage semantic search construes myopically and can't verify a
+  pin-cite; a novelty/construction analysis must read the reference as a whole. Search is now only
+  the separate find/triage feature.
+- **Full-doc is the only method.** The 3-method test bed settled it; whole-context reading is both
+  principled (Art 69) and empirically best. Hybrid/semantic removed.
+- **One table, no scaffolding.** Repeatedly the table got buried under phases / steppers / lock
+  gates / placeholder pages; the product *is* a table you add rows and columns to. Build the
+  literal thing.
+- **Cells key off a stable uid, not the label.** Editable labels + stale-tracking demand it.
+- **Re-run never clobbers human-touched cells.** Otherwise editing is a trap.
+- **Construction is done in light of the description** (Art 69 / Protocol), not the claim wording
+  in isolation — the silent correctness bug behind over-narrow constructions.
+- **Two supporting docs, kept distinct:** construction-support (parse-time, the description) vs
+  primer (read-time, the exam/search report).
