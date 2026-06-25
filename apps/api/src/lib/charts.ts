@@ -12,7 +12,9 @@ function chartPath(folder: string, id: string): string {
 	return join(chartsDir(folder), `${id}.json`);
 }
 
-export async function listCharts(folder: string): Promise<ChartSummary[]> {
+/** Read every chart in the folder once (full records, unordered). Shared by listCharts and
+ *  the system manifest so a chat turn parses each file once, not twice. */
+export async function loadCharts(folder: string): Promise<Chart[]> {
 	let files: string[];
 	try {
 		files = await readdir(chartsDir(folder));
@@ -24,9 +26,12 @@ export async function listCharts(folder: string): Promise<ChartSummary[]> {
 			.filter((f) => f.endsWith(".json"))
 			.map((f) => readChart(folder, f.replace(/\.json$/, ""))),
 	);
+	return charts.filter((c): c is Chart => c != null);
+}
+
+export async function listCharts(folder: string): Promise<ChartSummary[]> {
 	return (
-		charts
-			.filter((c): c is Chart => c != null)
+		(await loadCharts(folder))
 			.map(chartSummary)
 			// Starred float to the top; otherwise most-recent first.
 			.sort(
@@ -68,6 +73,30 @@ export async function saveChart(folder: string, chart: Chart): Promise<Chart> {
 		JSON.stringify(full, null, 2),
 		"utf8",
 	);
+	return full;
+}
+
+// Apply a delta to a chart, re-reading it IMMEDIATELY before the write so a slow caller (an
+// agent tool whose LLM round-trip takes seconds) can't clobber edits that landed meanwhile:
+// `mutate` runs on the freshest on-disk chart and there's no await between the read and the
+// write, so the window is effectively zero (versus seconds if the caller spread a pre-call
+// snapshot). title/starred stay meta-owned, as in saveChart. Returns null if the chart is gone.
+export async function mutateChart(
+	folder: string,
+	id: string,
+	mutate: (chart: Chart) => Chart,
+): Promise<Chart | null> {
+	await mkdir(chartsDir(folder), { recursive: true });
+	const existing = await readChart(folder, id);
+	if (!existing) return null;
+	const full: Chart = {
+		...mutate(existing),
+		createdAt: existing.createdAt,
+		updatedAt: new Date().toISOString(),
+		title: existing.title,
+		starred: existing.starred,
+	};
+	await writeFile(chartPath(folder, id), JSON.stringify(full, null, 2), "utf8");
 	return full;
 }
 

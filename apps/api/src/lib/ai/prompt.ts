@@ -28,6 +28,7 @@ function manifest(
 	pinned: PinnedSource[],
 	activeDraft: string | null,
 	available: AvailableDoc[],
+	charts: string,
 ): string {
 	const lines: string[] = [];
 	if (pinned.length > 0) {
@@ -59,6 +60,15 @@ function manifest(
 		for (const d of available)
 			lines.push(`- ${d.filename}${d.label ? ` — ${d.label}` : ""}`);
 	}
+	// Existing claim charts the agent can extend (create_chart / parse_claim /
+	// add_reference / run_analysis target one by id) — never their content, just id + shape.
+	if (charts) {
+		lines.push("");
+		lines.push(
+			"Claim charts in this matter (read one with read_chart, extend one by its id, or create_chart for a new one):",
+		);
+		lines.push(charts);
+	}
 	return lines.join("\n");
 }
 
@@ -71,11 +81,12 @@ export function buildSystemPrompt(
 	pinned: PinnedSource[],
 	activeDraft: string | null,
 	available: AvailableDoc[],
+	charts: string,
 	middle: string,
 ): string {
 	return assembleSystemPrompt(
 		middle.trim(),
 		taskBlock(task),
-		manifest(pinned, activeDraft, available),
+		manifest(pinned, activeDraft, available, charts),
 	);
 }
