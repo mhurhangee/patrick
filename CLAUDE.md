@@ -33,7 +33,9 @@ No database in local mode. A **task = a folder on disk** the attorney already ha
 
 - `documents.yaml` — per-file meta keyed by filename (`label`, `excluded`, `starred`, `createdInPatrick`, and for PDFs `extracted`/`ocr`/`contextMode`).
 - `chats/<id>.json` — a persisted chat: its messages + its **locked system template** + its **locked model** + its **pinned sources**.
+- `charts/<id>.json` — a persisted **Chart** (claim charts first): rows, columns, cells, per-chart model. Its own object class, like a chat (see "Search, charting & citations").
 - `extracted/<file>.json` — text pulled from a PDF (native text layer or OCR), for the selectable overlay and the text-mode context.
+- `index/<file>.json` — the on-device search index for a document. Derived, regenerable state; not a visible document.
 
 Config home (`~/.config/patrick/` via `apps/api/src/lib/config.ts`): `profiles/<id>/…` and `tasks/<id>/…` registries (YAML).
 
@@ -81,6 +83,17 @@ Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
 - **`patrick_help`** — the agent answers questions about itself from bundled docs (`scripts/gen-patrick-docs.ts` → `packages/shared/src/patrick-docs.generated.ts`; the same docs power `apps/site`).
 
 **Transparency UI** (`apps/frontend/src/components/workspace/`): Streamdown answers, a chain-of-thought reasoning/tool trail, honest live status, a per-exchange panel (tokens/cost/time/tools), a unified **context control** (what's about to be sent — open sources with token estimates + one-tap close — and, after sending, the provider's exact usage/cost; the context-usage ring), a per-chat **model picker** (locked at first send), and a **read-only system-card** (the chat header; instructions + Patrick's abilities live in the profile prompt builder, linked from the context control). Chats persist + list in the sidebar with new/switch/delete/edit/fork/star/rename.
+
+## Search, claim charting & citations
+
+**In-document search** (`apps/frontend/src/lib/search/`, `components/workspace/doc-search*`): a local **hybrid** (semantic + keyword) and **exact** search over any open document, in a panel beside it. The index is **derived state** built on-device (transformers.js) and stored at `.patrick/index/<file>.json` (regenerable; not a visible document). Matches highlight in place via the **CSS Custom Highlight API** (`use-doc-highlights.ts`, normalised matching). Patrick searches too via the **`search_document`** tool (query expansions + cross-encoder rerank). Search is a find/triage feature — **not** the charting engine (which reads whole documents).
+
+**Claim charting.** A **Chart** is its own object class (like a chat): canonical JSON at `.patrick/charts/<id>.json`, a generic envelope on `type` (claim-chart first; timelines/FTO later), in the "Charts" sidebar section, opened as a workspace tab. A claim chart is **one editable table** — no phases/steppers/lock-gates: rows = claim **limitations** (parsed and construed **in light of the description**, Art 69 EPC), columns = prior-art **references** read **whole** (`apps/api/src/lib/ai/read-reference.ts` — full-document read only, never per-passage search). A cell = **verdict** (Express/Derived/Suggested/Absent) + **citations** + reasoning + a **status** (AI/Edited/Approved/Stale). Load-bearing:
+- **Cells key off a stable `uid`, never the editable label.** Re-run preserves human-touched (`edited`/`approved`) cells — the shared **`mergeColumnReads`** (`@patrick/shared`) is the single place that rule lives, used by both the server tool and the viewer's `runColumn`.
+- **Per-chart model** (`Chart.model`, quality is model-sensitive). **Profile-editable prompts** (`prompts.claimConstruction`/`claimAnalysis`) — each a tunable **rubric** + a locked **output format** (`packages/shared/claim-prompts.ts`), so editing the methodology can't break structured output. Two optional supporting docs: **construction-support** (the description, at parse) and **primer** (exam/search report, at read).
+- **Agent tools** (server-executed, `apps/api/src/lib/ai/chart-tools.ts`; names single-sourced in `@patrick/shared`, `satisfies`-checked): `read_chart` / `create_chart` / `parse_claim` / `add_reference` / `run_analysis` / `edit_cell` / `edit_limitation`. They write through **`mutateChart`** (re-read immediately before write, no `await` between — a slow LLM call can't clobber a concurrent edit). A chart is **mutable, Patrick-owned state read live via `read_chart`** (like the editable draft), **never pinned context**. Agent edits are marked **`ai`** not `edited` (clean binary: `ai` = AI last, `edited` = human last); deletion stays a user action (CRU, no D).
+
+**Citation navigation.** Click a chart citation → open the reference, jump to and highlight the passage. A citation splits a **locator** (a hidden verbatim `snippet` — the robust nav primitive) from a **label** (`location` in examiner-speak: `[0021]`, or **`leaf N`** for a PDF). **`leaf` = the actual page in the file (reserved); `page` = the printed number an examiner cites — never conflated** (enforced in `PATRICK_CAPABILITIES` + the analysis prompt). Navigation matches the snippet (matcher primitives in `@patrick/shared/match.ts`), falling back to label-parse (leaf → page jump; `[000n]` → marker). The read engine **verifies-and-drops** citations that locate nowhere. Citations render as **chips** (click = navigate, ✕ = remove, + = add); **no inline label editing** (it would desync the locator). Not yet: docx scroll-to-text, select-in-doc add, fuzzy/semantic matcher tiers.
 
 ## Conventions
 

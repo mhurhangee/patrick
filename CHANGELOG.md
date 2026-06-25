@@ -6,6 +6,56 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-25
+
+The biggest release yet: Patrick can now **search your documents** for prior art
+and **chart a claim against it**, and every citation he produces clicks straight
+through to the passage in the source. Plus a friendlier profile and AI setup.
+
+### Added
+
+- **In-document search.** Search any open document beside it, by meaning or by
+  exact text. Semantic mode finds passages by what they mean (a hybrid of meaning
+  and keyword); Exact mode is a literal find. Matches highlight in the document,
+  and you can sort by relevance or document order. The index is built on your own
+  machine and stored in the task folder; a scanned PDF offers to extract its text
+  first. Patrick can search a document too — the `search_document` tool casts a
+  wide net with query expansions and reranks the hits — so he finds where
+  something is disclosed without reading the whole document into the chat.
+- **Claim charting.** A claim chart is one editable table: rows are a claim's
+  limitations, columns are prior-art references. Patrick parses the claim into its
+  limitations and construes each in light of the description (Art 69 EPC), reads
+  each reference in full, and judges every limitation — Express, Derived,
+  Suggested, or Absent — with reasoning and citations. You own the result: every
+  cell is editable, with a trust status (AI / Edited / Approved / Stale) that a
+  re-run preserves, and the construction and disclosure prompts are yours to tune
+  in your profile. The analysis model is chosen per chart (quality is
+  model-sensitive), under a standing "always verify" banner. Patrick drives the
+  whole thing — create a chart, parse a claim, add a reference, re-run a column,
+  read it back, and edit it — so you can simply ask.
+- **Citation navigation.** Click any citation in a chart to open the reference and
+  jump straight to the cited passage (a PDF or retrieved text), with the passage
+  highlighted. Citations are chips you add and remove. Patrick's analysis citations
+  are checked against the source as they're produced, and any that don't locate are
+  dropped — so a pin you can click is a pin that lands. A limitation's construction
+  basis links to its supporting passage in the specification.
+- **Web search**, as a per-chat toggle that defaults from your profile.
+- **Friendlier AI setup.** Provider logos and a "get a key" link, your API key
+  verified automatically with a clear status row, and EPO Open Patent Services
+  credentials verified the same way.
+
+### Changed
+
+- **A single Patrick menu** consolidates the header actions.
+- **AI settings are grouped** into Connection (provider and keys) and Behaviour
+  (model, reasoning, web search) for a clearer profile.
+
+### Fixed
+
+- Credential verification is hardened, reasoning is correctly disabled on models
+  that don't support it, and the per-chat web-search setting is read live rather
+  than captured once when a chat opens.
+
 ## [0.5.1] - 2026-06-21
 
 ### Fixed

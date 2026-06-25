@@ -7,9 +7,11 @@
  * The version itself is not here — it's injected at build from tauri.conf.json.
  */
 export const LATEST_HIGHLIGHTS = {
-	headline: "A fix for Claude Haiku",
+	headline: "Prior-art search and claim charting",
 	highlights: [
-		"Chats on Claude Haiku 4.5 no longer error on the first message",
+		"Search any document by meaning or exact text, right beside it",
+		"Chart a claim's limitations against the prior art — every citation clicks through to the source",
+		"Patrick drives it: ask him to build, read, and edit a chart, or to find where something's disclosed",
 	],
 } as const;
 
