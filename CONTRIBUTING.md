@@ -30,10 +30,35 @@ Every user-facing change adds one bullet to [`CHANGELOG.md`](CHANGELOG.md) under
 Changed / Fixed / Removed. Internal-only work (refactors, tooling, tests) needs
 no entry.
 
+## Dependencies
+
+Bump **before a release**, not continuously — a small, regular bump keeps you
+from ever facing a wall of breaking majors. No automation (Renovate/Dependabot);
+it's a deliberate step.
+
+The `^` range in `package.json` is a _floor + major pin_ (`^6.0.204` means
+`>=6.0.204 <7.0.0`); the committed `pnpm-lock.yaml` is the exact pinned truth.
+So:
+
+- `pnpm outdated -r` — the radar. Shows the true latest for every dep,
+  **including majors beyond your `^` ranges** — the only way to spot majors.
+- `pnpm update -r` — applies every **in-range** (minor/patch) bump and rolls the
+  lockfile + `^` floors forward. Safe to batch: one `chore(deps)` branch,
+  `pnpm check`, smoke-test the app, PR, merge. Keep the `@tiptap/*` packages on a
+  single version (they must move as a set).
+- `pnpm update -r --latest <pkg>` — crosses a **major** for one package. Do these
+  one at a time: read the changelog, then test the feature that uses it.
+
+Treat `@eigenpal/docx-editor-*` as load-bearing — read its notes and exercise a
+real tracked-change edit even on a minor bump. Keep `@types/node` on the Node LTS
+major we build against (24). Dep bumps are internal-only, so they need no
+`CHANGELOG.md` entry.
+
 ## Releasing
 
 `main` accumulates merged work; cut a release only when a batch is coherent —
-not for every fix.
+not for every fix. Refresh dependencies first (see **Dependencies**), so the
+release ships current.
 
 1. **Bump the version** in `apps/desktop/src-tauri/tauri.conf.json` and
    `apps/desktop/src-tauri/Cargo.toml` (keep the two in sync); the `app` package

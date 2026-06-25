@@ -16,8 +16,8 @@
 		"check": "pnpm typecheck && pnpm lint:fix && pnpm knip"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.0",
-		"knip": "^6.16.1",
+		"@biomejs/biome": "^2.5.1",
+		"knip": "^6.19.0",
 		"typescript": "^6.0.3"
 	}
 }

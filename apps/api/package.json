@@ -9,16 +9,16 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^3.0.84",
-		"@ai-sdk/google": "^3.0.82",
-		"@ai-sdk/openai": "^3.0.71",
-		"@eigenpal/docx-editor-agents": "^1.5.0",
+		"@ai-sdk/anthropic": "^3.0.86",
+		"@ai-sdk/google": "^3.0.83",
+		"@ai-sdk/openai": "^3.0.74",
+		"@eigenpal/docx-editor-agents": "^1.9.0",
 		"@patrick/law": "workspace:*",
 		"@patrick/shared": "workspace:*",
-		"ai": "^6.0.204",
-		"hono": "^4.12.25",
+		"ai": "^6.0.209",
+		"hono": "^4.12.27",
 		"jszip": "^3.10.1",
-		"node-html-parser": "^7.1.0",
+		"node-html-parser": "^8.0.3",
 		"yaml": "^2.9.0",
 		"zod": "^4.4.3"
 	},
