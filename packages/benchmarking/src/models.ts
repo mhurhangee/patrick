@@ -39,7 +39,7 @@ export function modelId(role: Role, override?: string): string {
 	);
 }
 
-/** The gateway model for a role, ready to pass to generateText/generateObject. */
+/** The gateway model for a role, ready to pass to generateText. */
 export function modelFor(role: Role, override?: string) {
 	return provider()(modelId(role, override));
 }

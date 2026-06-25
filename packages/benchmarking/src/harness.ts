@@ -2,7 +2,7 @@
 // (build.ts) and the dev inspect tools (generate.ts / judge.ts). The accept/reject
 // is plain code — never a model (STRATEGY §6).
 
-import { generateObject, type LanguageModel } from "ai";
+import { generateText, type LanguageModel, Output } from "ai";
 import type { z } from "zod";
 import { citationKeys } from "./citations";
 import {
@@ -23,15 +23,15 @@ export async function proposeOne(
 	framing: Framing,
 	distortion: string,
 ): Promise<{ pair: ProposedPair; tokens: number }> {
-	const { object, usage } = await generateObject({
+	const { output, usage } = await generateText({
 		model,
-		schema: proposedPairSchema,
+		output: Output.object({ schema: proposedPairSchema }),
 		system: GENERATOR_SYSTEM,
 		prompt: generatorInput(set, framing, distortion),
 	});
 	return {
 		pair: {
-			...object,
+			...output,
 			jurisdiction: set.jurisdiction,
 			topic: set.topic,
 			framing,
@@ -59,14 +59,14 @@ export async function judgeOne(
 	const trueIsA = Math.random() < 0.5;
 	const aText = trueIsA ? pair.true_statement : pair.false_statement;
 	const bText = trueIsA ? pair.false_statement : pair.true_statement;
-	const { object, usage } = await generateObject({
+	const { output, usage } = await generateText({
 		model,
-		schema: judgeResultSchema,
+		output: Output.object({ schema: judgeResultSchema }),
 		system: JUDGE_SYSTEM,
 		prompt: judgeInput(set, pair.scenario, aText, bText),
 	});
 	return {
-		jr: object,
+		jr: output,
 		trueSlot: trueIsA ? "A" : "B",
 		falseSlot: trueIsA ? "B" : "A",
 		aText,

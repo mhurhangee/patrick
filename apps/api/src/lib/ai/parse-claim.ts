@@ -1,5 +1,5 @@
 import { type ClaimLimitation, docKind, type Provider } from "@patrick/shared";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { pinnedWithRequiredPrimary } from "./chat";
 import { createModel } from "./model";
@@ -58,9 +58,9 @@ export async function parseClaimSpine(
 		constructionSupport && constructionSupport !== filename
 			? " A separate description/specification document is also provided above — construe the claims in light of it."
 			: "";
-	const { object } = await generateObject({
+	const { output } = await generateText({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
-		schema,
+		output: Output.object({ schema }),
 		system,
 		messages: [
 			{
@@ -71,7 +71,7 @@ export async function parseClaimSpine(
 		],
 	});
 
-	return object.limitations.map((l) => ({
+	return output.limitations.map((l) => ({
 		uid: crypto.randomUUID(),
 		label: l.id,
 		text: l.text,
