@@ -37,10 +37,10 @@ Give self-contained reasoning a colleague could read on its own ("limitation X, 
 export const CLAIM_ANALYSIS_FORMAT = `Output requirements (fixed):
 - Return one entry per limitation, in the order given. limitationUid: echo back, exactly, the id given in brackets ([id: …]) before that limitation — it identifies the row, so copy it character-for-character. Use exactly the verdicts Express / Derived / Suggested / Absent.
 - citations: the location(s) in the reference that evidence the disclosure — the MOST ON-POINT first, then any further supporting locations (typically 1–3). Each gives:
-    - location: where it is — the paragraph number (e.g. [0021]), or the page / column / line if that is how the reference is laid out. This is what the reader will click to check the source, so make it precise.
-    - snippet: a SHORT verbatim phrase (a few exact words) from that spot. It is used only to locate and highlight the passage and is NOT shown to the reader, so keep it brief and copy it exactly from the text.
+    - location: a precise, human-readable pointer the attorney reads and clicks to check — follow the citation convention given for THIS reference (paragraph numbers, or leaf / column / line for a PDF).
+    - snippet: a DISTINCTIVE verbatim phrase (about 6–12 exact words) copied EXACTLY from that spot — specific enough to occur only ONCE in the reference (use the unusual technical wording, not boilerplate like "the method comprising"), but short enough to transcribe without error. It is what actually locates and highlights the passage, and is never shown to the reader.
   Empty if Absent.
-- Work only from the reference's actual text — never invent passages or locations.`;
+- Work only from the reference's actual text — never invent passages, locations or snippets.`;
 
 /** Assemble the full parse/construe system prompt: the (editable) rubric + the locked format. */
 export function assembleClaimConstructionPrompt(rubric: string): string {

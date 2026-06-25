@@ -51,6 +51,7 @@ import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { useCitationNav } from "@/lib/search/citation-nav";
 import { cn } from "@/lib/utils";
 import { Patrick } from "../patrick";
 import { Skeleton } from "../ui/skeleton";
@@ -256,6 +257,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 			...chartRef.current,
 			limitations: next,
 			constructionSupport: support,
+			claimsDocument: claimDoc,
 		});
 		setClaimOpen(false);
 	};
@@ -453,6 +455,9 @@ function ChartTable({ chart }: { chart: Chart }) {
 								<td className="border-r border-b px-2 py-1.5 align-top">
 									<FeatureCell
 										lim={lim}
+										basisTarget={
+											chart.constructionSupport ?? chart.claimsDocument
+										}
 										onCommit={(field, value) => commitField(i, field, value)}
 										onRemove={() => removeRow(i)}
 									/>
@@ -464,6 +469,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 									>
 										<DisclosureContent
 											cell={cellFor(lim.uid, c.id)}
+											reference={c.reference}
 											running={running.has(c.id)}
 											onEdit={editCell}
 											onSetStatus={setCellStatus}
@@ -738,13 +744,17 @@ function InlineField({
 
 function FeatureCell({
 	lim,
+	basisTarget,
 	onCommit,
 	onRemove,
 }: {
 	lim: ClaimLimitation;
+	/** Doc the constructionBasis points into (the description, else the claims doc). */
+	basisTarget?: string;
 	onCommit: (field: keyof ClaimLimitation, value: string) => void;
 	onRemove: () => void;
 }) {
+	const { goToCitation } = useCitationNav();
 	return (
 		<div className="flex items-start gap-1.5">
 			<div className="w-9 shrink-0 pt-0.5">
@@ -771,12 +781,26 @@ function FeatureCell({
 						className="text-muted-foreground text-xs"
 					/>
 					{lim.construction && (
-						<InlineEdit
-							value={lim.constructionBasis ?? ""}
-							onCommit={(v) => onCommit("constructionBasis", v)}
-							placeholder="+ basis in spec"
-							className="text-[11px] text-muted-foreground/70 italic"
-						/>
+						<div className="flex items-center gap-1">
+							{lim.constructionBasis?.trim() && basisTarget && (
+								<button
+									type="button"
+									title="Go to the basis in the specification"
+									className="shrink-0 text-muted-foreground/50 hover:text-foreground"
+									onClick={() =>
+										goToCitation(basisTarget, "", lim.constructionBasis ?? "")
+									}
+								>
+									<Locate className="size-3" />
+								</button>
+							)}
+							<InlineEdit
+								value={lim.constructionBasis ?? ""}
+								onCommit={(v) => onCommit("constructionBasis", v)}
+								placeholder="+ basis in spec"
+								className="text-[11px] text-muted-foreground/70 italic"
+							/>
+						</div>
 					)}
 				</div>
 			</div>
@@ -949,11 +973,13 @@ function ColumnHeader({
 
 function DisclosureContent({
 	cell,
+	reference,
 	running,
 	onEdit,
 	onSetStatus,
 }: {
 	cell: ChartCell | undefined;
+	reference: string;
 	running: boolean;
 	onEdit: (cell: ChartCell, patch: Partial<ChartCell>) => void;
 	onSetStatus: (cell: ChartCell, status: CellStatus) => void;
@@ -1033,6 +1059,7 @@ function DisclosureContent({
 			/>
 			<CitationList
 				citations={cell.citations}
+				reference={reference}
 				onChange={(c) => onEdit(cell, { citations: c })}
 			/>
 		</div>
@@ -1041,51 +1068,92 @@ function DisclosureContent({
 
 function CitationList({
 	citations,
+	reference,
 	onChange,
 }: {
 	citations: ChartCitation[];
+	reference: string;
 	onChange: (citations: ChartCitation[]) => void;
 }) {
-	const set = (i: number, patch: Partial<ChartCitation>) =>
-		onChange(citations.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+	const { goToCitation } = useCitationNav();
+	const [addOpen, setAddOpen] = useState(false);
+	const [draft, setDraft] = useState("");
+	const add = () => {
+		const v = draft.trim();
+		if (v) onChange([...citations, { location: v }]);
+		setDraft("");
+		setAddOpen(false);
+	};
+	const remove = (i: number) =>
+		onChange(citations.filter((_, idx) => idx !== i));
+	// Citations are chips, not editable text: click one to jump to the cited passage, ✕ to
+	// remove. A chip with a snippet is "linked" (located precisely); a typed-label-only one is
+	// best-effort (navigated by parsing the label). Editing a label would desync it from its
+	// locator, so we add/remove rather than edit.
 	return (
-		<div className="space-y-1">
+		<div className="flex flex-wrap items-center gap-1">
 			{citations.map((cit, i) => (
-				<div
+				<span
 					// biome-ignore lint/suspicious/noArrayIndexKey: citations have no stable id
 					key={i}
-					className="group/c flex items-center gap-1 text-muted-foreground"
+					className="group/c inline-flex items-center gap-0.5 rounded border bg-muted/50 py-0.5 pr-0.5 pl-1.5 text-[11px] text-muted-foreground"
 				>
-					<Locate className="size-3 shrink-0 opacity-60" />
-					<div className="min-w-0 flex-1">
-						<InlineEdit
-							value={cit.location}
-							onCommit={(v) => set(i, { location: v })}
-							placeholder="location…"
-							mono
-							className="text-[11px]"
+					<button
+						type="button"
+						title="Go to the cited passage in the reference"
+						className="inline-flex items-center gap-1 hover:text-foreground"
+						onClick={() =>
+							goToCitation(reference, cit.snippet ?? "", cit.location)
+						}
+					>
+						<Locate
+							className={cn(
+								"size-3",
+								cit.snippet ? "opacity-70" : "opacity-30",
+							)}
 						/>
-					</div>
+						<span className="font-mono">{cit.location || "—"}</span>
+					</button>
+					<button
+						type="button"
+						title="Remove citation"
+						className="rounded opacity-0 hover:bg-muted group-hover/c:opacity-100"
+						onClick={() => remove(i)}
+					>
+						<X className="size-2.5" />
+					</button>
+				</span>
+			))}
+			<Popover
+				open={addOpen}
+				onOpenChange={(o) => {
+					setAddOpen(o);
+					if (!o) setDraft("");
+				}}
+			>
+				<PopoverTrigger asChild>
 					<Button
 						variant="ghost"
-						size="icon-xxs"
-						tooltip="Remove citation"
-						className="shrink-0 text-muted-foreground opacity-0 group-hover/c:opacity-100"
-						onClick={() => onChange(citations.filter((_, idx) => idx !== i))}
+						size="xs"
+						tooltip="Add a citation"
+						className="h-5 px-1 text-muted-foreground"
 					>
-						<X />
+						<Plus className="size-3" />
 					</Button>
-				</div>
-			))}
-			<Button
-				variant="ghost"
-				size="sm"
-				className="h-6 gap-1 px-1 text-[11px] text-muted-foreground"
-				onClick={() => onChange([...citations, { location: "" }])}
-			>
-				<Plus className="size-3" />
-				citation
-			</Button>
+				</PopoverTrigger>
+				<PopoverContent align="start" className="w-52 p-1.5">
+					<Input
+						value={draft}
+						autoFocus
+						placeholder="leaf 6, ll. 5–12  /  [0021]"
+						className="h-7 text-xs"
+						onChange={(e) => setDraft(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") add();
+						}}
+					/>
+				</PopoverContent>
+			</Popover>
 		</div>
 	);
 }

@@ -13,6 +13,7 @@ import { ActiveEditorProvider } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { applyAppearance } from "@/lib/appearance";
 import { LayoutProvider, useLayout } from "@/lib/layout";
+import { CitationNavProvider } from "@/lib/search/citation-nav";
 import { WorkspaceProvider } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_app")({
@@ -27,11 +28,13 @@ function AppLayout() {
 	useApplyActiveAppearance();
 	return (
 		<WorkspaceProvider>
-			<LayoutProvider>
-				<ActiveEditorProvider>
-					<AppShell />
-				</ActiveEditorProvider>
-			</LayoutProvider>
+			<CitationNavProvider>
+				<LayoutProvider>
+					<ActiveEditorProvider>
+						<AppShell />
+					</ActiveEditorProvider>
+				</LayoutProvider>
+			</CitationNavProvider>
 		</WorkspaceProvider>
 	);
 }

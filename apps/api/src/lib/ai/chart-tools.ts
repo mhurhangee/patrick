@@ -250,6 +250,7 @@ export function buildChartTools(folder: string, profile: Profile) {
 					...fresh,
 					limitations: [...fresh.limitations, ...added],
 					constructionSupport: support ?? fresh.constructionSupport,
+					claimsDocument: doc,
 				};
 			});
 			if (!saved) return { error: `no chart with id ${chartId}` };

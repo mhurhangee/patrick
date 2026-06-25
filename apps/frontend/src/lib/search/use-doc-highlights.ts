@@ -1,3 +1,4 @@
+import { normalizeForMatch, PREFIX_LEN } from "@patrick/shared";
 import { type RefObject, useEffect, useRef } from "react";
 import type { HighlightSelected } from "./doc-search-context";
 
@@ -12,11 +13,6 @@ const supported = () =>
 	typeof CSS !== "undefined" &&
 	"highlights" in CSS &&
 	typeof Highlight !== "undefined";
-
-/** Normalize a target string the same way the DOM flat string is built. */
-function norm(s: string): string {
-	return s.toLowerCase().replace(/[*#`]/g, " ").replace(/\s+/g, " ").trim();
-}
 
 /** Flatten the container's text nodes into a normalized string + a per-char map back
  *  to (node, offset), collapsing whitespace and lowercasing. */
@@ -81,10 +77,8 @@ function matchAll(flat: string, map: CharPos[], t: string): Range[] {
 	return ranges;
 }
 
-const PREFIX_LEN = 90;
-
 function findRanges(flat: string, map: CharPos[], target: string): Range[] {
-	const t = norm(target);
+	const t = normalizeForMatch(target);
 	if (!t) return [];
 	const ranges = matchAll(flat, map, t);
 	if (ranges.length || t.length <= PREFIX_LEN) return ranges;
