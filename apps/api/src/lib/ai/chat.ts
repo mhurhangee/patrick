@@ -31,6 +31,7 @@ import {
 } from "../documents";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
+import { buildChartTools, chartManifest } from "./chart-tools";
 import { createFindLaw } from "./find-law";
 import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
@@ -84,6 +85,8 @@ type RequestBody = {
 	pinnedSources?: PinnedSource[];
 	/** The editable draft in focus — driven by the editor tools, not pinned. */
 	activeDraft?: string | null;
+	/** The chart tab the attorney is viewing (so "this chart" resolves); read via read_chart. */
+	openChart?: string | null;
 	/** The model for this turn (locked per chat client-side); absent ⇒ profile default. */
 	model?: string;
 	/** Whether web search is available this turn (toolbar toggle). Default on. */
@@ -440,6 +443,8 @@ export async function pinnedWithRequiredPrimary(
 // open-a-file proposal are conditional. Built in one place so the inspection
 // panel can list the exact active tool names without drifting from what ships.
 function buildChatTools(opts: {
+	folder: string;
+	profile: Profile;
 	provider: Provider;
 	apiKey: string;
 	modelId: string;
@@ -458,6 +463,9 @@ function buildChatTools(opts: {
 		fetchPublication,
 		patrick_help: patrickHelp,
 		ep_law_lookup: epcLookup,
+		// Chart-driving tools: server-executed, they read/write the Chart JSON and run the
+		// parse/read engines — Patrick builds claim charts whether or not the tab is open.
+		...buildChartTools(opts.folder, opts.profile),
 		find_law: createFindLaw({
 			provider: opts.provider,
 			apiKey: opts.apiKey,
@@ -501,17 +509,21 @@ export async function handleChat(c: Context) {
 	const model = createModel(provider, apiKey, modelId);
 	const { providerOptions } = reasoningOptions(provider, modelId, effort);
 	const template = await frozenTemplate(task.folder, body.chatId, profile);
+	const charts = await chartManifest(task.folder, body.openChart);
 	const system = buildSystemPrompt(
 		task,
 		pinnedSources,
 		activeDraft,
 		available,
+		charts,
 		template,
 	);
 
 	// Adding/removing a capability? Do it in buildChatTools — and update
 	// PATRICK_CAPABILITIES in @patrick/shared so the prompt describes Patrick honestly.
 	const tools = buildChatTools({
+		folder: task.folder,
+		profile,
 		provider,
 		apiKey,
 		modelId,

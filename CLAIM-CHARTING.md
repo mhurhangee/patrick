@@ -134,9 +134,50 @@ The trust model instead:
 
 ## Agent tools
 
-Patrick drives the chart: `create_chart`, `parse_claim`, `add_reference`, `run_analysis` …
-(agent-first payoff, clean now there's one method). Open question for that phase: if the reference
-is already pinned in the chat's context, the tool should **reuse it** rather than re-load/re-pay.
+Patrick drives the chart through seven **server-executed** tools (like `ep_law_lookup`):
+`read_chart` (render a chart's current contents — limitations, constructions, and each column's
+verdicts / reasoning / citations), `create_chart` (returns a `chartId`), `parse_claim` (parse +
+append limitation rows, construed under Art 69), `add_reference` (add a reference column and read it
+in full against every limitation), `run_analysis` (re-run an existing column — preserves
+edited/approved cells unless `overwriteHumanEdits`), `edit_cell` (change a cell's verdict /
+reasoning / citations) and `edit_limitation` (change a row's label / claim text / construction).
+They live in `apps/api/src/lib/ai/chart-tools.ts`, built per-request with `{folder, profile}` and
+wired into `buildChatTools`; they reuse the same `parseClaimSpine` / `readReference` engines +
+`charts.ts` CRUD the UI does, so **the chart need not be open** — Patrick builds it as data on disk.
+The open viewer refreshes via TanStack Query invalidation when a *mutating* chart tool result
+streams back (`CHART_TOOLS` in `agent-chat.tsx`; `read_chart` is excluded — it's read-only), and the
+viewer adopts agent-written limitation rows via a `chart.limitations` sync effect. Existing charts
+are surfaced to the agent in the system manifest (`chartManifest` — id + row/column counts) so it
+can extend or read one by id.
+
+**Editing — the U in CRUD (no D; deletion stays a user action).** Patrick edits at the attorney's
+direction and **auto-applies** (no accept/reject card — babysitting every edit would be a slog, and
+the chart is already the reviewable surface with the status chip + verify banner). An agent edit is
+marked **`ai`**, *not* `edited` — the chip stays a clean binary: **`ai` = AI wrote/edited last,
+`edited` = a human wrote/edited last** (a more open-ended ask like "review 1b in light of …" makes
+`edited` plainly wrong). Consequence (which falls out cleanly): re-run preserves only human-touched
+cells (`edited`/`approved`) and refreshes everything `ai`, so an AI edit is replaced on a re-run
+just like AI-generated content — *want it to survive a re-run? approve it (or edit it in the table)*.
+`edit_limitation` changing text/construction marks that row's cells `stale` (matching the table's
+inline edit) and returns the affected reference columns so Patrick can offer to re-run them. Edits
+address the row by the stable **`[id: …]` now surfaced in `read_chart`** (labels are
+editable/non-unique), enforcing read-then-edit. `read_chart` and the edits are split into two focused
+tools rather than one overloaded `edit_chart` — the cell edit (→ `ai`) and the row edit (→ stale
+cascade) have genuinely different shapes and consequences, so separate schemas are easier to call.
+
+**Reading a chart — retrieved, not pinned.** A chart is mutable, derived, Patrick-owned state — the
+opposite of a read-only source — so it does NOT ride the OPEN=CONTEXT model (pinning a chart that
+changes on every tool call would break caching and the append-only pin). It's read live via
+`read_chart`, exactly like the editable draft is read live via the editor tools — always current,
+never stale. The focused chart tab is sent as `openChart` and flagged in the manifest so deictic
+references ("summarise *this* chart") resolve to the right id.
+
+On the old "reuse an already-pinned reference" question: moot under this design — each engine call
+builds its own minimal cached context (the reference rides as a pinned message *inside* the
+`generateObject` call), independent of the chat's pinned context, so there's no double-pin to avoid.
+
+Not built: per-cell edit/approve tools, and a delete-row/column tool — the attorney does those in the
+table. Add them only if a real need shows up.
 
 ## UI specifics
 
@@ -163,24 +204,24 @@ the whole-document read engine (full-doc only — hybrid/semantic/classify remov
 the status model + editable cells (verdict dropdown, editable citations, freetext reasoning,
 AI/Edited/Approved/Stale, stale-on-edit, re-run-preserves-human); the two supporting docs + Art 69
 multi-claim parse; row/column kebab menus; **location citations** (verbatim dropped); the **header
-bar** (verify banner + per-chart model picker + prompts link); **profile-editable prompts**.
+bar** (verify banner + per-chart model picker + prompts link); **profile-editable prompts**; the
+**agent tools** (`read_chart` / `create_chart` / `parse_claim` / `add_reference` / `run_analysis` /
+`edit_cell` / `edit_limitation`, server-executed; edits auto-apply and are marked `ai`).
 
-**To build:** **citation navigation** (the next pass) and **agent tools**.
+**To build:** **citation navigation** (the next pass).
 
 ## Build order — done, and what's left
 
 Steps 1–5 (schema/full-doc collapse, Art 69 construction correctness, UI polish + sticky header,
 editable cells + status model, multiple citations) are **done**. The reviewer pass was built then
 **removed** (see the trust model). The trust rework (locations not quotes, banner, per-chart model,
-profile prompts) is **done**. Remaining:
+profile prompts) is **done**. The **agent tools** are **done** (see Agent tools above). Remaining:
 
 1. **Citation navigation** — click a location → open the reference in the workspace, scroll to and
    highlight the passage (using the hidden snippet for precision). Its own pass: it shares the
    in-document search-highlighting machinery (currently flaky on some docs), so fixing that *is*
    building this. The whole trust model leans on click-to-check being smooth, so it's the highest
    value remaining.
-2. **Agent tools** — Patrick drives the chart: `create_chart`, `parse_claim`, `add_reference`,
-   `run_analysis` …. Open question: reuse an already-pinned reference rather than re-load/re-pay.
 
 ## Deferred (on the map, not now)
 
@@ -211,3 +252,8 @@ profile prompts) is **done**. Remaining:
   one click, under a standing "always verify" banner.
 - **Per-chart model, profile-wide prompts.** The model is model-sensitive so it's chosen per chart;
   the rubrics are profile-wide (a variant → a new profile), not per-chart (the chat-prompt lesson).
+- **Agent chart tools auto-apply; agent edits are `ai`, not `edited`.** No accept/reject card — the
+  chart is the reviewable surface (status chip + verify banner), and a card per action is a slog. The
+  status chip stays a clean binary (`ai` = AI last, `edited` = human last), which also makes re-run
+  preservation fall out: only `edited`/`approved` survive a re-run, AI edits are refreshed like any
+  AI content (approve to lock). Deletion stays a user-only action (CRU, no D).

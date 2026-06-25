@@ -12,6 +12,7 @@ import {
 	toStoredMessage,
 	upsertBlock,
 } from "@patrick/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
 	DefaultChatTransport,
@@ -73,12 +74,26 @@ import { SystemCard } from "./system-card";
 // Tools that execute on the server (their results stream back) — the client must
 // not route them to the docx editor, which would error "Editor not ready". Like
 // HITL tools, they're skipped in onToolCall.
+// Chart-driving tools run on the server (they read/write the Chart JSON). Their results
+// refresh the open chart viewer via query invalidation (see CHART_TOOLS below).
+const CHART_TOOLS = new Set([
+	"create_chart",
+	"parse_claim",
+	"add_reference",
+	"run_analysis",
+	"edit_cell",
+	"edit_limitation",
+]);
+
 const SERVER_TOOLS = new Set([
 	"patrick_help",
 	"ep_law_lookup",
 	"find_law",
 	"web_search",
 	"google_search",
+	// read_chart is read-only (no invalidation); the rest mutate the chart.
+	"read_chart",
+	...CHART_TOOLS,
 ]);
 
 // One user message + every assistant message that follows it (the loop produces
@@ -177,7 +192,7 @@ function ChatSession({
 	taskRef.current = task;
 	const profileRef = useRef(profile);
 	profileRef.current = profile;
-	const { close, columnList, focused, getDoc, open } = useWorkspace();
+	const { close, columnList, focused, getChart, getDoc, open } = useWorkspace();
 	const navigate = useNavigate();
 	// Tailor only the empty-state prompt to the open surface (display, not Patrick).
 	const surfacePath = useLocation({ select: (l) => l.pathname });
@@ -263,6 +278,10 @@ function ChatSession({
 	const editorRef = useEditorRefFor(activeDraft);
 	const waitForEditor = useEditorReadiness();
 
+	// The chart tab in focus, so "this chart" resolves server-side. Unlike the draft it isn't
+	// sticky — Patrick reads any chart by id via read_chart; this only disambiguates deixis.
+	const openChart = focused && getChart(focused) ? focused : null;
+
 	const { executeToolCall } = useDocxAgentTools({
 		editorRef: editorRef as RefObject<DocxEditorRef | null>,
 		author: profile?.identity.author?.trim() || "Patrick",
@@ -287,6 +306,8 @@ function ChatSession({
 	pinnedRef.current = pinnedSources;
 	const activeDraftRef = useRef(activeDraft);
 	activeDraftRef.current = activeDraft;
+	const openChartRef = useRef(openChart);
+	openChartRef.current = openChart;
 	const profileIdRef = useRef(activeProfileId);
 	profileIdRef.current = activeProfileId;
 	const modelRef = useRef(modelId);
@@ -316,6 +337,7 @@ function ChatSession({
 					profileId: profileIdRef.current,
 					pinnedSources: pinnedRef.current,
 					activeDraft: activeDraftRef.current,
+					openChart: openChartRef.current,
 					model: modelRef.current ?? undefined,
 					webSearch: webSearchRef.current,
 				},
@@ -397,6 +419,28 @@ function ChatSession({
 			});
 		},
 	});
+
+	// Chart tools mutate the Chart JSON server-side; refresh the charts list and any open
+	// viewer when one completes. Dedupe by toolCallId so each result invalidates once.
+	const queryClient = useQueryClient();
+	const seenChartTools = useRef(new Set<string>());
+	useEffect(() => {
+		const taskId = activeTaskIdRef.current;
+		if (!taskId) return;
+		let hit = false;
+		for (const m of messages) {
+			if (m.role !== "assistant") continue;
+			for (const part of m.parts) {
+				if (!isToolUIPart(part) || part.state !== "output-available") continue;
+				if (!CHART_TOOLS.has(getToolName(part))) continue;
+				if (seenChartTools.current.has(part.toolCallId)) continue;
+				seenChartTools.current.add(part.toolCallId);
+				hit = true;
+			}
+		}
+		if (hit)
+			queryClient.invalidateQueries({ queryKey: ["tasks", taskId, "charts"] });
+	}, [messages, queryClient]);
 
 	const [composerEmpty, setComposerEmpty] = useState(true);
 	const canSend = !!activeTaskId && !!activeProfileId && keyReady;

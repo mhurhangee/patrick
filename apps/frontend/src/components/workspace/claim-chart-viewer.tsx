@@ -145,6 +145,14 @@ function ChartTable({ chart }: { chart: Chart }) {
 	const [rows, setRows] = useState<ClaimLimitation[]>(chart.limitations ?? []);
 	const rowsRef = useRef(rows);
 	rowsRef.current = rows;
+	// Adopt limitations written elsewhere — the agent's parse_claim, or another window —
+	// when the refetched chart carries them (columns/cells already read straight off the
+	// prop). Local edits round-trip through `chart` too, so an unchanged refetch just
+	// re-sets identical rows; InlineField buffers its own draft, so an in-progress cell
+	// edit is never interrupted.
+	useEffect(() => {
+		setRows(chart.limitations ?? []);
+	}, [chart.limitations]);
 	const [widths, setWidths] = useState<Record<string, number>>(
 		chart.columnWidths ?? {},
 	);

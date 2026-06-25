@@ -99,6 +99,48 @@ const PRESENTERS: Record<string, Presenter> = {
 			return `${n} passage${n === 1 ? "" : "s"}${where}`;
 		},
 	},
+	read_chart: {
+		label: "Read the claim chart",
+		runningLabel: "Reading the claim chart…",
+	},
+	create_chart: {
+		label: "Create a claim chart",
+		runningLabel: "Creating a claim chart…",
+		summary: (input, output) => output?.error ?? input?.title ?? null,
+	},
+	parse_claim: {
+		label: "Parse claims into limitations",
+		runningLabel: "Parsing the claim(s)…",
+		summary: (input, output) =>
+			output?.error ??
+			(output?.added != null
+				? `${output.added} limitation${output.added === 1 ? "" : "s"} added`
+				: (input?.claims ?? null)),
+	},
+	add_reference: {
+		label: "Analyse a reference",
+		runningLabel: "Reading the reference in full…",
+		summary: (input, output) => output?.error ?? input?.reference ?? null,
+	},
+	run_analysis: {
+		label: "Re-run the analysis",
+		runningLabel: "Re-reading the reference…",
+		summary: (input, output) => output?.error ?? input?.reference ?? null,
+	},
+	edit_cell: {
+		label: "Edit a cell",
+		runningLabel: "Updating the cell…",
+		summary: (_input, output) =>
+			output?.error ??
+			(output?.limitation
+				? `${output.limitation} × ${output.reference} → ${output.verdict}`
+				: null),
+	},
+	edit_limitation: {
+		label: "Revise a limitation",
+		runningLabel: "Revising the limitation…",
+		summary: (_input, output) => output?.error ?? output?.limitation ?? null,
+	},
 };
 
 function humanize(name: string): string {
@@ -285,6 +327,12 @@ function FindLawCard({ output }: { output: unknown }) {
 const OUTPUT_RENDERERS: Record<string, (output: unknown) => ReactNode> = {
 	ep_law_lookup: (output) => <LawResults output={output} />,
 	find_law: (output) => <FindLawCard output={output} />,
+	read_chart: (output) => {
+		const o = output as { chart?: string; error?: string };
+		if (o?.error)
+			return <p className="text-xs text-muted-foreground">{o.error}</p>;
+		return <JsonView value={o?.chart ?? ""} />;
+	},
 };
 
 function ToolDetail({ part }: { part: AnyToolPart }) {
