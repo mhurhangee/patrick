@@ -14,6 +14,7 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { DocSearchPanel } from "@/components/workspace/doc-search";
+import { useCitationNav } from "@/lib/search/citation-nav";
 import {
 	DocSearchHighlightProvider,
 	useDocSearchHighlights,
@@ -31,6 +32,22 @@ function HighlightBinder({
 }) {
 	const { texts, selected, scrollKey } = useDocSearchHighlights();
 	useDocHighlights(containerRef, texts, selected, scrollKey);
+	return null;
+}
+
+// Bridges an app-level citation click (from a chart cell) into THIS document's highlight
+// provider: when a pending target names this file, scroll to + highlight its snippet. The
+// token dedupes so a repeat click on the same citation re-fires.
+function CitationConsumer({ filename }: { filename: string }) {
+	const { pending } = useCitationNav();
+	const { setHighlights } = useDocSearchHighlights();
+	const consumed = useRef(0);
+	useEffect(() => {
+		if (!pending || pending.filename !== filename) return;
+		if (pending.token === consumed.current) return;
+		consumed.current = pending.token;
+		setHighlights([pending.snippet], { text: pending.snippet, nth: 0 }, true);
+	}, [pending, filename, setHighlights]);
 	return null;
 }
 
@@ -79,6 +96,7 @@ export function DocSearchLayout({
 	return (
 		<DocSearchHighlightProvider>
 			<HighlightBinder containerRef={contentRef} />
+			<CitationConsumer filename={filename} />
 			<ResizablePanelGroup orientation="horizontal" className="h-full">
 				<ResizablePanel id="doc-content" minSize="40%">
 					<div ref={contentRef} className="relative h-full">

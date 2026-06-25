@@ -51,6 +51,7 @@ import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
+import { useCitationNav } from "@/lib/search/citation-nav";
 import { cn } from "@/lib/utils";
 import { Patrick } from "../patrick";
 import { Skeleton } from "../ui/skeleton";
@@ -464,6 +465,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 									>
 										<DisclosureContent
 											cell={cellFor(lim.uid, c.id)}
+											reference={c.reference}
 											running={running.has(c.id)}
 											onEdit={editCell}
 											onSetStatus={setCellStatus}
@@ -949,11 +951,13 @@ function ColumnHeader({
 
 function DisclosureContent({
 	cell,
+	reference,
 	running,
 	onEdit,
 	onSetStatus,
 }: {
 	cell: ChartCell | undefined;
+	reference: string;
 	running: boolean;
 	onEdit: (cell: ChartCell, patch: Partial<ChartCell>) => void;
 	onSetStatus: (cell: ChartCell, status: CellStatus) => void;
@@ -1033,6 +1037,7 @@ function DisclosureContent({
 			/>
 			<CitationList
 				citations={cell.citations}
+				reference={reference}
 				onChange={(c) => onEdit(cell, { citations: c })}
 			/>
 		</div>
@@ -1041,11 +1046,14 @@ function DisclosureContent({
 
 function CitationList({
 	citations,
+	reference,
 	onChange,
 }: {
 	citations: ChartCitation[];
+	reference: string;
 	onChange: (citations: ChartCitation[]) => void;
 }) {
+	const { goToCitation } = useCitationNav();
 	const set = (i: number, patch: Partial<ChartCitation>) =>
 		onChange(citations.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
 	return (
@@ -1056,7 +1064,21 @@ function CitationList({
 					key={i}
 					className="group/c flex items-center gap-1 text-muted-foreground"
 				>
-					<Locate className="size-3 shrink-0 opacity-60" />
+					<Button
+						variant="bare"
+						size="xs"
+						tooltip="Go to the cited passage in the reference"
+						className="shrink-0 p-0 text-muted-foreground hover:text-foreground"
+						onClick={() =>
+							goToCitation(
+								reference,
+								cit.snippet?.trim() || cit.location,
+								cit.location,
+							)
+						}
+					>
+						<Locate className="size-3 opacity-60" />
+					</Button>
 					<div className="min-w-0 flex-1">
 						<InlineEdit
 							value={cit.location}

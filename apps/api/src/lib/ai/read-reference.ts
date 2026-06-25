@@ -57,6 +57,15 @@ export async function readReference(
 		? `\n\nA primer document (${primer}) is also provided above — use it to focus and shape your analysis.`
 		: "";
 
+	// Doc-type-aware citation convention (the location label only — the snippet is the real
+	// locator). PDFs: cite by LEAF (the actual page in the file), never the printed page —
+	// "leaf" and "page" are kept distinct app-wide so a chart's leaf and an examiner's page
+	// can't be confused. Text/markdown: cite paragraph numbers where present.
+	const citationNote =
+		docKind(reference) === "pdf"
+			? `\n\nCiting this reference (a PDF): give each location as a LEAF — the actual sequential page in the file, counting from 1 and INCLUDING any cover and drawing pages (e.g. "leaf 6"); add a column and line range when the page has them ("leaf 6, col. 2, ll. 5–12"). Do NOT use the printed page number on the page, and never guess it — "leaf" (file position) and "page" (printed number) are different things. The snippet is what actually locates the passage, so give it for every citation.`
+			: `\n\nCiting this reference: where the text carries paragraph numbers ([0001], [0002] …), cite those (e.g. "[0021]"); for a heading or figure without one, name it. The snippet is what actually locates the passage, so give it for every citation.`;
+
 	const { object } = await generateObject({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
 		schema,
@@ -65,7 +74,7 @@ export async function readReference(
 			content,
 			{
 				role: "user",
-				content: `The claim's limitations:\n\n${list}\n\nFor each, judge its disclosure in the reference above.${primerNote}`,
+				content: `The claim's limitations:\n\n${list}\n\nFor each, judge its disclosure in the reference above.${primerNote}${citationNote}`,
 			},
 		],
 	});
