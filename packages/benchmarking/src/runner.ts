@@ -23,13 +23,7 @@ import {
 	resolveCitation,
 	tableOfContents,
 } from "@patrick/law";
-import {
-	generateObject,
-	generateText,
-	stepCountIs,
-	type ToolSet,
-	tool,
-} from "ai";
+import { generateText, Output, stepCountIs, type ToolSet, tool } from "ai";
 import { z } from "zod";
 import { modelFor, modelId } from "./models";
 import type { Contract, Item, SystemUnderTest } from "./types";
@@ -263,17 +257,17 @@ export function localRunner(opts: {
 
 			// Extract the contract from the reasoning — decoupled from the tool
 			// conversation, so it's provider-safe regardless of the arm.
-			const { object, usage: u } = await generateObject({
+			const { output, usage: u } = await generateText({
 				model,
-				schema: contractSchema,
+				output: Output.object({ schema: contractSchema }),
 				prompt: `${task(item)}\n\nAnalysis:\n${analysis}\n\n${FINAL_ASK}`,
 			});
 			usage.input += u?.inputTokens ?? 0;
 			usage.output += u?.outputTokens ?? 0;
 
 			return {
-				answer: object.answer,
-				cited_provisions: object.cited_provisions,
+				answer: output.answer,
+				cited_provisions: output.cited_provisions,
 				retrieved_provisions: [...retrieved],
 			};
 		},

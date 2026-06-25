@@ -13,7 +13,7 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { modelFor, modelId } from "../src/models";
 import {
 	GENERATOR_SYSTEM,
@@ -86,15 +86,15 @@ async function main(): Promise<void> {
 		for (const framing of framings) {
 			for (const d of distortions) {
 				try {
-					const { object, usage } = await generateObject({
+					const { output, usage } = await generateText({
 						model,
-						schema: proposedPairSchema,
+						output: Output.object({ schema: proposedPairSchema }),
 						system: GENERATOR_SYSTEM,
 						prompt: generatorInput(set, framing, d),
 					});
 					tokens += usage?.totalTokens ?? 0;
 					const pair: ProposedPair = {
-						...object,
+						...output,
 						jurisdiction: set.jurisdiction,
 						topic: set.topic,
 						framing,
@@ -105,15 +105,15 @@ async function main(): Promise<void> {
 						pair,
 					};
 					lines.push(JSON.stringify(record));
-					if (object.status === "proposed") {
+					if (output.status === "proposed") {
 						proposed++;
 						console.log(
-							`✓ ${set.id} [${framing}/${object.distortion_used}]  T: ${object.true_statement.slice(0, 80)}`,
+							`✓ ${set.id} [${framing}/${output.distortion_used}]  T: ${output.true_statement.slice(0, 80)}`,
 						);
 					} else {
 						rejected++;
 						console.log(
-							`✗ ${set.id} [${framing}/${d}] rejected: ${(object.rejection_reason ?? "").slice(0, 70)}`,
+							`✗ ${set.id} [${framing}/${d}] rejected: ${(output.rejection_reason ?? "").slice(0, 70)}`,
 						);
 					}
 				} catch (err) {

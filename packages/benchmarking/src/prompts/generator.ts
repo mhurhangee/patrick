@@ -1,7 +1,7 @@
 // The generator prompt (STRATEGY §4). It only *proposes* a true/false pair from a
 // source set — it never grades itself (a model marking its own homework
 // rubber-stamps correlated errors; the blind judge does verification). The output
-// shape is enforced by `proposedPairSchema` via generateObject, so there's no
+// shape is enforced by `proposedPairSchema` via Output.object, so there's no
 // JSON to hand-parse. The taxonomy comes from the single source of truth.
 
 import { z } from "zod";
