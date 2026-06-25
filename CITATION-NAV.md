@@ -111,12 +111,21 @@ at paragraph starts (the "[0018] mid-sentence" bug) improves *labels* — a foll
    snippet to desync). A precise basis snippet from the parse prompt is a possible later refinement.
 
 **Follow-ups (decided as their own passes):**
+- **docx citation navigation** — the docx viewer is the ProseMirror editor (not wrapped in the
+  highlight machinery) and paginates with no exposed scroll-to-text, so navigating to a `.docx`
+  reference / basis target opens the doc but doesn't auto-scroll. Needs editor integration; works
+  for PDF / markdown / text today.
 - **Select-in-doc add** — highlight a passage in the reference to add/fix a citation (captures the
   snippet locator + derives the label), unifying user citations with AI ones. The fiddliest piece
   (selection capture + per-viewer label derivation); deferred deliberately.
 - **Fuzzy + semantic tiers** (semantic only if an index exists) and **label-disambiguation** for
   repeated phrases; the Google-Patents `[000n]` extraction fix for cleaner labels; a precise basis
   snippet so the Feature-cell pin highlights the exact phrase, not just the paragraph.
+
+Verify-and-drop note: a located citation is kept **as-is** (the snippet is never stripped — the
+client matches it against the live text layer, less lossy than the server's extracted text); a
+citation is dropped only when nothing locates (snippet absent from the text AND the label doesn't
+resolve — a paragraph marker present, or, for a PDF only, a leaf in range).
 
 ## Decisions log (don't relitigate)
 

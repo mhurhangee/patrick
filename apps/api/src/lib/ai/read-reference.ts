@@ -5,10 +5,11 @@ import {
 	type ClaimLimitation,
 	docKind,
 	type LimitationRead,
+	normalizedIncludes,
+	normalizeForMatch,
 	type Provider,
 	paragraphToken,
 	parseLeaf,
-	snippetInText,
 } from "@patrick/shared";
 import { generateObject } from "ai";
 import { z } from "zod";
@@ -63,32 +64,29 @@ async function referenceText(
 	return null; // docx and others — skip verification
 }
 
-/** Verify each citation against the reference and prune what can't be located — the snippet
- *  is the locator, so: snippet matches ⇒ keep (linked); else strip the bad snippet and keep
- *  only if the label still resolves (a paragraph marker present, or a leaf within range);
- *  else drop it. A citation nothing can find is noise. (Verbatim from the design: drop only
- *  when NO tier locates.) */
+/** Drop citations that locate NOWHERE — neither the snippet nor the label resolves against the
+ *  reference. We keep located citations AS-IS (never strip the snippet): the client matches the
+ *  snippet against the live text layer, which is less lossy than our extracted text, so a snippet
+ *  that misses here may still hit on click. The label resolves doc-type-aware: a paragraph marker
+ *  present in the text, or — for a PDF only — a leaf within range (text docs have no leaves). The
+ *  reference is normalized once for the whole pass. */
 function verifyCitations(
 	reads: LimitationRead[],
 	ref: { text: string; pageCount: number },
 ): LimitationRead[] {
-	const keep = (c: ChartCitation): ChartCitation | null => {
-		if (c.snippet?.trim() && snippetInText(ref.text, c.snippet)) return c;
-		const leaf = parseLeaf(c.location);
+	const normText = normalizeForMatch(ref.text);
+	const located = (c: ChartCitation): boolean => {
+		if (c.snippet?.trim() && normalizedIncludes(normText, c.snippet))
+			return true;
 		const para = paragraphToken(c.location);
-		const labelOk =
-			(leaf != null && (ref.pageCount === 0 || leaf <= ref.pageCount)) ||
-			(para != null && snippetInText(ref.text, para));
-		// Snippet didn't locate — drop it so the chip isn't falsely "linked"; keep the
-		// citation only if its label still points somewhere.
-		return labelOk ? { location: c.location } : null;
+		if (para && normalizedIncludes(normText, para)) return true;
+		if (ref.pageCount > 0) {
+			const leaf = parseLeaf(c.location);
+			if (leaf != null && leaf <= ref.pageCount) return true;
+		}
+		return false;
 	};
-	return reads.map((r) => ({
-		...r,
-		citations: r.citations
-			.map(keep)
-			.filter((c): c is ChartCitation => c != null),
-	}));
+	return reads.map((r) => ({ ...r, citations: r.citations.filter(located) }));
 }
 
 /** Read one reference in full and judge each limitation. `primer`, if given, shapes the

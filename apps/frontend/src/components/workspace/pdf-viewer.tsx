@@ -51,12 +51,16 @@ export function PdfViewer({ filename }: { filename: string }) {
 	const [error, setError] = useState(false);
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const scrollKey = `${activeTaskId ?? ""}|${filename}`;
+	// A citation jump that arrives before the pages render is parked here and applied on load,
+	// so it isn't lost to the timing — and it suppresses the scroll restore (below) so the two
+	// don't fight (the citation, being the explicit intent, wins).
+	const pendingJump = useRef<number | null>(null);
 
 	// Restore the remembered scroll once the page divs exist (their heights are reserved up
-	// front from the viewport, so the position is valid immediately). A citation jump fires
-	// after this (it awaits the page derivation), so it still wins.
+	// front from the viewport, so the position is valid immediately) — unless a citation jump
+	// is queued, which owns the scroll instead.
 	useEffect(() => {
-		if (!pages.length) return;
+		if (!pages.length || pendingJump.current != null) return;
 		const y = scrollMemory.get(scrollKey);
 		if (y && scrollRef.current) scrollRef.current.scrollTop = y;
 	}, [pages.length, scrollKey]);
@@ -73,10 +77,28 @@ export function PdfViewer({ filename }: { filename: string }) {
 	}, [activeTaskId, filename]);
 
 	const jumpToPage = useCallback((page: number) => {
+		const el = scrollRef.current?.querySelector<HTMLElement>(
+			`[data-page="${page}"]`,
+		);
+		if (el) {
+			pendingJump.current = null;
+			el.scrollIntoView({ behavior: "smooth", block: "start" });
+		} else {
+			// Pages not rendered yet (the jump beat the load) — apply it once they are.
+			pendingJump.current = page;
+		}
+	}, []);
+
+	// Apply a parked citation jump when the pages render. Runs after the restore effect
+	// (declared above), so it lands on the cited page rather than the remembered position.
+	useEffect(() => {
+		if (!pages.length || pendingJump.current == null) return;
+		const page = pendingJump.current;
+		pendingJump.current = null;
 		scrollRef.current
 			?.querySelector<HTMLElement>(`[data-page="${page}"]`)
 			?.scrollIntoView({ behavior: "smooth", block: "start" });
-	}, []);
+	}, [pages.length]);
 
 	useEffect(() => {
 		let cancelled = false;

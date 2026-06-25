@@ -78,10 +78,14 @@ const STOPWORDS = new Set([
 // a wall of text), with the distinctive query terms highlighted so the relevant bit stands
 // out — stopwords are excluded so they don't highlight everywhere.
 function highlightSnippet(text: string, query: string): ReactNode[] {
-	const terms = query
+	const all = query
 		.toLowerCase()
 		.split(/[^a-z0-9]+/)
-		.filter((t) => t.length > 1 && !STOPWORDS.has(t));
+		.filter((t) => t.length > 1);
+	// Highlight the distinctive terms; but if the query is ALL stopwords (common in claim
+	// language — "comprising the said"), fall back to all terms so something still highlights.
+	const distinctive = all.filter((t) => !STOPWORDS.has(t));
+	const terms = distinctive.length ? distinctive : all;
 
 	let start = 0;
 	if (terms.length) {

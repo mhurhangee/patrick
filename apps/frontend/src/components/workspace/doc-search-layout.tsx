@@ -62,13 +62,15 @@ function CitationConsumer({
 		const text = highlightText(pending.snippet, label);
 		const apply = () =>
 			setHighlights(text ? [text] : [], text ? { text, nth: 0 } : null, true);
-		// PDF: jump to the page (the text layer then renders and the snippet highlights).
+		// PDF: jump to the page (the text layer then renders and the locator highlights).
+		// Derive the page from the highlight TEXT — a snippet, or a "[0021]" marker that
+		// appears in the extracted text — then fall back to a "leaf N" label.
 		if (onJump) {
 			(async () => {
 				let page: number | null = null;
-				if (pending.snippet?.trim()) {
+				if (text) {
 					const pages = await loadPages();
-					if (pages) page = findPage(pending.snippet, pages);
+					if (pages) page = findPage(text, pages);
 				}
 				if (page == null) page = parseLeaf(label);
 				if (page != null) onJump(page);

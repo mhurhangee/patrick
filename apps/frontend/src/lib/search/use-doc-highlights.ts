@@ -1,4 +1,4 @@
-import { normalizeForMatch } from "@patrick/shared";
+import { normalizeForMatch, PREFIX_LEN } from "@patrick/shared";
 import { type RefObject, useEffect, useRef } from "react";
 import type { HighlightSelected } from "./doc-search-context";
 
@@ -76,8 +76,6 @@ function matchAll(flat: string, map: CharPos[], t: string): Range[] {
 	}
 	return ranges;
 }
-
-const PREFIX_LEN = 90;
 
 function findRanges(flat: string, map: CharPos[], target: string): Range[] {
 	const t = normalizeForMatch(target);
