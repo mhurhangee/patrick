@@ -30,13 +30,58 @@ type SortBy = "relevance" | "appearance";
 const SNIPPET_LEN = 260;
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Show a short window around the first keyword match (not the whole chunk, which is
-// a wall of text), with the query terms highlighted so the relevant bit stands out.
+// Common words to never highlight: in a multi-word query they'd light up "the", "to",
+// "of" … everywhere, turning the snippet into confetti and burying the distinctive terms.
+const STOPWORDS = new Set([
+	"the",
+	"a",
+	"an",
+	"and",
+	"or",
+	"of",
+	"to",
+	"in",
+	"on",
+	"at",
+	"by",
+	"for",
+	"with",
+	"as",
+	"is",
+	"are",
+	"was",
+	"were",
+	"be",
+	"been",
+	"being",
+	"it",
+	"its",
+	"this",
+	"that",
+	"these",
+	"those",
+	"from",
+	"into",
+	"which",
+	"such",
+	"said",
+	"comprising",
+	"comprises",
+	"wherein",
+	"thereof",
+	"having",
+	"has",
+	"have",
+]);
+
+// Show a short window around the first distinctive match (not the whole chunk, which is
+// a wall of text), with the distinctive query terms highlighted so the relevant bit stands
+// out — stopwords are excluded so they don't highlight everywhere.
 function highlightSnippet(text: string, query: string): ReactNode[] {
 	const terms = query
 		.toLowerCase()
 		.split(/[^a-z0-9]+/)
-		.filter((t) => t.length > 1);
+		.filter((t) => t.length > 1 && !STOPWORDS.has(t));
 
 	let start = 0;
 	if (terms.length) {
