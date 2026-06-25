@@ -117,6 +117,9 @@ export type ClaimChart = ChartBase & {
 	columnWidths?: Record<string, number>;
 	/** Last-used construction-support doc (the description), to default the parse popover. */
 	constructionSupport?: string;
+	/** Last-used claims document — the navigation target for a limitation's constructionBasis
+	 *  when there's no separate construction-support doc (the claims doc held the description). */
+	claimsDocument?: string;
 };
 
 /** The persisted analysis object. A discriminated union (over `type`) as new chart

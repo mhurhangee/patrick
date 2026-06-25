@@ -257,6 +257,7 @@ function ChartTable({ chart }: { chart: Chart }) {
 			...chartRef.current,
 			limitations: next,
 			constructionSupport: support,
+			claimsDocument: claimDoc,
 		});
 		setClaimOpen(false);
 	};
@@ -454,6 +455,9 @@ function ChartTable({ chart }: { chart: Chart }) {
 								<td className="border-r border-b px-2 py-1.5 align-top">
 									<FeatureCell
 										lim={lim}
+										basisTarget={
+											chart.constructionSupport ?? chart.claimsDocument
+										}
 										onCommit={(field, value) => commitField(i, field, value)}
 										onRemove={() => removeRow(i)}
 									/>
@@ -740,13 +744,17 @@ function InlineField({
 
 function FeatureCell({
 	lim,
+	basisTarget,
 	onCommit,
 	onRemove,
 }: {
 	lim: ClaimLimitation;
+	/** Doc the constructionBasis points into (the description, else the claims doc). */
+	basisTarget?: string;
 	onCommit: (field: keyof ClaimLimitation, value: string) => void;
 	onRemove: () => void;
 }) {
+	const { goToCitation } = useCitationNav();
 	return (
 		<div className="flex items-start gap-1.5">
 			<div className="w-9 shrink-0 pt-0.5">
@@ -773,12 +781,26 @@ function FeatureCell({
 						className="text-muted-foreground text-xs"
 					/>
 					{lim.construction && (
-						<InlineEdit
-							value={lim.constructionBasis ?? ""}
-							onCommit={(v) => onCommit("constructionBasis", v)}
-							placeholder="+ basis in spec"
-							className="text-[11px] text-muted-foreground/70 italic"
-						/>
+						<div className="flex items-center gap-1">
+							{lim.constructionBasis?.trim() && basisTarget && (
+								<button
+									type="button"
+									title="Go to the basis in the specification"
+									className="shrink-0 text-muted-foreground/50 hover:text-foreground"
+									onClick={() =>
+										goToCitation(basisTarget, "", lim.constructionBasis ?? "")
+									}
+								>
+									<Locate className="size-3" />
+								</button>
+							)}
+							<InlineEdit
+								value={lim.constructionBasis ?? ""}
+								onCommit={(v) => onCommit("constructionBasis", v)}
+								placeholder="+ basis in spec"
+								className="text-[11px] text-muted-foreground/70 italic"
+							/>
+						</div>
 					)}
 				</div>
 			</div>

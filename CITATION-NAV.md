@@ -104,14 +104,19 @@ at paragraph starts (the "[0018] mid-sentence" bug) improves *labels* — a foll
    keep (linked); else strip the bad snippet and keep only if the label still resolves; else drop.
    The verdict + reasoning always stand — only the unlocatable pin is removed.
 
+**Phase 4 — Feature-column basis (done):**
+7. ✅ The Feature cell's `constructionBasis` gets a navigate pin → the construction-support doc, else
+   the claims doc (a new `ClaimChart.claimsDocument`, stored on parse by both the tool and the UI).
+   Basis is label-only (no snippet), so it navigates via label-parse and stays inline-editable (no
+   snippet to desync). A precise basis snippet from the parse prompt is a possible later refinement.
+
 **Follow-ups (decided as their own passes):**
 - **Select-in-doc add** — highlight a passage in the reference to add/fix a citation (captures the
   snippet locator + derives the label), unifying user citations with AI ones. The fiddliest piece
   (selection capture + per-viewer label derivation); deferred deliberately.
-- **`constructionBasis` as a chip** — the Feature cell's basis pointer navigates to the
-  construction-support doc (else the claims doc); the parse prompt emits a snippet for it.
 - **Fuzzy + semantic tiers** (semantic only if an index exists) and **label-disambiguation** for
-  repeated phrases; the Google-Patents `[000n]` extraction fix for cleaner labels.
+  repeated phrases; the Google-Patents `[000n]` extraction fix for cleaner labels; a precise basis
+  snippet so the Feature-cell pin highlights the exact phrase, not just the paragraph.
 
 ## Decisions log (don't relitigate)
 
