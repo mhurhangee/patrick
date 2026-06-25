@@ -8,7 +8,9 @@ import {
 	type ExchangeContext,
 	type ExchangeMetadata,
 	MODELS_BY_ID,
+	MUTATING_CHART_TOOLS,
 	type PinnedSource,
+	READ_CHART_TOOL,
 	toStoredMessage,
 	upsertBlock,
 } from "@patrick/shared";
@@ -74,25 +76,18 @@ import { SystemCard } from "./system-card";
 // Tools that execute on the server (their results stream back) — the client must
 // not route them to the docx editor, which would error "Editor not ready". Like
 // HITL tools, they're skipped in onToolCall.
-// Chart-driving tools run on the server (they read/write the Chart JSON). Their results
-// refresh the open chart viewer via query invalidation (see CHART_TOOLS below).
-const CHART_TOOLS = new Set([
-	"create_chart",
-	"parse_claim",
-	"add_reference",
-	"run_analysis",
-	"edit_cell",
-	"edit_limitation",
-]);
+// Chart-driving tools run on the server (they read/write the Chart JSON). The mutating ones
+// refresh the open chart viewer via query invalidation; read_chart is read-only. Names come
+// from @patrick/shared so they can't drift from what buildChartTools actually ships.
+const CHART_TOOLS = new Set<string>(MUTATING_CHART_TOOLS);
 
-const SERVER_TOOLS = new Set([
+const SERVER_TOOLS = new Set<string>([
 	"patrick_help",
 	"ep_law_lookup",
 	"find_law",
 	"web_search",
 	"google_search",
-	// read_chart is read-only (no invalidation); the rest mutate the chart.
-	"read_chart",
+	READ_CHART_TOOL,
 	...CHART_TOOLS,
 ]);
 
@@ -427,16 +422,18 @@ function ChatSession({
 	useEffect(() => {
 		const taskId = activeTaskIdRef.current;
 		if (!taskId) return;
+		// Only the last assistant message can carry a newly-arrived chart result (earlier ones
+		// were handled while they were last, deduped by toolCallId) — so don't re-walk the whole
+		// transcript on every streaming tick.
+		const last = messages[messages.length - 1];
+		if (last?.role !== "assistant") return;
 		let hit = false;
-		for (const m of messages) {
-			if (m.role !== "assistant") continue;
-			for (const part of m.parts) {
-				if (!isToolUIPart(part) || part.state !== "output-available") continue;
-				if (!CHART_TOOLS.has(getToolName(part))) continue;
-				if (seenChartTools.current.has(part.toolCallId)) continue;
-				seenChartTools.current.add(part.toolCallId);
-				hit = true;
-			}
+		for (const part of last.parts) {
+			if (!isToolUIPart(part) || part.state !== "output-available") continue;
+			if (!CHART_TOOLS.has(getToolName(part))) continue;
+			if (seenChartTools.current.has(part.toolCallId)) continue;
+			seenChartTools.current.add(part.toolCallId);
+			hit = true;
 		}
 		if (hit)
 			queryClient.invalidateQueries({ queryKey: ["tasks", taskId, "charts"] });

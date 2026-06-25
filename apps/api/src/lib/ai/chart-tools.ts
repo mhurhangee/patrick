@@ -2,18 +2,19 @@ import { basename } from "node:path";
 import {
 	assembleClaimAnalysisPrompt,
 	assembleClaimConstructionPrompt,
+	type CHART_TOOL_NAMES,
 	type Chart,
 	type ChartCell,
 	type ChartColumn,
 	createClaimChart,
 	DEFAULT_CLAIM_ANALYSIS_RUBRIC,
 	DEFAULT_CLAIM_CONSTRUCTION_RUBRIC,
-	type LimitationRead,
+	mergeColumnReads,
 	type Profile,
 } from "@patrick/shared";
 import { tool } from "ai";
 import { z } from "zod";
-import { listCharts, readChart, saveChart } from "../charts";
+import { loadCharts, mutateChart, readChart, saveChart } from "../charts";
 import { listDocuments } from "../documents";
 import { parseClaimSpine } from "./parse-claim";
 import { readReference } from "./read-reference";
@@ -27,45 +28,6 @@ import { readReference } from "./read-reference";
 /** The analysis model for a chart: its per-chart override, else the profile default. */
 function chartModel(chart: Chart, profile: Profile): string {
 	return chart.model?.trim() || profile.ai.model;
-}
-
-/** Map a column's whole-document reads back onto cells, keyed by the stable uid the read
- *  echoes (never the editable label). Mirrors the viewer's runColumn merge: refresh AI /
- *  stale / new cells, but leave human-touched (edited / approved) cells alone unless forced. */
-function mergeColumnReads(
-	chart: Chart,
-	columnId: string,
-	reads: LimitationRead[],
-	force: boolean,
-): ChartCell[] {
-	const validUids = new Set(chart.limitations.map((l) => l.uid));
-	const existing = new Map(
-		chart.cells
-			.filter((c) => c.columnId === columnId)
-			.map((c) => [c.limitationUid, c]),
-	);
-	const next: ChartCell[] = [];
-	for (const r of reads) {
-		if (!validUids.has(r.limitationUid)) continue;
-		const prev = existing.get(r.limitationUid);
-		if (
-			!force &&
-			prev &&
-			(prev.status === "edited" || prev.status === "approved")
-		) {
-			next.push(prev);
-		} else {
-			next.push({
-				limitationUid: r.limitationUid,
-				columnId,
-				disclosureType: r.disclosed,
-				reasoning: r.reasoning,
-				citations: r.citations ?? [],
-				status: "ai",
-			});
-		}
-	}
-	return next;
 }
 
 /** Count verdicts so the tool returns a compact summary the agent can narrate. */
@@ -102,6 +64,8 @@ function renderChart(chart: Chart): string {
 		);
 		if (lim.construction?.trim())
 			out.push(`Construction: ${lim.construction.trim()}`);
+		if (lim.constructionBasis?.trim())
+			out.push(`Construction basis: ${lim.constructionBasis.trim()}`);
 		for (const col of chart.columns) {
 			const cell = cellByKey.get(`${lim.uid}|${col.id}`);
 			if (!cell) {
@@ -164,18 +128,32 @@ export function buildChartTools(folder: string, profile: Profile) {
 			return {
 				error: `couldn't read ${column.reference} (no extractable text?)`,
 			};
-		const cells = mergeColumnReads(chart, column.id, reads, force);
-		await saveChart(folder, {
-			...chart,
-			columns: chart.columns.some((c) => c.id === column.id)
-				? chart.columns
-				: [...chart.columns, column],
-			cells: [...chart.cells.filter((c) => c.columnId !== column.id), ...cells],
-		});
+		// Re-read and merge so edits the attorney made during the (multi-second) read aren't
+		// clobbered; mergeColumnReads preserves their edited/approved cells + carries forward
+		// any limitation the model omitted.
+		const saved = await mutateChart(folder, chartId, (fresh) => ({
+			...fresh,
+			columns: fresh.columns.some((c) => c.id === column.id)
+				? fresh.columns
+				: [...fresh.columns, column],
+			cells: [
+				...fresh.cells.filter((c) => c.columnId !== column.id),
+				...mergeColumnReads({
+					columnId: column.id,
+					reads,
+					cells: fresh.cells,
+					validUids: new Set(fresh.limitations.map((l) => l.uid)),
+					force,
+				}),
+			],
+		}));
+		if (!saved) return { error: `no chart with id ${chartId}` };
 		return {
 			columnId: column.id,
 			reference: column.reference,
-			verdicts: verdictTally(cells),
+			verdicts: verdictTally(
+				saved.cells.filter((c) => c.columnId === column.id),
+			),
 		};
 	}
 
@@ -261,14 +239,29 @@ export function buildChartTools(folder: string, profile: Profile) {
 			);
 			if (!limitations || limitations.length === 0)
 				return { error: "couldn't parse a claim from that document" };
-			await saveChart(folder, {
-				...chart,
-				limitations: [...chart.limitations, ...limitations],
-				constructionSupport: support ?? chart.constructionSupport,
+			// Idempotent: drop any parsed limitation whose label is already in the chart, so a
+			// retry / re-ask on the same claims doesn't double the rows. Re-read so a concurrent
+			// edit during the parse isn't clobbered.
+			let added: typeof limitations = [];
+			const saved = await mutateChart(folder, chartId, (fresh) => {
+				const have = new Set(fresh.limitations.map((l) => l.label));
+				added = limitations.filter((l) => !have.has(l.label));
+				return {
+					...fresh,
+					limitations: [...fresh.limitations, ...added],
+					constructionSupport: support ?? fresh.constructionSupport,
+				};
 			});
+			if (!saved) return { error: `no chart with id ${chartId}` };
+			if (added.length === 0)
+				return {
+					added: 0,
+					note: "those limitations are already in the chart (matched by label) — nothing added",
+				};
 			return {
-				added: limitations.length,
-				limitations: limitations.map((l) => ({ label: l.label, text: l.text })),
+				added: added.length,
+				skipped: limitations.length - added.length,
+				limitations: added.map((l) => ({ label: l.label, text: l.text })),
 			};
 		},
 	});
@@ -320,12 +313,20 @@ export function buildChartTools(folder: string, profile: Profile) {
 			const chart = await readChart(folder, chartId);
 			if (!chart) return { error: `no chart with id ${chartId}` };
 			const want = basename(reference);
-			const column = chart.columns.find((c) => c.reference === want);
-			if (!column)
+			const matches = chart.columns.filter((c) => c.reference === want);
+			if (matches.length === 0)
 				return {
 					error: `no column for ${reference} in this chart — add it first`,
 				};
-			return analyseColumn(chartId, column, overwriteHumanEdits === true);
+			if (matches.length > 1)
+				return {
+					error: `${matches.length} columns use ${reference} (different primers) — re-running by reference is ambiguous; re-run it from the table instead`,
+				};
+			return analyseColumn(
+				chartId,
+				matches[0] as ChartColumn,
+				overwriteHumanEdits === true,
+			);
 		},
 	});
 
@@ -369,8 +370,14 @@ export function buildChartTools(folder: string, profile: Profile) {
 			if (!lim)
 				return { error: `no limitation with id ${limitationId} in this chart` };
 			const want = basename(reference);
-			const column = chart.columns.find((c) => c.reference === want);
-			if (!column) return { error: `no column for ${reference} in this chart` };
+			const matches = chart.columns.filter((c) => c.reference === want);
+			if (matches.length === 0)
+				return { error: `no column for ${reference} in this chart` };
+			if (matches.length > 1)
+				return {
+					error: `${matches.length} columns use ${reference} — editing by reference is ambiguous; disambiguate in the table`,
+				};
+			const column = matches[0] as ChartColumn;
 			if (
 				verdict === undefined &&
 				reasoning === undefined &&
@@ -380,43 +387,52 @@ export function buildChartTools(folder: string, profile: Profile) {
 					error:
 						"nothing to change — provide a verdict, reasoning, and/or citations",
 				};
-			const prev = chart.cells.find(
+			const exists = chart.cells.some(
 				(c) => c.limitationUid === lim.uid && c.columnId === column.id,
 			);
-			if (!prev && verdict === undefined)
+			if (!exists && verdict === undefined)
 				return {
 					error:
 						"this cell hasn't been analysed yet — provide a verdict to set it, or run the analysis first",
 				};
-			const next: ChartCell = prev
-				? { ...prev }
-				: {
-						limitationUid: lim.uid,
-						columnId: column.id,
-						disclosureType: "Absent",
-						reasoning: "",
-						citations: [],
-						status: "ai",
-					};
-			if (verdict !== undefined) next.disclosureType = verdict;
-			if (reasoning !== undefined) next.reasoning = reasoning;
-			if (citations !== undefined)
-				next.citations = citations.map((location) => ({ location }));
-			next.status = "ai";
-			await saveChart(folder, {
-				...chart,
-				cells: [
-					...chart.cells.filter(
-						(c) => !(c.limitationUid === lim.uid && c.columnId === column.id),
-					),
-					next,
-				],
+			// Re-read so a concurrent edit isn't clobbered; apply the patch to the fresh cell.
+			let result: ChartCell | undefined;
+			const saved = await mutateChart(folder, chartId, (fresh) => {
+				const prev = fresh.cells.find(
+					(c) => c.limitationUid === lim.uid && c.columnId === column.id,
+				);
+				const next: ChartCell = prev
+					? { ...prev }
+					: {
+							limitationUid: lim.uid,
+							columnId: column.id,
+							disclosureType: "Absent",
+							reasoning: "",
+							citations: [],
+							status: "ai",
+						};
+				if (verdict !== undefined) next.disclosureType = verdict;
+				if (reasoning !== undefined) next.reasoning = reasoning;
+				if (citations !== undefined)
+					next.citations = citations.map((location) => ({ location }));
+				next.status = "ai";
+				result = next;
+				return {
+					...fresh,
+					cells: [
+						...fresh.cells.filter(
+							(c) => !(c.limitationUid === lim.uid && c.columnId === column.id),
+						),
+						next,
+					],
+				};
 			});
+			if (!saved || !result) return { error: `no chart with id ${chartId}` };
 			return {
 				limitation: lim.label,
 				reference: column.reference,
-				verdict: next.disclosureType,
-				status: next.status,
+				verdict: result.disclosureType,
+				status: result.status,
 			};
 		},
 	});
@@ -438,8 +454,21 @@ export function buildChartTools(folder: string, profile: Profile) {
 				.string()
 				.optional()
 				.describe("New construction (the assumed scope)."),
+			constructionBasis: z
+				.string()
+				.optional()
+				.describe(
+					"New basis pointer — where in the description the construction is supported (paragraphs / figures). Update this when you change the construction so the cited support still matches.",
+				),
 		}),
-		execute: async ({ chartId, limitationId, label, text, construction }) => {
+		execute: async ({
+			chartId,
+			limitationId,
+			label,
+			text,
+			construction,
+			constructionBasis,
+		}) => {
 			const chart = await readChart(folder, chartId);
 			if (!chart) return { error: `no chart with id ${chartId}` };
 			const lim = chart.limitations.find((l) => l.uid === limitationId);
@@ -448,50 +477,62 @@ export function buildChartTools(folder: string, profile: Profile) {
 			if (
 				label === undefined &&
 				text === undefined &&
-				construction === undefined
+				construction === undefined &&
+				constructionBasis === undefined
 			)
 				return {
 					error:
-						"nothing to change — provide a label, text, and/or construction",
+						"nothing to change — provide a label, text, construction, and/or construction basis",
 				};
-			const updated = { ...lim };
-			if (label !== undefined) updated.label = label;
-			if (text !== undefined) updated.text = text;
-			if (construction !== undefined) updated.construction = construction;
-			// Changing the claim text or the construction invalidates this row's verdicts —
-			// stale every one of its cells (matching the table's inline edit).
-			const invalidates =
-				(text !== undefined && text !== lim.text) ||
-				(construction !== undefined && construction !== lim.construction);
-			const staleRefs = invalidates
-				? [
-						...new Set(
-							chart.cells
-								.filter((c) => c.limitationUid === lim.uid)
-								.map(
-									(c) =>
-										chart.columns.find((col) => col.id === c.columnId)
-											?.reference,
-								)
-								.filter((r): r is string => !!r),
-						),
-					]
-				: [];
-			await saveChart(folder, {
-				...chart,
-				limitations: chart.limitations.map((l) =>
-					l.uid === lim.uid ? updated : l,
-				),
-				cells: invalidates
-					? chart.cells.map((c) =>
-							c.limitationUid === lim.uid ? { ...c, status: "stale" } : c,
-						)
-					: chart.cells,
+			// Re-read so a concurrent edit isn't clobbered; staling matches the table's inline
+			// edit (text/construction change ⇒ every one of the row's cells goes stale).
+			let staleRefs: string[] = [];
+			const saved = await mutateChart(folder, chartId, (fresh) => {
+				const target = fresh.limitations.find((l) => l.uid === limitationId);
+				if (!target) return fresh; // vanished between read and write — no-op
+				const updated = { ...target };
+				if (label !== undefined) updated.label = label;
+				if (text !== undefined) updated.text = text;
+				if (construction !== undefined) updated.construction = construction;
+				if (constructionBasis !== undefined)
+					updated.constructionBasis = constructionBasis || undefined;
+				const invalidates =
+					(text !== undefined && text !== target.text) ||
+					(construction !== undefined && construction !== target.construction);
+				staleRefs = invalidates
+					? [
+							...new Set(
+								fresh.cells
+									.filter((c) => c.limitationUid === target.uid)
+									.map(
+										(c) =>
+											fresh.columns.find((col) => col.id === c.columnId)
+												?.reference,
+									)
+									.filter((r): r is string => !!r),
+							),
+						]
+					: [];
+				return {
+					...fresh,
+					limitations: fresh.limitations.map((l) =>
+						l.uid === target.uid ? updated : l,
+					),
+					cells: invalidates
+						? fresh.cells.map((c) =>
+								c.limitationUid === target.uid ? { ...c, status: "stale" } : c,
+							)
+						: fresh.cells,
+				};
 			});
-			return { limitation: updated.label, staleColumns: staleRefs };
+			if (!saved) return { error: `no chart with id ${chartId}` };
+			return { limitation: label ?? lim.label, staleColumns: staleRefs };
 		},
 	});
 
+	// `satisfies` ties the wired tools to the shared name list — add a name there without a
+	// tool here (or vice versa) and this fails to compile, so the client's CHART_TOOLS /
+	// invalidation can't silently drift from what the server actually ships.
 	return {
 		read_chart,
 		create_chart,
@@ -500,7 +541,7 @@ export function buildChartTools(folder: string, profile: Profile) {
 		run_analysis,
 		edit_cell,
 		edit_limitation,
-	};
+	} satisfies Record<(typeof CHART_TOOL_NAMES)[number], unknown>;
 }
 
 /** A compact line per existing chart for the system manifest, so the agent can target or
@@ -511,13 +552,9 @@ export async function chartManifest(
 	folder: string,
 	openChart?: string | null,
 ): Promise<string> {
-	const summaries = await listCharts(folder);
-	if (summaries.length === 0) return "";
-	const charts = await Promise.all(
-		summaries.map((s) => readChart(folder, s.id)),
-	);
+	const charts = await loadCharts(folder);
+	if (charts.length === 0) return "";
 	return charts
-		.filter((c): c is Chart => c != null)
 		.map(
 			(c) =>
 				`- ${c.title} (id: ${c.id}) — ${c.limitations.length} limitation(s), ${c.columns.length} reference column(s)${c.id === openChart ? " — OPEN (the chart the attorney is viewing)" : ""}`,

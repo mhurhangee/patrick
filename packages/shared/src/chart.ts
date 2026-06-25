@@ -159,3 +159,75 @@ export function chartSummary(chart: Chart): ChartSummary {
 		starred: chart.starred,
 	};
 }
+
+/** Merge a column's whole-document reads onto its cells, keyed by the stable limitation uid
+ *  the read echoes (never the editable, non-unique label). The single source of truth for the
+ *  "re-run preserves human work" rule, used by BOTH the server agent tool and the viewer:
+ *  - refresh AI / stale / new cells from the reads;
+ *  - keep human-touched (edited / approved) cells unless `force`;
+ *  - carry forward any existing cell whose limitation the read omitted (still a valid row) —
+ *    don't silently drop a verdict the model just didn't re-emit;
+ *  - mark a freshly-produced cell `stale` (not `ai`) when its row changed mid-read (`staleUids`).
+ *  Returns the FULL cell set for the column; the caller swaps it in for that columnId. */
+export function mergeColumnReads(params: {
+	columnId: string;
+	reads: LimitationRead[];
+	/** The chart's current cells (any columns — filtered here). */
+	cells: ChartCell[];
+	/** Limitation uids that still exist (cells for removed rows are dropped). */
+	validUids: Set<string>;
+	force: boolean;
+	/** Uids whose row text/construction changed while the read was in flight. */
+	staleUids?: Set<string>;
+}): ChartCell[] {
+	const { columnId, reads, force, staleUids } = params;
+	const existing = new Map(
+		params.cells
+			.filter((c) => c.columnId === columnId)
+			.map((c) => [c.limitationUid, c]),
+	);
+	const seen = new Set<string>();
+	const next: ChartCell[] = [];
+	for (const r of reads) {
+		if (!params.validUids.has(r.limitationUid)) continue;
+		seen.add(r.limitationUid);
+		const prev = existing.get(r.limitationUid);
+		if (
+			!force &&
+			prev &&
+			(prev.status === "edited" || prev.status === "approved")
+		) {
+			next.push(prev);
+		} else {
+			next.push({
+				limitationUid: r.limitationUid,
+				columnId,
+				disclosureType: r.disclosed,
+				reasoning: r.reasoning,
+				citations: r.citations ?? [],
+				status: staleUids?.has(r.limitationUid) ? "stale" : "ai",
+			});
+		}
+	}
+	// Carry forward existing cells the read omitted (still-valid limitations only).
+	for (const [uid, cell] of existing)
+		if (!seen.has(uid) && params.validUids.has(uid)) next.push(cell);
+	return next;
+}
+
+/** The chart-driving agent tools, named once so the server (buildChartTools) and the client
+ *  (the tool-name sets in agent-chat) can't drift. `read_chart` is read-only; the rest mutate
+ *  the chart on disk, so a client seeing one of their results must refresh the open viewer. */
+export const READ_CHART_TOOL = "read_chart";
+export const MUTATING_CHART_TOOLS = [
+	"create_chart",
+	"parse_claim",
+	"add_reference",
+	"run_analysis",
+	"edit_cell",
+	"edit_limitation",
+] as const;
+export const CHART_TOOL_NAMES = [
+	READ_CHART_TOOL,
+	...MUTATING_CHART_TOOLS,
+] as const;

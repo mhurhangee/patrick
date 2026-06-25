@@ -7,7 +7,7 @@ import type {
 	ClaimLimitation,
 	DisclosureType,
 } from "@patrick/shared";
-import { docKind } from "@patrick/shared";
+import { docKind, mergeColumnReads } from "@patrick/shared";
 import { useNavigate } from "@tanstack/react-router";
 import {
 	Info,
@@ -278,48 +278,32 @@ function ChartTable({ chart }: { chart: Chart }) {
 				limitations: sent,
 				model: chartRef.current.model,
 			});
-			// Map reads back by the stable uid the read echoes — NOT the label, which is
-			// editable and non-unique (two blank rows, or the same claim parsed twice).
-			const current = new Map(rowsRef.current.map((l) => [l.uid, l]));
-			const existing = new Map(
-				chartRef.current.cells
-					.filter((c) => c.columnId === column.id)
-					.map((c) => [c.limitationUid, c]),
-			);
-			const cells: ChartCell[] = [];
-			for (const r of reads) {
-				const uid = r.limitationUid;
-				const now = current.get(uid);
-				if (!now) continue;
-				const prev = existing.get(uid);
-				// Preserve human work (unless forced); refresh AI / stale / new cells.
+			// Merge by the stable uid the read echoes (never the editable, non-unique label) —
+			// the same shared rule the agent's run uses. Rows whose text/construction changed
+			// while the read was in flight land Stale, not as a fresh verdict.
+			const currentRows = rowsRef.current;
+			const currentByUid = new Map(currentRows.map((l) => [l.uid, l]));
+			const staleUids = new Set<string>();
+			for (const [uid, at] of sentByUid) {
+				const now = currentByUid.get(uid);
 				if (
-					!force &&
-					prev &&
-					(prev.status === "edited" || prev.status === "approved")
-				) {
-					cells.push(prev);
-				} else {
-					// If the row's text/construction changed while the read was in flight, the
-					// verdict is already out of date — flag it Stale, don't pass it off as fresh.
-					const at = sentByUid.get(uid);
-					const stale =
-						!!at &&
-						(at.text !== now.text || at.construction !== now.construction);
-					cells.push({
-						limitationUid: uid,
-						columnId: column.id,
-						disclosureType: r.disclosed,
-						reasoning: r.reasoning,
-						citations: r.citations ?? [],
-						status: stale ? "stale" : "ai",
-					});
-				}
+					now &&
+					(at.text !== now.text || at.construction !== now.construction)
+				)
+					staleUids.add(uid);
 			}
+			const merged = mergeColumnReads({
+				columnId: column.id,
+				reads,
+				cells: chartRef.current.cells,
+				validUids: new Set(currentRows.map((l) => l.uid)),
+				force,
+				staleUids,
+			});
 			update({
 				cells: [
 					...chartRef.current.cells.filter((x) => x.columnId !== column.id),
-					...cells,
+					...merged,
 				],
 			});
 		} catch (err) {

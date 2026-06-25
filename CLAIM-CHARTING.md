@@ -150,6 +150,23 @@ viewer adopts agent-written limitation rows via a `chart.limitations` sync effec
 are surfaced to the agent in the system manifest (`chartManifest` — id + row/column counts) so it
 can extend or read one by id.
 
+**Concurrency + the merge are hardened (post-review).** Every mutating tool writes through
+`mutateChart(folder, id, fn)` (in `charts.ts`): it re-reads the chart immediately before the write
+and applies the delta to *that* fresh copy, with no `await` between read and write — so a
+multi-second LLM call can't clobber an attorney edit that landed meanwhile (the old "spread the
+pre-call snapshot" was a silent data-loss race). The re-run merge is **one shared pure function**,
+`mergeColumnReads` in `@patrick/shared`, used by *both* the server tool and the viewer's `runColumn`
+(the LOCKED "re-run preserves human work" rule lives in exactly one place): it keys by uid, keeps
+edited/approved unless `force`, **carries forward any cell whose limitation the model omitted** (so a
+dropped read can't delete an approved verdict), and marks a fresh cell `stale` when its row changed
+mid-read (the viewer passes `staleUids`). `parse_claim` is **idempotent** (drops parsed limitations
+whose label is already present, so a retry can't double the rows); `run_analysis`/`edit_cell`
+**refuse an ambiguous reference** (>1 column on the same filename) rather than silently hitting the
+first; `constructionBasis` is shown in `read_chart` and settable via `edit_limitation`; the system
+manifest reads each chart once (`loadCharts`); and the chart tool-name list is single-sourced in
+`@patrick/shared` (`MUTATING_CHART_TOOLS` / `CHART_TOOL_NAMES`), `satisfies`-checked against the
+wired tools so the client's invalidation set can't drift.
+
 **Editing — the U in CRUD (no D; deletion stays a user action).** Patrick edits at the attorney's
 direction and **auto-applies** (no accept/reject card — babysitting every edit would be a slog, and
 the chart is already the reviewable surface with the status chip + verify banner). An agent edit is
