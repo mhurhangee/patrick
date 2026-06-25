@@ -1,6 +1,6 @@
+import { normalizeForMatch } from "@patrick/shared";
 import { type RefObject, useEffect, useRef } from "react";
 import type { HighlightSelected } from "./doc-search-context";
-import { normalizeForMatch } from "./normalize";
 
 // In-document highlighting via the CSS Custom Highlight API (no DOM surgery — Ranges
 // over the existing text, styled by ::highlight() in index.css). Matching is

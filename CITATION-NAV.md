@@ -96,14 +96,20 @@ at paragraph starts (the "[0018] mid-sentence" bug) improves *labels* — a foll
    (which would desync the locator). A chip with a snippet is "linked" (precise); a typed-label one
    is best-effort (label-parse). Same data shape, different confidence (shown via the pin opacity).
 
+**Phase 3 — verify-and-drop (done):**
+6. ✅ The matcher primitives moved to `@patrick/shared` (`match.ts`: `normalizeForMatch`,
+   `snippetInText`, `parseLeaf`, `paragraphToken`) so server-verify and client-nav resolve
+   identically. `read-reference.ts` reads the reference text (extracted pages for a PDF, the file
+   for markdown; skipped for image-only PDFs / docx) and prunes each citation: snippet matches ⇒
+   keep (linked); else strip the bad snippet and keep only if the label still resolves; else drop.
+   The verdict + reasoning always stand — only the unlocatable pin is removed.
+
 **Follow-ups (decided as their own passes):**
 - **Select-in-doc add** — highlight a passage in the reference to add/fix a citation (captures the
   snippet locator + derives the label), unifying user citations with AI ones. The fiddliest piece
   (selection capture + per-viewer label derivation); deferred deliberately.
 - **`constructionBasis` as a chip** — the Feature cell's basis pointer navigates to the
   construction-support doc (else the claims doc); the parse prompt emits a snippet for it.
-- **Server verify-and-drop** of AI citations at write time (needs reference-text plumbing; the
-  matcher's `findSnippet` core moves to `@patrick/shared` then).
 - **Fuzzy + semantic tiers** (semantic only if an index exists) and **label-disambiguation** for
   repeated phrases; the Google-Patents `[000n]` extraction fix for cleaner labels.
 

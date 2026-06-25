@@ -1,11 +1,18 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import {
+	type ChartCitation,
 	type ClaimLimitation,
 	docKind,
 	type LimitationRead,
 	type Provider,
+	paragraphToken,
+	parseLeaf,
+	snippetInText,
 } from "@patrick/shared";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { readExtractedText } from "../documents";
 import { pinnedWithRequiredPrimary } from "./chat";
 import { createModel } from "./model";
 
@@ -27,6 +34,62 @@ const schema = z.object({
 		}),
 	),
 });
+
+/** The reference's plain text (+ page count for PDFs), to check citations against. Null when
+ *  we can't read it (an image-only PDF, a docx, an unreadable file) — then we skip
+ *  verification and keep the citations as-is rather than drop blind. */
+async function referenceText(
+	folder: string,
+	reference: string,
+): Promise<{ text: string; pageCount: number } | null> {
+	if (docKind(reference) === "pdf") {
+		const ext = await readExtractedText(folder, reference);
+		if (!ext) return null; // not extracted (image mode) — can't verify server-side
+		return {
+			text: ext.pages.map((p) => p.text).join("\n"),
+			pageCount: ext.pages.length,
+		};
+	}
+	if (docKind(reference) === "text") {
+		try {
+			return {
+				text: await readFile(join(folder, reference), "utf8"),
+				pageCount: 0,
+			};
+		} catch {
+			return null;
+		}
+	}
+	return null; // docx and others — skip verification
+}
+
+/** Verify each citation against the reference and prune what can't be located — the snippet
+ *  is the locator, so: snippet matches ⇒ keep (linked); else strip the bad snippet and keep
+ *  only if the label still resolves (a paragraph marker present, or a leaf within range);
+ *  else drop it. A citation nothing can find is noise. (Verbatim from the design: drop only
+ *  when NO tier locates.) */
+function verifyCitations(
+	reads: LimitationRead[],
+	ref: { text: string; pageCount: number },
+): LimitationRead[] {
+	const keep = (c: ChartCitation): ChartCitation | null => {
+		if (c.snippet?.trim() && snippetInText(ref.text, c.snippet)) return c;
+		const leaf = parseLeaf(c.location);
+		const para = paragraphToken(c.location);
+		const labelOk =
+			(leaf != null && (ref.pageCount === 0 || leaf <= ref.pageCount)) ||
+			(para != null && snippetInText(ref.text, para));
+		// Snippet didn't locate — drop it so the chip isn't falsely "linked"; keep the
+		// citation only if its label still points somewhere.
+		return labelOk ? { location: c.location } : null;
+	};
+	return reads.map((r) => ({
+		...r,
+		citations: r.citations
+			.map(keep)
+			.filter((c): c is ChartCitation => c != null),
+	}));
+}
 
 /** Read one reference in full and judge each limitation. `primer`, if given, shapes the
  *  analysis (e.g. the examiner's report). */
@@ -82,5 +145,10 @@ export async function readReference(
 	// An empty result is a model failure, not "nothing disclosed" (Absent is an explicit
 	// verdict). Treat it as an error so the caller doesn't silently blank the column.
 	if (object.reads.length === 0) return null;
-	return object.reads;
+
+	// Prune citations that don't actually locate in the reference (hallucinated / non-verbatim
+	// snippets), when we can read the reference text. The verdict + reasoning stand; only the
+	// unlocatable pin is dropped.
+	const ref = await referenceText(folder, reference);
+	return ref ? verifyCitations(object.reads, ref) : object.reads;
 }

@@ -3,6 +3,7 @@ export * from "./chart";
 export * from "./chat";
 export * from "./claim-prompts";
 export * from "./law";
+export * from "./match";
 export * from "./patrick-docs.generated";
 export * from "./profile";
 export * from "./profile-templates";

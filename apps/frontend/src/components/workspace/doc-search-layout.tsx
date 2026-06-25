@@ -1,3 +1,4 @@
+import { parseLeaf } from "@patrick/shared";
 import { Search } from "lucide-react";
 import {
 	type ReactNode,
@@ -14,11 +15,7 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { DocSearchPanel } from "@/components/workspace/doc-search";
-import {
-	findPage,
-	highlightText,
-	parseLeaf,
-} from "@/lib/search/citation-match";
+import { findPage, highlightText } from "@/lib/search/citation-match";
 import { useCitationNav } from "@/lib/search/citation-nav";
 import {
 	DocSearchHighlightProvider,
