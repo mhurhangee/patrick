@@ -11,7 +11,7 @@ import {
 	paragraphToken,
 	parseLeaf,
 } from "@patrick/shared";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { readExtractedText } from "../documents";
 import { pinnedWithRequiredPrimary } from "./chat";
@@ -127,9 +127,9 @@ export async function readReference(
 			? `\n\nCiting this reference (a PDF): give each location as a LEAF — the actual sequential page in the file, counting from 1 and INCLUDING any cover and drawing pages (e.g. "leaf 6"); add a column and line range when the page has them ("leaf 6, col. 2, ll. 5–12"). Do NOT use the printed page number on the page, and never guess it — "leaf" (file position) and "page" (printed number) are different things. The snippet is what actually locates the passage, so give it for every citation.`
 			: `\n\nCiting this reference: where the text carries paragraph numbers ([0001], [0002] …), cite those (e.g. "[0021]"); for a heading or figure without one, name it. The snippet is what actually locates the passage, so give it for every citation.`;
 
-	const { object } = await generateObject({
+	const { output } = await generateText({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
-		schema,
+		output: Output.object({ schema }),
 		system,
 		messages: [
 			content,
@@ -142,11 +142,11 @@ export async function readReference(
 
 	// An empty result is a model failure, not "nothing disclosed" (Absent is an explicit
 	// verdict). Treat it as an error so the caller doesn't silently blank the column.
-	if (object.reads.length === 0) return null;
+	if (output.reads.length === 0) return null;
 
 	// Prune citations that don't actually locate in the reference (hallucinated / non-verbatim
 	// snippets), when we can read the reference text. The verdict + reasoning stand; only the
 	// unlocatable pin is dropped.
 	const ref = await referenceText(folder, reference);
-	return ref ? verifyCitations(object.reads, ref) : object.reads;
+	return ref ? verifyCitations(output.reads, ref) : output.reads;
 }
