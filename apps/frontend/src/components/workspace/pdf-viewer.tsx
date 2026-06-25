@@ -35,6 +35,11 @@ const STEP = 0.2;
 // Render the current page ± this many pages; the rest stay blank placeholders.
 const OVERSCAN = 3;
 
+// Inactive read-only tabs unmount (PDFs are heavy to keep alive), so remember each PDF's
+// scroll position by id and restore it on remount — otherwise PDF → chart → PDF dumps you
+// back at the top. Module-level so it survives the unmount.
+const scrollMemory = new Map<string, number>();
+
 export function PdfViewer({ filename }: { filename: string }) {
 	const { activeTaskId } = useActiveTask();
 	const { activeProfileId } = useActiveProfile();
@@ -45,6 +50,16 @@ export function PdfViewer({ filename }: { filename: string }) {
 	const [current, setCurrent] = useState(1);
 	const [error, setError] = useState(false);
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const scrollKey = `${activeTaskId ?? ""}|${filename}`;
+
+	// Restore the remembered scroll once the page divs exist (their heights are reserved up
+	// front from the viewport, so the position is valid immediately). A citation jump fires
+	// after this (it awaits the page derivation), so it still wins.
+	useEffect(() => {
+		if (!pages.length) return;
+		const y = scrollMemory.get(scrollKey);
+		if (y && scrollRef.current) scrollRef.current.scrollTop = y;
+	}, [pages.length, scrollKey]);
 
 	// Search over this PDF's extracted text. Needs text — if it hasn't been
 	// extracted, the panel says so.
@@ -133,6 +148,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 	function onScroll() {
 		const el = scrollRef.current;
 		if (!el) return;
+		scrollMemory.set(scrollKey, el.scrollTop);
 		const mid = el.scrollTop + el.clientHeight / 2;
 		let cur = 1;
 		for (const pe of el.querySelectorAll<HTMLElement>("[data-page]")) {

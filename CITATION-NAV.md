@@ -79,16 +79,33 @@ at paragraph starts (the "[0018] mid-sentence" bug) improves *labels* — a foll
 
 ## Build order
 
-**Phase 1 — the spine (this pass):**
+**Phase 1 — the spine (done):**
 1. ✅ Fix the search panel's per-word highlight confetti (`highlightSnippet` — exclude stopwords).
-2. `@patrick/shared`: `findSnippet` + the `Matcher` chain scaffold (tiers 1 + 5 to start).
-3. Wire **click-a-citation → open the reference → match → highlight**, reusing
-   `use-doc-highlights` (charts first, then search).
-4. Server: **verify-and-drop** chart citations at write time + doc-type-aware citation
-   instructions (incl. the "leaf" convention) in the analysis prompt.
+2. ✅ Click-a-citation → open the reference → match → highlight, reusing `use-doc-highlights`
+   (charts). App-level `citation-nav` channel keyed by filename; the matcher (`citation-match.ts`)
+   does snippet-find + label-parse (leaf → page jump, `[000n]` → marker highlight) with a shared
+   `normalizeForMatch`.
+3. ✅ Doc-type-aware citation instructions (the "leaf" convention) in the analysis prompt +
+   `PATRICK_CAPABILITIES`.
 
-**Follow-ups:** fuzzy + semantic tiers (3/4); the Google-Patents `[000n]` extraction fix; reading
-printed page numbers off PDF pages for richer labels.
+**Phase 2 — PDF + the editing model (done):**
+4. ✅ PDF page-jump: derive the page from the extracted per-page text (else parse "leaf N") and
+   `jumpToPage`, so a passage on an unrendered page is reached (the text layer then renders and the
+   snippet highlights). PDF **scroll memory** (module store) so PDF → chart → PDF restores position.
+5. ✅ Citations are **chips** (click = navigate, ✕ = remove, + = type a label) — no label editing
+   (which would desync the locator). A chip with a snippet is "linked" (precise); a typed-label one
+   is best-effort (label-parse). Same data shape, different confidence (shown via the pin opacity).
+
+**Follow-ups (decided as their own passes):**
+- **Select-in-doc add** — highlight a passage in the reference to add/fix a citation (captures the
+  snippet locator + derives the label), unifying user citations with AI ones. The fiddliest piece
+  (selection capture + per-viewer label derivation); deferred deliberately.
+- **`constructionBasis` as a chip** — the Feature cell's basis pointer navigates to the
+  construction-support doc (else the claims doc); the parse prompt emits a snippet for it.
+- **Server verify-and-drop** of AI citations at write time (needs reference-text plumbing; the
+  matcher's `findSnippet` core moves to `@patrick/shared` then).
+- **Fuzzy + semantic tiers** (semantic only if an index exists) and **label-disambiguation** for
+  repeated phrases; the Google-Patents `[000n]` extraction fix for cleaner labels.
 
 ## Decisions log (don't relitigate)
 

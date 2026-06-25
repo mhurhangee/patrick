@@ -1054,60 +1054,84 @@ function CitationList({
 	onChange: (citations: ChartCitation[]) => void;
 }) {
 	const { goToCitation } = useCitationNav();
-	const set = (i: number, patch: Partial<ChartCitation>) =>
-		onChange(citations.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+	const [addOpen, setAddOpen] = useState(false);
+	const [draft, setDraft] = useState("");
+	const add = () => {
+		const v = draft.trim();
+		if (v) onChange([...citations, { location: v }]);
+		setDraft("");
+		setAddOpen(false);
+	};
+	const remove = (i: number) =>
+		onChange(citations.filter((_, idx) => idx !== i));
+	// Citations are chips, not editable text: click one to jump to the cited passage, ✕ to
+	// remove. A chip with a snippet is "linked" (located precisely); a typed-label-only one is
+	// best-effort (navigated by parsing the label). Editing a label would desync it from its
+	// locator, so we add/remove rather than edit.
 	return (
-		<div className="space-y-1">
+		<div className="flex flex-wrap items-center gap-1">
 			{citations.map((cit, i) => (
-				<div
+				<span
 					// biome-ignore lint/suspicious/noArrayIndexKey: citations have no stable id
 					key={i}
-					className="group/c flex items-center gap-1 text-muted-foreground"
+					className="group/c inline-flex items-center gap-0.5 rounded border bg-muted/50 py-0.5 pr-0.5 pl-1.5 text-[11px] text-muted-foreground"
 				>
-					<Button
-						variant="bare"
-						size="xs"
-						tooltip="Go to the cited passage in the reference"
-						className="shrink-0 p-0 text-muted-foreground hover:text-foreground"
+					<button
+						type="button"
+						title="Go to the cited passage in the reference"
+						className="inline-flex items-center gap-1 hover:text-foreground"
 						onClick={() =>
-							goToCitation(
-								reference,
-								cit.snippet?.trim() || cit.location,
-								cit.location,
-							)
+							goToCitation(reference, cit.snippet ?? "", cit.location)
 						}
 					>
-						<Locate className="size-3 opacity-60" />
-					</Button>
-					<div className="min-w-0 flex-1">
-						<InlineEdit
-							value={cit.location}
-							onCommit={(v) => set(i, { location: v })}
-							placeholder="location…"
-							mono
-							className="text-[11px]"
+						<Locate
+							className={cn(
+								"size-3",
+								cit.snippet ? "opacity-70" : "opacity-30",
+							)}
 						/>
-					</div>
+						<span className="font-mono">{cit.location || "—"}</span>
+					</button>
+					<button
+						type="button"
+						title="Remove citation"
+						className="rounded opacity-0 hover:bg-muted group-hover/c:opacity-100"
+						onClick={() => remove(i)}
+					>
+						<X className="size-2.5" />
+					</button>
+				</span>
+			))}
+			<Popover
+				open={addOpen}
+				onOpenChange={(o) => {
+					setAddOpen(o);
+					if (!o) setDraft("");
+				}}
+			>
+				<PopoverTrigger asChild>
 					<Button
 						variant="ghost"
-						size="icon-xxs"
-						tooltip="Remove citation"
-						className="shrink-0 text-muted-foreground opacity-0 group-hover/c:opacity-100"
-						onClick={() => onChange(citations.filter((_, idx) => idx !== i))}
+						size="xs"
+						tooltip="Add a citation"
+						className="h-5 px-1 text-muted-foreground"
 					>
-						<X />
+						<Plus className="size-3" />
 					</Button>
-				</div>
-			))}
-			<Button
-				variant="ghost"
-				size="sm"
-				className="h-6 gap-1 px-1 text-[11px] text-muted-foreground"
-				onClick={() => onChange([...citations, { location: "" }])}
-			>
-				<Plus className="size-3" />
-				citation
-			</Button>
+				</PopoverTrigger>
+				<PopoverContent align="start" className="w-52 p-1.5">
+					<Input
+						value={draft}
+						autoFocus
+						placeholder="leaf 6, ll. 5–12  /  [0021]"
+						className="h-7 text-xs"
+						onChange={(e) => setDraft(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") add();
+						}}
+					/>
+				</PopoverContent>
+			</Popover>
 		</div>
 	);
 }

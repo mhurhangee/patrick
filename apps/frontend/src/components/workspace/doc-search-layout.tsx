@@ -14,6 +14,11 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { DocSearchPanel } from "@/components/workspace/doc-search";
+import {
+	findPage,
+	highlightText,
+	parseLeaf,
+} from "@/lib/search/citation-match";
 import { useCitationNav } from "@/lib/search/citation-nav";
 import {
 	DocSearchHighlightProvider,
@@ -36,9 +41,19 @@ function HighlightBinder({
 }
 
 // Bridges an app-level citation click (from a chart cell) into THIS document's highlight
-// provider: when a pending target names this file, scroll to + highlight its snippet. The
-// token dedupes so a repeat click on the same citation re-fires.
-function CitationConsumer({ filename }: { filename: string }) {
+// provider: when a pending target names this file, resolve it (snippet locator → label
+// fallback) and scroll to + highlight it. For a PDF, derive the page first (from the
+// extracted text, else the "leaf N" label) and jump there, so a passage on an unrendered
+// page is reached. The token dedupes so a repeat click on the same citation re-fires.
+function CitationConsumer({
+	filename,
+	onJump,
+	loadPages,
+}: {
+	filename: string;
+	onJump?: (page: number) => void;
+	loadPages: () => Promise<{ text: string }[] | null>;
+}) {
 	const { pending } = useCitationNav();
 	const { setHighlights } = useDocSearchHighlights();
 	const consumed = useRef(0);
@@ -46,8 +61,26 @@ function CitationConsumer({ filename }: { filename: string }) {
 		if (!pending || pending.filename !== filename) return;
 		if (pending.token === consumed.current) return;
 		consumed.current = pending.token;
-		setHighlights([pending.snippet], { text: pending.snippet, nth: 0 }, true);
-	}, [pending, filename, setHighlights]);
+		const label = pending.label ?? "";
+		const text = highlightText(pending.snippet, label);
+		const apply = () =>
+			setHighlights(text ? [text] : [], text ? { text, nth: 0 } : null, true);
+		// PDF: jump to the page (the text layer then renders and the snippet highlights).
+		if (onJump) {
+			(async () => {
+				let page: number | null = null;
+				if (pending.snippet?.trim()) {
+					const pages = await loadPages();
+					if (pages) page = findPage(pending.snippet, pages);
+				}
+				if (page == null) page = parseLeaf(label);
+				if (page != null) onJump(page);
+				apply();
+			})();
+		} else {
+			apply();
+		}
+	}, [pending, filename, setHighlights, onJump, loadPages]);
 	return null;
 }
 
@@ -96,7 +129,11 @@ export function DocSearchLayout({
 	return (
 		<DocSearchHighlightProvider>
 			<HighlightBinder containerRef={contentRef} />
-			<CitationConsumer filename={filename} />
+			<CitationConsumer
+				filename={filename}
+				onJump={onJump}
+				loadPages={loadPages}
+			/>
 			<ResizablePanelGroup orientation="horizontal" className="h-full">
 				<ResizablePanel id="doc-content" minSize="40%">
 					<div ref={contentRef} className="relative h-full">
