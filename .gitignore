@@ -60,3 +60,8 @@ BRAND.md
 /external_docs
 
 .codegraph
+
+# Locally-installed agent skills (per-developer, not shared)
+.agents/
+.claude/skills/
+skills-lock.json

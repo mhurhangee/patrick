@@ -14,10 +14,12 @@ import {
 } from "@patrick/shared";
 import {
 	convertToModelMessages,
+	createUIMessageStreamResponse,
 	isStepCount,
 	type ModelMessage,
 	streamText,
 	tool,
+	toUIMessageStream,
 	type UIMessage,
 } from "ai";
 import type { Context } from "hono";
@@ -559,7 +561,8 @@ export async function handleChat(c: Context) {
 		providerOptions,
 	});
 
-	return result.toUIMessageStreamResponse({
+	const uiStream = toUIMessageStream({
+		stream: result.stream,
 		sendReasoning: true,
 		// Web-search results stream as source-url parts → the answer's citations block.
 		sendSources: true,
@@ -594,4 +597,6 @@ export async function handleChat(c: Context) {
 			});
 		},
 	});
+
+	return createUIMessageStreamResponse({ stream: uiStream });
 }
