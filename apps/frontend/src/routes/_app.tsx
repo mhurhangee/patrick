@@ -64,9 +64,7 @@ function AppShell() {
 				maxSize="28%"
 				collapsible
 				collapsedSize="0%"
-				onResize={(size) =>
-					setNavCollapsed(Number.parseFloat(String(size)) === 0)
-				}
+				onResize={(size) => setNavCollapsed(size.asPercentage === 0)}
 			>
 				<AppSidebar />
 			</ResizablePanel>
@@ -84,9 +82,7 @@ function AppShell() {
 						minSize="20%"
 						collapsible
 						collapsedSize="0%"
-						onResize={(size) =>
-							setChatCollapsed(Number.parseFloat(String(size)) === 0)
-						}
+						onResize={(size) => setChatCollapsed(size.asPercentage === 0)}
 					>
 						<AgentChat />
 					</ResizablePanel>
