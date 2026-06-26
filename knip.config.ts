@@ -65,6 +65,9 @@ const config: KnipConfig = {
 		"packages/ui": {
 			entry: ["src/components/*.tsx", "src/lib/*.ts"],
 			project: ["src/**/*.{ts,tsx}"],
+			// theme.css uses Tailwind directives (@apply/@theme), but the consuming
+			// app's Tailwind processes them — tailwindcss isn't this package's dep.
+			ignoreDependencies: ["tailwindcss"],
 		},
 	},
 };

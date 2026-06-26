@@ -3,12 +3,12 @@
 @import "@fontsource-variable/lora";
 @import "@fontsource-variable/hanken-grotesk";
 @import "streamdown/styles.css";
+/* Shared design system: stone/emerald tokens, radius, base @theme, brand. */
+@import "../../../packages/ui/src/theme.css";
 
 /* Generate utilities for the shared design-system components (Tailwind v4 only
    scans the app's own tree by default). */
 @source "../../../packages/ui/src";
-
-@custom-variant dark (&:is(.dark *));
 
 /* radix data-state variants, no-scrollbar utility, accordion keyframes */
 @theme inline {
@@ -106,32 +106,15 @@
 	}
 }
 
+/* Frontend-only tokens on top of the shared palette: UI scale, chart + sidebar
+   colors, and the document-canvas paper. */
 :root {
 	--ui-scale: 1;
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.147 0.004 49.25);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.147 0.004 49.25);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.147 0.004 49.25);
-	--primary: oklch(0.508 0.118 165.612);
-	--primary-foreground: oklch(0.979 0.021 166.113);
-	--secondary: oklch(0.967 0.001 286.375);
-	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.97 0.001 106.424);
-	--muted-foreground: oklch(0.553 0.013 58.071);
-	--accent: oklch(0.97 0.001 106.424);
-	--accent-foreground: oklch(0.216 0.006 56.043);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.923 0.003 48.717);
-	--input: oklch(0.923 0.003 48.717);
-	--ring: oklch(0.709 0.01 56.259);
 	--chart-1: oklch(0.869 0.005 56.366);
 	--chart-2: oklch(0.553 0.013 58.071);
 	--chart-3: oklch(0.444 0.011 73.639);
 	--chart-4: oklch(0.374 0.01 67.558);
 	--chart-5: oklch(0.268 0.007 34.298);
-	--radius: 0.625rem;
 	--sidebar: oklch(0.985 0.001 106.423);
 	--sidebar-foreground: oklch(0.147 0.004 49.25);
 	--sidebar-primary: oklch(0.596 0.145 163.225);
@@ -141,12 +124,6 @@
 	--sidebar-border: oklch(0.923 0.003 48.717);
 	--sidebar-ring: oklch(0.709 0.01 56.259);
 
-	/* Patrick branding */
-	--patrick-green: oklch(0.508 0.118 165.612);
-	--patrick-coral: #e76b41;
-	--patrick-tile-green: oklch(97.9% 0.021 166.113);
-	--patrick-tile: oklch(0.508 0.118 165.612);
-
 	/* Document canvas — paper, stays light in dark mode (not overridden in .dark).
 	   PDFs are scans and docx are white paper; we show them as-is, framed by the
 	   themed chrome. Matches the docx editor's own canvas (#f8f9fa). */
@@ -154,24 +131,6 @@
 }
 
 .dark {
-	--background: oklch(0.147 0.004 49.25);
-	--foreground: oklch(0.985 0.001 106.423);
-	--card: oklch(0.216 0.006 56.043);
-	--card-foreground: oklch(0.985 0.001 106.423);
-	--popover: oklch(0.216 0.006 56.043);
-	--popover-foreground: oklch(0.985 0.001 106.423);
-	--primary: oklch(0.432 0.095 166.913);
-	--primary-foreground: oklch(0.979 0.021 166.113);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.268 0.007 34.298);
-	--muted-foreground: oklch(0.709 0.01 56.259);
-	--accent: oklch(0.268 0.007 34.298);
-	--accent-foreground: oklch(0.985 0.001 106.423);
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.553 0.013 58.071);
 	--chart-1: oklch(0.869 0.005 56.366);
 	--chart-2: oklch(0.553 0.013 58.071);
 	--chart-3: oklch(0.444 0.011 73.639);
@@ -185,13 +144,10 @@
 	--sidebar-accent-foreground: oklch(0.985 0.001 106.423);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.553 0.013 58.071);
-
-	--patrick-green: oklch(0.508 0.118 165.612);
-	--patrick-coral: #e76b41;
-	--patrick-tile-green: oklch(97.9% 0.021 166.113);
-	--patrick-tile: oklch(0.508 0.118 165.612);
 }
 
+/* Frontend-only @theme: the fonts, the chart + sidebar color mappings, and the
+   larger radius steps (the base color/radius mappings live in @patrick/ui). */
 @theme inline {
 	--font-sans: "Hanken Grotesk Variable", sans-serif;
 	--font-heading: "Lora Variable", serif;
@@ -208,37 +164,11 @@
 	--color-chart-3: var(--chart-3);
 	--color-chart-2: var(--chart-2);
 	--color-chart-1: var(--chart-1);
-	--color-ring: var(--ring);
-	--color-input: var(--input);
-	--color-border: var(--border);
-	--color-destructive: var(--destructive);
-	--color-accent-foreground: var(--accent-foreground);
-	--color-accent: var(--accent);
-	--color-muted-foreground: var(--muted-foreground);
-	--color-muted: var(--muted);
-	--color-secondary-foreground: var(--secondary-foreground);
-	--color-secondary: var(--secondary);
-	--color-primary-foreground: var(--primary-foreground);
-	--color-primary: var(--primary);
-	--color-popover-foreground: var(--popover-foreground);
-	--color-popover: var(--popover);
-	--color-card-foreground: var(--card-foreground);
-	--color-card: var(--card);
-	--color-foreground: var(--foreground);
-	--color-background: var(--background);
-	--radius-sm: calc(var(--radius) * 0.6);
-	--radius-md: calc(var(--radius) * 0.8);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) * 1.4);
-	--radius-2xl: calc(var(--radius) * 1.8);
 	--radius-3xl: calc(var(--radius) * 2.2);
 	--radius-4xl: calc(var(--radius) * 2.6);
 }
 
 @layer base {
-	* {
-		@apply border-border outline-ring/50;
-	}
 	html,
 	body,
 	#root {
@@ -247,10 +177,6 @@
 	html {
 		font-size: calc(15px * var(--ui-scale));
 		@apply font-sans;
-	}
-	button:not(:disabled),
-	[role="button"]:not(:disabled) {
-		cursor: pointer;
 	}
 	body {
 		@apply overflow-hidden bg-background text-foreground;
@@ -263,67 +189,6 @@
 	}
 	h3 {
 		@apply text-base font-semibold;
-	}
-}
-
-/* Scanning — the coral accent hops clockwise through the cells.
-   Delays are set inline by the component. */
-@keyframes patrick-hop {
-	0%,
-	21% {
-		fill: var(--patrick-coral);
-	}
-	29%,
-	100% {
-		fill: var(--patrick-green);
-	}
-}
-.patrick-hop {
-	fill: var(--patrick-green);
-	animation: patrick-hop 1.6s infinite;
-}
-
-/* Drawing — the fourth cell draws itself in, fills, resets.
-   Path uses pathLength="100" so these numbers are size-independent. */
-@keyframes patrick-draw {
-	0% {
-		stroke-dashoffset: 100;
-		fill-opacity: 0;
-		stroke-opacity: 1;
-	}
-	55% {
-		stroke-dashoffset: 0;
-		fill-opacity: 0;
-		stroke-opacity: 1;
-	}
-	70%,
-	86% {
-		stroke-dashoffset: 0;
-		fill-opacity: 1;
-		stroke-opacity: 1;
-	}
-	100% {
-		stroke-dashoffset: 0;
-		fill-opacity: 0;
-		stroke-opacity: 0;
-	}
-}
-.patrick-draw {
-	fill: var(--patrick-coral);
-	stroke: var(--patrick-coral);
-	stroke-dasharray: 100;
-	animation: patrick-draw 2.4s ease-in-out infinite;
-}
-
-/* Accessibility: freeze animated variants to their resolved state */
-@media (prefers-reduced-motion: reduce) {
-	.patrick-hop {
-		animation: none;
-	}
-	.patrick-draw {
-		animation: none;
-		stroke-dashoffset: 0;
-		fill-opacity: 1;
 	}
 }
 
