@@ -9,9 +9,7 @@ import type { TableAction } from '../ui/TableToolbar';
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import { CommentsSidebarToggle } from './CommentsSidebarToggle';
 import { EditingModeDropdown } from './EditingModeDropdown';
-import { AgentPanelToggle } from './AgentPanelToggle';
 import type { EditorMode } from './internals/editing-modes';
-import type { AgentPanelOptions } from './types';
 
 interface ImageContext {
   pos: number;
@@ -43,8 +41,6 @@ interface ImageContext {
  */
 export function DocxEditorToolbar({
   toolbarRefCallback,
-  agentPanelOpen,
-  setAgentPanelOpen,
   // Doc state
   document,
   theme,
@@ -59,7 +55,6 @@ export function DocxEditorToolbar({
   setShowCommentsSidebar,
   setExpandedSidebarItem,
   showCommentsSidebar,
-  agentPanel,
   // Customisation slots
   renderLogo,
   documentName,
@@ -96,8 +91,6 @@ export function DocxEditorToolbar({
   onTableAction,
 }: {
   toolbarRefCallback: (el: HTMLDivElement | null) => void;
-  agentPanelOpen: boolean;
-  setAgentPanelOpen: (next: boolean) => void;
   document: Document | null;
   theme: Theme | null | undefined;
   pmState: PMEditorState | null;
@@ -110,7 +103,6 @@ export function DocxEditorToolbar({
   setShowCommentsSidebar: React.Dispatch<React.SetStateAction<boolean>>;
   setExpandedSidebarItem: React.Dispatch<React.SetStateAction<string | null>>;
   showCommentsSidebar: boolean;
-  agentPanel: AgentPanelOptions | undefined;
   renderLogo: (() => ReactNode) | undefined;
   documentName: string | undefined;
   onDocumentNameChange: ((name: string) => void) | undefined;
@@ -153,7 +145,6 @@ export function DocxEditorToolbar({
   return (
     <div ref={toolbarRefCallback} className="z-50 flex flex-col gap-0 flex-shrink-0">
       <EditorToolbar
-        className={agentPanelOpen ? 'rounded-br-2xl' : undefined}
         style={toolbarStyle}
         currentFormatting={selectionFormatting}
         onFormat={onFormat}
@@ -223,16 +214,6 @@ export function DocxEditorToolbar({
               if (mode === 'suggesting') setShowCommentsSidebar(true);
             }}
           />
-          {agentPanel && agentPanel.showToolbarButton !== false && (
-            <>
-              <ToolbarSeparator />
-              <AgentPanelToggle
-                active={agentPanelOpen}
-                badge={agentPanel.toolbarBadge}
-                onClick={() => setAgentPanelOpen(!agentPanelOpen)}
-              />
-            </>
-          )}
           {toolbarExtra}
         </EditorToolbar.Toolbar>
       </EditorToolbar>

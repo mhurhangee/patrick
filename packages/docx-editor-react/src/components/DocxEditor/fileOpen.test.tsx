@@ -117,8 +117,6 @@ function renderToolbar({ showFileOpen, onOpen }: { showFileOpen: boolean; onOpen
   return render(
     <DocxEditorToolbar
       toolbarRefCallback={noop}
-      agentPanelOpen={false}
-      setAgentPanelOpen={noop}
       document={null}
       theme={null}
       pmState={null}
@@ -131,7 +129,6 @@ function renderToolbar({ showFileOpen, onOpen }: { showFileOpen: boolean; onOpen
       setShowCommentsSidebar={noop}
       setExpandedSidebarItem={noop}
       showCommentsSidebar={false}
-      agentPanel={undefined}
       renderLogo={undefined}
       documentName={undefined}
       onDocumentNameChange={undefined}

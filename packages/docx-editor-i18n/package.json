@@ -17,51 +17,6 @@
       "import": "./dist/en.mjs",
       "require": "./dist/en.js"
     },
-    "./de": {
-      "types": "./dist/de.d.ts",
-      "import": "./dist/de.mjs",
-      "require": "./dist/de.js"
-    },
-    "./fr": {
-      "types": "./dist/fr.d.ts",
-      "import": "./dist/fr.mjs",
-      "require": "./dist/fr.js"
-    },
-    "./he": {
-      "types": "./dist/he.d.ts",
-      "import": "./dist/he.mjs",
-      "require": "./dist/he.js"
-    },
-    "./hi": {
-      "types": "./dist/hi.d.ts",
-      "import": "./dist/hi.mjs",
-      "require": "./dist/hi.js"
-    },
-    "./id": {
-      "types": "./dist/id.d.ts",
-      "import": "./dist/id.mjs",
-      "require": "./dist/id.js"
-    },
-    "./pl": {
-      "types": "./dist/pl.d.ts",
-      "import": "./dist/pl.mjs",
-      "require": "./dist/pl.js"
-    },
-    "./pt-BR": {
-      "types": "./dist/pt-BR.d.ts",
-      "import": "./dist/pt-BR.mjs",
-      "require": "./dist/pt-BR.js"
-    },
-    "./tr": {
-      "types": "./dist/tr.d.ts",
-      "import": "./dist/tr.mjs",
-      "require": "./dist/tr.js"
-    },
-    "./zh-CN": {
-      "types": "./dist/zh-CN.d.ts",
-      "import": "./dist/zh-CN.mjs",
-      "require": "./dist/zh-CN.js"
-    },
     "./package.json": "./package.json"
   },
   "files": [

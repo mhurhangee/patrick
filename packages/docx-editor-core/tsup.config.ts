@@ -6,7 +6,6 @@ export default defineConfig([
       core: 'src/core.ts',
       headless: 'src/headless.ts',
       'core-plugins': 'src/core-plugins/index.ts',
-      mcp: 'src/mcp/index.ts',
       // Subpath entries — stable public surface at directory-boundary
       // granularity, so framework adapters outside packages/{react,vue}
       // can consume internals without reaching into src/.
@@ -101,22 +100,5 @@ export default defineConfig([
       'prosemirror-view',
     ],
     injectStyle: false,
-  },
-  // CLI build (with shebang) - bundles all deps for standalone use
-  {
-    entry: {
-      'mcp-cli': 'src/mcp/cli.ts',
-    },
-    format: ['esm'],
-    dts: true,
-    splitting: false,
-    sourcemap: false,
-    clean: false,
-    treeshake: true,
-    minify: true,
-    injectStyle: false,
-    banner: {
-      js: '#!/usr/bin/env node',
-    },
   },
 ]);
