@@ -1,0 +1,34 @@
+name: CI
+
+# Typecheck + lint + knip, then the docx-editor test suites, on every push and
+# PR. `pnpm install` runs the `prepare` guard which builds the vendored editor
+# (needed for the typecheck to resolve its dist); `bun test` runs from the repo
+# root so the editor's round-trip tests find their e2e/fixtures.
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck, lint, knip
+        run: pnpm check
+
+      - name: Test (docx-editor suites)
+        run: bun test
