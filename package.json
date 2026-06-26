@@ -11,6 +11,7 @@
 		"dev:site": "pnpm --filter site dev",
 		"build:editor": "pnpm -r --filter \"@eigenpal/docx-editor-*\" run build",
 		"prepare": "node scripts/ensure-editor-built.mjs",
+		"test": "bun test",
 		"gen:docs": "bun scripts/gen-patrick-docs.ts",
 		"typecheck": "pnpm -r --parallel --if-present --filter \"!@eigenpal/docx-editor-*\" typecheck",
 		"lint": "biome check .",

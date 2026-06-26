@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@eigenpal/docx-editor-core": "workspace:*",
+    "@types/bun": "^1.0.0",
     "@types/react": "19.2.17",
     "ai": "^6.0.169",
     "tsup": "^8.0.1",
