@@ -8,3 +8,6 @@ allowBuilds:
   protobufjs: false
   sharp: true
   tesseract.js: true
+  # esbuild's postinstall installs its platform binary; pulled in by tsup (the
+  # vendored editor build). A fresh CI install errors if it's not listed.
+  esbuild: true
