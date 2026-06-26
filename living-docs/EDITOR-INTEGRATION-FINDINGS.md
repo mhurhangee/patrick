@@ -77,7 +77,17 @@ Deferred / dropped (user decision):
 
 Note — **headers/footers are render-only in this editor** (painted by `layout-painter`, not in the editable PM body; `core/src/agent/createContentControl.ts:315`: header/footer paragraphs "are not reachable"). Pre-existing in 1.9.0, not caused by the lean pass. Editable headers/footers would be a future feature, not a bug.
 
-## Recommended sequence
+### OUTCOME (test build-out — PR #60)
+Adopted the editor's own suites as Patrick's first test foundation: added `@happy-dom/global-registrator` + `@testing-library/react` + `@types/bun`, a root `bunfig.toml` + `test` script, restored the e2e `.docx` fixtures (run from repo root), and a CI workflow (`pnpm check` + `bun test`). **1,725 tests pass / 0 fail** across 226 files.
+
+### OUTCOME (tooling stage-2 — branch chore/docx-editor-tooling)
+Measured before acting: a full biome lint of the vendored packages = **~1,291 diagnostics** (487 `noNonNullAssertion`, 109 `useExhaustiveDependencies` [unsafe to auto-fix], ~250 a11y on the react UI we're about to replace, etc.). DECISION — "homogenize" for *third-party library code* ≠ app code (Patrick already exempts shadcn `components/ui/**` from lint for the same reason):
+- **Typecheck: INCLUDED** all 4 in root `pnpm typecheck` (they pass clean, 0 errors) — the real first-class-citizen win, and the safety net for editing them later.
+- **Lint: EXEMPT** (kept the biome exclusion) — don't police third-party code; lint each file when we *rewrite* it (new shadcn components get full lint).
+- **Mass `biome --write`: SKIPPED** — format on-touch, not 800 files we'll partly replace.
+- **knip: DEFERRED** (library-mode dead-code sweep only if wanted later).
+
+## Recommended sequence (historical — see OUTCOMEs above for what shipped)
 1. **i18n → react merge** + **Tier-1 cuts** (one lean-pass branch; ~11k LOC + 5 test files out). Mechanical, evidence-backed.
 2. **Tier-2 decisions** (this doc's menu) → a second lean branch applying whatever the user picks (templating cut is the prize).
 3. **Tooling homogenization (stage-2)** LAST — one `biome --write`, fold into knip/tsconfig.base/typecheck. Done last because it spends the "diff vs upstream 1.9.0" safety property, so do the correctness-sensitive cutting *while we can still diff*.
