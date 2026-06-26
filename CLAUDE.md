@@ -2,7 +2,7 @@
 
 **Patrick is an agent-first patent-prosecution assistant. Open source, private by design, local-first.** Everything lives in the attorney's own folder, in open formats (`.docx`, `.pdf`), readable without the app. Every competitor is cloud SaaS with your documents on their servers; Patrick is the opposite — zero lock-in, zero hidden state. Tauri desktop today; a marketing/docs site is live (`apps/site`); a web and a hosted/cloud version are planned (they reuse the same `apps/frontend` + `packages/shared`).
 
-The product is built around **@eigenpal/docx-editor** — a local, Apache-2.0, ProseMirror-based WYSIWYG `.docx` editor with first-class **agent tools** (`read_document` / `find_text` / `suggest_change` / `add_comment` …) that produce **native Word tracked changes**, driven by AI SDK v6. That gives us a real editor + high-quality redlines off the shelf; Patrick (the agent) drives it.
+The product is built around **@eigenpal/docx-editor** — a local, Apache-2.0, ProseMirror-based WYSIWYG `.docx` editor with first-class **agent tools** (`read_document` / `find_text` / `suggest_change` / `add_comment` …) that produce **native Word tracked changes**, driven by AI SDK v6. That gives us a real editor + high-quality redlines off the shelf; Patrick (the agent) drives it. **The editor is now vendored into this monorepo and owned by us** (`packages/docx-editor-*`) — the upstream vanished, so we recovered the Apache-2.0 source and folded it in; see "The docx editor (vendored)".
 
 This file is mostly a **map** — what exists and where, so you can navigate to the code — but it also carries the load-bearing **why** behind the non-obvious architecture, so contributors (and their AI tools) don't reintroduce mistakes already fixed. Where a section says "don't", it's because doing the obvious thing caused a real bug.
 
@@ -18,14 +18,37 @@ packages/
   shared/     types, model catalog, prompt token catalog, in-app docs (generated) — imported by frontend + api
   law/         @patrick/law — the EP law dataset + retrieval: EPC, EPO Guidelines, PCT-EPO Guidelines, Case Law of the Boards. Verbatim recall + find-the-law search source
   benchmarking/ a standalone grounding benchmark (the dev runs it himself — see the benchmarking memories)
-scripts/        gen-patrick-docs.ts → packages/shared/src/patrick-docs.generated.ts (the agent's `patrick_help` corpus)
+  docx-editor-core/    @eigenpal/docx-editor-core — vendored: the framework-agnostic engine (docx parse/serialize, ProseMirror, tracked changes, the agent DocumentAgent + core-plugins)
+  docx-editor-agents/  @eigenpal/docx-editor-agents — vendored: the agent bridge (docx tool schemas, the editor-bridge executor, AI-SDK server adapter, the headless DocxReviewer)
+  docx-editor-react/   @eigenpal/docx-editor-react — vendored: the React editor UI (DocxEditor) + its components/dialogs/toolbar
+  docx-editor-i18n/    @eigenpal/docx-editor-i18n — vendored: locale strings/types (English only after the lean pass)
+scripts/        gen-patrick-docs.ts → packages/shared/src/patrick-docs.generated.ts (the agent's `patrick_help` corpus); ensure-editor-built.mjs (the editor-build guard)
+e2e/fixtures/   binary .docx test fixtures for the vendored editor's round-trip suites (run `bun test` from the repo root)
+living-docs/    transient per-task plans, deleted when the work ships (not durable docs)
 ```
 
-**pnpm workspace**; configs (`pnpm-workspace.yaml`, `biome.json`, `tsconfig.base.json`, `knip.config.ts`) live at the root. A hosted/cloud app is the main future slot.
+**pnpm workspace**; configs (`pnpm-workspace.yaml`, `biome.json`, `tsconfig.base.json`, `knip.config.ts`, `bunfig.toml`) live at the root. A hosted/cloud app is the main future slot.
 
 ## Stack
 
-React 19 + Vite + Tailwind v4 + shadcn (stone/emerald) · TanStack Router (file-based) + TanStack Query · @eigenpal/docx-editor (ProseMirror) · Hono on Bun · AI SDK v6 + `@ai-sdk/react` (Anthropic / OpenAI / Google / Gateway, **BYOK**) · Next.js (`apps/site`) · pnpm · Biome · TS strict · Streamdown (chat markdown).
+React 19 + Vite + Tailwind v4 + shadcn (stone/emerald) · TanStack Router (file-based) + TanStack Query · @eigenpal/docx-editor (ProseMirror, vendored in `packages/`) · Hono on Bun · AI SDK v6 + `@ai-sdk/react` (Anthropic / OpenAI / Google / Gateway, **BYOK**) · Next.js (`apps/site`) · pnpm · Biome · TS strict · Streamdown (chat markdown) · `bun:test` (runner).
+
+## The docx editor (vendored)
+
+`@eigenpal/docx-editor` (the ProseMirror `.docx` editor + agent tools) **vanished from npm/GitHub mid-2026**; we recovered the Apache-2.0 source and folded it into the monorepo as four `workspace:*` packages. **We own it now** — improve it in place; there's no upstream to PR. Provenance + the Apache-2.0 `NOTICE` live in each package.
+
+**The package seam (load-bearing — don't collapse it):**
+- `docx-editor-core` — framework-agnostic. Consumed **two ways**: server-side **headless** (via agents → `DocxReviewer`, the api's docx→text) AND client-side (via react, the editor render). The `core`/`react` split is the **headless-vs-DOM (server-vs-client) seam, NOT a multi-framework artifact** — `core/headless` is DOM-free and the server depends on it. **Don't** merge core into react (it would drag react-dom/DOM into the server path).
+- `docx-editor-agents` — the bridge: docx tool *schemas* (`getAiSdkTools`) + the editor-bridge *executor* (`useDocxAgentTools`) + the headless *reviewer* (`DocxReviewer`). It does **~no AI-SDK orchestration** of its own (that all lives in `apps/api` + the frontend) — the boundary is clean, nothing to de-dupe.
+- `docx-editor-react` — the editor UI. `docx-editor-i18n` — locale strings (English only).
+
+**Patrick's entire consumed contract is 5 symbols:** `DocxEditor` + `DocxEditorRef` + `/styles.css` (react); `getAiSdkTools` (agents/ai-sdk/server), `useDocxAgentTools` (agents/react), `DocxReviewer` (agents/server). Everything else is internal.
+
+**Leaned to Patrick's needs:** removed the editor's bundled chat UI + agent panel + MCP (Patrick ships its own chat), and the non-English locales. **Kept `core-plugins/*` (incl. docxtemplater) as the extension surface** — future patent transforms (e.g. claims formatting) become core-plugins; docxtemplater is the worked reference. Also kept footnotes + math.
+
+**Build + tooling:** built to `dist` via `tsup` — `pnpm build:editor` (topological). The build runs **only where the editor is consumed** (a `pretypecheck`/`prebuild` guard, `scripts/ensure-editor-built.mjs`, no-op when dist exists) — **never** on a bare `pnpm install`, so the site (which doesn't use the editor) doesn't build it. The vendored packages are **lint/knip-EXEMPT** (third-party library surface, same stance as shadcn `components/ui/**`) but **are typechecked** and covered by their own tests.
+
+**Known limitation:** headers/footers are **render-only** (painted, not in the editable body) — viewing yes, typing no. Editable H/F would be a future feature, not a bug.
 
 ## Storage — files all the way down
 
@@ -95,15 +118,24 @@ Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
 
 **Citation navigation.** Click a chart citation → open the reference, jump to and highlight the passage. A citation splits a **locator** (a hidden verbatim `snippet` — the robust nav primitive) from a **label** (`location` in examiner-speak: `[0021]`, or **`leaf N`** for a PDF). **`leaf` = the actual page in the file (reserved); `page` = the printed number an examiner cites — never conflated** (enforced in `PATRICK_CAPABILITIES` + the analysis prompt). Navigation matches the snippet (matcher primitives in `@patrick/shared/match.ts`), falling back to label-parse (leaf → page jump; `[000n]` → marker). The read engine **verifies-and-drops** citations that locate nowhere. Citations render as **chips** (click = navigate, ✕ = remove, + = add); **no inline label editing** (it would desync the locator). Not yet: docx scroll-to-text, select-in-doc add, fuzzy/semantic matcher tiers.
 
+## Testing
+
+**Runner: `bun:test`.** `pnpm test` (= `bun test`) — **always from the repo root** (the editor's round-trip tests resolve fixtures via `process.cwd()/e2e/fixtures/`); `bunfig.toml` scopes discovery to the monorepo. ~1,756 tests, all green; CI (`.github/workflows/ci.yml`) runs `pnpm check` + `bun test` on every push/PR.
+
+- **The vendored editor's own suites (~1,725)** — adopted wholesale as Patrick's first foundation: docx parse/serialize **round-trip**, the layout/pagination engine, ProseMirror conversion, and the **agents** suite (`DocxReviewer` / tracked changes / tools — Patrick's critical path).
+- **Patrick's own targeted tests** — the stable, high-stakes, pure-logic cores only: `@patrick/shared` `match.ts` (citation matchers) + `mergeColumnReads` (chart merge), and `apps/api/.../prompt.ts` `buildSystemPrompt` (context assembly = manifest-only-never-content). **Don't pre-test the UI we're about to restyle or the chat layer we're about to migrate** — test the stable cores + test-as-you-go.
+- **Adding tests to a package:** co-locate `*.test.ts(x)`; the package needs `@types/bun` + `"types": ["bun"]` in its tsconfig (the DOM-free strict base won't resolve `bun:test` otherwise, and strict index access needs a typed `first()` helper or `toMatchObject`).
+
 ## Conventions
 
-- **pnpm** only (never npm/yarn). Biome for lint/format (root `biome.json`). TS strict — no `any`, no skipping types. `pnpm check` = typecheck + lint:fix + knip; run before considering work done.
+- **pnpm** only (never npm/yarn). Biome for lint/format (root `biome.json`). TS strict — no `any`, no skipping types. `pnpm check` = typecheck + lint:fix + knip; run before considering work done. `bun test` is the other gate.
 - **Comments explain the code, not history** — never "this used to…", "previously…", or rebuild/migration commentary.
 - **Git hygiene — the dev wants active help here, so be proactive about it:**
   - **Branch for every piece of work** — a feature, a fix, a refactor. Never pile changes onto `main`; `main` stays releasable.
   - **Small, focused, atomic commits** — one logical change each (don't grab-bag unrelated edits into one commit). Stage only what belongs together; keep the working tree from drifting.
   - **Messages:** present tense, *what + why* (the why when it's non-obvious). **Never** add a Claude co-author line.
   - **Ask before committing** — propose a commit at a clean, green checkpoint and wait for an explicit "commit"; don't infer standing permission. But *do* proactively suggest the commit/branch at the right moment rather than waiting to be asked.
+  - **Verify checks GREEN before merging — never on assumption.** After pushing a PR, poll until CI **and** the Vercel deploy resolve (`gh pr checks <n>`), confirm `pass`, *then* merge; re-confirm `main`'s CI + prod deploy after. **Local green ≠ CI green** — generated/gitignored artifacts (editor `dist`, the TanStack `routeTree.gen.ts`) exist on your machine but not in a fresh CI checkout. (Learned the hard way: a batch of PRs merged blind left CI red + prod broken for hours.)
   - The full branch→PR→merge-commit→release standard is in `CONTRIBUTING.md`.
 - **Review before merging:** run **`/code-review`** on a feature branch's diff before merging it — fresh eyes catch the author's blind spots that re-reading your own code won't. Use a thorough pass (high effort) for anything substantial; `ultra` is the deep multi-agent cloud review the dev triggers. Proactively suggest it at merge points and other meaningful milestones, then triage the findings together before merging. **Lead with confirmed correctness bugs; weigh efficiency/cleanup/altitude findings on their merits, and verify any finding against the actual code before acting on it.**
 - MVP/startup mode: working > perfect, simple > clever; let it crash by default (catch only at real boundaries). Ask before structural/dependency/schema changes.
@@ -116,6 +148,8 @@ pnpm dev              # frontend + api together (browser dev)
 pnpm dev:desktop      # tauri dev
 pnpm dev:site         # the Next.js marketing/docs site
 pnpm check            # typecheck + lint:fix + knip
+pnpm test             # bun test — run from the repo root (editor fixtures resolve via cwd)
+pnpm build:editor     # build the vendored docx-editor packages to dist (topological)
 pnpm gen:docs         # regenerate the agent's bundled docs after editing them
 ```
 
