@@ -1,0 +1,279 @@
+/**
+ * Selection-overlay hook for PagedEditor.
+ *
+ * Owns the painted selection geometry — caret position, selection rects,
+ * selected-image info — plus the DOM-walk that produces them from PM
+ * state. Also drives the container `ResizeObserver` and the post-layout
+ * recompute, since both routes invalidate the same overlay state.
+ *
+ * `onSelectionChange` consumers fire only on real PM state changes
+ * (immutable reference identity), not on geometry-only redraws — regression
+ * #268 traced the sidebar expand → resize → re-fire → collapse loop to
+ * this exact distinction.
+ */
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { NodeSelection } from 'prosemirror-state';
+import type { EditorState } from 'prosemirror-state';
+
+import {
+  findBodyPmAnchor,
+  getCaretPosition,
+  selectionToRects,
+  type CaretPosition,
+  type SelectionRect,
+} from '@eigenpal/docx-editor-core/layout-bridge';
+import type { FlowBlock, Layout, Measure } from '@eigenpal/docx-editor-core/layout-engine';
+import { enclosingSdtGroupIds, applySdtFocus } from '@eigenpal/docx-editor-core/layout-painter';
+
+import type { HiddenProseMirrorRef } from '../HiddenProseMirror';
+import type { ImageSelectionInfo } from '../overlays/ImageSelectionOverlay';
+import type { LayoutSelectionGate } from '../internals/LayoutSelectionGate';
+import {
+  applyCellSelectionHighlight,
+  computeSelectionRectsFromDom,
+  getCaretFromDom,
+} from '../internals/domSelection';
+
+export interface UseSelectionOverlayOptions {
+  layout: Layout | null;
+  blocks: FlowBlock[];
+  measures: Measure[];
+  zoom: number;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  pagesContainerRef: React.RefObject<HTMLDivElement | null>;
+  hiddenPMRef: React.RefObject<HiddenProseMirrorRef | null>;
+  syncCoordinator: LayoutSelectionGate;
+  isImageInteractingRef: React.MutableRefObject<boolean>;
+  onSelectionChangeRef: React.MutableRefObject<((from: number, to: number) => void) | undefined>;
+}
+
+export interface UseSelectionOverlayReturn {
+  selectionRects: SelectionRect[];
+  caretPosition: CaretPosition | null;
+  selectedImageInfo: ImageSelectionInfo | null;
+  setSelectionRects: React.Dispatch<React.SetStateAction<SelectionRect[]>>;
+  setCaretPosition: React.Dispatch<React.SetStateAction<CaretPosition | null>>;
+  setSelectedImageInfo: React.Dispatch<React.SetStateAction<ImageSelectionInfo | null>>;
+  buildImageSelectionInfo: (el: HTMLElement, pmPos: number) => ImageSelectionInfo;
+  updateSelectionOverlay: (state: EditorState) => void;
+  handleSelectionChange: (state: EditorState) => void;
+}
+
+export function useSelectionOverlay(opts: UseSelectionOverlayOptions): UseSelectionOverlayReturn {
+  const {
+    layout,
+    blocks,
+    measures,
+    zoom,
+    containerRef,
+    pagesContainerRef,
+    hiddenPMRef,
+    syncCoordinator,
+    isImageInteractingRef,
+    onSelectionChangeRef,
+  } = opts;
+
+  const [selectionRects, setSelectionRects] = useState<SelectionRect[]>([]);
+  const [caretPosition, setCaretPosition] = useState<CaretPosition | null>(null);
+  const [selectedImageInfo, setSelectedImageInfo] = useState<ImageSelectionInfo | null>(null);
+
+  // Last PM state we invoked onSelectionChange for. updateSelectionOverlay
+  // runs from ResizeObserver / layout / font-load paths too, not only on real
+  // state changes — firing the callback in those cases caused the sidebar
+  // expand → resize → re-fire → collapse feedback loop (regression #268).
+  const lastNotifiedStateRef = useRef<EditorState | null>(null);
+
+  const buildImageSelectionInfo = useCallback(
+    (el: HTMLElement, pmPos: number): ImageSelectionInfo => {
+      const imgTag = el.tagName === 'IMG' ? el : el.querySelector('img');
+      const rect = (imgTag ?? el).getBoundingClientRect();
+      return {
+        element: (imgTag ?? el) as HTMLElement,
+        pmPos,
+        width: Math.round(rect.width / zoom),
+        height: Math.round(rect.height / zoom),
+      };
+    },
+    [zoom]
+  );
+
+  const updateSelectionOverlay = useCallback(
+    (state: EditorState) => {
+      const { from, to } = state.selection;
+
+      // Notify consumers only on real PM state changes (see regression #268).
+      if (lastNotifiedStateRef.current !== state) {
+        lastNotifiedStateRef.current = state;
+        onSelectionChangeRef.current?.(from, to);
+      }
+
+      const pagesEl = pagesContainerRef.current;
+      if (pagesEl) {
+        applyCellSelectionHighlight(pagesEl, state);
+        // Keep a content control's boundary visible while the caret is inside
+        // it (Word-style focus), in addition to the painter's hover reveal.
+        applySdtFocus(pagesEl, enclosingSdtGroupIds(state.doc, from, to));
+      }
+
+      if (!layout || blocks.length === 0) return;
+
+      if (from === to) {
+        // Collapsed selection — show caret.
+        const domCaret = pagesEl ? getCaretFromDom(pagesEl, from, zoom) : null;
+        if (domCaret) {
+          setCaretPosition(domCaret);
+        } else {
+          // Fallback to layout-based math when the DOM isn't painted yet.
+          const overlay = pagesContainerRef.current?.parentElement?.querySelector(
+            '[data-testid="selection-overlay"]'
+          );
+          const firstPage = pagesContainerRef.current?.querySelector('.layout-page');
+          if (overlay && firstPage) {
+            const overlayRect = overlay.getBoundingClientRect();
+            const pageRect = firstPage.getBoundingClientRect();
+            const caret = getCaretPosition(layout, blocks, measures, from);
+            if (caret) {
+              setCaretPosition({
+                ...caret,
+                x: caret.x + (pageRect.left - overlayRect.left) / zoom,
+                y: caret.y + (pageRect.top - overlayRect.top) / zoom,
+              });
+            } else {
+              setCaretPosition(null);
+            }
+          } else {
+            setCaretPosition(null);
+          }
+        }
+        setSelectionRects([]);
+      } else {
+        // Range selection — DOM-walk preferred; fall back to layout math.
+        const overlay = pagesContainerRef.current?.parentElement?.querySelector(
+          '[data-testid="selection-overlay"]'
+        );
+        if (overlay && pagesContainerRef.current) {
+          const overlayRect = overlay.getBoundingClientRect();
+          const domRects = computeSelectionRectsFromDom(
+            pagesContainerRef.current,
+            overlayRect,
+            from,
+            to,
+            zoom
+          );
+          if (domRects.length > 0) {
+            setSelectionRects(domRects);
+          } else {
+            const firstPage = pagesContainerRef.current.querySelector('.layout-page');
+            if (firstPage) {
+              const pageRect = firstPage.getBoundingClientRect();
+              const pageOffsetX = (pageRect.left - overlayRect.left) / zoom;
+              const pageOffsetY = (pageRect.top - overlayRect.top) / zoom;
+              const rects = selectionToRects(layout, blocks, measures, from, to);
+              const adjustedRects = rects.map((rect) => ({
+                ...rect,
+                x: rect.x + pageOffsetX,
+                y: rect.y + pageOffsetY,
+              }));
+              setSelectionRects(adjustedRects);
+            } else {
+              setSelectionRects([]);
+            }
+          }
+        } else {
+          setSelectionRects([]);
+        }
+        setCaretPosition(null);
+      }
+    },
+    [layout, blocks, measures, zoom, onSelectionChangeRef, pagesContainerRef]
+  );
+
+  const handleSelectionChange = useCallback(
+    (state: EditorState) => {
+      const { selection } = state;
+      if (selection instanceof NodeSelection && selection.node.type.name === 'image') {
+        // Image NodeSelection suppresses text overlay so the image overlay is the
+        // only thing painted over the selection.
+        setSelectionRects([]);
+        setCaretPosition(null);
+      } else if (syncCoordinator.isSafeToRender()) {
+        // Skip overlay update when layout is pending — overlay would sit on
+        // stale DOM and the caret would visibly jump after layout commits.
+        updateSelectionOverlay(state);
+      }
+
+      // Defer image-selection check until after layout updates so PM positions
+      // resolve against painted DOM.
+      requestAnimationFrame(() => {
+        const view = hiddenPMRef.current?.getView();
+        if (!view) {
+          setSelectedImageInfo(null);
+          return;
+        }
+        const { selection: sel } = view.state;
+        if (sel instanceof NodeSelection && sel.node.type.name === 'image') {
+          const pmPos = sel.from;
+          const imgEl = pagesContainerRef.current
+            ? findBodyPmAnchor(pagesContainerRef.current, pmPos)
+            : null;
+          if (imgEl) {
+            setSelectedImageInfo(buildImageSelectionInfo(imgEl, pmPos));
+            return;
+          }
+        }
+        if (!isImageInteractingRef.current) {
+          setSelectedImageInfo(null);
+        }
+      });
+    },
+    [
+      updateSelectionOverlay,
+      buildImageSelectionInfo,
+      syncCoordinator,
+      hiddenPMRef,
+      isImageInteractingRef,
+      pagesContainerRef,
+    ]
+  );
+
+  // Re-compute selection overlay when the container resizes (window resize,
+  // scrollbar toggle, sidebar open/close). Page elements shift and caret
+  // coordinates become stale.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      const state = hiddenPMRef.current?.getState();
+      if (state) {
+        updateSelectionOverlay(state);
+      }
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [updateSelectionOverlay, containerRef, hiddenPMRef]);
+
+  // Update once layout is ready. handleEditorViewReady → runLayoutPipeline is
+  // async; this effect ensures the first overlay pass runs once `layout`
+  // populates.
+  useEffect(() => {
+    const state = hiddenPMRef.current?.getState();
+    if (layout && state) {
+      updateSelectionOverlay(state);
+    }
+  }, [layout, updateSelectionOverlay, hiddenPMRef]);
+
+  return {
+    selectionRects,
+    caretPosition,
+    selectedImageInfo,
+    setSelectionRects,
+    setCaretPosition,
+    setSelectedImageInfo,
+    buildImageSelectionInfo,
+    updateSelectionOverlay,
+    handleSelectionChange,
+  };
+}

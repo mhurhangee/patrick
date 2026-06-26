@@ -1,0 +1,26 @@
+@eigenpal/docx-editor — vendored into the Patrick monorepo
+
+This directory and its sibling packages (docx-editor-core, docx-editor-agents,
+docx-editor-react, docx-editor-i18n) are a vendored copy of the open-source
+@eigenpal/docx-editor project, version 1.9.0, licensed under Apache-2.0.
+
+Provenance
+----------
+- Original project:  github.com/eigenpal/docx-editor  (went offline 2026-06-26)
+- Recovered from:    github.com/sorenlouv/docx-editor  @ commit 66d74702
+                     ("chore: release (#955)", 2026-06-21 = the 1.9.0 release)
+- Upstream lineage:  github.com/DoctorSlimm/docx-js-editor (pre-1.0 root)
+- Original author:   Jedr Blaszyk <jedr@eigenpal.com>
+
+License
+-------
+Apache License 2.0. The full text is in the LICENSE file alongside this NOTICE.
+Patrick is also Apache-2.0 (compatible). This copy preserves the original
+copyright and license notices as required by Apache-2.0 §4.
+
+Modifications by the Patrick project
+------------------------------------
+- Folded the four consumed packages into the monorepo as workspace packages.
+- Removed the Vue and Nuxt bindings, examples, e2e suites, and the docs-site /
+  api-extractor / changesets tooling (Patrick consumes only the React surface).
+- Adjusted build scripts and tsconfig paths for the monorepo layout.
