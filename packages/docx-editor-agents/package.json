@@ -1,24 +1,9 @@
 {
   "name": "@eigenpal/docx-editor-agents",
   "version": "1.9.0",
-  "description": "Agent SDK and chat UI for the DOCX editor — framework-agnostic bridge, MCP server, AI SDK adapters, plus React UI",
-  "sideEffects": [
-    "*.css"
-  ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "description": "Agent SDK for the DOCX editor — docx tool schemas, the editor-bridge executor, AI SDK server adapter, and the headless DocxReviewer.",
+  "sideEffects": false,
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./bridge": {
-      "types": "./dist/bridge.d.ts",
-      "import": "./dist/bridge.mjs",
-      "require": "./dist/bridge.js"
-    },
     "./server": {
       "types": "./dist/server.d.ts",
       "import": "./dist/server.mjs",
@@ -29,41 +14,22 @@
       "import": "./dist/react.mjs",
       "require": "./dist/react.js"
     },
-    "./mcp": {
-      "types": "./dist/mcp.d.ts",
-      "import": "./dist/mcp.mjs",
-      "require": "./dist/mcp.js"
-    },
     "./ai-sdk/server": {
       "types": "./dist/ai-sdk/server.d.ts",
       "import": "./dist/ai-sdk/server.mjs",
       "require": "./dist/ai-sdk/server.js"
-    },
-    "./ai-sdk/react": {
-      "types": "./dist/ai-sdk/react.d.ts",
-      "import": "./dist/ai-sdk/react.mjs",
-      "require": "./dist/ai-sdk/react.js"
     }
   },
   "typesVersions": {
     "*": {
-      "bridge": [
-        "./dist/bridge.d.ts"
-      ],
       "server": [
         "./dist/server.d.ts"
       ],
       "react": [
         "./dist/react.d.ts"
       ],
-      "mcp": [
-        "./dist/mcp.d.ts"
-      ],
       "ai-sdk/server": [
         "./dist/ai-sdk/server.d.ts"
-      ],
-      "ai-sdk/react": [
-        "./dist/ai-sdk/react.d.ts"
       ]
     }
   },

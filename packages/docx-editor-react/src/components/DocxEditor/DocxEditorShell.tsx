@@ -13,11 +13,9 @@ import {
 } from '../DocumentOutline';
 import { OutlineToggleButton } from './OutlineToggleButton';
 import { PageIndicator } from './PageIndicator';
-import { LocalizedAgentPanel } from './LocalizedAgentPanel';
 import { SIDEBAR_DOCUMENT_SHIFT } from '../sidebar/constants';
 import { Z_INDEX } from '../../styles/zIndex';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
-import type { AgentPanelOptions } from './types';
 
 interface ScrollPageInfo {
   currentPage: number;
@@ -100,9 +98,6 @@ export function DocxEditorShell({
   outlineProps,
   onToggleOutline,
   scrollPageInfo,
-  agentPanel,
-  agentPanelOpen,
-  onAgentPanelClose,
   toolbar,
   pagedArea,
   overlays,
@@ -137,9 +132,6 @@ export function DocxEditorShell({
   outlineProps: OutlineProps;
   onToggleOutline: () => void;
   scrollPageInfo: ScrollPageInfo;
-  agentPanel: AgentPanelOptions | undefined;
-  agentPanelOpen: boolean;
-  onAgentPanelClose: () => void;
   toolbar: ReactNode;
   pagedArea: ReactNode;
   overlays: ReactNode;
@@ -285,17 +277,6 @@ export function DocxEditorShell({
                   />
                 )}
               </div>
-
-              {/* Agent panel (right-side dock) — always mounted when the prop
-                  is set so chat state survives close/reopen. `closed={!agentPanelOpen}`
-                  drives the slide / fade. */}
-              {agentPanel && (
-                <LocalizedAgentPanel
-                  agentPanel={agentPanel}
-                  closed={!agentPanelOpen}
-                  onClose={onAgentPanelClose}
-                />
-              )}
             </div>
 
             {overlays}

@@ -1,18 +1,14 @@
 import { defineConfig } from 'tsup';
 
-// Tsup builds the framework-agnostic + React entries. Vue SFCs are built by
-// `vite.config.ts` because tsup/esbuild can't compile `.vue` files. The
-// dedicated `tsconfig.tsup.json` excludes vue/* so the d.ts pass doesn't
-// trip on the SFC shim.
+// Tsup builds the three entries Patrick consumes: the headless `server`
+// (DocxReviewer + tool schemas), the `react` hook (useDocxAgentTools), and the
+// `ai-sdk/server` adapter (getAiSdkTools). `bridge.ts` is bundled into `react`
+// (not its own entry); the old root/mcp/ai-sdk-react entries were pruned.
 export default defineConfig({
   entry: {
-    index: 'src/index.ts',
-    bridge: 'src/bridge.ts',
     server: 'src/server.ts',
     react: 'src/react.ts',
-    mcp: 'src/mcp/index.ts',
     'ai-sdk/server': 'src/ai-sdk/server.ts',
-    'ai-sdk/react': 'src/ai-sdk/react.ts',
   },
   format: ['cjs', 'esm'],
   dts: { resolve: true },

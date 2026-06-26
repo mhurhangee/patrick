@@ -15,7 +15,6 @@ import type { Document, Theme } from '@eigenpal/docx-editor-core/types/document'
 
 import { cn } from '../lib/utils';
 import { type SelectionFormatting } from './Toolbar';
-import type { AgentPanelOptions } from './DocxEditor/types';
 import { useOutlineSidebar } from './DocxEditor/hooks/useOutlineSidebar';
 import { useKeyboardShortcuts } from './DocxEditor/hooks/useKeyboardShortcuts';
 import { useFileIO } from './DocxEditor/hooks/useFileIO';
@@ -307,22 +306,6 @@ export interface DocxEditorProps {
   renderTitleBarRight?: () => ReactNode;
   /** Translation overrides. Import a locale JSON file and pass it directly. */
   i18n?: Translations;
-  /**
-   * Mount a controllable agent panel on the right side of the editor. The
-   * panel is the chrome (header, close button, drag-resize); the consumer
-   * supplies whatever content goes inside via `render` — typically a chat
-   * UI from `@ai-sdk/react`'s `useChat`, `assistant-ui`, or any other
-   * framework. We do not ship message bubbles, a composer, or a chat engine.
-   *
-   * Three control patterns:
-   *  - **Uncontrolled**: `agentPanel={{ render }}` — toolbar button + panel
-   *    close button toggle the panel. Width persists to localStorage.
-   *  - **Controlled**: `agentPanel={{ render, open, onOpenChange }}` — the
-   *    consumer owns open state (e.g. tied to a global menu).
-   *  - **Headless**: omit `agentPanel`, use the toolkit directly via
-   *    `useDocxAgentTools` — render the panel anywhere you want.
-   */
-  agentPanel?: AgentPanelOptions;
 }
 
 /**
@@ -652,7 +635,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     documentNameEditable = true,
     renderTitleBarRight,
     i18n,
-    agentPanel,
   },
   ref
 ) {
@@ -767,22 +749,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   };
   // 'viewing' mode acts as read-only
   const readOnly = readOnlyProp || editingMode === 'viewing';
-
-  // Agent panel open state (uncontrolled fallback when `agentPanel.open` is undefined).
-  const [agentPanelInternalOpen, setAgentPanelInternalOpen] = useState(false);
-  const isAgentPanelControlled = agentPanel?.open !== undefined;
-  const agentPanelOpen = !agentPanel
-    ? false
-    : isAgentPanelControlled
-      ? !!agentPanel.open
-      : agentPanelInternalOpen;
-  const setAgentPanelOpen = useCallback(
-    (next: boolean) => {
-      agentPanel?.onOpenChange?.(next);
-      if (!isAgentPanelControlled) setAgentPanelInternalOpen(next);
-    },
-    [agentPanel, isAgentPanelControlled]
-  );
 
   // Bridge / agent event subscribers — fan-out from the existing onChange and
   // onSelectionChange paths so multiple listeners (host app, MCP server, etc.)
@@ -1777,15 +1743,10 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       }}
       onToggleOutline={handleToggleOutline}
       scrollPageInfo={scrollPageInfo}
-      agentPanel={agentPanel}
-      agentPanelOpen={agentPanelOpen}
-      onAgentPanelClose={() => setAgentPanelOpen(false)}
       toolbar={
         showToolbar && !readOnlyProp ? (
           <DocxEditorToolbar
             toolbarRefCallback={toolbarRefCallback}
-            agentPanelOpen={agentPanelOpen}
-            setAgentPanelOpen={setAgentPanelOpen}
             document={history.state}
             theme={theme}
             pmState={pmState}
@@ -1798,7 +1759,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             setShowCommentsSidebar={setShowCommentsSidebar}
             setExpandedSidebarItem={setExpandedSidebarItem}
             showCommentsSidebar={showCommentsSidebar}
-            agentPanel={agentPanel}
             renderLogo={renderLogo}
             documentName={documentName}
             onDocumentNameChange={onDocumentNameChange}

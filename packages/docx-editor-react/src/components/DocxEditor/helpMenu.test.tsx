@@ -19,8 +19,6 @@ function renderToolbar({ showHelpMenu }: { showHelpMenu: boolean }) {
   return render(
     <DocxEditorToolbar
       toolbarRefCallback={noop}
-      agentPanelOpen={false}
-      setAgentPanelOpen={noop}
       document={null}
       theme={null}
       pmState={null}
@@ -33,7 +31,6 @@ function renderToolbar({ showHelpMenu }: { showHelpMenu: boolean }) {
       setShowCommentsSidebar={noop}
       setExpandedSidebarItem={noop}
       showCommentsSidebar={false}
-      agentPanel={undefined}
       renderLogo={undefined}
       documentName={undefined}
       onDocumentNameChange={undefined}
