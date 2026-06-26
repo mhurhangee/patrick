@@ -1,5 +1,5 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGoogle } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import {
 	type AiEffort,
@@ -35,8 +35,7 @@ export function createModel(
 	if (provider === "gateway") return createGateway({ apiKey: key })(modelId);
 	const bare = stripVendor(modelId);
 	if (provider === "openai") return createOpenAI({ apiKey: key })(bare);
-	if (provider === "google")
-		return createGoogleGenerativeAI({ apiKey: key })(bare);
+	if (provider === "google") return createGoogle({ apiKey: key })(bare);
 	return createAnthropic({ apiKey: key })(bare);
 }
 

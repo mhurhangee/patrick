@@ -61,7 +61,7 @@ export async function parseClaimSpine(
 	const { output } = await generateText({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
 		output: Output.object({ schema }),
-		system,
+		instructions: system,
 		messages: [
 			{
 				role: "user",

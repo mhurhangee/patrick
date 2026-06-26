@@ -23,7 +23,7 @@ import {
 	resolveCitation,
 	tableOfContents,
 } from "@patrick/law";
-import { generateText, Output, stepCountIs, type ToolSet, tool } from "ai";
+import { generateText, isStepCount, Output, type ToolSet, tool } from "ai";
 import { z } from "zod";
 import { modelFor, modelId } from "./models";
 import type { Contract, Item, SystemUnderTest } from "./types";
@@ -219,13 +219,13 @@ export function localRunner(opts: {
 
 			const reasoning = await generateText({
 				model,
-				system: SYSTEM,
+				instructions: SYSTEM,
 				prompt: task(item),
 				tools,
 				// Headroom for a few find_law → ep_law_lookup rounds before answering
 				// (find_law alone can return 8 sections). Too low and a well-grounded
 				// item hits the cap mid-retrieval, ending on a tool call.
-				stopWhen: stepCountIs(16),
+				stopWhen: isStepCount(16),
 			});
 			usage.input += reasoning.usage?.inputTokens ?? 0;
 			usage.output += reasoning.usage?.outputTokens ?? 0;

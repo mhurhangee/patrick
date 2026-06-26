@@ -89,7 +89,7 @@ async function main(): Promise<void> {
 					const { output, usage } = await generateText({
 						model,
 						output: Output.object({ schema: proposedPairSchema }),
-						system: GENERATOR_SYSTEM,
+						instructions: GENERATOR_SYSTEM,
 						prompt: generatorInput(set, framing, d),
 					});
 					tokens += usage?.totalTokens ?? 0;

@@ -130,7 +130,7 @@ export async function readReference(
 	const { output } = await generateText({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
 		output: Output.object({ schema }),
-		system,
+		instructions: system,
 		messages: [
 			content,
 			{

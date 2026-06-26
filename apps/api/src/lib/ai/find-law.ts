@@ -49,6 +49,9 @@ export function createFindLaw(ai: AiConfig) {
 			try {
 				const result = await generateText({
 					model: createModel(ai.provider, ai.apiKey, ai.modelId),
+					// v7 moves system prompts to top-level `instructions`; keep this one
+					// as a message so it can carry `cacheControl` on the big static TOC.
+					allowSystemInMessages: true,
 					messages: [
 						{
 							role: "system",
