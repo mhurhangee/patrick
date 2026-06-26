@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // dedupe). Chromeless at rest so it reads as plain text; hover hints it's
 // editable; focus shows the field. Always the same element → no layout shift.
 const FIELD =
-	"w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground hover:border-input focus-visible:border-ring focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring/30";
+	"w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 hover:border-input focus-visible:border-ring focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring/30";
 
 /**
  * Seamless edit-in-place text. Commits on blur; Enter commits (single-line),
