@@ -5,7 +5,8 @@
 	"type": "module",
 	"exports": {
 		"./components/*": "./src/components/*.tsx",
-		"./lib/*": "./src/lib/*.ts"
+		"./lib/*": "./src/lib/*.ts",
+		"./theme.css": "./src/theme.css"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"
