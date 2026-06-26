@@ -16,6 +16,7 @@ apps/
   site/       Next.js marketing + docs site (apps.patrick…) — alpha messaging, download, an own-MDX docs system
 packages/
   shared/     types, model catalog, prompt token catalog, in-app docs (generated) — imported by frontend + api
+  ui/          @patrick/ui — the shared design system: shadcn primitives (`components/*`) + cn + the stone/emerald tokens (`src/theme.css`), consumed by frontend + site (source-only)
   law/         @patrick/law — the EP law dataset + retrieval: EPC, EPO Guidelines, PCT-EPO Guidelines, Case Law of the Boards. Verbatim recall + find-the-law search source
   benchmarking/ a standalone grounding benchmark (the dev runs it himself — see the benchmarking memories)
   docx-editor-core/    @eigenpal/docx-editor-core — vendored: the framework-agnostic engine (docx parse/serialize, ProseMirror, tracked changes, the agent DocumentAgent + core-plugins)
@@ -139,7 +140,7 @@ Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
   - The full branch→PR→merge-commit→release standard is in `CONTRIBUTING.md`.
 - **Review before merging:** run **`/code-review`** on a feature branch's diff before merging it — fresh eyes catch the author's blind spots that re-reading your own code won't. Use a thorough pass (high effort) for anything substantial; `ultra` is the deep multi-agent cloud review the dev triggers. Proactively suggest it at merge points and other meaningful milestones, then triage the findings together before merging. **Lead with confirmed correctness bugs; weigh efficiency/cleanup/altitude findings on their merits, and verify any finding against the actual code before acting on it.**
 - MVP/startup mode: working > perfect, simple > clever; let it crash by default (catch only at real boundaries). Ask before structural/dependency/schema changes.
-- **Build UI from shadcn/radix primitives** (Button, Dialog, Sheet, DropdownMenu, Empty…) — never hand-roll equivalents with raw divs + state; they drift and miss focus/scroll/a11y. If a primitive isn't installed, add it (`pnpm dlx shadcn@latest add <x>`) rather than routing around it.
+- **Build UI from shadcn/radix primitives** (Button, Dialog, Sheet, DropdownMenu, Empty…) — never hand-roll equivalents with raw divs + state; they drift and miss focus/scroll/a11y. The primitives live in **`@patrick/ui`** (the shared design system) — import from `@patrick/ui/components/<name>`; the stone/emerald tokens are in `packages/ui/src/theme.css` (edit the palette there, not per-app). If a primitive isn't installed, add it to `packages/ui` rather than routing around it. A consuming app's CSS needs a relative `@import` of `theme.css` + `@source "…/packages/ui/src"` (Tailwind v4 only scans the app's own tree).
 
 ## Running
 
