@@ -11,3 +11,7 @@ allowBuilds:
   # esbuild's postinstall installs its platform binary; pulled in by tsup (the
   # vendored editor build). A fresh CI install errors if it's not listed.
   esbuild: true
+minimumReleaseAgeExclude:
+  - '@ai-sdk/gateway@4.0.2'
+  - '@ai-sdk/react@4.0.2'
+  - ai@7.0.2

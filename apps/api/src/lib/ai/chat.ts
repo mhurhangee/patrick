@@ -14,8 +14,8 @@ import {
 } from "@patrick/shared";
 import {
 	convertToModelMessages,
+	isStepCount,
 	type ModelMessage,
-	stepCountIs,
 	streamText,
 	tool,
 	type UIMessage,
@@ -552,10 +552,10 @@ export async function handleChat(c: Context) {
 
 	const result = streamText({
 		model,
-		system,
+		instructions: system,
 		messages,
 		tools,
-		stopWhen: stepCountIs(20),
+		stopWhen: isStepCount(20),
 		providerOptions,
 	});
 
@@ -578,7 +578,7 @@ export async function handleChat(c: Context) {
 		// `messages` is only the response side — the user message + prior history
 		// live in body.messages (the client re-sends the full conversation each
 		// request). Merge them by id so the saved chat is the whole conversation.
-		onFinish: async ({ responseMessage }) => {
+		onEnd: async ({ responseMessage }) => {
 			if (!body.chatId) return;
 			const byId = new Map<string, UIMessage>();
 			for (const m of body.messages) byId.set(m.id, m);

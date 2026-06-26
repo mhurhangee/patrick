@@ -41,7 +41,7 @@ export async function generateDocumentLabel(
 	const { output } = await generateText({
 		model: createModel(ai.provider, ai.apiKey, ai.model),
 		output: Output.object({ schema }),
-		system: SYSTEM,
+		instructions: SYSTEM,
 		messages: [content],
 	});
 

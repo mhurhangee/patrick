@@ -10,7 +10,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
-import { createGateway, generateText, stepCountIs } from "ai";
+import { createGateway, generateText, isStepCount } from "ai";
 
 // Informational only — we don't filter on these, just mark them so we can see the
 // official-vs-commentary spread each provider returns under a soft prompt.
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
 					model: gateway(m.modelId),
 					prompt: scope(question),
 					tools: { [m.toolKey]: m.tool },
-					stopWhen: stepCountIs(5),
+					stopWhen: isStepCount(5),
 					abortSignal: AbortSignal.timeout(60_000),
 				});
 				const queries = queriesOf(

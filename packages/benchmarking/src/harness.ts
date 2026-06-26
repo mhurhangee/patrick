@@ -26,7 +26,7 @@ export async function proposeOne(
 	const { output, usage } = await generateText({
 		model,
 		output: Output.object({ schema: proposedPairSchema }),
-		system: GENERATOR_SYSTEM,
+		instructions: GENERATOR_SYSTEM,
 		prompt: generatorInput(set, framing, distortion),
 	});
 	return {
@@ -62,7 +62,7 @@ export async function judgeOne(
 	const { output, usage } = await generateText({
 		model,
 		output: Output.object({ schema: judgeResultSchema }),
-		system: JUDGE_SYSTEM,
+		instructions: JUDGE_SYSTEM,
 		prompt: judgeInput(set, pair.scenario, aText, bText),
 	});
 	return {

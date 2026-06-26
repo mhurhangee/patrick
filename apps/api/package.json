@@ -10,13 +10,13 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^3.0.86",
-		"@ai-sdk/google": "^3.0.83",
-		"@ai-sdk/openai": "^3.0.74",
+		"@ai-sdk/anthropic": "^4.0.0",
+		"@ai-sdk/google": "^4.0.0",
+		"@ai-sdk/openai": "^4.0.0",
 		"@eigenpal/docx-editor-agents": "workspace:*",
 		"@patrick/law": "workspace:*",
 		"@patrick/shared": "workspace:*",
-		"ai": "^6.0.209",
+		"ai": "^7.0.2",
 		"hono": "^4.12.27",
 		"jszip": "^3.10.1",
 		"node-html-parser": "^8.0.3",
