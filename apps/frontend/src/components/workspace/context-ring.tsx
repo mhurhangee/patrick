@@ -1,3 +1,10 @@
+import { Button } from "@patrick/ui/components/button";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@patrick/ui/components/popover";
+import { InfoTooltip } from "@patrick/ui/components/tooltip";
 import {
 	ArrowUpRight,
 	Brain,
@@ -8,13 +15,6 @@ import {
 	Pencil,
 	X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { InfoTooltip } from "@/components/ui/tooltip";
 import { formatTokens } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DocKind } from "@/lib/workspace";

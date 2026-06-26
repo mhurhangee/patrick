@@ -1,4 +1,12 @@
 import type { ChatSummary } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@patrick/ui/components/dropdown-menu";
 import { useNavigate } from "@tanstack/react-router";
 import {
 	MessageSquare,
@@ -10,14 +18,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useChats, useDeleteChat, useUpdateChatMeta } from "@/hooks/use-chats";
 import { useActiveChat } from "@/lib/active-chat";
 import { useActiveTask } from "@/lib/active-task";

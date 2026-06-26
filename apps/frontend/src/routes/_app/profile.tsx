@@ -1,6 +1,6 @@
+import { Skeleton } from "@patrick/ui/components/skeleton";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ProfileForm } from "@/components/profile/profile-form";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SurfaceScaffold } from "@/components/workspace/surface-scaffold";
 import {
 	useDeleteProfile,

@@ -1,6 +1,6 @@
+import { Skeleton } from "@patrick/ui/components/skeleton";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { TaskForm } from "@/components/task/task-form";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SurfaceScaffold } from "@/components/workspace/surface-scaffold";
 import { useDeleteTask, useTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";

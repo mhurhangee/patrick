@@ -1,11 +1,11 @@
 import { type Document, docKind } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import { Skeleton } from "@patrick/ui/components/skeleton";
 import { EyeOff, Star } from "lucide-react";
 import { useState } from "react";
 import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
 import { SaveStatus } from "@/components/save-status";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useSaveDocuments, useTaskDocuments } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";

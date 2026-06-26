@@ -1,13 +1,13 @@
 "use client";
 
-import { Check, ChevronDown, Copy, FileText, SquarePen } from "lucide-react";
-import { useState } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@patrick/ui/components/dropdown-menu";
+import { Check, ChevronDown, Copy, FileText, SquarePen } from "lucide-react";
+import { useState } from "react";
 
 // Split button (à la Linear): "Copy page" exposed, with the rest behind a
 // chevron — copy / view raw markdown / edit on GitHub.

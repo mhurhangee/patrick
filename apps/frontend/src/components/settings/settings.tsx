@@ -1,8 +1,8 @@
+import { Button } from "@patrick/ui/components/button";
+import { Input } from "@patrick/ui/components/input";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { SaveStatus } from "@/components/save-status";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { SaveState } from "@/hooks/use-autosave";
 import { cn } from "@/lib/utils";
 

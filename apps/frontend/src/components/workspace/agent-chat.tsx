@@ -14,6 +14,7 @@ import {
 	toStoredMessage,
 	upsertBlock,
 } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -37,7 +38,6 @@ import { BASE_URL } from "@/api/client";
 import { tasksApi } from "@/api/tasks";
 import { ModelPicker } from "@/components/model-picker";
 import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
 import { useRefreshChats, useStoredChat } from "@/hooks/use-chats";
 import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { useLawProvisions } from "@/hooks/use-law";

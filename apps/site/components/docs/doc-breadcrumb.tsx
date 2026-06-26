@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Fragment } from "react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -7,7 +5,9 @@ import {
 	BreadcrumbList,
 	BreadcrumbPage,
 	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from "@patrick/ui/components/breadcrumb";
+import Link from "next/link";
+import { Fragment } from "react";
 import { getBreadcrumb } from "@/lib/docs";
 
 // Docs › Section › Page. Sections aren't pages, so only "Docs" is a link.

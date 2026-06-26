@@ -1,8 +1,8 @@
 import type { OpsSettings } from "@patrick/shared";
+import { Field, FieldGroup, FieldLabel } from "@patrick/ui/components/field";
 import { useState } from "react";
 import { KeyStatusDot } from "@/components/key-status-dot";
 import { SecretInput } from "@/components/secret-input";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { type KeyStatus, keyStatusOf } from "@/hooks/use-key-verification";
 import { useOpsVerification } from "@/hooks/use-ops-verification";

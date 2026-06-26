@@ -21,9 +21,9 @@ const config: KnipConfig = {
 				"src/routes/**/*.tsx",
 				// Ambient declaration for the Vite-injected __APP_VERSION__ global.
 				"src/globals.d.ts",
-				// shadcn registry + foundational lib are library surfaces — treat as
-				// roots so their (as-yet-unused) exports/deps aren't false-flagged.
-				"src/components/ui/**/*.{ts,tsx}",
+				// Foundational lib surfaces — treat as roots so their (as-yet-unused)
+				// exports/deps aren't false-flagged. (shadcn primitives now live in
+				// @patrick/ui.)
 				"src/components/theme-provider.tsx",
 				"src/lib/utils.ts",
 			],
@@ -42,12 +42,9 @@ const config: KnipConfig = {
 		},
 		"apps/site": {
 			// Next.js app router (app/ at the package root, not src/). The Next plugin
-			// adds the app/ + next.config entries; we add the shadcn library surfaces.
-			entry: [
-				"components/ui/**/*.{ts,tsx}",
-				"components/theme-provider.tsx",
-				"lib/utils.ts",
-			],
+			// adds the app/ + next.config entries; we add the foundational surfaces.
+			// (shadcn primitives now live in @patrick/ui.)
+			entry: ["components/theme-provider.tsx", "lib/utils.ts"],
 			project: [
 				"app/**/*.{ts,tsx}",
 				"components/**/*.{ts,tsx}",
@@ -62,6 +59,12 @@ const config: KnipConfig = {
 		},
 		"packages/shared": {
 			project: ["src/**/*.ts"],
+		},
+		// Shared shadcn/design-system surface — its exported components + cn are
+		// the library API (consumed by the apps), so treat them as entries.
+		"packages/ui": {
+			entry: ["src/components/*.tsx", "src/lib/*.ts"],
+			project: ["src/**/*.{ts,tsx}"],
 		},
 	},
 };

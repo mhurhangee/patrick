@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Generate utilities for the shared design-system components (Tailwind v4 only
+   scans the app's own tree by default). */
+@source "../../../packages/ui/src";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

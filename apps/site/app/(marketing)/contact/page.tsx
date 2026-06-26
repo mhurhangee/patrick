@@ -1,5 +1,5 @@
+import { Button } from "@patrick/ui/components/button";
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { CONTACT_EMAIL, ISSUES_URL } from "@/lib/links";
 

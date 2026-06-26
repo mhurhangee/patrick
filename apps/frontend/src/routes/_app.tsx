@@ -1,12 +1,12 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { AppSidebar } from "@/components/shell/app-sidebar";
-import { useTheme } from "@/components/theme-provider";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
-} from "@/components/ui/resizable";
+} from "@patrick/ui/components/resizable";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { AppSidebar } from "@/components/shell/app-sidebar";
+import { useTheme } from "@/components/theme-provider";
 import { AgentChat } from "@/components/workspace/agent-chat";
 import { useProfile } from "@/hooks/use-profiles";
 import { ActiveEditorProvider } from "@/lib/active-editor";

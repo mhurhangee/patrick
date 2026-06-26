@@ -3,7 +3,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+} from "@patrick/ui/components/dropdown-menu";
 
 // The "start from a template" choices, shared by the profile switcher and the
 // welcome empty state so the create-a-profile menu lives in one place. Render

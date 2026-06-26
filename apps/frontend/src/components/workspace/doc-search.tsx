@@ -1,4 +1,6 @@
 import { docKind } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import { Input } from "@patrick/ui/components/input";
 import {
 	ChevronDown,
 	ChevronUp,
@@ -8,8 +10,6 @@ import {
 	X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useExtractText, useTaskDocuments } from "@/hooks/use-tasks";
 import {
 	type DocIndex,

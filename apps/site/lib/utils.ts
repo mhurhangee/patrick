@@ -1,6 +1,3 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
-}
+// cn lives in the shared design-system package; re-exported here so the app's
+// `@/lib/utils` importers stay unchanged.
+export { cn } from "@patrick/ui/lib/utils";

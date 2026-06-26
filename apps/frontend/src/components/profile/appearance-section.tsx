@@ -1,14 +1,14 @@
 import type { Appearance, ThemeMode } from "@patrick/shared";
-import { Check } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	Field,
 	FieldDescription,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { InfoTooltip } from "@/components/ui/tooltip";
+} from "@patrick/ui/components/field";
+import { InfoTooltip } from "@patrick/ui/components/tooltip";
+import { Check } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 import { applyColour, applyScale, COLOUR_THEMES } from "@/lib/appearance";
 import { cn } from "@/lib/utils";
 

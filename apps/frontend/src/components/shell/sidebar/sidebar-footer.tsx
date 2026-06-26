@@ -1,8 +1,4 @@
-import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronsUpDown, Plus, Settings2 } from "lucide-react";
-import { KeyStatusDot, keyStatusLabel } from "@/components/key-status-dot";
-import { ProfileTemplateItems } from "@/components/profile/profile-template-items";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -13,7 +9,11 @@ import {
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@patrick/ui/components/dropdown-menu";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Check, ChevronsUpDown, Plus, Settings2 } from "lucide-react";
+import { KeyStatusDot, keyStatusLabel } from "@/components/key-status-dot";
+import { ProfileTemplateItems } from "@/components/profile/profile-template-items";
 import { useNewProfile } from "@/hooks/use-create-flows";
 import { keyStatusOf, useKeyVerification } from "@/hooks/use-key-verification";
 import { useProfile, useProfiles } from "@/hooks/use-profiles";

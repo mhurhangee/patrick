@@ -1,5 +1,5 @@
+import { Button } from "@patrick/ui/components/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useLayout } from "@/lib/layout";
 import { cn } from "@/lib/utils";
 

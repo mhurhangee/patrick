@@ -1,5 +1,5 @@
+import { Button } from "@patrick/ui/components/button";
 import { Plus } from "lucide-react";
-import { Button } from "../ui/button";
 import { PatrickMenu } from "./patrick-menu";
 
 // The chat header: Patrick's identity + a new-chat button, plus the warning when

@@ -1,12 +1,12 @@
-import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	Empty,
 	EmptyContent,
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
-} from "@/components/ui/empty";
+} from "@patrick/ui/components/empty";
+import { Patrick } from "@/components/patrick";
 import type { WorkspaceDoc } from "@/lib/workspace";
 
 // What Patrick offers when a chat is empty, tailored to the open surface and the

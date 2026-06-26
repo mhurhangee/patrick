@@ -1,4 +1,17 @@
 import { type Document, docKind } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@patrick/ui/components/dropdown-menu";
+import { Skeleton } from "@patrick/ui/components/skeleton";
+import { InfoTooltip } from "@patrick/ui/components/tooltip";
 import { useNavigate } from "@tanstack/react-router";
 import {
 	Copy,
@@ -21,19 +34,6 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DocIcon } from "@/components/doc-icon";
 import { InlineEdit } from "@/components/inline-edit";
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { InfoTooltip } from "@/components/ui/tooltip";
 import {
 	useCreateDocument,
 	useDeleteDocument,

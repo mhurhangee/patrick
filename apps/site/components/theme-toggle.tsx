@@ -1,9 +1,9 @@
 "use client";
 
+import { Button } from "@patrick/ui/components/button";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 
 // Footer toggle so visitors can find dark mode (the `d` shortcut works too).
 // Gated on mount so the icon doesn't mismatch between server + client.

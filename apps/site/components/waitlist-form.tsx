@@ -1,7 +1,7 @@
 "use client";
 
+import { Button } from "@patrick/ui/components/button";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 
 // v1.0 waitlist — posts the email straight to Formspree (no backend of our own,
 // in keeping with "no servers"). Dependency-free: a plain fetch to the endpoint.

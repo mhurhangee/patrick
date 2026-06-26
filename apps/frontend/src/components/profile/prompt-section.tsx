@@ -1,17 +1,17 @@
 import { DEFAULT_AGENTPAT_PROMPT, PROFILE_TEMPLATES } from "@patrick/shared";
-import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	Field,
 	FieldDescription,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
+} from "@patrick/ui/components/field";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@patrick/ui/components/popover";
+import { ChevronDown } from "lucide-react";
 import { PromptBuilder } from "./prompt-builder";
 
 export function PromptSection({

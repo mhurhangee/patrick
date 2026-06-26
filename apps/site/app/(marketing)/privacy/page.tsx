@@ -1,6 +1,6 @@
+import { Button } from "@patrick/ui/components/button";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
 	title: "Privacy",

@@ -1,4 +1,6 @@
 import { type ExtractedWord, estimatePdfTokens } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import { InfoTooltip } from "@patrick/ui/components/tooltip";
 import { Minus, Plus } from "lucide-react";
 import {
 	GlobalWorkerOptions,
@@ -17,8 +19,6 @@ import {
 } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
-import { InfoTooltip } from "@/components/ui/tooltip";
 import { DocSearchLayout } from "@/components/workspace/doc-search-layout";
 import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";

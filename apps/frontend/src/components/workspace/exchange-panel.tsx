@@ -1,4 +1,10 @@
 import type { PinnedSource } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@patrick/ui/components/tooltip";
 import {
 	Check,
 	ChevronDown,
@@ -11,12 +17,6 @@ import {
 	RotateCcw,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { formatTokens } from "@/lib/format";
 
 export type ExchangePanelData = {

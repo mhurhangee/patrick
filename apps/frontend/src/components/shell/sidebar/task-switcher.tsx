@@ -1,7 +1,5 @@
 import { taskDisplayName } from "@patrick/shared";
-import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronsUpDown, FolderOpen, Settings2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -9,8 +7,10 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@patrick/ui/components/dropdown-menu";
+import { Skeleton } from "@patrick/ui/components/skeleton";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Check, ChevronsUpDown, FolderOpen, Settings2 } from "lucide-react";
 import { useNewTask } from "@/hooks/use-create-flows";
 import { useTask, useTasks } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";

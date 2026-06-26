@@ -1,4 +1,5 @@
 import type { FindLawResult, LookupResult } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
 import {
 	type DynamicToolUIPart,
 	getToolName,
@@ -19,7 +20,6 @@ import {
 import { type ReactNode, useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
 import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
 import { useActiveTask } from "@/lib/active-task";
 import { indexKey, onIndexProgress } from "@/lib/search/doc-index";
 import { cn } from "@/lib/utils";

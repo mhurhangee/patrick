@@ -4,6 +4,10 @@
 @import "@fontsource-variable/hanken-grotesk";
 @import "streamdown/styles.css";
 
+/* Generate utilities for the shared design-system components (Tailwind v4 only
+   scans the app's own tree by default). */
+@source "../../../packages/ui/src";
+
 @custom-variant dark (&:is(.dark *));
 
 /* radix data-state variants, no-scrollbar utility, accordion keyframes */

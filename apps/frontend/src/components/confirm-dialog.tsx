@@ -7,7 +7,7 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@patrick/ui/components/alert-dialog";
 
 // A destructive confirm — the accept/cancel dialog shared by the sidebar
 // delete actions (documents, chats). Title + description are the only things

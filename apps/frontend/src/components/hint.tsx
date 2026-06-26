@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
 import {
 	Item,
 	ItemContent,
 	ItemDescription,
 	ItemMedia,
 	ItemTitle,
-} from "@/components/ui/item";
+} from "@patrick/ui/components/item";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Patrick } from "./patrick";
 
