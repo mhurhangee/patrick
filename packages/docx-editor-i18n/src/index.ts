@@ -25,100 +25,40 @@
  * @public
  */
 
-// ─── GENERATED START — `bun run i18n:codegen` ───
-// DO NOT EDIT — this block is rewritten from the on-disk
-// `packages/i18n/*.json` filenames whenever `bun run i18n:codegen`
-// runs (and `bun run i18n:new <lang>` runs it automatically).
-// `bun run i18n:validate` fails CI if hand-edits drift from the
-// JSON files. Edit the JSON, not this block.
+// English-only. Patrick ships English; the community locales (de/fr/he/hi/id/
+// pl/pt-BR/tr/zh-CN) and the i18n codegen/validate tooling were removed in the
+// lean pass. The `Translations` prop still accepts a partial override at runtime
+// if a host ever wants to localise.
 
 import enJson from '../en.json';
-import deJson from '../de.json';
-import frJson from '../fr.json';
-import heJson from '../he.json';
-import hiJson from '../hi.json';
-import idJson from '../id.json';
-import plJson from '../pl.json';
-import ptBRJson from '../pt-BR.json';
-import trJson from '../tr.json';
-import zhCNJson from '../zh-CN.json';
 
 /**
- * Full locale string set, auto-derived from `en.json` (the source of truth).
- * Every other locale is a `PartialLocaleStrings` against this shape.
+ * Full locale string set, derived from `en.json` (the source of truth).
+ * A runtime override is a `PartialLocaleStrings` against this shape.
  *
  * @public
  */
 export type LocaleStrings = typeof enJson;
 
 /**
- * Every locale code shipped from this package. Pass to `locales[code]`
- * for runtime lookup; assign to `_lang` to drive `Intl.PluralRules`.
- *
- * Custom codes are accepted at runtime ({@link PartialLocaleStrings._lang}
- * widens to any string), but the shipped union is the IDE-completion list.
+ * Every locale code shipped from this package. Custom codes are accepted at
+ * runtime ({@link PartialLocaleStrings._lang} widens to any string).
  *
  * @public
  */
-export type LocaleCode = 'en' | 'de' | 'fr' | 'he' | 'hi' | 'id' | 'pl' | 'pt-BR' | 'tr' | 'zh-CN';
+export type LocaleCode = 'en';
 
 /** English (`en`) — the source of truth, 100% covered. @public */
 export const en: LocaleStrings = enJson;
 
-/** German (`de`). Community-maintained; null leaves fall back to English. @public */
-export const de: PartialLocaleStrings = deJson;
-
-/** French (`fr`). Community-maintained; null leaves fall back to English. @public */
-export const fr: PartialLocaleStrings = frJson;
-
-/** Hebrew (`he`). Community-maintained; null leaves fall back to English. @public */
-export const he: PartialLocaleStrings = heJson;
-
-/** Hindi (`hi`). Community-maintained; null leaves fall back to English. @public */
-export const hi: PartialLocaleStrings = hiJson;
-
-/** Indonesian (`id`). Community-maintained; null leaves fall back to English. @public */
-export const id: PartialLocaleStrings = idJson;
-
-/** Polish (`pl`). Community-maintained; null leaves fall back to English. @public */
-export const pl: PartialLocaleStrings = plJson;
-
-/** Portuguese (Brazil) (`pt-BR`). Community-maintained; null leaves fall back to English. @public */
-export const ptBR: PartialLocaleStrings = ptBRJson;
-
-/** Turkish (`tr`). Community-maintained; null leaves fall back to English. @public */
-export const tr: PartialLocaleStrings = trJson;
-
-/** Simplified Chinese (`zh-CN`). Community-maintained; null leaves fall back to English. @public */
-export const zhCN: PartialLocaleStrings = zhCNJson;
-
 /**
- * Every shipped locale, keyed by BCP-47 tag. Use for runtime locale
- * pickers and "look up the locale matching this user preference" code:
- *
- * ```ts
- * <DocxEditor i18n={locales[userLocale]} />
- * ```
- *
- * Importing `locales` defeats the per-locale tree-shake — the bundler
- * sees a static reference to every locale. If you only need one or two,
- * import them by name (`import { en, de } from '...'`) instead.
+ * Every shipped locale, keyed by BCP-47 tag.
  *
  * @public
  */
 export const locales: Record<LocaleCode, PartialLocaleStrings> = {
   en,
-  de,
-  fr,
-  he,
-  hi,
-  id,
-  pl,
-  'pt-BR': ptBR,
-  tr,
-  'zh-CN': zhCN,
 };
-// ─── GENERATED END ───
 
 /**
  * Recursive Partial that allows `null` at leaves to signal "not yet
