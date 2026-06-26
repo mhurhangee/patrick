@@ -42,7 +42,7 @@ export function SidebarFooter() {
 	const dotTitle = keyStatusLabel(status, hasKey);
 
 	return (
-		<div className="p-2">
+		<div>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<Button

@@ -22,6 +22,7 @@ import { embedQuery } from "@/lib/search/embed";
 import { findOccurrences, type Occurrence } from "@/lib/search/exact";
 import { hybridRank, type SearchHit } from "@/lib/search/search";
 import { cn } from "@/lib/utils";
+import { Patrick } from "../patrick";
 
 type Status = "loading" | "no-text" | "ready" | "error";
 type Mode = "semantic" | "exact";
@@ -356,10 +357,18 @@ export function DocSearchPanel({
 				<div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
 					<ScanText className="size-8 text-muted-foreground/40" />
 					<p className="text-muted-foreground text-xs">
-						This PDF has no extracted text yet. Extract it to search — scanned
+						This PDF has no searchable text yet. Extract it to search — scanned
 						pages are OCR'd on your device.
 					</p>
-					<Button size="sm" onClick={onExtract} disabled={extract.isPending}>
+					<Button
+						size="sm"
+						onClick={onExtract}
+						disabled={extract.isPending}
+						variant={!extract.isPending ? "default" : "secondary"}
+					>
+						{extract.isPending ? (
+							<Patrick variant="scanning" size={14} />
+						) : null}
 						{extract.isPending
 							? `Extracting…${extractProgress ? ` ${extractProgress.done}/${extractProgress.total}` : ""}`
 							: "Extract text"}

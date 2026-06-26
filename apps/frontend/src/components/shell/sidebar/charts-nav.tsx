@@ -47,12 +47,12 @@ export function ChartsNav() {
 
 	return (
 		<Section
-			label="Charts"
+			label="Analyses"
 			action={
 				<Button
 					variant="ghost"
 					size="icon-xxs"
-					tooltip="New claim chart"
+					tooltip="New analysis"
 					onClick={createNew}
 					className="text-muted-foreground/70"
 				>
@@ -62,7 +62,7 @@ export function ChartsNav() {
 		>
 			{charts?.length === 0 && (
 				<p className="px-2 py-1 text-xs text-muted-foreground">
-					No charts yet. Start a claim chart with the + above.
+					No analyses yet. Start one with the + above.
 				</p>
 			)}
 			{charts?.map((chart) => (
@@ -113,7 +113,7 @@ function ChartRow({
 					{renaming ? (
 						<RowRenameField
 							value={chart.title}
-							placeholder="Chart title…"
+							placeholder="Analysis title…"
 							onCommit={(t) => {
 								setRenaming(false);
 								onRename(t);
@@ -148,7 +148,7 @@ function ChartRow({
 			<ConfirmDialog
 				open={confirmDelete}
 				onOpenChange={setConfirmDelete}
-				title="Delete this chart?"
+				title="Delete this analysis?"
 				description="This permanently removes the analysis. This can't be undone."
 				onConfirm={onDelete}
 			/>

@@ -357,20 +357,19 @@ function ChartTable({ chart }: { chart: Chart }) {
 		<div className="flex h-full flex-col bg-background">
 			<div className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-1.5">
 				<p className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-					<TriangleAlert className="size-4 shrink-0" />
+					<TriangleAlert className="size-4 shrink-0 text-[var(--patrick-coral)]" />
 					<span className="truncate">
-						AI-generated — always verify each citation against the source.{" "}
-						<Button
-							variant="link"
-							className="text-[11px] text-muted-foreground px-0"
-							onClick={() => navigate({ to: "/profile", hash: "prompt" })}
-						>
-							See prompts
-						</Button>
-						.
+						AI makes mistakes — always verify analysis.{" "}
 					</span>
 				</p>
 				<div className="flex shrink-0 items-center gap-1">
+					<Button
+						variant="link"
+						className="text-[11px] text-muted-foreground px-0"
+						onClick={() => navigate({ to: "/profile", hash: "prompt" })}
+					>
+						See prompts
+					</Button>
 					<ModelPicker
 						value={analysisModel}
 						onChange={(id) => update({ model: id })}

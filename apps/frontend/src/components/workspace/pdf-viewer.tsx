@@ -222,7 +222,8 @@ export function PdfViewer({ filename }: { filename: string }) {
 
 			<div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-md backdrop-blur">
 				<span className="px-1.5 tabular-nums">
-					{current} / {pages.length}
+					<span className="hidden sm:inline">Leaf</span> {current} /{" "}
+					{pages.length}
 				</span>
 				<span className="h-4 w-px bg-border" />
 				<Button

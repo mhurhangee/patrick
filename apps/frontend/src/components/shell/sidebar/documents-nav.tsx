@@ -334,7 +334,7 @@ function DocumentRow({
 						value={doc.label ?? ""}
 						onCommit={(label) => onUpdate({ label })}
 						placeholder="Add a label…"
-						className="px-0 py-0.5 text-xs leading-tight text-muted-foreground"
+						className="py-0.5 text-xs leading-tight text-muted-foreground"
 					/>
 				</div>
 				{/* shrink-0 — the title truncates, these stay pinned right. */}

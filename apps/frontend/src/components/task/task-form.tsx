@@ -72,7 +72,11 @@ export function TaskForm({
 					/>
 				}
 			>
-				<SettingsSection id="details" title="Details">
+				<SettingsSection
+					id="details"
+					title="Details"
+					description="The basics for this matter. Its brief and documents have their own sections below."
+				>
 					<Hint className="mb-6" title="Patrick can help">
 						Ask in the chat — Patrick can draft the brief, label the documents,
 						or keep the brief current.
@@ -107,7 +111,11 @@ export function TaskForm({
 					/>
 				</SettingsSection>
 
-				<SettingsSection id="documents" title="Documents">
+				<SettingsSection
+					id="documents"
+					title="Documents"
+					description="The files in this matter's folder — what Patrick reads as context. Choose which to include, star, or label."
+				>
 					<DocumentsSection taskId={draft.id} />
 				</SettingsSection>
 
