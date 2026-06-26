@@ -22,11 +22,6 @@
       "import": "./dist/core-plugins.mjs",
       "require": "./dist/core-plugins.js"
     },
-    "./mcp": {
-      "types": "./dist/mcp.d.ts",
-      "import": "./dist/mcp.mjs",
-      "require": "./dist/mcp.js"
-    },
     "./prosemirror": {
       "types": "./dist/prosemirror/index.d.ts",
       "import": "./dist/prosemirror/index.mjs",
@@ -381,9 +376,6 @@
       ],
       "core-plugins": [
         "./dist/core-plugins.d.ts"
-      ],
-      "mcp": [
-        "./dist/mcp.d.ts"
       ],
       "prosemirror": [
         "./dist/prosemirror/index.d.ts"
