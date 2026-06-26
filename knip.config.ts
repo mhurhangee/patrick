@@ -3,8 +3,11 @@ import type { KnipConfig } from "knip";
 const config: KnipConfig = {
 	// Desktop is a Rust/Tauri crate + a thin package.json (deps used via the
 	// `tauri` script); nothing for knip to analyse. The vendored docx-editor
-	// packages are third-party source (own build/test tooling) — excluded from
-	// knip until the stage-2 tooling homogenization folds them in.
+	// packages are third-party library code with a broad public API — knip would
+	// flag the whole exported surface as unused, so they're left out (same stance
+	// as their biome lint exemption). They ARE typechecked (root `typecheck`) and
+	// covered by their own bun:test suites. Revisit per-package only if we want a
+	// library-mode dead-code sweep.
 	ignoreWorkspaces: [
 		"apps/desktop",
 		"packages/docx-editor-core",
