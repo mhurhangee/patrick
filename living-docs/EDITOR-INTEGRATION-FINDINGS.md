@@ -64,6 +64,19 @@ There's no "basic AI SDK functionality" implemented twice. The only parallel cod
 4. **PM node extensions** (shapes, textboxes, math, watermarks, footnotes) — **HIGH risk, schema+parser+serializer coupled.** Cutting a node without its parse/serialize branches = failed loads / lossy saves. Likely **keep footnotes + math** for a patent tool; shapes/textboxes/watermarks only if lossy round-trips are acceptable. NOT a mechanical cut.
 5. **In-editor extras** (print preview, shortcuts dialog, insert-symbol, paste-special, DocumentOutline, StylePicker, full table toolbar) — UX/scope calls, moderate coupling, no correctness risk. Decide per feature.
 
+### OUTCOME (lean pass — branch chore/lean-docx-editor)
+Done (all green, ~12.5k LOC removed):
+- Cut the built-in chat UI, agent panel, and MCP (agents) + react's agent-panel wiring.
+- Dropped the 9 non-English locales (i18n → en only).
+- Cut the core MCP server.
+
+Deferred / dropped (user decision):
+- **react `components/*` cuts → deferred to the planned UI rework** (swapping Material icons → lucide and to shadcn-based components; don't prune what we're about to replace).
+- **i18n → react package merge → dropped** (pure churn, no functional gain; i18n stays its own en-only package).
+- **Bucket B (shapes/textboxes) → dropped** (schema+parser+serializer risk for noise rarely in patent docs).
+
+Note — **headers/footers are render-only in this editor** (painted by `layout-painter`, not in the editable PM body; `core/src/agent/createContentControl.ts:315`: header/footer paragraphs "are not reachable"). Pre-existing in 1.9.0, not caused by the lean pass. Editable headers/footers would be a future feature, not a bug.
+
 ## Recommended sequence
 1. **i18n → react merge** + **Tier-1 cuts** (one lean-pass branch; ~11k LOC + 5 test files out). Mechanical, evidence-backed.
 2. **Tier-2 decisions** (this doc's menu) → a second lean branch applying whatever the user picks (templating cut is the prize).
