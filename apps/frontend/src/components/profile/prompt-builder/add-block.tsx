@@ -1,12 +1,12 @@
 import { BLOCK_CATALOG } from "@patrick/shared";
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@patrick/ui/components/popover";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 
 // The "+ Add a block" palette — the catalog grouped by category, each with its
 // description (so the user knows what to write), plus a Custom escape hatch.

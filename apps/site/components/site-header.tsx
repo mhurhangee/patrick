@@ -1,8 +1,8 @@
+import { Button } from "@patrick/ui/components/button";
 import Link from "next/link";
 import { NavLinks } from "@/components/nav-links";
 import { Patrick } from "@/components/patrick";
 import { SiteMobileMenu } from "@/components/site-mobile-menu";
-import { Button } from "@/components/ui/button";
 
 // Marketing header — centered, hairline-bottom. Plain inline links + Download.
 export function SiteHeader() {

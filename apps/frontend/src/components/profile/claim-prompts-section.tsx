@@ -5,15 +5,19 @@ import {
 	DEFAULT_CLAIM_CONSTRUCTION_RUBRIC,
 	type Profile,
 } from "@patrick/shared";
-import { ChevronDown, Lock, RotateCcw } from "lucide-react";
-import { RichEditor } from "@/components/rich-editor/rich-editor";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+} from "@patrick/ui/components/collapsible";
+import {
+	Field,
+	FieldDescription,
+	FieldLabel,
+} from "@patrick/ui/components/field";
+import { ChevronDown, Lock, RotateCcw } from "lucide-react";
+import { RichEditor } from "@/components/rich-editor/rich-editor";
 
 type ClaimPrompts = Pick<
 	Profile["prompts"],

@@ -8,6 +8,29 @@ import type {
 	DisclosureType,
 } from "@patrick/shared";
 import { docKind, mergeColumnReads } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@patrick/ui/components/dropdown-menu";
+import { Input } from "@patrick/ui/components/input";
+import { Label } from "@patrick/ui/components/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@patrick/ui/components/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@patrick/ui/components/select";
+import { Skeleton } from "@patrick/ui/components/skeleton";
 import { useNavigate } from "@tanstack/react-router";
 import {
 	Info,
@@ -24,28 +47,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { DocIcon } from "@/components/doc-icon";
 import { ModelPicker } from "@/components/model-picker";
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { useChart, useParseChart, useSaveChart } from "@/hooks/use-charts";
 import { useProfile } from "@/hooks/use-profiles";
 import { useTaskDocuments } from "@/hooks/use-tasks";
@@ -54,7 +55,6 @@ import { useActiveTask } from "@/lib/active-task";
 import { useCitationNav } from "@/lib/search/citation-nav";
 import { cn } from "@/lib/utils";
 import { Patrick } from "../patrick";
-import { Skeleton } from "../ui/skeleton";
 
 const FEATURE_W = 380;
 const COLUMN_W = 360;

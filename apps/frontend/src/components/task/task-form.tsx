@@ -1,4 +1,10 @@
 import { type Task, taskDisplayName } from "@patrick/shared";
+import {
+	Field,
+	FieldDescription,
+	FieldLabel,
+} from "@patrick/ui/components/field";
+import { Input } from "@patrick/ui/components/input";
 import { Hint } from "@/components/hint";
 import { RichEditor } from "@/components/rich-editor/rich-editor";
 import { SaveStatus } from "@/components/save-status";
@@ -12,8 +18,6 @@ import {
 	type SettingsSectionDef,
 } from "@/components/settings/settings";
 import { DocumentsSection } from "@/components/task/documents-section";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { useAutosavedDraft } from "@/hooks/use-autosave";
 
 const SECTIONS: readonly SettingsSectionDef[] = [

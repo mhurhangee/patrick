@@ -2,16 +2,16 @@ import { SortableKeyboardPlugin } from "@dnd-kit/dom/sortable";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { Columns2, Table2, X } from "lucide-react";
-import { Fragment } from "react";
-import { DocIcon } from "@/components/doc-icon";
-import { PanelToggleButton } from "@/components/shell/panel-toggle-button";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
-} from "@/components/ui/resizable";
+} from "@patrick/ui/components/resizable";
+import { Columns2, Table2, X } from "lucide-react";
+import { Fragment } from "react";
+import { DocIcon } from "@/components/doc-icon";
+import { PanelToggleButton } from "@/components/shell/panel-toggle-button";
 import { ClaimChartViewer } from "@/components/workspace/claim-chart-viewer";
 import { DocxViewer } from "@/components/workspace/docx-viewer";
 import { PdfViewer } from "@/components/workspace/pdf-viewer";

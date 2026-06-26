@@ -50,7 +50,7 @@
 	},
 	"overrides": [
 		{
-			"includes": ["**/components/ui/**"],
+			"includes": ["**/components/ui/**", "packages/ui/src/components/**"],
 			"linter": { "enabled": false }
 		}
 	]

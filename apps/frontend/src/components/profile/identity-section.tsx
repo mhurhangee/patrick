@@ -4,8 +4,8 @@ import {
 	FieldDescription,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@patrick/ui/components/field";
+import { Input } from "@patrick/ui/components/input";
 
 type Identity = Profile["identity"];
 

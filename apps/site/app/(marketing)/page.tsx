@@ -1,9 +1,9 @@
+import { Button } from "@patrick/ui/components/button";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/reveal";
 import { RotatingWord } from "@/components/rotating-word";
 import { Shot } from "@/components/shot";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Home() {

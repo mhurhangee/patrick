@@ -1,7 +1,6 @@
 import { CHANGELOG_URL, DOCS_URL, LATEST_HIGHLIGHTS } from "@patrick/shared";
-import { ArrowUpRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@patrick/ui/components/badge";
+import { Button } from "@patrick/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -9,7 +8,8 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@patrick/ui/components/dropdown-menu";
+import { ArrowUpRight } from "lucide-react";
 import { feedbackMailto, githubIssueUrl } from "@/lib/feedback";
 import { Patrick } from "../patrick";
 

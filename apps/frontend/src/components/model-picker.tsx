@@ -8,15 +8,15 @@ import {
 	TIER_BLURB,
 	vendorForModel,
 } from "@patrick/shared";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { Button } from "@patrick/ui/components/button";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@patrick/ui/components/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
 
 const VENDOR_LABEL: Record<string, string> = {
 	anthropic: "Anthropic",

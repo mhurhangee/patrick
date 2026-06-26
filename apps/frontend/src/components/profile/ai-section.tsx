@@ -6,6 +6,21 @@ import {
 	recommendedModelFor,
 	supportsReasoning,
 } from "@patrick/shared";
+import {
+	Field,
+	FieldContent,
+	FieldDescription,
+	FieldGroup,
+	FieldLabel,
+} from "@patrick/ui/components/field";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@patrick/ui/components/select";
+import { Switch } from "@patrick/ui/components/switch";
 import { ArrowUpRight, Lock } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { KeyStatusDot } from "@/components/key-status-dot";
@@ -13,21 +28,6 @@ import { ModelPicker } from "@/components/model-picker";
 import { OptionCard } from "@/components/option-card";
 import { ProviderLogo } from "@/components/provider-logo";
 import { SecretInput } from "@/components/secret-input";
-import {
-	Field,
-	FieldContent,
-	FieldDescription,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
 	type KeyStatus,

@@ -1,13 +1,13 @@
 import { DocxEditor, type DocxEditorRef } from "@eigenpal/docx-editor-react";
 import "@eigenpal/docx-editor-react/styles.css";
 import { estimateTextTokens } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import { InfoTooltip } from "@patrick/ui/components/tooltip";
 import { Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { SaveStatus } from "@/components/save-status";
-import { Button } from "@/components/ui/button";
-import { InfoTooltip } from "@/components/ui/tooltip";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";

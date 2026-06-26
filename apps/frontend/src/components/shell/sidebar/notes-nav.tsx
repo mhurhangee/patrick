@@ -1,9 +1,9 @@
 import type { Task } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { RichEditor } from "@/components/rich-editor/rich-editor";
 import { SaveStatus } from "@/components/save-status";
-import { Button } from "@/components/ui/button";
 import { useAutosavedDraft } from "@/hooks/use-autosave";
 import { useTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useActiveTask } from "@/lib/active-task";

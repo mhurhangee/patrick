@@ -1,7 +1,7 @@
+import { Button } from "@patrick/ui/components/button";
 import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { DOWNLOAD_URL, GITHUB_URL } from "@/lib/links";
 

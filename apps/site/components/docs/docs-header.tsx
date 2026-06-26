@@ -1,8 +1,8 @@
+import { Button } from "@patrick/ui/components/button";
 import Link from "next/link";
 import { DocsMobileNav } from "@/components/docs/docs-mobile-nav";
 import { Patrick } from "@/components/patrick";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
 import type { NavNode } from "@/lib/docs";
 
 // Docs-only top bar — its own focused chrome (no marketing footer below).

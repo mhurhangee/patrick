@@ -1,6 +1,6 @@
+import { Button } from "@patrick/ui/components/button";
+import { Input } from "@patrick/ui/components/input";
 import { Eye, EyeOff, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 /**
  * A password input with show/hide and clear affordances tucked inside it (so the

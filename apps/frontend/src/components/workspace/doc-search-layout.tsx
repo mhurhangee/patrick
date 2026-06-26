@@ -1,4 +1,11 @@
 import { parseLeaf } from "@patrick/shared";
+import { Button } from "@patrick/ui/components/button";
+import { Kbd } from "@patrick/ui/components/kbd";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@patrick/ui/components/resizable";
 import { Search } from "lucide-react";
 import {
 	type ReactNode,
@@ -7,13 +14,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
-import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import { DocSearchPanel } from "@/components/workspace/doc-search";
 import { findPage, highlightText } from "@/lib/search/citation-match";
 import { useCitationNav } from "@/lib/search/citation-nav";

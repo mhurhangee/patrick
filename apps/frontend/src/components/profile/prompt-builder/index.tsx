@@ -7,14 +7,19 @@ import {
 	parseBlocks,
 	serializeBlocks,
 } from "@patrick/shared";
-import { ChevronDown, Lock } from "lucide-react";
-import { useEffect, useState } from "react";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@patrick/ui/components/collapsible";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@patrick/ui/components/tabs";
+import { ChevronDown, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AddBlock } from "./add-block";
 import { BlockCard } from "./block-card";
 

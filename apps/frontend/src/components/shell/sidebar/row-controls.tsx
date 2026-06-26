@@ -1,6 +1,6 @@
+import { Button } from "@patrick/ui/components/button";
 import { MoreHorizontal } from "lucide-react";
 import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // The kebab (…) button that opens a sidebar row's action menu. forwardRef +

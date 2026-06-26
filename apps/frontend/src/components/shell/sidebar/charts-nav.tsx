@@ -1,16 +1,16 @@
 import type { ChartSummary } from "@patrick/shared";
-import { useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus, Star, StarOff, Table2, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@patrick/ui/components/dropdown-menu";
+import { useNavigate } from "@tanstack/react-router";
+import { Pencil, Plus, Star, StarOff, Table2, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
 	useCharts,
 	useCreateChart,

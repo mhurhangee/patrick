@@ -1,13 +1,13 @@
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import { Patrick } from "@/components/patrick";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@patrick/ui/components/button";
+import { Input } from "@patrick/ui/components/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@patrick/ui/components/popover";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import { Patrick } from "@/components/patrick";
 import { useFetchPublication } from "@/hooks/use-tasks";
 import { useActiveProfile } from "@/lib/active-profile";
 

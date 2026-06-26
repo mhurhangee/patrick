@@ -1,15 +1,9 @@
-import { useNavigate } from "@tanstack/react-router";
-import { FolderOpen, Plus } from "lucide-react";
-import { useState } from "react";
-import { OptionCard } from "@/components/option-card";
-import { Patrick } from "@/components/patrick";
-import { ProfileTemplateItems } from "@/components/profile/profile-template-items";
-import { Button } from "@/components/ui/button";
+import { Button } from "@patrick/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@patrick/ui/components/dropdown-menu";
 import {
 	Empty,
 	EmptyContent,
@@ -17,8 +11,14 @@ import {
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
-} from "@/components/ui/empty";
-import { Input } from "@/components/ui/input";
+} from "@patrick/ui/components/empty";
+import { Input } from "@patrick/ui/components/input";
+import { useNavigate } from "@tanstack/react-router";
+import { FolderOpen, Plus } from "lucide-react";
+import { useState } from "react";
+import { OptionCard } from "@/components/option-card";
+import { Patrick } from "@/components/patrick";
+import { ProfileTemplateItems } from "@/components/profile/profile-template-items";
 import { SurfaceScaffold } from "@/components/workspace/surface-scaffold";
 import { useNewProfile, useNewTask } from "@/hooks/use-create-flows";
 import { useProfiles } from "@/hooks/use-profiles";

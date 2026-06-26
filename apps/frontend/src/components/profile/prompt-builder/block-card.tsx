@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/react/sortable";
+import { Button } from "@patrick/ui/components/button";
 import { GripVertical, X } from "lucide-react";
 import { RichEditor } from "@/components/rich-editor/rich-editor";
-import { Button } from "@/components/ui/button";
 
 // One editable block: a freeform label (the `## Header`) + rich content (marks +
 // lists, no headings — `##` is the block delimiter). Draggable via the grip.
