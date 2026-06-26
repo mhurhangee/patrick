@@ -2,8 +2,16 @@ import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
 	// Desktop is a Rust/Tauri crate + a thin package.json (deps used via the
-	// `tauri` script); nothing for knip to analyse.
-	ignoreWorkspaces: ["apps/desktop"],
+	// `tauri` script); nothing for knip to analyse. The vendored docx-editor
+	// packages are third-party source (own build/test tooling) — excluded from
+	// knip until the stage-2 tooling homogenization folds them in.
+	ignoreWorkspaces: [
+		"apps/desktop",
+		"packages/docx-editor-core",
+		"packages/docx-editor-agents",
+		"packages/docx-editor-react",
+		"packages/docx-editor-i18n",
+	],
 	workspaces: {
 		"apps/frontend": {
 			entry: [

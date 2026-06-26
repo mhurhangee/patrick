@@ -1,0 +1,6 @@
+/* The editor chrome stylesheet is the single source of truth in
+   @eigenpal/docx-editor-core (packages/docx-editor-core/src/styles/editor.css).
+   The React adapter imports it so the color tokens and UI styling never drift.
+   `@tailwind utilities` lives in the shared file and is expanded by this
+   package's own Tailwind build (build:css). */
+@import '../../../docx-editor-core/src/styles/editor.css';
