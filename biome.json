@@ -12,7 +12,11 @@
 			"!**/*.svg",
 			"!**/patrick-docs.generated.ts",
 			"!packages/law/data",
-			"!packages/benchmarking/data"
+			"!packages/benchmarking/data",
+			"!packages/docx-editor-core",
+			"!packages/docx-editor-agents",
+			"!packages/docx-editor-react",
+			"!packages/docx-editor-i18n"
 		]
 	},
 	"formatter": {

@@ -12,7 +12,7 @@
 		"@ai-sdk/anthropic": "^3.0.86",
 		"@ai-sdk/google": "^3.0.83",
 		"@ai-sdk/openai": "^3.0.74",
-		"@eigenpal/docx-editor-agents": "^1.9.0",
+		"@eigenpal/docx-editor-agents": "workspace:*",
 		"@patrick/law": "workspace:*",
 		"@patrick/shared": "workspace:*",
 		"ai": "^6.0.209",
