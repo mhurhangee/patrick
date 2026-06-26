@@ -366,7 +366,9 @@ export function DocSearchPanel({
 						disabled={extract.isPending}
 						variant={!extract.isPending ? "default" : "secondary"}
 					>
-						{extract.isPending ? <Patrick variant="scanning" /> : null}
+						{extract.isPending ? (
+							<Patrick variant="scanning" size={14} />
+						) : null}
 						{extract.isPending
 							? `Extracting…${extractProgress ? ` ${extractProgress.done}/${extractProgress.total}` : ""}`
 							: "Extract text"}
