@@ -5,7 +5,7 @@
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"strict": true,
-		"noUncheckedIndexedAccess": false,
+		"noUncheckedIndexedAccess": true,
 		"noImplicitOverride": true,
 		"verbatimModuleSyntax": true,
 		"esModuleInterop": true,

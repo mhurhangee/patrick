@@ -10,15 +10,13 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist",
-    "README.md"
+    "src"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/bun": "^1.0.0",
-    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   },
   "keywords": [

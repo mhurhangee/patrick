@@ -2,6 +2,9 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"types": ["bun"],
+		// Off only because this app compiles the vendored editor's source (consumed
+		// from ./src), which predates the flag. The base keeps it ON repo-wide.
+		"noUncheckedIndexedAccess": false,
 		// The editor is an isomorphic library: its source has DOM-guarded
 		// font/canvas code the headless api imports but never runs (the reviewer
 		// parses with preloadFonts:false; fontLoader is `typeof document` guarded).
