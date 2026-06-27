@@ -7,7 +7,7 @@
  * - Active option is highlighted
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { ParagraphAlignment } from '@eigenpal/docx-editor-core/types/document';
 import {
@@ -18,9 +18,10 @@ import {
   ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
-import { Button } from '@patrick/ui/components/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@patrick/ui/components/popover';
-import { ToggleGroup, ToggleGroupItem } from '@patrick/ui/components/toggle-group';
+import { Button } from './Button';
+import { Tooltip } from './Tooltip';
+import { cn } from '../../lib/utils';
+import { useFixedDropdown } from '../../hooks/useFixedDropdown';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
 
@@ -66,8 +67,6 @@ export interface AlignmentButtonsProps {
   showLabels?: boolean;
   /** Compact mode (smaller buttons) */
   compact?: boolean;
-  /** Return focus to the editor after the popover closes */
-  onRefocusEditor?: () => void;
 }
 
 /**
@@ -144,79 +143,123 @@ const ALIGNMENT_OPTIONS: AlignmentOption[] = [
 // ============================================================================
 
 /**
- * Alignment dropdown — one toolbar button (current alignment + chevron) that
- * opens a popover with a single-select ToggleGroup of the four alignments.
+ * Alignment dropdown component — single button with popover panel
  */
 export function AlignmentButtons({
   value = 'left',
   onChange,
   disabled = false,
-  onRefocusEditor,
 }: AlignmentButtonsProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const onClose = useCallback(() => setIsOpen(false), []);
+  const { containerRef, dropdownRef, dropdownStyle, handleMouseDown } = useFixedDropdown({
+    isOpen,
+    onClose,
+  });
 
+  const handleOptionClick = useCallback(
+    (alignment: ParagraphAlignment) => {
+      if (!disabled) {
+        onChange?.(alignment);
+      }
+      setIsOpen(false);
+    },
+    [disabled, onChange]
+  );
+
+  // Find the current alignment option for the trigger icon
   const currentOption =
     ALIGNMENT_OPTIONS.find((opt) => opt.value === value) || ALIGNMENT_OPTIONS[0];
+
   const currentLabel = t(currentOption.labelKey);
   const currentShortcut = currentOption.shortcutKey ? t(currentOption.shortcutKey) : undefined;
   const ariaText = `${currentLabel}${currentShortcut ? ` (${currentShortcut})` : ''}`;
-  const CurrentIcon = currentOption.iconName;
+
+  const triggerButton = (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className={cn(
+        'text-muted-foreground hover:text-foreground hover:bg-muted/80',
+        isOpen && 'bg-muted',
+        disabled && 'opacity-30 cursor-not-allowed'
+      )}
+      onMouseDown={handleMouseDown}
+      onClick={() => !disabled && setIsOpen((prev) => !prev)}
+      disabled={disabled}
+      aria-label={ariaText}
+      aria-expanded={isOpen}
+      aria-haspopup="true"
+      data-testid="toolbar-alignment"
+    >
+      <currentOption.iconName size={ICON_SIZE} />
+      <ChevronDown size={14} className="-ml-1" />
+    </Button>
+  );
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          tooltip={ariaText}
-          aria-label={ariaText}
-          data-testid="toolbar-alignment"
-          className="text-muted-foreground"
-        >
-          <CurrentIcon size={ICON_SIZE} />
-          <ChevronDown size={14} className="-ml-1" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-auto p-1"
-        onCloseAutoFocus={(e) => {
-          e.preventDefault();
-          onRefocusEditor?.();
-        }}
-      >
-        <ToggleGroup
-          type="single"
-          value={value}
-          onValueChange={(v) => {
-            if (v) {
-              onChange?.(v as ParagraphAlignment);
-              setOpen(false);
-            }
+    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block' }}>
+      {!isOpen ? <Tooltip content={ariaText}>{triggerButton}</Tooltip> : triggerButton}
+
+      {isOpen && !disabled && (
+        <div
+          ref={dropdownRef}
+          style={{
+            ...dropdownStyle,
+            backgroundColor: 'var(--doc-surface)',
+            border: '1px solid var(--doc-border)',
+            borderRadius: 8,
+            boxShadow: '0 4px 16px var(--doc-shadow)',
+            padding: 6,
           }}
+          onMouseDown={(e) => e.stopPropagation()}
         >
-          {ALIGNMENT_OPTIONS.map((option) => {
-            const OptIcon = option.iconName;
-            const optLabel = t(option.labelKey);
-            const optShortcut = option.shortcutKey ? t(option.shortcutKey) : undefined;
-            return (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                size="sm"
-                aria-label={optLabel}
-                title={`${optLabel}${optShortcut ? ` (${optShortcut})` : ''}`}
-                data-testid={`alignment-${option.value}`}
-              >
-                <OptIcon size={18} />
-              </ToggleGroupItem>
-            );
-          })}
-        </ToggleGroup>
-      </PopoverContent>
-    </Popover>
+          <div style={{ display: 'flex', gap: 2 }}>
+            {ALIGNMENT_OPTIONS.map((option) => {
+              const isActive = value === option.value;
+              const optLabel = t(option.labelKey);
+              const optShortcut = option.shortcutKey ? t(option.shortcutKey) : undefined;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  title={`${optLabel}${optShortcut ? ` (${optShortcut})` : ''}`}
+                  data-testid={`alignment-${option.value}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    border: '1px solid transparent',
+                    borderRadius: 4,
+                    backgroundColor: isActive ? 'var(--doc-primary-light)' : 'transparent',
+                    cursor: 'pointer',
+                    color: isActive ? 'var(--doc-primary)' : 'var(--doc-text)',
+                  }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                        'var(--doc-bg-hover)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = isActive
+                      ? 'var(--doc-primary-light)'
+                      : 'transparent';
+                  }}
+                  onClick={() => handleOptionClick(option.value)}
+                >
+                  <option.iconName size={18} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

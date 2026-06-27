@@ -18,8 +18,8 @@ const CELL_GAP = 2;
 const cellStyle: CSSProperties = {
   width: CELL_SIZE,
   height: CELL_SIZE,
-  backgroundColor: 'var(--doc-bg-hover)',
-  border: '1px solid var(--doc-border-dark)',
+  backgroundColor: 'var(--doc-surface)',
+  border: '1px solid var(--doc-border)',
   borderRadius: 2,
   transition: 'background-color 0.1s, border-color 0.1s',
   cursor: 'pointer',

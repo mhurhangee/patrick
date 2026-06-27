@@ -1,17 +1,17 @@
 /**
- * List controls — one toolbar button that opens a popover with bullet/numbered
- * toggles and indent/outdent actions. Slims the four-button inline group down to
- * a single dropdown.
+ * List Buttons Component
+ *
+ * A component for list formatting controls in the DOCX editor:
+ * - Bullet list button
+ * - Numbered list button
+ * - Toggles list on/off for selection
+ * - Indent/outdent for list levels
  */
 
-import React, { useState } from 'react';
-import type { CSSProperties } from 'react';
+import React, { useState, useCallback } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { NumberFormat } from '@eigenpal/docx-editor-core/types/document';
-import { ChevronDown, IndentDecrease, IndentIncrease, List, ListOrdered } from 'lucide-react';
-import { Button } from '@patrick/ui/components/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@patrick/ui/components/popover';
-import { Toggle } from '@patrick/ui/components/toggle';
-import { cn } from '../../lib/utils';
+import { IndentDecrease, IndentIncrease, List, ListOrdered } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 
 // ============================================================================
@@ -48,19 +48,157 @@ export interface ListButtonsProps {
   compact?: boolean;
   /** Whether the current paragraph has left indentation (for enabling outdent) */
   hasIndent?: boolean;
-  /** Return focus to the editor after the popover closes */
-  onRefocusEditor?: () => void;
 }
 
-const ICON_SIZE = 18;
+/**
+ * Props for individual list button
+ */
+export interface ListButtonProps {
+  /** Whether the button is active/selected */
+  active?: boolean;
+  /** Whether the button is disabled */
+  disabled?: boolean;
+  /** Button title/tooltip */
+  title?: string;
+  /** Click handler */
+  onClick?: () => void;
+  /** Button content */
+  children: ReactNode;
+  /** Additional CSS class name */
+  className?: string;
+  /** Additional inline styles */
+  style?: CSSProperties;
+}
+
+// ============================================================================
+// STYLES
+// ============================================================================
+
+const CONTAINER_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+};
+
+const BUTTON_GROUP_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+};
+
+const BUTTON_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '32px',
+  height: '32px',
+  padding: '4px',
+  border: 'none',
+  borderRadius: '4px',
+  backgroundColor: 'transparent',
+  cursor: 'pointer',
+  transition: 'background-color 0.1s',
+  color: 'var(--doc-text-muted)',
+};
+
+const BUTTON_HOVER_STYLE: CSSProperties = {
+  ...BUTTON_STYLE,
+  backgroundColor: 'var(--doc-bg-hover)',
+};
+
+const BUTTON_ACTIVE_STYLE: CSSProperties = {
+  ...BUTTON_STYLE,
+  backgroundColor: 'var(--doc-primary-light)',
+  color: 'var(--doc-primary)',
+};
+
+const BUTTON_DISABLED_STYLE: CSSProperties = {
+  ...BUTTON_STYLE,
+  cursor: 'default',
+  opacity: 0.38,
+};
+
+const COMPACT_BUTTON_STYLE: CSSProperties = {
+  width: '28px',
+  height: '28px',
+  padding: '2px',
+};
+
+const SEPARATOR_STYLE: CSSProperties = {
+  width: '1px',
+  height: '20px',
+  backgroundColor: 'var(--doc-border)',
+  margin: '0 6px',
+};
+
+// ============================================================================
+// ICON SIZE CONSTANT
+// ============================================================================
+
+const ICON_SIZE = 20;
+
+// ============================================================================
+// LIST BUTTON COMPONENT
+// ============================================================================
+
+/**
+ * Individual list button
+ */
+export function ListButton({
+  active = false,
+  disabled = false,
+  title,
+  onClick,
+  children,
+  className,
+  style,
+}: ListButtonProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const buttonStyle: CSSProperties = {
+    ...(disabled
+      ? BUTTON_DISABLED_STYLE
+      : active
+        ? BUTTON_ACTIVE_STYLE
+        : isHovered
+          ? BUTTON_HOVER_STYLE
+          : BUTTON_STYLE),
+    ...style,
+  };
+
+  // Prevent mousedown from stealing focus/selection from the editor
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
+  return (
+    <button
+      type="button"
+      className={`docx-list-button ${active ? 'docx-list-button-active' : ''} ${
+        disabled ? 'docx-list-button-disabled' : ''
+      } ${className || ''}`}
+      style={buttonStyle}
+      onMouseDown={handleMouseDown}
+      onClick={disabled ? undefined : onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      disabled={disabled}
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      role="button"
+    >
+      {children}
+    </button>
+  );
+}
 
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
 /**
- * List dropdown — one button (current list type + chevron) opening a popover
- * with bullet/numbered toggles and indent/outdent.
+ * List buttons component for bullet/numbered list controls
  */
 export function ListButtons({
   listState,
@@ -69,12 +207,20 @@ export function ListButtons({
   onIndent,
   onOutdent,
   disabled = false,
+  className,
+  style,
   showIndentButtons = true,
+  compact = false,
   hasIndent = false,
-  onRefocusEditor,
 }: ListButtonsProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  /**
+   * Get button style with compact option
+   */
+  const getButtonStyle = useCallback(
+    (): CSSProperties => (compact ? { ...COMPACT_BUTTON_STYLE } : {}),
+    [compact]
+  );
 
   const isBulletList = listState?.type === 'bullet';
   const isNumberedList = listState?.type === 'numbered';
@@ -82,79 +228,64 @@ export function ListButtons({
   // Can outdent if: in a list with level > 0, OR has paragraph indentation
   const canOutdent = (isInList && (listState?.level ?? 0) > 0) || hasIndent;
 
-  const TriggerIcon = isNumberedList ? ListOrdered : List;
-  const triggerLabel = t('lists.ariaLabel');
-
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
+    <div
+      className={`docx-list-buttons ${className || ''}`}
+      style={{ ...CONTAINER_STYLE, ...style }}
+      role="group"
+      aria-label={t('lists.ariaLabel')}
+    >
+      {/* List type buttons */}
+      <div style={BUTTON_GROUP_STYLE} role="group" aria-label={t('lists.typeAriaLabel')}>
+        <ListButton
+          active={isBulletList}
           disabled={disabled}
-          tooltip={triggerLabel}
-          aria-label={triggerLabel}
-          data-testid="toolbar-lists"
-          className={cn('text-muted-foreground', isInList && 'text-foreground')}
-        >
-          <TriggerIcon size={ICON_SIZE} />
-          <ChevronDown size={14} className="-ml-1" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="flex w-auto items-center gap-1 p-1"
-        onCloseAutoFocus={(e) => {
-          e.preventDefault();
-          onRefocusEditor?.();
-        }}
-      >
-        <Toggle
-          size="sm"
-          pressed={isBulletList}
-          onPressedChange={() => onBulletList?.()}
-          aria-label={t('lists.bulletList')}
           title={t('lists.bulletList')}
-          data-testid="list-bullet"
+          onClick={onBulletList}
+          style={getButtonStyle()}
         >
           <List size={ICON_SIZE} />
-        </Toggle>
-        <Toggle
-          size="sm"
-          pressed={isNumberedList}
-          onPressedChange={() => onNumberedList?.()}
-          aria-label={t('lists.numberedList')}
+        </ListButton>
+
+        <ListButton
+          active={isNumberedList}
+          disabled={disabled}
           title={t('lists.numberedList')}
-          data-testid="list-numbered"
+          onClick={onNumberedList}
+          style={getButtonStyle()}
         >
           <ListOrdered size={ICON_SIZE} />
-        </Toggle>
-        {showIndentButtons && (
-          <>
-            <div className="mx-0.5 h-5 w-px bg-border" role="separator" />
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              disabled={!canOutdent}
-              onClick={() => onOutdent?.()}
-              tooltip={t('lists.decreaseIndent')}
-              aria-label={t('lists.decreaseIndent')}
+        </ListButton>
+      </div>
+
+      {/* Indent/Outdent buttons */}
+      {showIndentButtons && (
+        <>
+          <div style={SEPARATOR_STYLE} role="separator" />
+          <div style={BUTTON_GROUP_STYLE} role="group" aria-label={t('lists.indentationAriaLabel')}>
+            <ListButton
+              active={false}
+              disabled={disabled || !canOutdent}
+              title={t('lists.decreaseIndent')}
+              onClick={onOutdent}
+              style={getButtonStyle()}
             >
               <IndentDecrease size={ICON_SIZE} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => onIndent?.()}
-              tooltip={t('lists.increaseIndent')}
-              aria-label={t('lists.increaseIndent')}
+            </ListButton>
+
+            <ListButton
+              active={false}
+              disabled={disabled}
+              title={t('lists.increaseIndent')}
+              onClick={onIndent}
+              style={getButtonStyle()}
             >
               <IndentIncrease size={ICON_SIZE} />
-            </Button>
-          </>
-        )}
-      </PopoverContent>
-    </Popover>
+            </ListButton>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

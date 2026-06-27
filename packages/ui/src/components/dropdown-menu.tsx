@@ -1,7 +1,6 @@
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import * as React from "react";
-import { usePortalContainer } from "../lib/portal-container";
 import { cn } from "../lib/utils";
 
 function DropdownMenu({
@@ -35,9 +34,8 @@ function DropdownMenuContent({
 	sideOffset = 4,
 	...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
-	const container = usePortalContainer();
 	return (
-		<DropdownMenuPrimitive.Portal container={container ?? undefined}>
+		<DropdownMenuPrimitive.Portal>
 			<DropdownMenuPrimitive.Content
 				data-slot="dropdown-menu-content"
 				sideOffset={sideOffset}

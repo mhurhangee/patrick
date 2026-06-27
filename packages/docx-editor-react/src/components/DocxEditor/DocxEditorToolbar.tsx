@@ -193,6 +193,7 @@ export function DocxEditorToolbar({
           {renderTitleBarRight && (
             <EditorToolbar.TitleBarRight>{renderTitleBarRight()}</EditorToolbar.TitleBarRight>
           )}
+          <EditorToolbar.MenuBar />
         </EditorToolbar.TitleBar>
         <EditorToolbar.Toolbar>
           <ToolbarSeparator />

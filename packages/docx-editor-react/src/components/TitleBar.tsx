@@ -1,15 +1,100 @@
 /**
- * TitleBar and sub-components — the row above the formatting toolbar.
+ * TitleBar and sub-components for the Google Docs-style 2-level toolbar.
  *
- * - TitleBar: logo + doc name + right-actions slot
+ * - TitleBar: two-row layout (row 1: logo + doc name + right actions, row 2: menu bar)
  * - Logo: renders custom logo content left-aligned
  * - DocumentName: editable document name input
+ * - MenuBar: File/Format/Insert menus (auto-wired from EditorToolbarContext)
  * - TitleBarRight: right-aligned actions slot
  */
 
 import React, { useCallback, Children, isValidElement } from 'react';
 import type { ReactNode } from 'react';
+import { MenuDropdown } from './ui/MenuDropdown';
+import type { MenuEntry } from './ui/MenuDropdown';
+import { TableGridInline } from './ui/TableGridInline';
+import {
+  FileDown,
+  FileUp,
+  Grid3x3,
+  Image,
+  ListOrdered,
+  Minus,
+  PilcrowLeft,
+  PilcrowRight,
+  Printer,
+  Rows2,
+  SeparatorHorizontal,
+  Settings,
+  Stamp,
+  type LucideIcon,
+} from 'lucide-react';
+import { useEditorToolbar } from './EditorToolbarContext';
+import type { FormattingAction } from './Toolbar';
 import { useTranslation } from '../i18n';
+import { openReportIssue } from './reportIssue';
+
+// ============================================================================
+// BreakSubmenu — vertical list of break choices shown inside the Insert menu's
+// "Break" submenu panel. Styled to match the menu items in MenuDropdown.
+// ============================================================================
+
+interface BreakSubmenuItem {
+  icon: LucideIcon;
+  label: string;
+  onClick?: () => void;
+}
+
+function BreakSubmenu({ items, closeMenu }: { items: BreakSubmenuItem[]; closeMenu: () => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 220 }}>
+      {items.map((item) => {
+        const disabled = !item.onClick;
+        const ItemIcon = item.icon;
+        return (
+          <button
+            key={item.label}
+            type="button"
+            disabled={disabled}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 12px',
+              border: 'none',
+              background: 'transparent',
+              cursor: disabled ? 'default' : 'pointer',
+              fontSize: 13,
+              color: 'var(--doc-text)',
+              width: '100%',
+              textAlign: 'left',
+              whiteSpace: 'nowrap',
+              opacity: disabled ? 0.4 : 1,
+            }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              if (disabled) return;
+              item.onClick?.();
+              closeMenu();
+            }}
+            onMouseOver={(e) => {
+              if (!disabled) {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  'var(--doc-bg-hover)';
+              }
+            }}
+            onMouseOut={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
+            }}
+          >
+            <ItemIcon size={18} />
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // ============================================================================
 // Default Doc Icon (shown when no Logo is provided)
@@ -97,6 +182,214 @@ export function TitleBarRight({ children }: TitleBarRightProps) {
 }
 
 // ============================================================================
+// MenuBar
+// ============================================================================
+
+export function MenuBar() {
+  const { t } = useTranslation();
+  const ctx = useEditorToolbar();
+  const {
+    disabled = false,
+    onFormat,
+    onPrint,
+    onOpen,
+    onSave,
+    onPageSetup,
+    onInsertImage,
+    onInsertTable,
+    showTableInsert = true,
+    showHelpMenu = true,
+    onInsertPageBreak,
+    onInsertSectionBreakNextPage,
+    onInsertSectionBreakContinuous,
+    onInsertTOC,
+    onWatermark,
+    onRefocusEditor,
+  } = ctx;
+
+  const handleFormat = useCallback(
+    (action: FormattingAction) => {
+      if (!disabled && onFormat) {
+        onFormat(action);
+      }
+    },
+    [disabled, onFormat]
+  );
+
+  const handleTableInsert = useCallback(
+    (rows: number, columns: number) => {
+      if (!disabled && onInsertTable) {
+        onInsertTable(rows, columns);
+        requestAnimationFrame(() => onRefocusEditor?.());
+      }
+    },
+    [disabled, onInsertTable, onRefocusEditor]
+  );
+
+  const hasPrintOrPageSetup = !!onPrint || !!onPageSetup;
+  const hasFileMenu = hasPrintOrPageSetup || onOpen || onSave;
+
+  return (
+    <div className="flex items-center" role="menubar" aria-label={t('titleBar.menuBarAriaLabel')}>
+      {/* File Menu */}
+      {hasFileMenu && (
+        <MenuDropdown
+          label={t('toolbar.file')}
+          disabled={disabled}
+          items={[
+            ...(onOpen
+              ? [
+                  {
+                    icon: FileUp,
+                    label: t('toolbar.open'),
+                    shortcut: t('toolbar.openShortcut'),
+                    onClick: onOpen,
+                  } as MenuEntry,
+                ]
+              : []),
+            ...(onSave
+              ? [
+                  {
+                    icon: FileDown,
+                    label: t('toolbar.save'),
+                    shortcut: t('toolbar.saveShortcut'),
+                    onClick: onSave,
+                  } as MenuEntry,
+                ]
+              : []),
+            ...((onOpen || onSave) && hasPrintOrPageSetup
+              ? [{ type: 'separator' as const } as MenuEntry]
+              : []),
+            ...(onPrint
+              ? [
+                  {
+                    icon: Printer,
+                    label: t('toolbar.print'),
+                    shortcut: t('toolbar.printShortcut'),
+                    onClick: onPrint,
+                  } as MenuEntry,
+                ]
+              : []),
+            ...(onPageSetup
+              ? [
+                  {
+                    icon: Settings,
+                    label: t('toolbar.pageSetup'),
+                    onClick: onPageSetup,
+                  } as MenuEntry,
+                ]
+              : []),
+          ]}
+        />
+      )}
+
+      {/* Format Menu */}
+      <MenuDropdown
+        label={t('toolbar.format')}
+        disabled={disabled}
+        items={[
+          {
+            icon: PilcrowLeft,
+            label: t('toolbar.leftToRight'),
+            onClick: () => handleFormat('setLtr'),
+          } as MenuEntry,
+          {
+            icon: PilcrowRight,
+            label: t('toolbar.rightToLeft'),
+            onClick: () => handleFormat('setRtl'),
+          } as MenuEntry,
+        ]}
+      />
+
+      {/* Insert Menu */}
+      <MenuDropdown
+        label={t('toolbar.insert')}
+        disabled={disabled}
+        items={[
+          ...(onInsertImage
+            ? [{ icon: Image, label: t('toolbar.image'), onClick: onInsertImage } as MenuEntry]
+            : []),
+          ...(showTableInsert && onInsertTable
+            ? [
+                {
+                  icon: Grid3x3,
+                  label: t('toolbar.table'),
+                  submenuContent: (closeMenu: () => void) => (
+                    <TableGridInline
+                      onInsert={(rows: number, cols: number) => {
+                        handleTableInsert(rows, cols);
+                        closeMenu();
+                      }}
+                    />
+                  ),
+                } as MenuEntry,
+              ]
+            : []),
+          ...(onInsertImage || (showTableInsert && onInsertTable)
+            ? [{ type: 'separator' as const } as MenuEntry]
+            : []),
+          {
+            icon: SeparatorHorizontal,
+            label: t('toolbar.break'),
+            submenuContent: (closeMenu: () => void) => (
+              <BreakSubmenu
+                closeMenu={closeMenu}
+                items={[
+                  {
+                    icon: SeparatorHorizontal,
+                    label: t('toolbar.pageBreak'),
+                    onClick: onInsertPageBreak,
+                  },
+                  {
+                    icon: Minus,
+                    label: t('toolbar.sectionBreakNextPage'),
+                    onClick: onInsertSectionBreakNextPage,
+                  },
+                  {
+                    icon: Rows2,
+                    label: t('toolbar.sectionBreakContinuous'),
+                    onClick: onInsertSectionBreakContinuous,
+                  },
+                ]}
+              />
+            ),
+          } as MenuEntry,
+          {
+            icon: ListOrdered,
+            label: t('toolbar.tableOfContents'),
+            onClick: onInsertTOC,
+            disabled: !onInsertTOC,
+          },
+          ...(onWatermark
+            ? [
+                {
+                  icon: Stamp,
+                  label: t('toolbar.watermark'),
+                  onClick: onWatermark,
+                } as MenuEntry,
+              ]
+            : []),
+        ]}
+      />
+
+      {/* Help Menu */}
+      {showHelpMenu && (
+        <MenuDropdown
+          label={t('toolbar.help')}
+          disabled={disabled}
+          items={[
+            {
+              label: t('toolbar.reportIssue'),
+              onClick: () => openReportIssue(),
+            } as MenuEntry,
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // TitleBar
 // ============================================================================
 
@@ -105,19 +398,22 @@ export interface TitleBarProps {
 }
 
 /**
- * TitleBar layout:
+ * TitleBar layout (Google Docs style):
  *
  *   ┌──────────┬────────────────────────────┬──────────────────┐
- *   │  Logo    │ Document Name              │  Right Actions   │
+ *   │          │ Document Name              │                  │
+ *   │  Logo    │                            │  Right Actions   │
+ *   │          │ File  Format  Insert       │                  │
  *   └──────────┴────────────────────────────┴──────────────────┘
  *
- * Logo and TitleBarRight span full height; DocumentName sits in the centre
- * column. (Formatting/insert actions live in the toolbar below, not here.)
+ * Logo and TitleBarRight span full height. DocumentName + MenuBar
+ * stack vertically in the center column.
  */
 export function TitleBar({ children }: TitleBarProps) {
   let logoItem: ReactNode = null;
   let rightItem: ReactNode = null;
   const middleTopItems: ReactNode[] = [];
+  const menuBarItems: ReactNode[] = [];
 
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return;
@@ -125,6 +421,8 @@ export function TitleBar({ children }: TitleBarProps) {
       logoItem = child;
     } else if (child.type === TitleBarRight) {
       rightItem = child;
+    } else if (child.type === MenuBar) {
+      menuBarItems.push(child);
     } else {
       middleTopItems.push(child);
     }
@@ -154,11 +452,12 @@ export function TitleBar({ children }: TitleBarProps) {
         {logoItem || <DefaultDocIcon />}
       </div>
 
-      {/* Center: document name */}
+      {/* Center: doc name on top, menus below */}
       <div className="flex flex-col justify-center flex-1 min-w-0 py-1">
         {middleTopItems.length > 0 && (
           <div className="flex items-center gap-2 px-1">{middleTopItems}</div>
         )}
+        {menuBarItems.length > 0 && <div className="flex items-center px-1">{menuBarItems}</div>}
       </div>
 
       {/* Right: actions spanning full height */}

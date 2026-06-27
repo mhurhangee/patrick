@@ -6,6 +6,7 @@
  *     <EditorToolbar.TitleBar>
  *       <EditorToolbar.Logo><MyIcon /></EditorToolbar.Logo>
  *       <EditorToolbar.DocumentName value={name} onChange={setName} />
+ *       <EditorToolbar.MenuBar />
  *       <EditorToolbar.TitleBarRight>
  *         <button>Save</button>
  *       </EditorToolbar.TitleBarRight>
@@ -17,7 +18,7 @@
 import type { ReactNode } from 'react';
 import { EditorToolbarContext } from './EditorToolbarContext';
 import type { EditorToolbarProps } from './EditorToolbarContext';
-import { TitleBar, Logo, DocumentName, TitleBarRight } from './TitleBar';
+import { TitleBar, Logo, DocumentName, MenuBar, TitleBarRight } from './TitleBar';
 import type { TitleBarProps, LogoProps, DocumentNameProps, TitleBarRightProps } from './TitleBar';
 import { Toolbar } from './Toolbar';
 import { cn } from '../lib/utils';
@@ -32,6 +33,7 @@ interface EditorToolbarComponent {
   TitleBar: typeof TitleBar;
   Logo: typeof Logo;
   DocumentName: typeof DocumentName;
+  MenuBar: typeof MenuBar;
   TitleBarRight: typeof TitleBarRight;
   Toolbar: typeof Toolbar;
 }
@@ -60,6 +62,7 @@ const EditorToolbar = EditorToolbarBase as EditorToolbarComponent;
 EditorToolbar.TitleBar = TitleBar;
 EditorToolbar.Logo = Logo;
 EditorToolbar.DocumentName = DocumentName;
+EditorToolbar.MenuBar = MenuBar;
 EditorToolbar.TitleBarRight = TitleBarRight;
 EditorToolbar.Toolbar = Toolbar;
 

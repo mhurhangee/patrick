@@ -17,15 +17,7 @@
 @import 'tailwindcss/utilities.css';
 @import 'tw-animate-css';
 
-/* Generate utilities for the editor's own source AND the @patrick/ui components
- * it consumes (the editor is the first package to use @patrick/ui). build-css.mjs
- * scopes everything generated here under `.ep-root`. */
 @source './../**/*.{ts,tsx}';
-@source '../../../ui/src/**/*.{ts,tsx}';
-
-/* `dark:` utilities (used by @patrick/ui components) resolve against the editor's
- * own dark scope — the root carries both classes (`.ep-root.dark`). */
-@custom-variant dark (&:is(.ep-root.dark, .ep-root.dark *));
 
 @theme inline {
   --color-border: hsl(var(--border));
