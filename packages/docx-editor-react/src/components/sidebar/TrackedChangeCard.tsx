@@ -1,5 +1,5 @@
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import { MaterialSymbol } from '../ui/Icons';
+import { Check, X } from 'lucide-react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
 import type { TrackedChangeEntry } from './cardUtils';
 import { formatDate, getInitials, avatarStyle, ICON_BUTTON_STYLE, truncateText } from './cardUtils';
@@ -107,10 +107,10 @@ export function TrackedChangeCard({
         {isExpanded && (
           <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
             <button onClick={handleAccept} title={t('common.accept')} style={ICON_BUTTON_STYLE}>
-              <MaterialSymbol name="check" size={20} />
+              <Check size={20} />
             </button>
             <button onClick={handleReject} title={t('common.reject')} style={ICON_BUTTON_STYLE}>
-              <MaterialSymbol name="close" size={20} />
+              <X size={20} />
             </button>
           </div>
         )}

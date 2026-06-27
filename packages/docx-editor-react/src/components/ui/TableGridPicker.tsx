@@ -8,7 +8,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
-import { MaterialSymbol } from './MaterialSymbol';
+import { Grid3x3 } from 'lucide-react';
 import { TableGridInline } from './TableGridInline';
 import { cn } from '../../lib/utils';
 import { useFixedDropdown } from '../../hooks/useFixedDropdown';
@@ -105,7 +105,7 @@ export function TableGridPicker({
       aria-haspopup="grid"
       data-testid="toolbar-insert-table"
     >
-      <MaterialSymbol name="grid_on" size={20} />
+      <Grid3x3 size={20} />
     </Button>
   );
 

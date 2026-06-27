@@ -7,10 +7,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { MaterialSymbol } from './MaterialSymbol';
+import { ChevronDown, ChevronRight, type LucideIcon } from 'lucide-react';
 
 export interface MenuItem {
-  icon?: string;
+  icon?: LucideIcon;
   label: string;
   shortcut?: string;
   onClick?: () => void;
@@ -182,7 +182,7 @@ export function MenuDropdown({ label, items, disabled, showChevron = false }: Me
         style={isOpen ? triggerOpenStyle : triggerStyle}
       >
         {label}
-        {showChevron && <MaterialSymbol name="arrow_drop_down" size={16} />}
+        {showChevron && <ChevronDown size={16} />}
       </button>
 
       {isOpen && (
@@ -217,6 +217,7 @@ export function MenuDropdown({ label, items, disabled, showChevron = false }: Me
 
             const hasSubmenu = !!item.submenuContent;
             const isSubmenuOpen = hoveredSubmenu === item.label;
+            const ItemIcon = item.icon;
 
             return (
               <div
@@ -241,12 +242,12 @@ export function MenuDropdown({ label, items, disabled, showChevron = false }: Me
                   }}
                   disabled={item.disabled}
                 >
-                  {item.icon && <MaterialSymbol name={item.icon} size={18} />}
+                  {ItemIcon && <ItemIcon size={18} />}
                   <span>{item.label}</span>
                   {item.shortcut && <span style={shortcutStyle}>{item.shortcut}</span>}
                   {hasSubmenu && (
                     <span style={{ marginLeft: 'auto' }}>
-                      <MaterialSymbol name="keyboard_arrow_right" size={16} />
+                      <ChevronRight size={16} />
                     </span>
                   )}
                 </button>

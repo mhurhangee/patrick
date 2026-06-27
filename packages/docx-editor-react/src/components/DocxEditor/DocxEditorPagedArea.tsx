@@ -29,7 +29,7 @@ import {
 import { UnifiedSidebar } from '../UnifiedSidebar';
 import { CommentMarginMarkers } from '../CommentMarginMarkers';
 import { Tooltip } from '../ui/Tooltip';
-import { MaterialSymbol } from '../ui/Icons';
+import { MessageSquarePlus } from 'lucide-react';
 import { PENDING_COMMENT_ID } from './commentFactories';
 import type { HyperlinkPopupData } from '../ui/HyperlinkPopup';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
@@ -478,7 +478,7 @@ export function DocxEditorPagedArea({
                 '0 1px 3px var(--doc-shadow)';
             }}
           >
-            <MaterialSymbol name="add_comment" size={16} />
+            <MessageSquarePlus size={16} />
           </button>
         </Tooltip>
       )}

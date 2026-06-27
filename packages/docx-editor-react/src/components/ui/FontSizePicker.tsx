@@ -12,7 +12,7 @@
 import * as React from 'react';
 import { useState, useCallback, useRef } from 'react';
 import { Button } from './Button';
-import { MaterialSymbol } from './MaterialSymbol';
+import { Minus, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useFixedDropdown } from '../../hooks/useFixedDropdown';
 import { useTranslation } from '../../i18n';
@@ -228,7 +228,7 @@ export function FontSizePicker({
         aria-label={t('fontSize.decrease')}
         data-testid="font-size-decrease"
       >
-        <MaterialSymbol name="remove" size={18} />
+        <Minus size={18} />
       </Button>
 
       {/* Font size input/display */}
@@ -320,7 +320,7 @@ export function FontSizePicker({
         aria-label={t('fontSize.increase')}
         data-testid="font-size-increase"
       >
-        <MaterialSymbol name="add" size={18} />
+        <Plus size={18} />
       </Button>
     </div>
   );

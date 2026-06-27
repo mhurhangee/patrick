@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import { MaterialSymbol } from '../ui/Icons';
+import { Check, EllipsisVertical, Undo2 } from 'lucide-react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
 import {
   getCommentText,
@@ -63,7 +63,7 @@ export function CommentCard({
             borderRadius: 10,
           }}
         >
-          <MaterialSymbol name="check" size={12} />
+          <Check size={12} />
           {t('comments.resolved')}
         </div>
       )}
@@ -91,7 +91,7 @@ export function CommentCard({
               title={comment.done ? t('comments.reopen') : t('comments.resolve')}
               style={ICON_BUTTON_STYLE}
             >
-              <MaterialSymbol name={comment.done ? 'undo' : 'check'} size={20} />
+              {comment.done ? <Undo2 size={20} /> : <Check size={20} />}
             </button>
             <button
               onClick={(e) => {
@@ -101,7 +101,7 @@ export function CommentCard({
               title={t('comments.moreOptions')}
               style={ICON_BUTTON_STYLE}
             >
-              <MaterialSymbol name="more_vert" size={20} />
+              <EllipsisVertical size={20} />
             </button>
             {menuOpen && (
               <div

@@ -9,7 +9,7 @@
 import * as React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
 import { Button } from './Button';
-import { MaterialSymbol } from './MaterialSymbol';
+import { Minus, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useTranslation } from '../../i18n';
 
@@ -100,7 +100,7 @@ export function ZoomControl({
         disabled={disabled || !prevLevel}
         aria-label={t('zoom.zoomOut')}
       >
-        <MaterialSymbol name="remove" size={18} />
+        <Minus size={18} />
       </Button>
       <Select value={value.toString()} onValueChange={handleValueChange} disabled={disabled}>
         <SelectTrigger
@@ -133,7 +133,7 @@ export function ZoomControl({
         disabled={disabled || !nextLevel}
         aria-label={t('zoom.zoomIn')}
       >
-        <MaterialSymbol name="add" size={18} />
+        <Plus size={18} />
       </Button>
     </div>
   );

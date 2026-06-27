@@ -15,7 +15,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { CSSProperties, DragEvent, ChangeEvent } from 'react';
 import { useTranslation } from '../../i18n';
-import { MaterialSymbol } from '../ui/Icons';
+import { Image as ImageIconLucide } from 'lucide-react';
 import { useAspectLockedSize } from '../../hooks/useAspectLockedSize';
 
 // ============================================================================
@@ -274,7 +274,7 @@ const DISABLED_BUTTON_STYLE: CSSProperties = {
 function ImageIcon(): React.ReactElement {
   return (
     <span style={{ color: 'var(--doc-text-placeholder)' }}>
-      <MaterialSymbol name="image" size={48} />
+      <ImageIconLucide size={48} />
     </span>
   );
 }

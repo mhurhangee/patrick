@@ -32,7 +32,19 @@ import { ListButtons, createDefaultListState } from './ui/ListButtons';
 import type { ListState } from './ui/ListButtons';
 import { LineSpacingPicker } from './ui/LineSpacingPicker';
 import { StylePicker } from './ui/StylePicker';
-import { MaterialSymbol } from './ui/MaterialSymbol';
+import {
+  Bold,
+  Italic,
+  Link,
+  Redo2,
+  RemoveFormatting,
+  SlidersHorizontal,
+  Strikethrough,
+  Subscript,
+  Superscript,
+  Underline,
+  Undo2,
+} from 'lucide-react';
 import { ZoomControl } from './ui/ZoomControl';
 import { TableBorderPicker } from './ui/TableBorderPicker';
 import { TableBorderColorPicker } from './ui/TableBorderColorPicker';
@@ -696,7 +708,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.undoShortcut')}
           ariaLabel={t('formattingBar.undo')}
         >
-          <MaterialSymbol name="undo" size={ICON_SIZE} />
+          <Undo2 size={ICON_SIZE} />
         </ToolbarButton>
         <ToolbarButton
           onClick={handleRedo}
@@ -704,7 +716,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.redoShortcut')}
           ariaLabel={t('formattingBar.redo')}
         >
-          <MaterialSymbol name="redo" size={ICON_SIZE} />
+          <Redo2 size={ICON_SIZE} />
         </ToolbarButton>
       </ToolbarGroup>
 
@@ -768,7 +780,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.boldShortcut')}
           ariaLabel={t('formattingBar.bold')}
         >
-          <MaterialSymbol name="format_bold" size={ICON_SIZE} />
+          <Bold size={ICON_SIZE} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => handleFormat('italic')}
@@ -777,7 +789,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.italicShortcut')}
           ariaLabel={t('formattingBar.italic')}
         >
-          <MaterialSymbol name="format_italic" size={ICON_SIZE} />
+          <Italic size={ICON_SIZE} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => handleFormat('underline')}
@@ -786,7 +798,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.underlineShortcut')}
           ariaLabel={t('formattingBar.underline')}
         >
-          <MaterialSymbol name="format_underlined" size={ICON_SIZE} />
+          <Underline size={ICON_SIZE} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => handleFormat('strikethrough')}
@@ -795,7 +807,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.strikethrough')}
           ariaLabel={t('formattingBar.strikethrough')}
         >
-          <MaterialSymbol name="strikethrough_s" size={ICON_SIZE} />
+          <Strikethrough size={ICON_SIZE} />
         </ToolbarButton>
         {showTextColorPicker && (
           <ColorPicker
@@ -823,7 +835,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.insertLinkShortcut')}
           ariaLabel={t('formattingBar.insertLink')}
         >
-          <MaterialSymbol name="link" size={ICON_SIZE} />
+          <Link size={ICON_SIZE} />
         </ToolbarButton>
       </ToolbarGroup>
 
@@ -836,7 +848,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.superscriptShortcut')}
           ariaLabel={t('formattingBar.superscript')}
         >
-          <MaterialSymbol name="superscript" size={ICON_SIZE} />
+          <Superscript size={ICON_SIZE} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => handleFormat('subscript')}
@@ -845,7 +857,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
           title={t('formattingBar.subscriptShortcut')}
           ariaLabel={t('formattingBar.subscript')}
         >
-          <MaterialSymbol name="subscript" size={ICON_SIZE} />
+          <Subscript size={ICON_SIZE} />
         </ToolbarButton>
       </ToolbarGroup>
 
@@ -904,7 +916,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
               title={t('formattingBar.imagePropertiesShortcut')}
               ariaLabel={t('formattingBar.imageProperties')}
             >
-              <MaterialSymbol name="tune" size={ICON_SIZE} />
+              <SlidersHorizontal size={ICON_SIZE} />
             </ToolbarButton>
           )}
         </ToolbarGroup>
@@ -942,7 +954,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
         title={t('formattingBar.clearFormatting')}
         ariaLabel={t('formattingBar.clearFormatting')}
       >
-        <MaterialSymbol name="format_clear" size={ICON_SIZE} />
+        <RemoveFormatting size={ICON_SIZE} />
       </ToolbarButton>
 
       {/* Custom toolbar items */}

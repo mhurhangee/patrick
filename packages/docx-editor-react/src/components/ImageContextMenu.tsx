@@ -21,18 +21,26 @@ import {
 } from '@eigenpal/docx-editor-core/layout-painter';
 import { Z_INDEX } from '../styles/zIndex';
 import { useTranslation } from '../i18n';
-import { MaterialSymbol } from './ui/Icons';
+import {
+  BringToFront,
+  PanelLeft,
+  PanelRight,
+  SendToBack,
+  Settings,
+  WrapText,
+  type LucideIcon,
+} from 'lucide-react';
 import type { TextContextAction } from './TextContextMenu';
 
 type ImageAttrsCssFloat = 'left' | 'right' | 'none' | null;
 
-/** Map core's icon hint vocabulary to React-side Material Symbol names. */
-const ICON_BY_HINT: Record<ImageLayoutIconHint, string> = {
-  inline: 'wrap_text',
-  squareLeft: 'format_image_left',
-  squareRight: 'format_image_right',
-  behind: 'flip_to_back',
-  inFront: 'flip_to_front',
+/** Map core's icon hint vocabulary to lucide icon components. */
+const ICON_BY_HINT: Record<ImageLayoutIconHint, LucideIcon> = {
+  inline: WrapText,
+  squareLeft: PanelLeft,
+  squareRight: PanelRight,
+  behind: SendToBack,
+  inFront: BringToFront,
 };
 
 export interface ImageContextMenuTextAction {
@@ -250,7 +258,7 @@ export const ImageContextMenu: React.FC<ImageContextMenuProps> = ({
                 width: ICON_SIZE,
               }}
             >
-              <MaterialSymbol name="settings" size={ICON_SIZE} />
+              <Settings size={ICON_SIZE} />
             </span>
             <span style={{ flex: 1 }}>{t('imageWrap.menu.imageProperties')}</span>
           </button>
@@ -266,6 +274,7 @@ export const ImageContextMenu: React.FC<ImageContextMenuProps> = ({
       )}
       {IMAGE_LAYOUT_OPTIONS.map((option: ImageLayoutOptionDef) => {
         const isCurrent = option.choice === currentChoice;
+        const HintIcon = ICON_BY_HINT[option.iconHint];
         const isEnabled = isImageLayoutOptionEnabled(option, currentWrapType);
         const navIdx = isEnabled
           ? propertiesOffset + enabledLayout.findIndex((o) => o.choice === option.choice)
@@ -314,7 +323,7 @@ export const ImageContextMenu: React.FC<ImageContextMenuProps> = ({
                 width: ICON_SIZE,
               }}
             >
-              <MaterialSymbol name={ICON_BY_HINT[option.iconHint]} size={ICON_SIZE} />
+              <HintIcon size={ICON_SIZE} />
             </span>
             <span style={{ flex: 1 }}>{t(`imageWrap.menu.${option.i18nLabelKey}` as never)}</span>
             {isCurrent && (

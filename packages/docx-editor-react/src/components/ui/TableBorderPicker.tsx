@@ -8,7 +8,18 @@
 import { useState, useCallback } from 'react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
-import { MaterialSymbol } from './MaterialSymbol';
+import {
+  ChevronDown,
+  Frame,
+  Grid3x3,
+  PanelBottom,
+  PanelLeft,
+  PanelRight,
+  PanelTop,
+  Plus,
+  SquareDashed,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { TableAction } from './TableToolbar';
 import { useFixedDropdown } from '../../hooks/useFixedDropdown';
@@ -20,15 +31,15 @@ export interface TableBorderPickerProps {
   disabled?: boolean;
 }
 
-const BORDER_PRESETS: { action: TableAction; icon: string; labelKey: TranslationKey }[] = [
-  { action: 'borderAll', icon: 'border_all', labelKey: 'table.borders.all' },
-  { action: 'borderOutside', icon: 'border_outer', labelKey: 'table.borders.outside' },
-  { action: 'borderInside', icon: 'border_inner', labelKey: 'table.borders.inside' },
-  { action: 'borderTop', icon: 'border_top', labelKey: 'table.borders.top' },
-  { action: 'borderBottom', icon: 'border_bottom', labelKey: 'table.borders.bottom' },
-  { action: 'borderLeft', icon: 'border_left', labelKey: 'table.borders.left' },
-  { action: 'borderRight', icon: 'border_right', labelKey: 'table.borders.right' },
-  { action: 'borderNone', icon: 'border_clear', labelKey: 'table.borders.none' },
+const BORDER_PRESETS: { action: TableAction; icon: LucideIcon; labelKey: TranslationKey }[] = [
+  { action: 'borderAll', icon: Grid3x3, labelKey: 'table.borders.all' },
+  { action: 'borderOutside', icon: Frame, labelKey: 'table.borders.outside' },
+  { action: 'borderInside', icon: Plus, labelKey: 'table.borders.inside' },
+  { action: 'borderTop', icon: PanelTop, labelKey: 'table.borders.top' },
+  { action: 'borderBottom', icon: PanelBottom, labelKey: 'table.borders.bottom' },
+  { action: 'borderLeft', icon: PanelLeft, labelKey: 'table.borders.left' },
+  { action: 'borderRight', icon: PanelRight, labelKey: 'table.borders.right' },
+  { action: 'borderNone', icon: SquareDashed, labelKey: 'table.borders.none' },
 ];
 
 export function TableBorderPicker({ onAction, disabled = false }: TableBorderPickerProps) {
@@ -65,8 +76,8 @@ export function TableBorderPicker({ onAction, disabled = false }: TableBorderPic
       aria-haspopup="true"
       data-testid="toolbar-table-borders"
     >
-      <MaterialSymbol name="border_all" size={20} />
-      <MaterialSymbol name="arrow_drop_down" size={14} className="-ml-1" />
+      <Grid3x3 size={20} />
+      <ChevronDown size={14} className="-ml-1" />
     </Button>
   );
 
@@ -94,7 +105,7 @@ export function TableBorderPicker({ onAction, disabled = false }: TableBorderPic
               gap: 2,
             }}
           >
-            {BORDER_PRESETS.map(({ action, icon, labelKey }) => (
+            {BORDER_PRESETS.map(({ action, icon: Icon, labelKey }) => (
               <button
                 key={typeof action === 'string' ? action : action.type}
                 type="button"
@@ -121,7 +132,7 @@ export function TableBorderPicker({ onAction, disabled = false }: TableBorderPic
                 }}
                 onClick={() => handlePreset(action)}
               >
-                <MaterialSymbol name={icon} size={18} />
+                <Icon size={18} />
               </button>
             ))}
           </div>

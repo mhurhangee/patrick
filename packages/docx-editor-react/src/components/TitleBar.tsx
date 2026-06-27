@@ -13,7 +13,22 @@ import type { ReactNode } from 'react';
 import { MenuDropdown } from './ui/MenuDropdown';
 import type { MenuEntry } from './ui/MenuDropdown';
 import { TableGridInline } from './ui/TableGridInline';
-import { MaterialSymbol } from './ui/MaterialSymbol';
+import {
+  FileDown,
+  FileUp,
+  Grid3x3,
+  Image,
+  ListOrdered,
+  Minus,
+  PilcrowLeft,
+  PilcrowRight,
+  Printer,
+  Rows2,
+  SeparatorHorizontal,
+  Settings,
+  Stamp,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEditorToolbar } from './EditorToolbarContext';
 import type { FormattingAction } from './Toolbar';
 import { useTranslation } from '../i18n';
@@ -25,7 +40,7 @@ import { openReportIssue } from './reportIssue';
 // ============================================================================
 
 interface BreakSubmenuItem {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   onClick?: () => void;
 }
@@ -35,6 +50,7 @@ function BreakSubmenu({ items, closeMenu }: { items: BreakSubmenuItem[]; closeMe
     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 220 }}>
       {items.map((item) => {
         const disabled = !item.onClick;
+        const ItemIcon = item.icon;
         return (
           <button
             key={item.label}
@@ -71,7 +87,7 @@ function BreakSubmenu({ items, closeMenu }: { items: BreakSubmenuItem[]; closeMe
               (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
             }}
           >
-            <MaterialSymbol name={item.icon} size={18} />
+            <ItemIcon size={18} />
             <span>{item.label}</span>
           </button>
         );
@@ -224,7 +240,7 @@ export function MenuBar() {
             ...(onOpen
               ? [
                   {
-                    icon: 'file_upload',
+                    icon: FileUp,
                     label: t('toolbar.open'),
                     shortcut: t('toolbar.openShortcut'),
                     onClick: onOpen,
@@ -234,7 +250,7 @@ export function MenuBar() {
             ...(onSave
               ? [
                   {
-                    icon: 'file_download',
+                    icon: FileDown,
                     label: t('toolbar.save'),
                     shortcut: t('toolbar.saveShortcut'),
                     onClick: onSave,
@@ -247,7 +263,7 @@ export function MenuBar() {
             ...(onPrint
               ? [
                   {
-                    icon: 'print',
+                    icon: Printer,
                     label: t('toolbar.print'),
                     shortcut: t('toolbar.printShortcut'),
                     onClick: onPrint,
@@ -257,7 +273,7 @@ export function MenuBar() {
             ...(onPageSetup
               ? [
                   {
-                    icon: 'settings',
+                    icon: Settings,
                     label: t('toolbar.pageSetup'),
                     onClick: onPageSetup,
                   } as MenuEntry,
@@ -273,12 +289,12 @@ export function MenuBar() {
         disabled={disabled}
         items={[
           {
-            icon: 'format_textdirection_l_to_r',
+            icon: PilcrowLeft,
             label: t('toolbar.leftToRight'),
             onClick: () => handleFormat('setLtr'),
           } as MenuEntry,
           {
-            icon: 'format_textdirection_r_to_l',
+            icon: PilcrowRight,
             label: t('toolbar.rightToLeft'),
             onClick: () => handleFormat('setRtl'),
           } as MenuEntry,
@@ -291,12 +307,12 @@ export function MenuBar() {
         disabled={disabled}
         items={[
           ...(onInsertImage
-            ? [{ icon: 'image', label: t('toolbar.image'), onClick: onInsertImage } as MenuEntry]
+            ? [{ icon: Image, label: t('toolbar.image'), onClick: onInsertImage } as MenuEntry]
             : []),
           ...(showTableInsert && onInsertTable
             ? [
                 {
-                  icon: 'grid_on',
+                  icon: Grid3x3,
                   label: t('toolbar.table'),
                   submenuContent: (closeMenu: () => void) => (
                     <TableGridInline
@@ -313,24 +329,24 @@ export function MenuBar() {
             ? [{ type: 'separator' as const } as MenuEntry]
             : []),
           {
-            icon: 'page_break',
+            icon: SeparatorHorizontal,
             label: t('toolbar.break'),
             submenuContent: (closeMenu: () => void) => (
               <BreakSubmenu
                 closeMenu={closeMenu}
                 items={[
                   {
-                    icon: 'page_break',
+                    icon: SeparatorHorizontal,
                     label: t('toolbar.pageBreak'),
                     onClick: onInsertPageBreak,
                   },
                   {
-                    icon: 'horizontal_rule',
+                    icon: Minus,
                     label: t('toolbar.sectionBreakNextPage'),
                     onClick: onInsertSectionBreakNextPage,
                   },
                   {
-                    icon: 'border_horizontal',
+                    icon: Rows2,
                     label: t('toolbar.sectionBreakContinuous'),
                     onClick: onInsertSectionBreakContinuous,
                   },
@@ -339,7 +355,7 @@ export function MenuBar() {
             ),
           } as MenuEntry,
           {
-            icon: 'format_list_numbered',
+            icon: ListOrdered,
             label: t('toolbar.tableOfContents'),
             onClick: onInsertTOC,
             disabled: !onInsertTOC,
@@ -347,7 +363,7 @@ export function MenuBar() {
           ...(onWatermark
             ? [
                 {
-                  icon: 'branding_watermark',
+                  icon: Stamp,
                   label: t('toolbar.watermark'),
                   onClick: onWatermark,
                 } as MenuEntry,

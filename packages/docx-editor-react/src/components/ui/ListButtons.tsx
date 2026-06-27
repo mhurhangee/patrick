@@ -11,7 +11,7 @@
 import React, { useState, useCallback } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { NumberFormat } from '@eigenpal/docx-editor-core/types/document';
-import { MaterialSymbol } from './MaterialSymbol';
+import { IndentDecrease, IndentIncrease, List, ListOrdered } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 
 // ============================================================================
@@ -244,7 +244,7 @@ export function ListButtons({
           onClick={onBulletList}
           style={getButtonStyle()}
         >
-          <MaterialSymbol name="format_list_bulleted" size={ICON_SIZE} />
+          <List size={ICON_SIZE} />
         </ListButton>
 
         <ListButton
@@ -254,7 +254,7 @@ export function ListButtons({
           onClick={onNumberedList}
           style={getButtonStyle()}
         >
-          <MaterialSymbol name="format_list_numbered" size={ICON_SIZE} />
+          <ListOrdered size={ICON_SIZE} />
         </ListButton>
       </div>
 
@@ -270,7 +270,7 @@ export function ListButtons({
               onClick={onOutdent}
               style={getButtonStyle()}
             >
-              <MaterialSymbol name="format_indent_decrease" size={ICON_SIZE} />
+              <IndentDecrease size={ICON_SIZE} />
             </ListButton>
 
             <ListButton
@@ -280,7 +280,7 @@ export function ListButtons({
               onClick={onIndent}
               style={getButtonStyle()}
             >
-              <MaterialSymbol name="format_indent_increase" size={ICON_SIZE} />
+              <IndentIncrease size={ICON_SIZE} />
             </ListButton>
           </div>
         </>

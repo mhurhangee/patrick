@@ -3,6 +3,7 @@
  */
 
 import { IconGridDropdown, type IconGridOption } from './IconGridDropdown';
+import { BringToFront, PanelLeft, PanelRight, SendToBack, WrapText } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
 
@@ -10,13 +11,13 @@ import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
 // Top-and-bottom and tight/through live in the right-click image menu where
 // Word also surfaces the full set.
 const WRAP_OPTIONS: (Omit<IconGridOption, 'label'> & { labelKey: TranslationKey })[] = [
-  { value: 'inline', labelKey: 'imageWrap.inline', iconName: 'wrap_text' },
+  { value: 'inline', labelKey: 'imageWrap.inline', iconName: WrapText },
   // Square Left = image anchored on the left, text wraps on the right.
-  { value: 'wrapRight', labelKey: 'imageWrap.floatLeft', iconName: 'format_image_left' },
+  { value: 'wrapRight', labelKey: 'imageWrap.floatLeft', iconName: PanelLeft },
   // Square Right = image anchored on the right, text wraps on the left.
-  { value: 'wrapLeft', labelKey: 'imageWrap.floatRight', iconName: 'format_image_right' },
-  { value: 'behind', labelKey: 'imageWrap.behindText', iconName: 'flip_to_back' },
-  { value: 'inFront', labelKey: 'imageWrap.inFrontOfText', iconName: 'flip_to_front' },
+  { value: 'wrapLeft', labelKey: 'imageWrap.floatRight', iconName: PanelRight },
+  { value: 'behind', labelKey: 'imageWrap.behindText', iconName: SendToBack },
+  { value: 'inFront', labelKey: 'imageWrap.inFrontOfText', iconName: BringToFront },
 ];
 
 export interface ImageWrapDropdownProps {
