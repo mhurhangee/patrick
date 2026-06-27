@@ -112,17 +112,18 @@ export function formatSdtDate(iso: string, pattern?: string): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   // Single pass so an emitted month name (e.g. "March") isn't re-scanned by a
   // later, shorter token like `M` — which would corrupt it to "3arch".
+  const monthName = MONTHS[m - 1] ?? '';
   const tokens: Record<string, string> = {
     yyyy: String(y),
     yy: String(y).slice(-2),
-    MMMM: MONTHS[m - 1],
-    MMM: MONTHS[m - 1].slice(0, 3),
+    MMMM: monthName,
+    MMM: monthName.slice(0, 3),
     MM: pad(m),
     M: String(m),
     dd: pad(d),
     d: String(d),
   };
-  return fmt.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d/g, (t) => tokens[t]);
+  return fmt.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d/g, (t) => tokens[t] ?? '');
 }
 
 // ── value application ───────────────────────────────────────────────────────

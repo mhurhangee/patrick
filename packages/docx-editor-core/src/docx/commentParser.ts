@@ -209,19 +209,21 @@ export function parseComments(
     // Build reverse lookup: paraId → comment id
     const commentIdByParaId = new Map<string, number>();
     for (let i = 0; i < comments.length; i++) {
+      const comment = comments[i];
       const pid = lastParaIdByCommentIdx[i];
-      if (pid) commentIdByParaId.set(pid, comments[i].id);
+      if (pid && comment) commentIdByParaId.set(pid, comment.id);
     }
 
     for (let i = 0; i < comments.length; i++) {
-      if (comments[i].parentId != null) continue; // already has parentId
+      const comment = comments[i];
+      if (!comment || comment.parentId != null) continue; // already has parentId
       const pid = lastParaIdByCommentIdx[i];
       if (!pid) continue;
       const parentParaId = extended.parentByParaId.get(pid);
       if (!parentParaId) continue;
       const parentCommentId = commentIdByParaId.get(parentParaId);
       if (parentCommentId != null) {
-        comments[i] = { ...comments[i], parentId: parentCommentId };
+        comments[i] = { ...comment, parentId: parentCommentId };
       }
     }
   }

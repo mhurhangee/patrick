@@ -214,7 +214,7 @@ function enrichParagraphTextBoxes(
     if (targetIdx >= paragraph.content.length) {
       targetIdx = -1;
       for (let i = paragraph.content.length - 1; i >= 0; i--) {
-        if (paragraph.content[i].type === 'run') {
+        if (paragraph.content[i]?.type === 'run') {
           targetIdx = i;
           break;
         }
@@ -222,7 +222,7 @@ function enrichParagraphTextBoxes(
     }
     if (targetIdx >= 0) {
       const parsedContent = paragraph.content[targetIdx];
-      if (parsedContent.type === 'run') {
+      if (parsedContent?.type === 'run') {
         parsedContent.content.push(shapeContent);
       }
     }

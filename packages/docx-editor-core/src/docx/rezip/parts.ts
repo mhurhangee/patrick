@@ -100,7 +100,7 @@ export async function readRelsOrStub(zip: JSZip, relsPath: string): Promise<stri
 export function findMaxRId(relsXml: string): number {
   let maxId = 0;
   for (const match of relsXml.matchAll(/Id="rId(\d+)"/g)) {
-    const id = parseInt(match[1], 10);
+    const id = parseInt(match[1] ?? '', 10);
     if (id > maxId) maxId = id;
   }
   return maxId;

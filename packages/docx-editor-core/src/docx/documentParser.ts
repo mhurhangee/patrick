@@ -56,7 +56,7 @@ export function extractTemplateVariables(text: string): string[] {
   TEMPLATE_VARIABLE_REGEX.lastIndex = 0;
 
   while ((match = TEMPLATE_VARIABLE_REGEX.exec(text)) !== null) {
-    const varName = match[1].trim();
+    const varName = (match[1] ?? '').trim();
     if (varName && !variables.includes(varName)) {
       variables.push(varName);
     }
@@ -249,8 +249,9 @@ export function parseDocumentBody(
   // The body-level sectPr is what most consumers read via finalSectionProperties.
   // Promote the last section's effective properties so downstream code sees the
   // inherited refs without having to walk sections[].
-  if (result.finalSectionProperties && result.sections.length > 0) {
-    result.finalSectionProperties = result.sections[result.sections.length - 1].properties;
+  const lastSection = result.sections[result.sections.length - 1];
+  if (result.finalSectionProperties && lastSection) {
+    result.finalSectionProperties = lastSection.properties;
   }
 
   return result;
@@ -433,7 +434,9 @@ export function getDocumentOutline(
   const paragraphs = getAllParagraphs(body);
 
   for (let i = 0; i < Math.min(paragraphs.length, maxParagraphs); i++) {
-    const text = getParagraphText(paragraphs[i]).trim();
+    const para = paragraphs[i];
+    if (!para) continue;
+    const text = getParagraphText(para).trim();
     if (text.length > 0) {
       outline.push(
         text.length > maxCharsPerPara ? text.substring(0, maxCharsPerPara) + '...' : text

@@ -40,6 +40,7 @@ export function findParagraphOffsets(
   }
 
   const start = matches[0];
+  if (start === undefined) return null;
 
   // Now find the matching </w:p> by counting depth
   // Start after the <w:p opening
@@ -128,6 +129,7 @@ function collectParaIds(xml: string): Map<string, number> {
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(xml)) !== null) {
     const id = match[1];
+    if (id === undefined) continue;
     ids.set(id, (ids.get(id) || 0) + 1);
   }
   return ids;

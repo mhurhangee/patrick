@@ -86,16 +86,20 @@ function serializeComment(comment: Comment, paraInfos: CommentParaInfo[]): strin
   let xml = `<w:comment ${attrs.join(' ')}>`;
 
   if (comment.content && comment.content.length > 0) {
-    if (comment.content.length === 1) {
+    const content = comment.content;
+    const firstPara = content[0];
+    const lastPara = content[content.length - 1];
+    if (content.length === 1 && firstPara) {
       // Single paragraph — paraId on this (last) paragraph
-      xml += serializeParagraphWithAnnotationRef(comment.content[0], commentParaId);
-    } else {
+      xml += serializeParagraphWithAnnotationRef(firstPara, commentParaId);
+    } else if (firstPara && lastPara) {
       // Multiple paragraphs — paraId ONLY on the last one
-      xml += serializeParagraphWithAnnotationRef(comment.content[0]);
-      for (let i = 1; i < comment.content.length - 1; i++) {
-        xml += serializeParagraph(comment.content[i]);
+      xml += serializeParagraphWithAnnotationRef(firstPara);
+      for (let i = 1; i < content.length - 1; i++) {
+        const para = content[i];
+        if (para) xml += serializeParagraph(para);
       }
-      xml += serializeParagraph(comment.content[comment.content.length - 1], commentParaId);
+      xml += serializeParagraph(lastPara, commentParaId);
     }
   } else {
     // Empty comment — paraId on the sole paragraph

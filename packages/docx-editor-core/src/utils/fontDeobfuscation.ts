@@ -33,7 +33,7 @@ function fontKeyToReversedBytes(fontKey: string): Uint8Array | null {
   // Reverse the byte order — this is the actual XOR key.
   const reversed = new Uint8Array(KEY_LENGTH);
   for (let i = 0; i < KEY_LENGTH; i++) {
-    reversed[i] = forward[KEY_LENGTH - 1 - i];
+    reversed[i] = forward[KEY_LENGTH - 1 - i] ?? 0;
   }
   return reversed;
 }
@@ -69,7 +69,7 @@ export function deobfuscateFont(data: ArrayBuffer, fontKey: string): ArrayBuffer
   const out = new Uint8Array(data.slice(0));
   const end = Math.min(HEADER_LENGTH, out.length);
   for (let i = 0; i < end; i++) {
-    out[i] ^= key[i % KEY_LENGTH];
+    out[i] = (out[i] ?? 0) ^ (key[i % KEY_LENGTH] ?? 0);
   }
   return out.buffer;
 }

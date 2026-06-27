@@ -107,6 +107,7 @@ export function removeComment(body: DocumentBody, commentId: number): void {
   forEachParagraph(body, (para) => {
     for (let i = para.content.length - 1; i >= 0; i--) {
       const item = para.content[i];
+      if (!item) continue;
       if (
         (item.type === 'commentRangeStart' || item.type === 'commentRangeEnd') &&
         item.id === commentId

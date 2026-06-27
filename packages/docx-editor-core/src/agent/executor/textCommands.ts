@@ -95,8 +95,9 @@ export function executeReplaceText(doc: Document, command: ReplaceTextCommand): 
 
     // Remove in reverse order to preserve indices
     for (let i = paragraphsToRemove.length - 1; i >= 0; i--) {
-      if (paragraphsToRemove[i] !== -1) {
-        body.content.splice(paragraphsToRemove[i], 1);
+      const idx = paragraphsToRemove[i];
+      if (idx !== undefined && idx !== -1) {
+        body.content.splice(idx, 1);
       }
     }
   }
@@ -145,8 +146,9 @@ export function executeDeleteText(doc: Document, command: DeleteTextCommand): Do
     }
 
     for (let i = indicesToRemove.length - 1; i >= 0; i--) {
-      if (indicesToRemove[i] !== -1) {
-        body.content.splice(indicesToRemove[i], 1);
+      const idx = indicesToRemove[i];
+      if (idx !== undefined && idx !== -1) {
+        body.content.splice(idx, 1);
       }
     }
   }

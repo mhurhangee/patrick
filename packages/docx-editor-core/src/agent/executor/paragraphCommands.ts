@@ -91,7 +91,10 @@ export function executeMergeParagraphs(doc: Document, command: MergeParagraphsCo
 
   // Remove merged paragraphs in reverse order
   for (let i = indicesToRemove.length - 1; i >= 0; i--) {
-    body.content.splice(indicesToRemove[i], 1);
+    const idx = indicesToRemove[i];
+    if (idx !== undefined) {
+      body.content.splice(idx, 1);
+    }
   }
 
   return newDoc;

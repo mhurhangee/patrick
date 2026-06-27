@@ -22,10 +22,11 @@ export function getTableColumnCount(table: Table): number {
     return table.columnWidths.length;
   }
 
-  if (table.rows.length === 0) return 0;
+  const firstRow = table.rows[0];
+  if (!firstRow) return 0;
 
   // Count cells in first row, accounting for grid span
-  return table.rows[0].cells.reduce((count, cell) => {
+  return firstRow.cells.reduce((count, cell) => {
     return count + (cell.formatting?.gridSpan ?? 1);
   }, 0);
 }
@@ -119,7 +120,7 @@ function getParagraphText(para: Paragraph): string {
  */
 export function hasHeaderRow(table: Table): boolean {
   if (table.rows.length === 0) return false;
-  return table.rows[0].formatting?.header === true;
+  return table.rows[0]?.formatting?.header === true;
 }
 
 /**

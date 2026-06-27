@@ -480,7 +480,7 @@ const CSS_NEWLINE_ESCAPES: Record<string, string> = { '\n': '\\a ', '\r': '\\d '
  * so a crafted DOCX font name cannot break out of the quoted value.
  */
 function escapeQuotedFontName(fontName: string): string {
-  return fontName.replace(/["\\]/g, '\\$&').replace(/[\n\r\f]/g, (c) => CSS_NEWLINE_ESCAPES[c]);
+  return fontName.replace(/["\\]/g, '\\$&').replace(/[\n\r\f]/g, (c) => CSS_NEWLINE_ESCAPES[c] ?? c);
 }
 
 /**

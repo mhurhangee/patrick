@@ -146,6 +146,9 @@ export function addRepeatingSectionItem(
   }
   const ord = options.afterIndex ?? items.length - 1;
   const srcContentIdx = items[Math.max(0, Math.min(ord, items.length - 1))];
+  if (srcContentIdx === undefined) {
+    throw new RepeatingSectionError('Repeating section has no item to clone.');
+  }
   const template = section.content[srcContentIdx] as BlockSdt;
 
   let nextId = maxControlId(doc.package.document.content);

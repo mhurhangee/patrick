@@ -28,7 +28,7 @@ export function cloneDocument(doc: Document): Document {
 export function getBlockIndexForParagraph(body: DocumentBody, paragraphIndex: number): number {
   let currentParagraphIndex = 0;
   for (let i = 0; i < body.content.length; i++) {
-    if (body.content[i].type === 'paragraph') {
+    if (body.content[i]?.type === 'paragraph') {
       if (currentParagraphIndex === paragraphIndex) {
         return i;
       }

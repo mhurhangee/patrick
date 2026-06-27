@@ -1,596 +1,89 @@
 {
   "name": "@eigenpal/docx-editor-core",
   "version": "1.9.0",
-  "sideEffects": false,
   "description": "Framework-agnostic core for DOCX parsing, editing, and rendering",
-  "main": "./dist/core.js",
-  "module": "./dist/core.mjs",
-  "types": "./dist/core.d.ts",
+  "type": "module",
+  "sideEffects": false,
   "exports": {
-    ".": {
-      "types": "./dist/core.d.ts",
-      "import": "./dist/core.mjs",
-      "require": "./dist/core.js"
-    },
-    "./headless": {
-      "types": "./dist/headless.d.ts",
-      "import": "./dist/headless.mjs",
-      "require": "./dist/headless.js"
-    },
-    "./core-plugins": {
-      "types": "./dist/core-plugins.d.ts",
-      "import": "./dist/core-plugins.mjs",
-      "require": "./dist/core-plugins.js"
-    },
-    "./prosemirror": {
-      "types": "./dist/prosemirror/index.d.ts",
-      "import": "./dist/prosemirror/index.mjs",
-      "require": "./dist/prosemirror/index.js"
-    },
-    "./prosemirror/extensions": {
-      "types": "./dist/prosemirror/extensions/index.d.ts",
-      "import": "./dist/prosemirror/extensions/index.mjs",
-      "require": "./dist/prosemirror/extensions/index.js"
-    },
-    "./prosemirror/conversion": {
-      "types": "./dist/prosemirror/conversion/index.d.ts",
-      "import": "./dist/prosemirror/conversion/index.mjs",
-      "require": "./dist/prosemirror/conversion/index.js"
-    },
-    "./prosemirror/commands": {
-      "types": "./dist/prosemirror/commands/index.d.ts",
-      "import": "./dist/prosemirror/commands/index.mjs",
-      "require": "./dist/prosemirror/commands/index.js"
-    },
-    "./prosemirror/plugins": {
-      "types": "./dist/prosemirror/plugins/index.d.ts",
-      "import": "./dist/prosemirror/plugins/index.mjs",
-      "require": "./dist/prosemirror/plugins/index.js"
-    },
-    "./prosemirror/utils/ClickPositionResolver": {
-      "types": "./dist/prosemirror/utils/ClickPositionResolver.d.ts",
-      "import": "./dist/prosemirror/utils/ClickPositionResolver.mjs",
-      "require": "./dist/prosemirror/utils/ClickPositionResolver.js"
-    },
-    "./prosemirror/utils/extractTrackedChanges": {
-      "types": "./dist/prosemirror/utils/extractTrackedChanges.d.ts",
-      "import": "./dist/prosemirror/utils/extractTrackedChanges.mjs",
-      "require": "./dist/prosemirror/utils/extractTrackedChanges.js"
-    },
-    "./prosemirror/utils/LayoutSelectionGate": {
-      "types": "./dist/prosemirror/utils/LayoutSelectionGate.d.ts",
-      "import": "./dist/prosemirror/utils/LayoutSelectionGate.mjs",
-      "require": "./dist/prosemirror/utils/LayoutSelectionGate.js"
-    },
-    "./prosemirror/utils/PointerEventHandler": {
-      "types": "./dist/prosemirror/utils/PointerEventHandler.d.ts",
-      "import": "./dist/prosemirror/utils/PointerEventHandler.mjs",
-      "require": "./dist/prosemirror/utils/PointerEventHandler.js"
-    },
-    "./prosemirror/utils/visualLineNavigation": {
-      "types": "./dist/prosemirror/utils/visualLineNavigation.d.ts",
-      "import": "./dist/prosemirror/utils/visualLineNavigation.mjs",
-      "require": "./dist/prosemirror/utils/visualLineNavigation.js"
-    },
-    "./prosemirror/extensions/nodes/TableExtension": {
-      "types": "./dist/prosemirror/extensions/nodes/TableExtension.d.ts",
-      "import": "./dist/prosemirror/extensions/nodes/TableExtension.mjs",
-      "require": "./dist/prosemirror/extensions/nodes/TableExtension.js"
-    },
-    "./prosemirror/template/prosemirror-plugin": {
-      "types": "./dist/prosemirror/template/prosemirror-plugin.d.ts",
-      "import": "./dist/prosemirror/template/prosemirror-plugin.mjs",
-      "require": "./dist/prosemirror/template/prosemirror-plugin.js"
-    },
-    "./prosemirror/editor.css": "./dist/prosemirror/editor.css",
-    "./docx": {
-      "types": "./dist/docx/index.d.ts",
-      "import": "./dist/docx/index.mjs",
-      "require": "./dist/docx/index.js"
-    },
-    "./docx/wrapTypes": {
-      "types": "./dist/docx/wrapTypes.d.ts",
-      "import": "./dist/docx/wrapTypes.mjs",
-      "require": "./dist/docx/wrapTypes.js"
-    },
-    "./docx/serializer": {
-      "types": "./dist/docx/serializer/index.d.ts",
-      "import": "./dist/docx/serializer/index.mjs",
-      "require": "./dist/docx/serializer/index.js"
-    },
-    "./agent": {
-      "types": "./dist/agent/index.d.ts",
-      "import": "./dist/agent/index.mjs",
-      "require": "./dist/agent/index.js"
-    },
-    "./layout-engine": {
-      "types": "./dist/layout-engine/index.d.ts",
-      "import": "./dist/layout-engine/index.mjs",
-      "require": "./dist/layout-engine/index.js"
-    },
-    "./layout-painter": {
-      "types": "./dist/layout-painter/index.d.ts",
-      "import": "./dist/layout-painter/index.mjs",
-      "require": "./dist/layout-painter/index.js"
-    },
-    "./layout-bridge": {
-      "types": "./dist/layout-bridge/index.d.ts",
-      "import": "./dist/layout-bridge/index.mjs",
-      "require": "./dist/layout-bridge/index.js"
-    },
-    "./plugin-api": {
-      "types": "./dist/plugin-api/index.d.ts",
-      "import": "./dist/plugin-api/index.mjs",
-      "require": "./dist/plugin-api/index.js"
-    },
-    "./plugin-api/RenderedDomContext": {
-      "types": "./dist/plugin-api/RenderedDomContext.d.ts",
-      "import": "./dist/plugin-api/RenderedDomContext.mjs",
-      "require": "./dist/plugin-api/RenderedDomContext.js"
-    },
-    "./plugin-api/resolveItemPositions": {
-      "types": "./dist/plugin-api/resolveItemPositions.d.ts",
-      "import": "./dist/plugin-api/resolveItemPositions.mjs",
-      "require": "./dist/plugin-api/resolveItemPositions.js"
-    },
-    "./plugin-api/types": {
-      "types": "./dist/plugin-api/types.d.ts",
-      "import": "./dist/plugin-api/types.mjs",
-      "require": "./dist/plugin-api/types.js"
-    },
-    "./types/document": {
-      "types": "./dist/types/document.d.ts",
-      "import": "./dist/types/document.mjs",
-      "require": "./dist/types/document.js"
-    },
-    "./types/content": {
-      "types": "./dist/types/content.d.ts",
-      "import": "./dist/types/content.mjs",
-      "require": "./dist/types/content.js"
-    },
-    "./types/agentApi": {
-      "types": "./dist/types/agentApi.d.ts",
-      "import": "./dist/types/agentApi.mjs",
-      "require": "./dist/types/agentApi.js"
-    },
-    "./utils": {
-      "types": "./dist/utils/index.d.ts",
-      "import": "./dist/utils/index.mjs",
-      "require": "./dist/utils/index.js"
-    },
-    "./utils/cardStyles": {
-      "types": "./dist/utils/cardStyles.d.ts",
-      "import": "./dist/utils/cardStyles.mjs",
-      "require": "./dist/utils/cardStyles.js"
-    },
-    "./utils/comments": {
-      "types": "./dist/utils/comments.d.ts",
-      "import": "./dist/utils/comments.mjs",
-      "require": "./dist/utils/comments.js"
-    },
-    "./utils/stylePreview": {
-      "types": "./dist/utils/stylePreview.d.ts",
-      "import": "./dist/utils/stylePreview.mjs",
-      "require": "./dist/utils/stylePreview.js"
-    },
-    "./utils/findReplace": {
-      "types": "./dist/utils/findReplace.d.ts",
-      "import": "./dist/utils/findReplace.mjs",
-      "require": "./dist/utils/findReplace.js"
-    },
-    "./utils/findVerticalScrollParent": {
-      "types": "./dist/utils/findVerticalScrollParent.d.ts",
-      "import": "./dist/utils/findVerticalScrollParent.mjs",
-      "require": "./dist/utils/findVerticalScrollParent.js"
-    },
-    "./utils/fontOptions": {
-      "types": "./dist/utils/fontOptions.d.ts",
-      "import": "./dist/utils/fontOptions.mjs",
-      "require": "./dist/utils/fontOptions.js"
-    },
-    "./utils/headingCollector": {
-      "types": "./dist/utils/headingCollector.d.ts",
-      "import": "./dist/utils/headingCollector.mjs",
-      "require": "./dist/utils/headingCollector.js"
-    },
-    "./utils/highlightColors": {
-      "types": "./dist/utils/highlightColors.d.ts",
-      "import": "./dist/utils/highlightColors.mjs",
-      "require": "./dist/utils/highlightColors.js"
-    },
-    "./utils/listState": {
-      "types": "./dist/utils/listState.d.ts",
-      "import": "./dist/utils/listState.mjs",
-      "require": "./dist/utils/listState.js"
-    },
-    "./utils/reportIssue": {
-      "types": "./dist/utils/reportIssue.d.ts",
-      "import": "./dist/utils/reportIssue.mjs",
-      "require": "./dist/utils/reportIssue.js"
-    },
-    "./utils/sidebarConstants": {
-      "types": "./dist/utils/sidebarConstants.d.ts",
-      "import": "./dist/utils/sidebarConstants.mjs",
-      "require": "./dist/utils/sidebarConstants.js"
-    },
-    "./utils/textSelection": {
-      "types": "./dist/utils/textSelection.d.ts",
-      "import": "./dist/utils/textSelection.mjs",
-      "require": "./dist/utils/textSelection.js"
-    },
-    "./utils/units": {
-      "types": "./dist/utils/units.d.ts",
-      "import": "./dist/utils/units.mjs",
-      "require": "./dist/utils/units.js"
-    },
-    "./utils/autoScroll": {
-      "types": "./dist/utils/autoScroll.d.ts",
-      "import": "./dist/utils/autoScroll.mjs",
-      "require": "./dist/utils/autoScroll.js"
-    },
-    "./docx/parser": {
-      "types": "./dist/docx/parser.d.ts",
-      "import": "./dist/docx/parser.mjs",
-      "require": "./dist/docx/parser.js"
-    },
-    "./docx/rezip": {
-      "types": "./dist/docx/rezip.d.ts",
-      "import": "./dist/docx/rezip.mjs",
-      "require": "./dist/docx/rezip.js"
-    },
-    "./layout-bridge/clickToPositionDom": {
-      "types": "./dist/layout-bridge/clickToPositionDom.d.ts",
-      "import": "./dist/layout-bridge/clickToPositionDom.mjs",
-      "require": "./dist/layout-bridge/clickToPositionDom.js"
-    },
-    "./layout-bridge/measuring": {
-      "types": "./dist/layout-bridge/measuring/index.d.ts",
-      "import": "./dist/layout-bridge/measuring/index.mjs",
-      "require": "./dist/layout-bridge/measuring/index.js"
-    },
-    "./layout-bridge/tableInsertHover": {
-      "types": "./dist/layout-bridge/tableInsertHover.d.ts",
-      "import": "./dist/layout-bridge/tableInsertHover.mjs",
-      "require": "./dist/layout-bridge/tableInsertHover.js"
-    },
-    "./layout-bridge/toFlowBlocks": {
-      "types": "./dist/layout-bridge/toFlowBlocks.d.ts",
-      "import": "./dist/layout-bridge/toFlowBlocks.mjs",
-      "require": "./dist/layout-bridge/toFlowBlocks.js"
-    },
-    "./layout-engine/types": {
-      "types": "./dist/layout-engine/types.d.ts",
-      "import": "./dist/layout-engine/types.mjs",
-      "require": "./dist/layout-engine/types.js"
-    },
-    "./layout-painter/renderPage": {
-      "types": "./dist/layout-painter/renderPage.d.ts",
-      "import": "./dist/layout-painter/renderPage.mjs",
-      "require": "./dist/layout-painter/renderPage.js"
-    },
-    "./managers/AutoSaveManager": {
-      "types": "./dist/managers/AutoSaveManager.d.ts",
-      "import": "./dist/managers/AutoSaveManager.mjs",
-      "require": "./dist/managers/AutoSaveManager.js"
-    },
-    "./managers/TableSelectionManager": {
-      "types": "./dist/managers/TableSelectionManager.d.ts",
-      "import": "./dist/managers/TableSelectionManager.mjs",
-      "require": "./dist/managers/TableSelectionManager.js"
-    },
-    "./managers/types": {
-      "types": "./dist/managers/types.d.ts",
-      "import": "./dist/managers/types.mjs",
-      "require": "./dist/managers/types.js"
-    },
-    "./prosemirror/commands/formatting": {
-      "types": "./dist/prosemirror/commands/formatting.d.ts",
-      "import": "./dist/prosemirror/commands/formatting.mjs",
-      "require": "./dist/prosemirror/commands/formatting.js"
-    },
-    "./prosemirror/commands/pageBreak": {
-      "types": "./dist/prosemirror/commands/pageBreak.d.ts",
-      "import": "./dist/prosemirror/commands/pageBreak.mjs",
-      "require": "./dist/prosemirror/commands/pageBreak.js"
-    },
-    "./prosemirror/commands/sectionBreak": {
-      "types": "./dist/prosemirror/commands/sectionBreak.d.ts",
-      "import": "./dist/prosemirror/commands/sectionBreak.mjs",
-      "require": "./dist/prosemirror/commands/sectionBreak.js"
-    },
-    "./prosemirror/commands/paragraph": {
-      "types": "./dist/prosemirror/commands/paragraph.d.ts",
-      "import": "./dist/prosemirror/commands/paragraph.mjs",
-      "require": "./dist/prosemirror/commands/paragraph.js"
-    },
-    "./prosemirror/paraText": {
-      "types": "./dist/prosemirror/paraText.d.ts",
-      "import": "./dist/prosemirror/paraText.mjs",
-      "require": "./dist/prosemirror/paraText.js"
-    },
-    "./prosemirror/queries": {
-      "types": "./dist/prosemirror/queries.d.ts",
-      "import": "./dist/prosemirror/queries.mjs",
-      "require": "./dist/prosemirror/queries.js"
-    },
-    "./prosemirror/applyFormatting": {
-      "types": "./dist/prosemirror/applyFormatting.d.ts",
-      "import": "./dist/prosemirror/applyFormatting.mjs",
-      "require": "./dist/prosemirror/applyFormatting.js"
-    },
-    "./prosemirror/tableResize": {
-      "types": "./dist/prosemirror/tableResize.d.ts",
-      "import": "./dist/prosemirror/tableResize.mjs",
-      "require": "./dist/prosemirror/tableResize.js"
-    },
-    "./prosemirror/cellDragSelection": {
-      "types": "./dist/prosemirror/cellDragSelection.d.ts",
-      "import": "./dist/prosemirror/cellDragSelection.mjs",
-      "require": "./dist/prosemirror/cellDragSelection.js"
-    },
-    "./prosemirror/imageCommit": {
-      "types": "./dist/prosemirror/imageCommit.d.ts",
-      "import": "./dist/prosemirror/imageCommit.mjs",
-      "require": "./dist/prosemirror/imageCommit.js"
-    },
-    "./prosemirror/commentOps": {
-      "types": "./dist/prosemirror/commentOps.d.ts",
-      "import": "./dist/prosemirror/commentOps.mjs",
-      "require": "./dist/prosemirror/commentOps.js"
-    },
-    "./prosemirror/commentIdAllocator": {
-      "types": "./dist/prosemirror/commentIdAllocator.d.ts",
-      "import": "./dist/prosemirror/commentIdAllocator.mjs",
-      "require": "./dist/prosemirror/commentIdAllocator.js"
-    },
-    "./editor": {
-      "types": "./dist/editor/index.d.ts",
-      "import": "./dist/editor/index.mjs",
-      "require": "./dist/editor/index.js"
-    },
-    "./prosemirror/conversion/fromProseDoc": {
-      "types": "./dist/prosemirror/conversion/fromProseDoc.d.ts",
-      "import": "./dist/prosemirror/conversion/fromProseDoc.mjs",
-      "require": "./dist/prosemirror/conversion/fromProseDoc.js"
-    },
-    "./prosemirror/plugins/selectionTracker": {
-      "types": "./dist/prosemirror/plugins/selectionTracker.d.ts",
-      "import": "./dist/prosemirror/plugins/selectionTracker.mjs",
-      "require": "./dist/prosemirror/plugins/selectionTracker.js"
-    },
-    "./prosemirror/schema": {
-      "types": "./dist/prosemirror/schema/index.d.ts",
-      "import": "./dist/prosemirror/schema/index.mjs",
-      "require": "./dist/prosemirror/schema/index.js"
-    },
-    "./prosemirror/styles": {
-      "types": "./dist/prosemirror/styles/index.d.ts",
-      "import": "./dist/prosemirror/styles/index.mjs",
-      "require": "./dist/prosemirror/styles/index.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "headless": [
-        "./dist/headless.d.ts"
-      ],
-      "core-plugins": [
-        "./dist/core-plugins.d.ts"
-      ],
-      "prosemirror": [
-        "./dist/prosemirror/index.d.ts"
-      ],
-      "prosemirror/extensions": [
-        "./dist/prosemirror/extensions/index.d.ts"
-      ],
-      "prosemirror/conversion": [
-        "./dist/prosemirror/conversion/index.d.ts"
-      ],
-      "prosemirror/commands": [
-        "./dist/prosemirror/commands/index.d.ts"
-      ],
-      "prosemirror/plugins": [
-        "./dist/prosemirror/plugins/index.d.ts"
-      ],
-      "prosemirror/utils/ClickPositionResolver": [
-        "./dist/prosemirror/utils/ClickPositionResolver.d.ts"
-      ],
-      "prosemirror/utils/extractTrackedChanges": [
-        "./dist/prosemirror/utils/extractTrackedChanges.d.ts"
-      ],
-      "prosemirror/utils/LayoutSelectionGate": [
-        "./dist/prosemirror/utils/LayoutSelectionGate.d.ts"
-      ],
-      "prosemirror/utils/PointerEventHandler": [
-        "./dist/prosemirror/utils/PointerEventHandler.d.ts"
-      ],
-      "prosemirror/utils/visualLineNavigation": [
-        "./dist/prosemirror/utils/visualLineNavigation.d.ts"
-      ],
-      "prosemirror/extensions/nodes/TableExtension": [
-        "./dist/prosemirror/extensions/nodes/TableExtension.d.ts"
-      ],
-      "prosemirror/template/prosemirror-plugin": [
-        "./dist/prosemirror/template/prosemirror-plugin.d.ts"
-      ],
-      "docx": [
-        "./dist/docx/index.d.ts"
-      ],
-      "docx/wrapTypes": [
-        "./dist/docx/wrapTypes.d.ts"
-      ],
-      "docx/serializer": [
-        "./dist/docx/serializer/index.d.ts"
-      ],
-      "agent": [
-        "./dist/agent/index.d.ts"
-      ],
-      "layout-engine": [
-        "./dist/layout-engine/index.d.ts"
-      ],
-      "layout-painter": [
-        "./dist/layout-painter/index.d.ts"
-      ],
-      "layout-bridge": [
-        "./dist/layout-bridge/index.d.ts"
-      ],
-      "plugin-api": [
-        "./dist/plugin-api/index.d.ts"
-      ],
-      "plugin-api/RenderedDomContext": [
-        "./dist/plugin-api/RenderedDomContext.d.ts"
-      ],
-      "plugin-api/resolveItemPositions": [
-        "./dist/plugin-api/resolveItemPositions.d.ts"
-      ],
-      "plugin-api/types": [
-        "./dist/plugin-api/types.d.ts"
-      ],
-      "types/document": [
-        "./dist/types/document.d.ts"
-      ],
-      "types/content": [
-        "./dist/types/content.d.ts"
-      ],
-      "types/agentApi": [
-        "./dist/types/agentApi.d.ts"
-      ],
-      "utils": [
-        "./dist/utils/index.d.ts"
-      ],
-      "utils/cardStyles": [
-        "./dist/utils/cardStyles.d.ts"
-      ],
-      "utils/comments": [
-        "./dist/utils/comments.d.ts"
-      ],
-      "utils/stylePreview": [
-        "./dist/utils/stylePreview.d.ts"
-      ],
-      "utils/findReplace": [
-        "./dist/utils/findReplace.d.ts"
-      ],
-      "utils/findVerticalScrollParent": [
-        "./dist/utils/findVerticalScrollParent.d.ts"
-      ],
-      "utils/fontOptions": [
-        "./dist/utils/fontOptions.d.ts"
-      ],
-      "utils/headingCollector": [
-        "./dist/utils/headingCollector.d.ts"
-      ],
-      "utils/highlightColors": [
-        "./dist/utils/highlightColors.d.ts"
-      ],
-      "utils/listState": [
-        "./dist/utils/listState.d.ts"
-      ],
-      "utils/reportIssue": [
-        "./dist/utils/reportIssue.d.ts"
-      ],
-      "utils/sidebarConstants": [
-        "./dist/utils/sidebarConstants.d.ts"
-      ],
-      "utils/textSelection": [
-        "./dist/utils/textSelection.d.ts"
-      ],
-      "utils/units": [
-        "./dist/utils/units.d.ts"
-      ],
-      "utils/autoScroll": [
-        "./dist/utils/autoScroll.d.ts"
-      ],
-      "docx/parser": [
-        "./dist/docx/parser.d.ts"
-      ],
-      "docx/rezip": [
-        "./dist/docx/rezip.d.ts"
-      ],
-      "layout-bridge/clickToPositionDom": [
-        "./dist/layout-bridge/clickToPositionDom.d.ts"
-      ],
-      "layout-bridge/measuring": [
-        "./dist/layout-bridge/measuring/index.d.ts"
-      ],
-      "layout-bridge/tableInsertHover": [
-        "./dist/layout-bridge/tableInsertHover.d.ts"
-      ],
-      "layout-bridge/toFlowBlocks": [
-        "./dist/layout-bridge/toFlowBlocks.d.ts"
-      ],
-      "layout-engine/types": [
-        "./dist/layout-engine/types.d.ts"
-      ],
-      "layout-painter/renderPage": [
-        "./dist/layout-painter/renderPage.d.ts"
-      ],
-      "managers/AutoSaveManager": [
-        "./dist/managers/AutoSaveManager.d.ts"
-      ],
-      "managers/TableSelectionManager": [
-        "./dist/managers/TableSelectionManager.d.ts"
-      ],
-      "managers/types": [
-        "./dist/managers/types.d.ts"
-      ],
-      "prosemirror/commands/formatting": [
-        "./dist/prosemirror/commands/formatting.d.ts"
-      ],
-      "prosemirror/commands/pageBreak": [
-        "./dist/prosemirror/commands/pageBreak.d.ts"
-      ],
-      "prosemirror/commands/sectionBreak": [
-        "./dist/prosemirror/commands/sectionBreak.d.ts"
-      ],
-      "prosemirror/commands/paragraph": [
-        "./dist/prosemirror/commands/paragraph.d.ts"
-      ],
-      "prosemirror/paraText": [
-        "./dist/prosemirror/paraText.d.ts"
-      ],
-      "prosemirror/queries": [
-        "./dist/prosemirror/queries.d.ts"
-      ],
-      "prosemirror/applyFormatting": [
-        "./dist/prosemirror/applyFormatting.d.ts"
-      ],
-      "prosemirror/tableResize": [
-        "./dist/prosemirror/tableResize.d.ts"
-      ],
-      "prosemirror/cellDragSelection": [
-        "./dist/prosemirror/cellDragSelection.d.ts"
-      ],
-      "prosemirror/imageCommit": [
-        "./dist/prosemirror/imageCommit.d.ts"
-      ],
-      "prosemirror/commentOps": [
-        "./dist/prosemirror/commentOps.d.ts"
-      ],
-      "prosemirror/commentIdAllocator": [
-        "./dist/prosemirror/commentIdAllocator.d.ts"
-      ],
-      "editor": [
-        "./dist/editor/index.d.ts"
-      ],
-      "prosemirror/conversion/fromProseDoc": [
-        "./dist/prosemirror/conversion/fromProseDoc.d.ts"
-      ],
-      "prosemirror/plugins/selectionTracker": [
-        "./dist/prosemirror/plugins/selectionTracker.d.ts"
-      ],
-      "prosemirror/schema": [
-        "./dist/prosemirror/schema/index.d.ts"
-      ],
-      "prosemirror/styles": [
-        "./dist/prosemirror/styles/index.d.ts"
-      ]
-    }
+    ".": "./src/core.ts",
+    "./headless": "./src/headless.ts",
+    "./core-plugins": "./src/core-plugins/index.ts",
+    "./prosemirror": "./src/prosemirror/index.ts",
+    "./prosemirror/extensions": "./src/prosemirror/extensions/index.ts",
+    "./prosemirror/conversion": "./src/prosemirror/conversion/index.ts",
+    "./prosemirror/commands": "./src/prosemirror/commands/index.ts",
+    "./prosemirror/plugins": "./src/prosemirror/plugins/index.ts",
+    "./prosemirror/utils/ClickPositionResolver": "./src/prosemirror/utils/ClickPositionResolver.ts",
+    "./prosemirror/utils/extractTrackedChanges": "./src/prosemirror/utils/extractTrackedChanges.ts",
+    "./prosemirror/utils/LayoutSelectionGate": "./src/prosemirror/utils/LayoutSelectionGate.ts",
+    "./prosemirror/utils/PointerEventHandler": "./src/prosemirror/utils/PointerEventHandler.ts",
+    "./prosemirror/utils/visualLineNavigation": "./src/prosemirror/utils/visualLineNavigation.ts",
+    "./prosemirror/extensions/nodes/TableExtension": "./src/prosemirror/extensions/nodes/TableExtension/index.ts",
+    "./prosemirror/template/prosemirror-plugin": "./src/prosemirror/template/prosemirror-plugin.ts",
+    "./prosemirror/editor.css": "./src/prosemirror/editor.css",
+    "./docx": "./src/docx/index.ts",
+    "./docx/wrapTypes": "./src/docx/wrapTypes.ts",
+    "./docx/serializer": "./src/docx/serializer/index.ts",
+    "./agent": "./src/agent/index.ts",
+    "./layout-engine": "./src/layout-engine/index.ts",
+    "./layout-painter": "./src/layout-painter/index.ts",
+    "./layout-bridge": "./src/layout-bridge/index.ts",
+    "./plugin-api": "./src/plugin-api/index.ts",
+    "./plugin-api/RenderedDomContext": "./src/plugin-api/RenderedDomContext.ts",
+    "./plugin-api/resolveItemPositions": "./src/plugin-api/resolveItemPositions.ts",
+    "./plugin-api/types": "./src/plugin-api/types.ts",
+    "./types/document": "./src/types/document.ts",
+    "./types/content": "./src/types/content.ts",
+    "./types/agentApi": "./src/types/agentApi.ts",
+    "./utils": "./src/utils/index.ts",
+    "./utils/cardStyles": "./src/utils/cardStyles.ts",
+    "./utils/comments": "./src/utils/comments.ts",
+    "./utils/stylePreview": "./src/utils/stylePreview.ts",
+    "./utils/findReplace": "./src/utils/findReplace.ts",
+    "./utils/findVerticalScrollParent": "./src/utils/findVerticalScrollParent.ts",
+    "./utils/fontOptions": "./src/utils/fontOptions.ts",
+    "./utils/headingCollector": "./src/utils/headingCollector.ts",
+    "./utils/highlightColors": "./src/utils/highlightColors.ts",
+    "./utils/listState": "./src/utils/listState.ts",
+    "./utils/reportIssue": "./src/utils/reportIssue.ts",
+    "./utils/sidebarConstants": "./src/utils/sidebarConstants.ts",
+    "./utils/textSelection": "./src/utils/textSelection.ts",
+    "./utils/units": "./src/utils/units.ts",
+    "./utils/autoScroll": "./src/utils/autoScroll.ts",
+    "./docx/parser": "./src/docx/parser.ts",
+    "./docx/rezip": "./src/docx/rezip.ts",
+    "./layout-bridge/clickToPositionDom": "./src/layout-bridge/clickToPositionDom.ts",
+    "./layout-bridge/measuring": "./src/layout-bridge/measuring/index.ts",
+    "./layout-bridge/tableInsertHover": "./src/layout-bridge/tableInsertHover.ts",
+    "./layout-bridge/toFlowBlocks": "./src/layout-bridge/toFlowBlocks.ts",
+    "./layout-engine/types": "./src/layout-engine/types.ts",
+    "./layout-painter/renderPage": "./src/layout-painter/renderPage.ts",
+    "./managers/AutoSaveManager": "./src/managers/AutoSaveManager.ts",
+    "./managers/TableSelectionManager": "./src/managers/TableSelectionManager.ts",
+    "./managers/types": "./src/managers/types.ts",
+    "./prosemirror/commands/formatting": "./src/prosemirror/commands/formatting.ts",
+    "./prosemirror/commands/pageBreak": "./src/prosemirror/commands/pageBreak.ts",
+    "./prosemirror/commands/sectionBreak": "./src/prosemirror/commands/sectionBreak.ts",
+    "./prosemirror/commands/paragraph": "./src/prosemirror/commands/paragraph.ts",
+    "./prosemirror/paraText": "./src/prosemirror/paraText.ts",
+    "./prosemirror/queries": "./src/prosemirror/queries.ts",
+    "./prosemirror/applyFormatting": "./src/prosemirror/applyFormatting.ts",
+    "./prosemirror/tableResize": "./src/prosemirror/tableResize.ts",
+    "./prosemirror/cellDragSelection": "./src/prosemirror/cellDragSelection.ts",
+    "./prosemirror/imageCommit": "./src/prosemirror/imageCommit.ts",
+    "./prosemirror/commentOps": "./src/prosemirror/commentOps.ts",
+    "./prosemirror/commentIdAllocator": "./src/prosemirror/commentIdAllocator.ts",
+    "./editor": "./src/editor/index.ts",
+    "./prosemirror/conversion/fromProseDoc": "./src/prosemirror/conversion/fromProseDoc.ts",
+    "./prosemirror/plugins/selectionTracker": "./src/prosemirror/plugins/selectionTracker.ts",
+    "./prosemirror/schema": "./src/prosemirror/schema/index.ts",
+    "./prosemirror/styles": "./src/prosemirror/styles/index.ts",
+    "./utils/paragraphFlashTypes": "./src/utils/paragraphFlashTypes.ts"
   },
   "files": [
-    "dist"
+    "src"
   ],
   "scripts": {
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 tsup && node scripts/copy-assets.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -624,7 +117,6 @@
     "prosemirror-transform": "^1.12.0",
     "prosemirror-view": "^1.41.6",
     "tailwindcss-animate": "^1.0.7",
-    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   },
   "keywords": [

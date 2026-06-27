@@ -108,7 +108,7 @@ export function parseXml(xml: string): XmlElement {
     // offending column so the next reader can see what byte broke the parse.
     const colMatch = error.message.match(/Column:\s*(\d+)/);
     if (colMatch) {
-      const col = parseInt(colMatch[1], 10);
+      const col = parseInt(colMatch[1] ?? '', 10);
       const start = Math.max(0, col - 30);
       const snippet = JSON.stringify(sanitized.slice(start, col + 30));
       const wrapped = new Error(`${error.message}\nNear: ${snippet}`);
@@ -340,13 +340,13 @@ export function getAttribute(
   if (namespace) {
     const prefixedName = `${namespace}:${name}`;
     if (prefixedName in attrs) {
-      return attrs[prefixedName];
+      return attrs[prefixedName] ?? null;
     }
   }
 
   // Try without namespace
   if (name in attrs) {
-    return attrs[name];
+    return attrs[name] ?? null;
   }
 
   return null;
@@ -369,7 +369,7 @@ export function getAttributeAny(
 
   for (const name of names) {
     if (name in attrs) {
-      return attrs[name];
+      return attrs[name] ?? null;
     }
   }
 

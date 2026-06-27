@@ -199,7 +199,7 @@ export function getFileList(content: RawDocxContent): string[] {
   const files: string[] = [];
 
   for (const path of Object.keys(content.originalZip.files)) {
-    if (!content.originalZip.files[path].dir) {
+    if (!content.originalZip.files[path]?.dir) {
       files.push(path);
     }
   }
@@ -253,7 +253,7 @@ export function mediaToDataUrl(data: ArrayBuffer, mimeType: string): string {
   const bytes = new Uint8Array(data);
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    binary += String.fromCharCode(bytes[i] ?? 0);
   }
   const base64 = btoa(binary);
   return `data:${mimeType};base64,${base64}`;
@@ -327,7 +327,7 @@ export function getContentSummary(content: RawDocxContent): {
     mediaCount: content.media.size,
     fontCount: content.fonts.size,
     totalFiles: Object.keys(content.originalZip.files).filter(
-      (p) => !content.originalZip.files[p].dir
+      (p) => !content.originalZip.files[p]?.dir
     ).length,
   };
 }
