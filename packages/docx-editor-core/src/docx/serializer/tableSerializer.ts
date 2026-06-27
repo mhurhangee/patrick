@@ -393,8 +393,9 @@ export function serializeTableFormatting(
 
   // OOXML allows at most one `<w:tblPrChange>` per `<w:tblPr>` (CT_TblPr
   // maxOccurs="1"). Model array can carry multiple in-memory; emit one.
-  if (propertyChanges && propertyChanges.length > 0) {
-    parts.push(serializeTablePropertyChange(propertyChanges[0]));
+  const firstTablePropertyChange = propertyChanges?.[0];
+  if (firstTablePropertyChange) {
+    parts.push(serializeTablePropertyChange(firstTablePropertyChange));
   }
 
   if (parts.length === 0) return '';
@@ -485,8 +486,9 @@ export function serializeTableRowFormatting(
   // OOXML allows at most one `<w:trPrChange>` per `<w:trPr>` (CT_TrPr
   // maxOccurs="1"). The model array can carry multiple in-memory; emit only
   // the first to stay schema-valid.
-  if (propertyChanges && propertyChanges.length > 0) {
-    parts.push(serializeTableRowPropertyChange(propertyChanges[0]));
+  const firstRowPropertyChange = propertyChanges?.[0];
+  if (firstRowPropertyChange) {
+    parts.push(serializeTableRowPropertyChange(firstRowPropertyChange));
   }
 
   if (parts.length === 0) return '';
@@ -621,8 +623,9 @@ export function serializeTableCellFormatting(
   // OOXML allows at most one `<w:tcPrChange>` per `<w:tcPr>` (CT_TcPrInner
   // maxOccurs="1"). The model array can carry multiple in-memory; emit only
   // the first to stay schema-valid.
-  if (propertyChanges && propertyChanges.length > 0) {
-    parts.push(serializeTableCellPropertyChange(propertyChanges[0]));
+  const firstCellPropertyChange = propertyChanges?.[0];
+  if (firstCellPropertyChange) {
+    parts.push(serializeTableCellPropertyChange(firstCellPropertyChange));
   }
 
   if (parts.length === 0) return '';
@@ -833,10 +836,11 @@ export function getTableColumnCount(table: Table): number {
     return table.columnWidths.length;
   }
 
-  if (table.rows.length === 0) return 0;
+  const firstRow = table.rows[0];
+  if (!firstRow) return 0;
 
   // Count cells in first row, accounting for grid span
-  return table.rows[0].cells.reduce((count, cell) => {
+  return firstRow.cells.reduce((count, cell) => {
     return count + (cell.formatting?.gridSpan ?? 1);
   }, 0);
 }

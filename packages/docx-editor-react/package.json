@@ -2,60 +2,15 @@
   "name": "@eigenpal/docx-editor-react",
   "version": "1.9.0",
   "description": "React DOCX editor adapter for @eigenpal/docx-editor-core.",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./ui": {
-      "types": "./dist/ui.d.ts",
-      "import": "./dist/ui.mjs",
-      "require": "./dist/ui.js"
-    },
-    "./dialogs": {
-      "types": "./dist/dialogs.d.ts",
-      "import": "./dist/dialogs.mjs",
-      "require": "./dist/dialogs.js"
-    },
-    "./hooks": {
-      "types": "./dist/hooks.d.ts",
-      "import": "./dist/hooks.mjs",
-      "require": "./dist/hooks.js"
-    },
-    "./plugin-api": {
-      "types": "./dist/plugin-api.d.ts",
-      "import": "./dist/plugin-api.mjs",
-      "require": "./dist/plugin-api.js"
-    },
-    "./styles": {
-      "types": "./dist/styles.d.ts",
-      "import": "./dist/styles.mjs",
-      "require": "./dist/styles.js"
-    },
+    ".": "./src/index.ts",
+    "./ui": "./src/ui.ts",
+    "./dialogs": "./src/components/dialogs/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./plugin-api": "./src/plugin-api/index.ts",
+    "./styles": "./src/styles/index.ts",
     "./styles.css": "./dist/styles.css"
-  },
-  "typesVersions": {
-    "*": {
-      "ui": [
-        "./dist/ui.d.ts"
-      ],
-      "dialogs": [
-        "./dist/dialogs.d.ts"
-      ],
-      "hooks": [
-        "./dist/hooks.d.ts"
-      ],
-      "plugin-api": [
-        "./dist/plugin-api.d.ts"
-      ],
-      "styles": [
-        "./dist/styles.d.ts"
-      ]
-    }
   },
   "sideEffects": [
     "*.css"
@@ -64,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup && bun run build:css",
+    "build": "bun run build:css",
     "build:css": "node scripts/build-css.mjs",
     "typecheck": "tsc --noEmit"
   },

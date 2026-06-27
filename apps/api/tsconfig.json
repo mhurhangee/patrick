@@ -1,7 +1,12 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"types": ["bun"]
+		"types": ["bun"],
+		// The editor is an isomorphic library: its source has DOM-guarded
+		// font/canvas code the headless api imports but never runs (the reviewer
+		// parses with preloadFonts:false; fontLoader is `typeof document` guarded).
+		// DOM types only type-check that imported source — the runtime stays DOM-free.
+		"lib": ["ES2023", "DOM", "DOM.Iterable"]
 	},
 	"include": ["src"]
 }

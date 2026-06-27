@@ -404,7 +404,7 @@ export function isHeadingStyle(styleId?: string): boolean {
 export function parseHeadingLevel(styleId?: string): number | undefined {
   if (!styleId) return undefined;
   const match = styleId.match(/heading\s*(\d)/i);
-  if (match) {
+  if (match?.[1] !== undefined) {
     return parseInt(match[1], 10);
   }
   return undefined;
@@ -502,7 +502,7 @@ export function getParagraphAtIndex(body: DocumentBody, index: number): Paragrap
 export function getBlockIndexForParagraph(body: DocumentBody, paragraphIndex: number): number {
   let currentParagraphIndex = 0;
   for (let i = 0; i < body.content.length; i++) {
-    if (body.content[i].type === 'paragraph') {
+    if (body.content[i]?.type === 'paragraph') {
       if (currentParagraphIndex === paragraphIndex) {
         return i;
       }

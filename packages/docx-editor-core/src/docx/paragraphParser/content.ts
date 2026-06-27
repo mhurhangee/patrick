@@ -331,7 +331,7 @@ function parseFieldType(instruction: string): FieldType {
   const match = instruction.trim().match(/^\\?([A-Z]+)/i);
   if (!match) return 'UNKNOWN';
 
-  const fieldName = match[1].toUpperCase();
+  const fieldName = (match[1] ?? '').toUpperCase();
 
   const knownFields: FieldType[] = [
     'PAGE',

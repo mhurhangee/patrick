@@ -158,8 +158,11 @@ export function formatContentForLLM(blocks: ContentBlock[]): string {
       case 'table': {
         let idx = block.index;
         for (let r = 0; r < block.rows.length; r++) {
-          for (let c = 0; c < block.rows[r].length; c++) {
-            const cellText = block.rows[r][c];
+          const row = block.rows[r];
+          if (!row) continue;
+          for (let c = 0; c < row.length; c++) {
+            const cellText = row[c];
+            if (cellText === undefined) continue;
             const paras = cellText.split('\n');
             const cellParaId = block.cellParaIds?.[r]?.[c];
             for (let p = 0; p < paras.length; p++) {

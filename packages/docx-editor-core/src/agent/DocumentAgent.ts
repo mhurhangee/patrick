@@ -845,7 +845,7 @@ export class DocumentAgent {
   private _parseHeadingLevel(styleId?: string): number | undefined {
     if (!styleId) return undefined;
     const match = styleId.match(/heading\s*(\d)/i);
-    if (match) {
+    if (match?.[1] !== undefined) {
       return parseInt(match[1], 10);
     }
     return undefined;

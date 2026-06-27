@@ -249,6 +249,7 @@ export function findContentControls(
   ): void => {
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
+      if (!block) continue;
       const blockPath = [...path, i];
       if (block.type === 'blockSdt') {
         if (matches(block.properties, filter)) out.push(infoOf(block, blockPath, depth, location));
@@ -543,12 +544,13 @@ function makeText(text: string): Run['content'][number] {
  */
 function toInline(replacement: string | BlockContent[], control: InlineSdt): InlineContent[] {
   if (typeof replacement !== 'string') {
+    const only = replacement[0];
     if (
       replacement.length === 1 &&
-      replacement[0].type === 'paragraph' &&
-      replacement[0].content.every(isInlineContent)
+      only?.type === 'paragraph' &&
+      only.content.every(isInlineContent)
     ) {
-      return structuredClone(replacement[0].content) as InlineContent[];
+      return structuredClone(only.content) as InlineContent[];
     }
     throw new ContentControlKindError(
       'Cannot place block content (paragraphs/tables) inside an inline content control. ' +

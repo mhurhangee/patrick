@@ -53,11 +53,10 @@ export function executeInsertTable(doc: Document, command: InsertTableCommand): 
 
     for (let c = 0; c < command.columns; c++) {
       const cellText = command.data?.[r]?.[c] || '';
+      const cellWidth = columnWidths[c];
       cells.push({
         type: 'tableCell',
-        formatting: columnWidths[c]
-          ? { width: { value: columnWidths[c], type: 'dxa' } }
-          : undefined,
+        formatting: cellWidth ? { width: { value: cellWidth, type: 'dxa' } } : undefined,
         content: [
           {
             type: 'paragraph',
@@ -159,7 +158,7 @@ export function executeInsertImage(doc: Document, command: InsertImageCommand): 
 
   for (let i = 0; i < newContent.length; i++) {
     const item = newContent[i];
-    if (item.type === 'run') {
+    if (item?.type === 'run') {
       const runText = item.content
         .filter((c): c is TextContent => c.type === 'text')
         .map((c) => c.text)

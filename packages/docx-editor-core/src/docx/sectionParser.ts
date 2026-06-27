@@ -761,11 +761,15 @@ function mergeRefsByType<T extends HeaderReference | FooterReference>(
  * after the first. Sections with no inheritable changes are reused.
  */
 export function applySectionInheritance(sections: Section[]): Section[] {
-  if (sections.length < 2) return sections;
-  const out: Section[] = [sections[0]];
+  const first = sections[0];
+  if (sections.length < 2 || !first) return sections;
+  const out: Section[] = [first];
   for (let i = 1; i < sections.length; i++) {
-    const prior = out[i - 1].properties;
-    const own = sections[i].properties;
+    const priorSection = out[i - 1];
+    const section = sections[i];
+    if (!priorSection || !section) continue;
+    const prior = priorSection.properties;
+    const own = section.properties;
     const headers = mergeRefsByType(own.headerReferences, prior.headerReferences);
     const footers = mergeRefsByType(own.footerReferences, prior.footerReferences);
     const titlePg = own.titlePg !== undefined ? own.titlePg : prior.titlePg;
@@ -774,11 +778,11 @@ export function applySectionInheritance(sections: Section[]): Section[] {
       footers === own.footerReferences &&
       titlePg === own.titlePg
     ) {
-      out.push(sections[i]);
+      out.push(section);
       continue;
     }
     out.push({
-      ...sections[i],
+      ...section,
       properties: {
         ...own,
         headerReferences: headers,

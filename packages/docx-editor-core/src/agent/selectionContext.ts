@@ -104,6 +104,9 @@ export function buildSelectionContext(
   }
 
   const startParagraph = paragraphs[range.start.paragraphIndex];
+  if (!startParagraph) {
+    throw new Error(`Invalid start paragraph index: ${range.start.paragraphIndex}`);
+  }
 
   // Extract selected text
   const selectedText = extractSelectedText(paragraphs, range);
@@ -223,11 +226,14 @@ export function getSelectionFormattingSummary(doc: Document, range: Range): Form
   }
 
   // Check if formatting is consistent
+  const first = allFormatting[0];
   const isConsistent =
-    allFormatting.length <= 1 || allFormatting.every((f) => formatEqual(f, allFormatting[0]));
+    allFormatting.length <= 1 ||
+    first === undefined ||
+    allFormatting.every((f) => formatEqual(f, first));
 
   // Get predominant formatting (first one or merge)
-  const predominant = allFormatting.length > 0 ? allFormatting[0] : {};
+  const predominant = first ?? {};
 
   return {
     predominant,

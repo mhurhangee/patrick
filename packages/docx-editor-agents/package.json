@@ -2,36 +2,12 @@
   "name": "@eigenpal/docx-editor-agents",
   "version": "1.9.0",
   "description": "Agent SDK for the DOCX editor — docx tool schemas, the editor-bridge executor, AI SDK server adapter, and the headless DocxReviewer.",
+  "type": "module",
   "sideEffects": false,
   "exports": {
-    "./server": {
-      "types": "./dist/server.d.ts",
-      "import": "./dist/server.mjs",
-      "require": "./dist/server.js"
-    },
-    "./react": {
-      "types": "./dist/react.d.ts",
-      "import": "./dist/react.mjs",
-      "require": "./dist/react.js"
-    },
-    "./ai-sdk/server": {
-      "types": "./dist/ai-sdk/server.d.ts",
-      "import": "./dist/ai-sdk/server.mjs",
-      "require": "./dist/ai-sdk/server.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "server": [
-        "./dist/server.d.ts"
-      ],
-      "react": [
-        "./dist/react.d.ts"
-      ],
-      "ai-sdk/server": [
-        "./dist/ai-sdk/server.d.ts"
-      ]
-    }
+    "./server": "./src/server.ts",
+    "./react": "./src/react.ts",
+    "./ai-sdk/server": "./src/ai-sdk/server.ts"
   },
   "peerDependencies": {
     "ai": "^6.0.0 || ^7.0.0",
@@ -58,7 +34,6 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

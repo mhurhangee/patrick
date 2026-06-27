@@ -144,9 +144,9 @@ function ensureWatermarkHeaderCoverage(doc: Document, watermark: Watermark): Doc
   // A non-numeric rId avoids the rezip pipeline's numeric `rIdN` allocation for
   // images/hyperlinks (which would otherwise collide). See createHeaderWithWatermark history.
   function createHeaderPart(type: HeaderFooterType): string {
-    let rId = `rIdWmHdr${type[0].toUpperCase()}${type.slice(1)}`;
+    let rId = `rIdWmHdr${(type[0] ?? '').toUpperCase()}${type.slice(1)}`;
     let suffix = 1;
-    while (rels.has(rId)) rId = `rIdWmHdr${type[0].toUpperCase()}${type.slice(1)}${suffix++}`;
+    while (rels.has(rId)) rId = `rIdWmHdr${(type[0] ?? '').toUpperCase()}${type.slice(1)}${suffix++}`;
     rels.set(rId, { id: rId, type: RELATIONSHIP_TYPES.header, target: nextHeaderTarget() });
     headers.set(rId, {
       type: 'header',

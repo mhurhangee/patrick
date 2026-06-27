@@ -55,7 +55,7 @@ function vmlLengthToPx(raw: string | undefined): number | undefined {
   if (!raw) return undefined;
   const m = raw.match(/^(-?[0-9.]+)(pt|px|in|cm|mm)?$/);
   if (!m) return undefined;
-  const n = parseFloat(m[1]);
+  const n = parseFloat(m[1] ?? '');
   if (isNaN(n)) return undefined;
   switch (m[2]) {
     case 'in':
