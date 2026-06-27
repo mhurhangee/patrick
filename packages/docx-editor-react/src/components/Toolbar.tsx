@@ -53,6 +53,7 @@ import { TableCellFillPicker } from './ui/TableCellFillPicker';
 import { TableMoreDropdown } from './ui/TableMoreDropdown';
 import { ImageWrapDropdown } from './ui/ImageWrapDropdown';
 import { ImageTransformDropdown } from './ui/ImageTransformDropdown';
+import { InsertMenu } from './ui/InsertMenu';
 import type { TableAction } from './ui/TableToolbar';
 import { cn } from '../lib/utils';
 import { EditorToolbarContext } from './EditorToolbarContext';
@@ -440,6 +441,14 @@ export function Toolbar(explicitProps: ToolbarProps) {
     zoom,
     onZoomChange,
     onRefocusEditor,
+    onInsertImage,
+    onInsertTable,
+    showTableInsert = true,
+    onInsertPageBreak,
+    onInsertSectionBreakNextPage,
+    onInsertSectionBreakContinuous,
+    onInsertTOC,
+    onWatermark,
     imageContext,
     onImageWrapType,
     onImageTransform,
@@ -718,6 +727,23 @@ export function Toolbar(explicitProps: ToolbarProps) {
         >
           <Redo2 size={ICON_SIZE} />
         </ToolbarButton>
+      </ToolbarGroup>
+
+      {/* Insert */}
+      <ToolbarGroup label={t('toolbar.insert')}>
+        <InsertMenu
+          disabled={disabled}
+          onFormat={handleFormat}
+          onRefocusEditor={onRefocusEditor}
+          onInsertImage={onInsertImage}
+          onInsertTable={onInsertTable}
+          showTableInsert={showTableInsert}
+          onInsertPageBreak={onInsertPageBreak}
+          onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
+          onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
+          onInsertTOC={onInsertTOC}
+          onWatermark={onWatermark}
+        />
       </ToolbarGroup>
 
       {/* Zoom Control */}
