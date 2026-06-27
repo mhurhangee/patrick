@@ -260,8 +260,9 @@ export function serializeParagraphFormatting(
     // maxOccurs="1"). The model array CAN carry several entries for in-memory
     // history; on disk we emit only the first (the canonical prior snapshot)
     // to stay schema-valid.
-    if (propertyChanges && propertyChanges.length > 0) {
-      parts.push(serializeParagraphPropertyChange(propertyChanges[0]));
+    const firstPropertyChange = propertyChanges?.[0];
+    if (firstPropertyChange) {
+      parts.push(serializeParagraphPropertyChange(firstPropertyChange));
     }
   }
 

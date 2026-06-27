@@ -169,7 +169,7 @@ function parseColorScheme(clrScheme: XmlElement | null): ThemeColorScheme {
       // The actual color is a child (srgbClr, sysClr, or schemeClr)
       const children = getChildElements(slotElement);
       if (children.length > 0) {
-        const color = parseColorElement(children[0]);
+        const color = parseColorElement(children[0] ?? null);
         if (color) {
           result[slot] = color;
         }

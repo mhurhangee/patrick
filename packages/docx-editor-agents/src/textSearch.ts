@@ -38,6 +38,7 @@ function flattenRuns(paragraph: Paragraph): FlattenedRun[] {
 
   for (let ci = 0; ci < paragraph.content.length; ci++) {
     const item = paragraph.content[ci];
+    if (!item) continue;
 
     if (item.type === 'run') {
       const text = getRunText(item);
@@ -46,6 +47,7 @@ function flattenRuns(paragraph: Paragraph): FlattenedRun[] {
     } else if (item.type === 'hyperlink') {
       for (let hi = 0; hi < item.children.length; hi++) {
         const child = item.children[hi];
+        if (!child) continue;
         if (child.type === 'run') {
           const text = getRunText(child);
           result.push({ contentIndex: ci, run: child, text, startPos: pos });
@@ -56,6 +58,7 @@ function flattenRuns(paragraph: Paragraph): FlattenedRun[] {
       if (item.type === 'insertion' || item.type === 'moveTo') continue;
       for (let ri = 0; ri < item.content.length; ri++) {
         const child = item.content[ri];
+        if (!child) continue;
         if (child.type === 'run') {
           const text = getRunText(child);
           result.push({ contentIndex: ci, run: child, text, startPos: pos });
@@ -99,9 +102,11 @@ export function findTextInParagraph(
   let startRunIdx = -1;
   let startOffset = 0;
   for (let i = 0; i < runs.length; i++) {
-    if (match.start < runs[i].startPos + runs[i].text.length) {
+    const run = runs[i];
+    if (!run) continue;
+    if (match.start < run.startPos + run.text.length) {
       startRunIdx = i;
-      startOffset = match.start - runs[i].startPos;
+      startOffset = match.start - run.startPos;
       break;
     }
   }
@@ -109,21 +114,25 @@ export function findTextInParagraph(
   let endRunIdx = -1;
   let endOffset = 0;
   for (let i = runs.length - 1; i >= 0; i--) {
-    if (match.end > runs[i].startPos) {
+    const run = runs[i];
+    if (!run) continue;
+    if (match.end > run.startPos) {
       endRunIdx = i;
-      endOffset = match.end - runs[i].startPos;
+      endOffset = match.end - run.startPos;
       break;
     }
   }
 
-  if (startRunIdx === -1 || endRunIdx === -1) {
+  const startRun = runs[startRunIdx];
+  const endRun = runs[endRunIdx];
+  if (startRunIdx === -1 || endRunIdx === -1 || !startRun || !endRun) {
     throw new TextNotFoundError(search, paragraphIndex);
   }
 
   return {
-    startRunIndex: runs[startRunIdx].contentIndex,
+    startRunIndex: startRun.contentIndex,
     startOffset,
-    endRunIndex: runs[endRunIdx].contentIndex,
+    endRunIndex: endRun.contentIndex,
     endOffset,
   };
 }
@@ -143,7 +152,7 @@ export function isolateMatchedText(
 
   // Split end run first (so indices don't shift for start)
   const endItem = paragraph.content[endRunIndex];
-  if (endItem.type === 'run') {
+  if (endItem?.type === 'run') {
     const endText = getRunText(endItem);
     if (endOffset < endText.length) {
       const afterRun = makeRunWithText(endText.slice(endOffset), endItem);
@@ -153,7 +162,7 @@ export function isolateMatchedText(
   }
 
   const startItem = paragraph.content[startRunIndex];
-  if (startItem.type === 'run' && startOffset > 0) {
+  if (startItem?.type === 'run' && startOffset > 0) {
     const startText = getRunText(startItem);
     const beforeRun = makeRunWithText(startText.slice(0, startOffset), startItem);
     setRunText(startItem, startText.slice(startOffset));
@@ -195,6 +204,7 @@ function normalize(original: string): { text: string; posMap: number[] } {
 
   for (let i = 0; i < original.length; i++) {
     let ch = original[i];
+    if (ch === undefined) continue;
 
     // Skip zero-width chars
     if ('\u200B\u200C\u200D\uFEFF\u00AD'.includes(ch)) continue;
@@ -247,9 +257,9 @@ function mapBack(
   len: number,
   original: string
 ): { start: number; end: number } {
-  const start = norm.posMap[idx];
-  let end = norm.posMap[idx + len - 1] + 1;
-  while (end < original.length && '\u200B\u200C\u200D\uFEFF\u00AD'.includes(original[end])) end++;
+  const start = norm.posMap[idx] ?? 0;
+  let end = (norm.posMap[idx + len - 1] ?? original.length - 1) + 1;
+  while (end < original.length && '\u200B\u200C\u200D\uFEFF\u00AD'.includes(original[end] ?? '')) end++;
   return { start, end };
 }
 

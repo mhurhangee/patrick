@@ -302,6 +302,7 @@ function applyMarksToParagraphRange(
 
   for (let i = targets.length - 1; i >= 0; i--) {
     const leaf = targets[i];
+    if (!leaf) continue;
     applyMarksToRunSlice(
       leaf,
       Math.max(0, from - leaf.start),

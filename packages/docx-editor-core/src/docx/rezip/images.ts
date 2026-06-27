@@ -105,13 +105,13 @@ function decodeDataUrl(dataUrl: string): { data: ArrayBuffer; extension: string 
     throw new Error('Invalid data URL');
   }
 
-  const binary = atob(match[2]);
+  const binary = atob(match[2] ?? '');
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
 
-  return { data: bytes.buffer, extension: MIME_TO_EXT[match[1]] || 'png' };
+  return { data: bytes.buffer, extension: MIME_TO_EXT[match[1] ?? ''] || 'png' };
 }
 
 /**
@@ -155,7 +155,7 @@ function findMaxImageNum(zip: JSZip): number {
   zip.forEach((relativePath) => {
     const m = relativePath.match(/^word\/media\/image(\d+)\./);
     if (m) {
-      const num = parseInt(m[1], 10);
+      const num = parseInt(m[1] ?? '', 10);
       if (num > max) max = num;
     }
   });

@@ -60,6 +60,9 @@ export function handleInsertTemplateVariable(doc: Document, command: PluginComma
   }
 
   const paragraph = paragraphs[position.paragraphIndex];
+  if (!paragraph) {
+    throw new Error(`Paragraph index ${position.paragraphIndex} out of bounds`);
+  }
 
   // Create the variable text
   const variableText = `{${variableName}}`;
@@ -103,6 +106,9 @@ export function handleReplaceWithTemplateVariable(doc: Document, command: Plugin
   }
 
   const paragraph = paragraphs[range.start.paragraphIndex];
+  if (!paragraph) {
+    throw new Error(`Paragraph index ${range.start.paragraphIndex} out of bounds`);
+  }
 
   // Delete the range first
   deleteTextInRange(paragraph, range.start.offset, range.end.offset);
@@ -135,6 +141,7 @@ function insertTextAtOffset(paragraph: Paragraph, offset: number, text: string):
 
   for (let i = 0; i < paragraph.content.length; i++) {
     const item = paragraph.content[i];
+    if (!item) continue;
 
     if (item.type === 'run') {
       const runText = getRunText(item);
@@ -152,7 +159,8 @@ function insertTextAtOffset(paragraph: Paragraph, offset: number, text: string):
 
         // Add items before this run
         for (let j = 0; j < i; j++) {
-          newContent.push(paragraph.content[j]);
+          const before = paragraph.content[j];
+          if (before) newContent.push(before);
         }
 
         // Add text before insertion point (if any)
@@ -182,7 +190,8 @@ function insertTextAtOffset(paragraph: Paragraph, offset: number, text: string):
 
         // Add remaining items
         for (let j = i + 1; j < paragraph.content.length; j++) {
-          newContent.push(paragraph.content[j]);
+          const remaining = paragraph.content[j];
+          if (remaining) newContent.push(remaining);
         }
 
         paragraph.content = newContent;

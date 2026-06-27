@@ -23,7 +23,7 @@ packages/
   docx-editor-agents/  @eigenpal/docx-editor-agents — vendored: the agent bridge (docx tool schemas, the editor-bridge executor, AI-SDK server adapter, the headless DocxReviewer)
   docx-editor-react/   @eigenpal/docx-editor-react — vendored: the React editor UI (DocxEditor) + its components/dialogs/toolbar
   docx-editor-i18n/    @eigenpal/docx-editor-i18n — vendored: locale strings/types (English only after the lean pass)
-scripts/        gen-patrick-docs.ts → packages/shared/src/patrick-docs.generated.ts (the agent's `patrick_help` corpus); ensure-editor-built.mjs (the editor-build guard)
+scripts/        gen-patrick-docs.ts → packages/shared/src/patrick-docs.generated.ts (the agent's `patrick_help` corpus); ensure-editor-built.mjs (builds the editor's one generated artifact — `styles.css` — when missing)
 e2e/fixtures/   binary .docx test fixtures for the vendored editor's round-trip suites (run `bun test` from the repo root)
 living-docs/    transient per-task plans, deleted when the work ships (not durable docs)
 ```
@@ -47,7 +47,7 @@ React 19 + Vite + Tailwind v4 + shadcn (stone/emerald) · TanStack Router (file-
 
 **Leaned to Patrick's needs:** removed the editor's bundled chat UI + agent panel + MCP (Patrick ships its own chat), and the non-English locales. **Kept `core-plugins/*` (incl. docxtemplater) as the extension surface** — future patent transforms (e.g. claims formatting) become core-plugins; docxtemplater is the worked reference. Also kept footnotes + math.
 
-**Build + tooling:** built to `dist` via `tsup` — `pnpm build:editor` (topological). The build runs **only where the editor is consumed** (a `pretypecheck`/`prebuild` guard, `scripts/ensure-editor-built.mjs`, no-op when dist exists) — **never** on a bare `pnpm install`, so the site (which doesn't use the editor) doesn't build it. The vendored packages are **lint/knip-EXEMPT** (third-party library surface, same stance as shadcn `components/ui/**`) but **are typechecked** and covered by their own tests.
+**Build + tooling:** the editor is consumed **from source** (package `exports` → `./src`, like `@patrick/shared`/`@patrick/ui`) — **no JS build, full HMR**; the frontend (Vite) and api (Bun) compile its TypeScript directly. The **only** generated artifact is the editor's Tailwind stylesheet (`pnpm build:editor` → `packages/docx-editor-react/dist/styles.css`); `scripts/ensure-editor-built.mjs` builds just that when missing (the `pretypecheck`/`prebuild` guard). Because the consumers type-check the editor *source*, it meets the repo's `strict` standard — the extra `noUncheckedIndexedAccess` flag is **off repo-wide** (the editor was authored without it), and the headless `api` carries DOM types for the editor's isomorphic font/template code (the runtime stays DOM-free via `preloadFonts:false` + `typeof document` guards). The vendored packages stay **lint/knip-EXEMPT** (third-party surface) but **are typechecked** and covered by their own tests.
 
 **Known limitation:** headers/footers are **render-only** (painted, not in the editable body) — viewing yes, typing no. Editable H/F would be a future feature, not a bug.
 
@@ -136,7 +136,7 @@ Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
   - **Small, focused, atomic commits** — one logical change each (don't grab-bag unrelated edits into one commit). Stage only what belongs together; keep the working tree from drifting.
   - **Messages:** present tense, *what + why* (the why when it's non-obvious). **Never** add a Claude co-author line.
   - **Ask before committing** — propose a commit at a clean, green checkpoint and wait for an explicit "commit"; don't infer standing permission. But *do* proactively suggest the commit/branch at the right moment rather than waiting to be asked.
-  - **Verify checks GREEN before merging — never on assumption.** After pushing a PR, poll until CI **and** the Vercel deploy resolve (`gh pr checks <n>`), confirm `pass`, *then* merge; re-confirm `main`'s CI + prod deploy after. **Local green ≠ CI green** — generated/gitignored artifacts (editor `dist`, the TanStack `routeTree.gen.ts`) exist on your machine but not in a fresh CI checkout. (Learned the hard way: a batch of PRs merged blind left CI red + prod broken for hours.)
+  - **Verify checks GREEN before merging — never on assumption.** After pushing a PR, poll until CI **and** the Vercel deploy resolve (`gh pr checks <n>`), confirm `pass`, *then* merge; re-confirm `main`'s CI + prod deploy after. **Local green ≠ CI green** — generated/gitignored artifacts (the editor's `styles.css`, the TanStack `routeTree.gen.ts`) exist on your machine but not in a fresh CI checkout. (Learned the hard way: a batch of PRs merged blind left CI red + prod broken for hours.)
   - The full branch→PR→merge-commit→release standard is in `CONTRIBUTING.md`.
 - **Review before merging:** run **`/code-review`** on a feature branch's diff before merging it — fresh eyes catch the author's blind spots that re-reading your own code won't. Use a thorough pass (high effort) for anything substantial; `ultra` is the deep multi-agent cloud review the dev triggers. Proactively suggest it at merge points and other meaningful milestones, then triage the findings together before merging. **Lead with confirmed correctness bugs; weigh efficiency/cleanup/altitude findings on their merits, and verify any finding against the actual code before acting on it.**
 - MVP/startup mode: working > perfect, simple > clever; let it crash by default (catch only at real boundaries). Ask before structural/dependency/schema changes.
@@ -150,7 +150,7 @@ pnpm dev:desktop      # tauri dev
 pnpm dev:site         # the Next.js marketing/docs site
 pnpm check            # typecheck + lint:fix + knip
 pnpm test             # bun test — run from the repo root (editor fixtures resolve via cwd)
-pnpm build:editor     # build the vendored docx-editor packages to dist (topological)
+pnpm build:editor     # build the editor's Tailwind stylesheet (its only generated artifact; JS is source)
 pnpm gen:docs         # regenerate the agent's bundled docs after editing them
 ```
 

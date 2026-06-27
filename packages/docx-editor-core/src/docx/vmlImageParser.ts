@@ -32,7 +32,7 @@ function cssLengthToPx(raw: string | undefined): number | undefined {
   if (!raw) return undefined;
   const m = /^(-?[\d.]+)\s*(pt|in|px|cm|mm|pc)?$/.exec(raw.trim());
   if (!m) return undefined;
-  const value = parseFloat(m[1]);
+  const value = parseFloat(m[1] ?? '');
   if (isNaN(value)) return undefined;
   switch (m[2]) {
     case 'pt':
@@ -113,7 +113,10 @@ function intrinsicSizePx(bytes: Uint8Array | null): { width: number; height: num
   }
   // GIF — width/height are little-endian uint16 at offsets 6/8.
   if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
-    return { width: bytes[6] | (bytes[7] << 8), height: bytes[8] | (bytes[9] << 8) };
+    return {
+      width: (bytes[6] ?? 0) | ((bytes[7] ?? 0) << 8),
+      height: (bytes[8] ?? 0) | ((bytes[9] ?? 0) << 8),
+    };
   }
   // BMP — width/height are int32 LE at offsets 18/22 (height may be negative).
   // Needs ≥26 bytes; the 24-byte guard above isn't enough for the offset-22 read.
@@ -128,7 +131,7 @@ function intrinsicSizePx(bytes: Uint8Array | null): { width: number; height: num
         off++;
         continue;
       }
-      const marker = bytes[off + 1];
+      const marker = bytes[off + 1] ?? -1;
       if (
         marker >= 0xc0 &&
         marker <= 0xcf &&
@@ -137,11 +140,11 @@ function intrinsicSizePx(bytes: Uint8Array | null): { width: number; height: num
         marker !== 0xcc // DAC
       ) {
         return {
-          height: (bytes[off + 5] << 8) | bytes[off + 6],
-          width: (bytes[off + 7] << 8) | bytes[off + 8],
+          height: ((bytes[off + 5] ?? 0) << 8) | (bytes[off + 6] ?? 0),
+          width: ((bytes[off + 7] ?? 0) << 8) | (bytes[off + 8] ?? 0),
         };
       }
-      const len = (bytes[off + 2] << 8) | bytes[off + 3];
+      const len = ((bytes[off + 2] ?? 0) << 8) | (bytes[off + 3] ?? 0);
       if (len < 2) break;
       off += 2 + len;
     }

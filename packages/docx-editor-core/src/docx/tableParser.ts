@@ -724,6 +724,7 @@ function inferImplicitSingleCellRowSpans(table: Table): void {
     if (row.cells.length !== 1) continue;
 
     const cell = row.cells[0];
+    if (!cell) continue;
     const currentSpan = cell.formatting?.gridSpan ?? 1;
     if (currentSpan >= maxColumns) continue;
 

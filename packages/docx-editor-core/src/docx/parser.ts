@@ -387,7 +387,7 @@ function buildMediaMap(raw: RawDocxContent, _rels: RelationshipMap): Map<string,
     const bytes = new Uint8Array(data);
     let binary = '';
     for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
+      binary += String.fromCharCode(bytes[i] ?? 0);
     }
     const base64 = btoa(binary);
     const dataUrl = `data:${mimeType};base64,${base64}`;

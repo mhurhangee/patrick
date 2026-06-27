@@ -330,7 +330,7 @@ function extractTagsFromText(text: string): string[] {
 
   while ((match = regex.exec(text)) !== null) {
     // docxtemplater uses single braces internally
-    const tag = match[1].trim();
+    const tag = match[1]?.trim();
     if (tag && !tags.includes(tag)) {
       tags.push(tag);
     }

@@ -9,7 +9,7 @@
 		"predev:desktop": "node scripts/ensure-editor-built.mjs",
 		"dev:desktop": "pnpm --filter desktop dev",
 		"dev:site": "pnpm --filter site dev",
-		"build:editor": "pnpm -r --filter \"@eigenpal/docx-editor-*\" run build",
+		"build:editor": "pnpm --filter @eigenpal/docx-editor-react run build",
 		"test": "bun test",
 		"gen:docs": "bun scripts/gen-patrick-docs.ts",
 		"pretypecheck": "node scripts/ensure-editor-built.mjs",

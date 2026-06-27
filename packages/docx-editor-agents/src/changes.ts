@@ -106,7 +106,7 @@ function processParagraph(
   let count = 0;
   for (let i = para.content.length - 1; i >= 0; i--) {
     const item = para.content[i];
-    if (isTrackedChange(item) && match(item)) {
+    if (item && isTrackedChange(item) && match(item)) {
       applyChangeAtIndex(para, i, item, mode);
       count++;
     }

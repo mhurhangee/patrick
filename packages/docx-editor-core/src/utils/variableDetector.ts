@@ -440,7 +440,8 @@ export function extractVariablesFromText(text: string): string[] {
   let match: RegExpExecArray | null;
 
   while ((match = pattern.exec(text)) !== null) {
-    variables.push(match[1]);
+    const name = match[1];
+    if (name !== undefined) variables.push(name);
   }
 
   return variables;
@@ -458,7 +459,7 @@ export function extractVariablesFromTextRelaxed(text: string): string[] {
   let match: RegExpExecArray | null;
 
   while ((match = pattern.exec(text)) !== null) {
-    const varName = match[1].trim();
+    const varName = match[1]?.trim();
     if (varName) {
       variables.push(varName);
     }
@@ -543,7 +544,7 @@ export function formatVariable(name: string): string {
  */
 export function parseVariable(variable: string): string | null {
   const match = variable.match(/^\{(.+?)\}$/);
-  return match ? match[1] : null;
+  return match ? (match[1] ?? null) : null;
 }
 
 // ============================================================================
@@ -562,8 +563,9 @@ export function replaceVariables(text: string, values: Record<string, string>): 
 
   return text.replace(VARIABLE_PATTERN_RELAXED, (match, varName) => {
     const name = varName.trim();
-    if (name in values) {
-      return values[name];
+    const value = values[name];
+    if (value !== undefined) {
+      return value;
     }
     return match; // Keep original if not in values
   });

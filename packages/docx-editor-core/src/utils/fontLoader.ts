@@ -554,7 +554,7 @@ const CSS_HEX_ESCAPES: Record<string, string> = {
   '\f': '\\c ',
 };
 const cssStringEscape = (s: string) =>
-  s.replace(/["\\]/g, '\\$&').replace(/[<>\n\r\f]/g, (c) => CSS_HEX_ESCAPES[c]);
+  s.replace(/["\\]/g, '\\$&').replace(/[<>\n\r\f]/g, (c) => CSS_HEX_ESCAPES[c] ?? c);
 
 /**
  * Load a font from a raw buffer (e.g., embedded in DOCX)
@@ -637,7 +637,7 @@ export async function loadFontFromBuffer(
 }
 
 function guessFontFormat(src: string): string {
-  const url = src.split('?')[0].split('#')[0].toLowerCase();
+  const url = (src.split('?')[0] ?? '').split('#')[0]?.toLowerCase() ?? '';
   if (url.endsWith('.woff2')) return 'woff2';
   if (url.endsWith('.woff')) return 'woff';
   if (url.endsWith('.otf')) return 'opentype';
