@@ -894,6 +894,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
             value={currentFormatting.alignment || 'left'}
             onChange={handleAlignmentChange}
             disabled={disabled}
+            onRefocusEditor={onRefocusEditor}
           />
         </ToolbarGroup>
       )}
@@ -912,6 +913,7 @@ export function Toolbar(explicitProps: ToolbarProps) {
               showIndentButtons={true}
               compact
               hasIndent={(currentFormatting.indentLeft ?? 0) > 0}
+              onRefocusEditor={onRefocusEditor}
             />
           )}
           {showLineSpacingPicker && (
