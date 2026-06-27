@@ -7,7 +7,7 @@
  */
 
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import { MaterialSymbol } from './ui/Icons';
+import { MessageCircle, MessageCircleCheck } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 export interface CommentMarginMarkersProps {
@@ -90,10 +90,7 @@ export function CommentMarginMarkers({
             (e.currentTarget as HTMLElement).style.opacity = '1';
           }}
         >
-          <MaterialSymbol
-            name={isResolved ? 'chat_bubble_check' : 'chat_bubble_outline'}
-            size={18}
-          />
+          {isResolved ? <MessageCircleCheck size={18} /> : <MessageCircle size={18} />}
         </button>
       ))}
     </div>

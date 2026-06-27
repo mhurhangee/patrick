@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { MaterialSymbol } from './MaterialSymbol';
+import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
 import { cn } from '../../lib/utils';
@@ -18,7 +18,7 @@ const ICON_SIZE = 20;
 export interface IconGridOption<T extends string = string> {
   value: T;
   label: string;
-  iconName: string;
+  iconName: LucideIcon;
 }
 
 export interface IconGridDropdownProps<T extends string = string> {
@@ -27,7 +27,7 @@ export interface IconGridDropdownProps<T extends string = string> {
   /** Currently active value (highlighted in the grid), or null */
   activeValue?: T | null;
   /** Icon shown on the trigger button */
-  triggerIcon: string;
+  triggerIcon: LucideIcon;
   /** Tooltip text when closed */
   tooltipContent: string;
   /** Fired when an option is clicked */
@@ -57,6 +57,7 @@ export function IconGridDropdown<T extends string = string>({
   showLabels = false,
 }: IconGridDropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const TriggerIcon = triggerIcon;
   const onClose = useCallback(() => setIsOpen(false), []);
   const { containerRef, dropdownRef, dropdownStyle, handleMouseDown } = useFixedDropdown({
     isOpen,
@@ -88,8 +89,8 @@ export function IconGridDropdown<T extends string = string>({
       aria-haspopup="true"
       data-testid={testId}
     >
-      <MaterialSymbol name={triggerIcon} size={ICON_SIZE} />
-      <MaterialSymbol name="arrow_drop_down" size={14} className="-ml-1" />
+      <TriggerIcon size={ICON_SIZE} />
+      <ChevronDown size={14} className="-ml-1" />
     </Button>
   );
 
@@ -162,7 +163,7 @@ export function IconGridDropdown<T extends string = string>({
                   }}
                   onClick={() => handleOptionClick(option.value)}
                 >
-                  <MaterialSymbol name={option.iconName} size={18} />
+                  <option.iconName size={18} />
                   {showLabels && <span style={{ flex: 1 }}>{option.label}</span>}
                 </button>
               );

@@ -16,7 +16,7 @@ import {
   SelectTrigger,
 } from './Select';
 import { cn } from '../../lib/utils';
-import { IconLineSpacing } from './Icons';
+import { AlignVerticalSpaceAround } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
 
@@ -98,7 +98,7 @@ export function LineSpacingPicker({
         style={{ width: 'auto' }}
         title={t('lineSpacing.lineSpacingTitle', { label: getOptionLabel(currentOption) })}
       >
-        <IconLineSpacing className="h-5 w-5 shrink-0" />
+        <AlignVerticalSpaceAround className="h-5 w-5 shrink-0" />
       </SelectTrigger>
       <SelectContent>
         {options.map((option) => (

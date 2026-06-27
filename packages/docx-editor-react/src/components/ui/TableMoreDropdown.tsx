@@ -10,7 +10,26 @@ import { useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
-import { MaterialSymbol } from './MaterialSymbol';
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  Columns3,
+  EllipsisVertical,
+  Grid3x3,
+  MoveHorizontal,
+  Plus,
+  Rows3,
+  Settings,
+  TableCellsMerge,
+  TableCellsSplit,
+  Trash2,
+  WrapText,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { TableAction } from './TableToolbar';
 import { useFixedDropdown } from '../../hooks/useFixedDropdown';
@@ -84,7 +103,7 @@ export function TableMoreDropdown({
 
   const menuItem = (
     id: string,
-    icon: string,
+    Icon: LucideIcon,
     label: string,
     action: TableAction,
     opts?: { danger?: boolean; itemDisabled?: boolean }
@@ -111,8 +130,7 @@ export function TableMoreDropdown({
         onMouseLeave={() => setHoveredItem(null)}
         disabled={isItemDisabled}
       >
-        <MaterialSymbol
-          name={icon}
+        <Icon
           size={16}
           className={opts?.danger && !isItemDisabled ? 'text-destructive' : ''}
         />
@@ -138,7 +156,7 @@ export function TableMoreDropdown({
       aria-haspopup="menu"
       data-testid="toolbar-table-more"
     >
-      <MaterialSymbol name="more_vert" size={20} />
+      <EllipsisVertical size={20} />
     </Button>
   );
 
@@ -164,38 +182,38 @@ export function TableMoreDropdown({
           onMouseDown={(e) => e.stopPropagation()}
         >
           {/* Insert actions */}
-          {menuItem('addRowAbove', 'add', t('table.insertRowAbove'), 'addRowAbove')}
-          {menuItem('addRowBelow', 'add', t('table.insertRowBelow'), 'addRowBelow')}
-          {menuItem('addColumnLeft', 'add', t('table.insertColumnLeft'), 'addColumnLeft')}
-          {menuItem('addColumnRight', 'add', t('table.insertColumnRight'), 'addColumnRight')}
+          {menuItem('addRowAbove', Plus, t('table.insertRowAbove'), 'addRowAbove')}
+          {menuItem('addRowBelow', Plus, t('table.insertRowBelow'), 'addRowBelow')}
+          {menuItem('addColumnLeft', Plus, t('table.insertColumnLeft'), 'addColumnLeft')}
+          {menuItem('addColumnRight', Plus, t('table.insertColumnRight'), 'addColumnRight')}
 
           <div style={separatorStyles} role="separator" />
 
           {/* Merge/Split */}
-          {menuItem('mergeCells', 'call_merge', t('table.mergeCells'), 'mergeCells', {
+          {menuItem('mergeCells', TableCellsMerge, t('table.mergeCells'), 'mergeCells', {
             itemDisabled: !tableContext?.hasMultiCellSelection,
           })}
-          {menuItem('splitCell', 'call_split', t('table.splitCell'), 'splitCell', {
+          {menuItem('splitCell', TableCellsSplit, t('table.splitCell'), 'splitCell', {
             itemDisabled: !tableContext?.canSplitCell,
           })}
 
           <div style={separatorStyles} role="separator" />
 
           {/* Select */}
-          {menuItem('selectTable', 'select_all', t('table.selectTable'), 'selectTable')}
+          {menuItem('selectTable', Grid3x3, t('table.selectTable'), 'selectTable')}
 
           <div style={separatorStyles} role="separator" />
 
           {/* Delete actions */}
-          {menuItem('deleteRow', 'delete', t('table.deleteRow'), 'deleteRow', {
+          {menuItem('deleteRow', Trash2, t('table.deleteRow'), 'deleteRow', {
             danger: true,
             itemDisabled: (tableContext?.rowCount ?? 0) <= 1,
           })}
-          {menuItem('deleteColumn', 'delete', t('table.deleteColumn'), 'deleteColumn', {
+          {menuItem('deleteColumn', Trash2, t('table.deleteColumn'), 'deleteColumn', {
             danger: true,
             itemDisabled: (tableContext?.columnCount ?? 0) <= 1,
           })}
-          {menuItem('deleteTable', 'delete', t('table.deleteTable'), 'deleteTable', {
+          {menuItem('deleteTable', Trash2, t('table.deleteTable'), 'deleteTable', {
             danger: true,
           })}
 
@@ -205,11 +223,12 @@ export function TableMoreDropdown({
           <div style={sectionLabelStyles}>{t('tableAdvanced.verticalAlignment')}</div>
           <div style={{ display: 'flex', gap: 4, padding: '4px 14px' }}>
             {(['top', 'center', 'bottom'] as const).map((align) => {
-              const icons = {
-                top: 'vertical_align_top',
-                center: 'vertical_align_center',
-                bottom: 'vertical_align_bottom',
+              const icons: Record<'top' | 'center' | 'bottom', LucideIcon> = {
+                top: AlignVerticalJustifyStart,
+                center: AlignVerticalJustifyCenter,
+                bottom: AlignVerticalJustifyEnd,
               };
+              const Icon = icons[align];
               const labelKeys = {
                 top: 'tableAdvanced.top' as const,
                 center: 'tableAdvanced.middle' as const,
@@ -241,7 +260,7 @@ export function TableMoreDropdown({
                   }}
                   onClick={() => handleAction({ type: 'cellVerticalAlign', align })}
                 >
-                  <MaterialSymbol name={icons[align]} size={16} />
+                  <Icon size={16} />
                 </button>
               );
             })}
@@ -253,11 +272,12 @@ export function TableMoreDropdown({
           <div style={sectionLabelStyles}>{t('tableAdvanced.tableAlignment')}</div>
           <div style={{ display: 'flex', gap: 4, padding: '4px 14px' }}>
             {(['left', 'center', 'right'] as const).map((align) => {
-              const icons = {
-                left: 'format_align_left',
-                center: 'format_align_center',
-                right: 'format_align_right',
+              const icons: Record<'left' | 'center' | 'right', LucideIcon> = {
+                left: AlignLeft,
+                center: AlignCenter,
+                right: AlignRight,
               };
+              const Icon = icons[align];
               const isActive = currentJustification === align;
               return (
                 <button
@@ -288,7 +308,7 @@ export function TableMoreDropdown({
                     handleAction({ type: 'tableProperties', props: { justification: align } })
                   }
                 >
-                  <MaterialSymbol name={icons[align]} size={16} />
+                  <Icon size={16} />
                 </button>
               );
             })}
@@ -297,22 +317,22 @@ export function TableMoreDropdown({
           <div style={separatorStyles} role="separator" />
 
           {/* Other options */}
-          {menuItem('headerRow', 'table_rows', t('tableAdvanced.toggleHeaderRow'), {
+          {menuItem('headerRow', Rows3, t('tableAdvanced.toggleHeaderRow'), {
             type: 'toggleHeaderRow',
           })}
-          {menuItem('distribute', 'view_column', t('tableAdvanced.distributeColumns'), {
+          {menuItem('distribute', Columns3, t('tableAdvanced.distributeColumns'), {
             type: 'distributeColumns',
           })}
-          {menuItem('autoFit', 'fit_width', t('tableAdvanced.autoFit'), {
+          {menuItem('autoFit', MoveHorizontal, t('tableAdvanced.autoFit'), {
             type: 'autoFitContents',
           })}
-          {menuItem('noWrap', 'wrap_text', t('tableAdvanced.toggleNoWrap'), {
+          {menuItem('noWrap', WrapText, t('tableAdvanced.toggleNoWrap'), {
             type: 'toggleNoWrap',
           })}
 
           <div style={separatorStyles} role="separator" />
 
-          {menuItem('properties', 'settings', t('tableAdvanced.tableProperties'), {
+          {menuItem('properties', Settings, t('tableAdvanced.tableProperties'), {
             type: 'openTableProperties',
           })}
         </div>

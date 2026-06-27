@@ -10,7 +10,14 @@
 import React, { useState, useCallback } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { ParagraphAlignment } from '@eigenpal/docx-editor-core/types/document';
-import { MaterialSymbol } from './MaterialSymbol';
+import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  ChevronDown,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
 import { cn } from '../../lib/utils';
@@ -32,8 +39,8 @@ export interface AlignmentOption {
   label: string;
   /** Icon to display */
   icon: ReactNode;
-  /** Material symbol icon name */
-  iconName: string;
+  /** lucide icon component */
+  iconName: LucideIcon;
   /** Keyboard shortcut hint */
   shortcut?: string;
   /** Translation key for label */
@@ -98,8 +105,8 @@ const ALIGNMENT_OPTIONS: AlignmentOption[] = [
     label: 'Align Left',
     labelKey: 'alignment.alignLeft',
     shortcutKey: 'alignment.alignLeftShortcut',
-    icon: <MaterialSymbol name="format_align_left" size={ICON_SIZE} />,
-    iconName: 'format_align_left',
+    icon: <AlignLeft size={ICON_SIZE} />,
+    iconName: AlignLeft,
     shortcut: 'Ctrl+L',
   },
   {
@@ -107,8 +114,8 @@ const ALIGNMENT_OPTIONS: AlignmentOption[] = [
     label: 'Center',
     labelKey: 'alignment.center',
     shortcutKey: 'alignment.centerShortcut',
-    icon: <MaterialSymbol name="format_align_center" size={ICON_SIZE} />,
-    iconName: 'format_align_center',
+    icon: <AlignCenter size={ICON_SIZE} />,
+    iconName: AlignCenter,
     shortcut: 'Ctrl+E',
   },
   {
@@ -116,8 +123,8 @@ const ALIGNMENT_OPTIONS: AlignmentOption[] = [
     label: 'Align Right',
     labelKey: 'alignment.alignRight',
     shortcutKey: 'alignment.alignRightShortcut',
-    icon: <MaterialSymbol name="format_align_right" size={ICON_SIZE} />,
-    iconName: 'format_align_right',
+    icon: <AlignRight size={ICON_SIZE} />,
+    iconName: AlignRight,
     shortcut: 'Ctrl+R',
   },
   {
@@ -125,8 +132,8 @@ const ALIGNMENT_OPTIONS: AlignmentOption[] = [
     label: 'Justify',
     labelKey: 'alignment.justify',
     shortcutKey: 'alignment.justifyShortcut',
-    icon: <MaterialSymbol name="format_align_justify" size={ICON_SIZE} />,
-    iconName: 'format_align_justify',
+    icon: <AlignJustify size={ICON_SIZE} />,
+    iconName: AlignJustify,
     shortcut: 'Ctrl+J',
   },
 ];
@@ -186,8 +193,8 @@ export function AlignmentButtons({
       aria-haspopup="true"
       data-testid="toolbar-alignment"
     >
-      <MaterialSymbol name={currentOption.iconName} size={ICON_SIZE} />
-      <MaterialSymbol name="arrow_drop_down" size={14} className="-ml-1" />
+      <currentOption.iconName size={ICON_SIZE} />
+      <ChevronDown size={14} className="-ml-1" />
     </Button>
   );
 
@@ -245,7 +252,7 @@ export function AlignmentButtons({
                   }}
                   onClick={() => handleOptionClick(option.value)}
                 >
-                  <MaterialSymbol name={option.iconName} size={18} />
+                  <option.iconName size={18} />
                 </button>
               );
             })}
@@ -287,7 +294,7 @@ export function getAlignmentLabel(value: ParagraphAlignment): string {
  */
 export function getAlignmentIcon(value: ParagraphAlignment): ReactNode {
   const option = ALIGNMENT_OPTIONS.find((opt) => opt.value === value);
-  return option?.icon || <MaterialSymbol name="format_align_left" size={ICON_SIZE} />;
+  return option?.icon || <AlignLeft size={ICON_SIZE} />;
 }
 
 /**

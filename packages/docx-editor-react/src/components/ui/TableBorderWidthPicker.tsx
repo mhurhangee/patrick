@@ -7,7 +7,7 @@
 import { useState, useCallback } from 'react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
-import { MaterialSymbol } from './MaterialSymbol';
+import { ChevronDown, Equal } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { TableAction } from './TableToolbar';
 import { useFixedDropdown } from '../../hooks/useFixedDropdown';
@@ -63,8 +63,8 @@ export function TableBorderWidthPicker({
       aria-haspopup="true"
       data-testid="toolbar-table-border-width"
     >
-      <MaterialSymbol name="line_weight" size={20} />
-      <MaterialSymbol name="arrow_drop_down" size={14} className="-ml-1" />
+      <Equal size={20} />
+      <ChevronDown size={14} className="-ml-1" />
     </Button>
   );
 

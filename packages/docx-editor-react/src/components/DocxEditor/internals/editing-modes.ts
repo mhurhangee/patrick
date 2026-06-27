@@ -5,13 +5,14 @@
  */
 
 import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
+import { Eye, MessageSquareText, SquarePen, type LucideIcon } from 'lucide-react';
 
 export type EditorMode = 'editing' | 'suggesting' | 'viewing';
 
 export type EditingModeDef = {
   value: EditorMode;
   labelKey: TranslationKey;
-  icon: string;
+  icon: LucideIcon;
   descKey: TranslationKey;
 };
 
@@ -19,19 +20,19 @@ export const EDITING_MODES: readonly EditingModeDef[] = [
   {
     value: 'editing',
     labelKey: 'editor.editing',
-    icon: 'edit_note',
+    icon: SquarePen,
     descKey: 'editor.editingDescription',
   },
   {
     value: 'suggesting',
     labelKey: 'editor.suggesting',
-    icon: 'rate_review',
+    icon: MessageSquareText,
     descKey: 'editor.suggestingDescription',
   },
   {
     value: 'viewing',
     labelKey: 'editor.viewing',
-    icon: 'visibility',
+    icon: Eye,
     descKey: 'editor.viewingDescription',
   },
 ];

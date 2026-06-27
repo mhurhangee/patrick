@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../i18n';
-import { MaterialSymbol } from '../ui/Icons';
+import { Check, ChevronDown } from 'lucide-react';
 import { EDITING_MODES, type EditorMode } from './internals/editing-modes';
 
 export function EditingModeDropdown({
@@ -18,6 +18,7 @@ export function EditingModeDropdown({
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
   const current = EDITING_MODES.find((m) => m.value === mode)!;
+  const CurrentIcon = current.icon;
 
   // Responsive: icon-only below 1400px
   useEffect(() => {
@@ -80,9 +81,9 @@ export function EditingModeDropdown({
           height: 28,
         }}
       >
-        <MaterialSymbol name={current.icon} size={18} />
+        <CurrentIcon size={18} />
         {!compact && <span>{t(current.labelKey)}</span>}
-        <MaterialSymbol name="arrow_drop_down" size={16} />
+        <ChevronDown size={16} />
       </button>
 
       {isOpen && (
@@ -132,14 +133,13 @@ export function EditingModeDropdown({
                 textAlign: 'left',
               }}
             >
-              <MaterialSymbol name={m.icon} size={20} />
+              <m.icon size={20} />
               <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                 <span style={{ fontWeight: 500 }}>{t(m.labelKey)}</span>
                 <span style={{ fontSize: 11, color: 'var(--doc-text-muted)' }}>{t(m.descKey)}</span>
               </span>
               {m.value === mode && (
-                <MaterialSymbol
-                  name="check"
+                <Check
                   size={18}
                   style={{ marginLeft: 'auto', color: 'var(--doc-primary)' }}
                 />

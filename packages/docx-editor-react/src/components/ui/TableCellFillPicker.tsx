@@ -9,6 +9,7 @@ import { useCallback } from 'react';
 import type { ColorValue, Theme } from '@eigenpal/docx-editor-core/types/document';
 import type { TableAction } from './TableToolbar';
 import { ColorPicker } from './ColorPicker';
+import { PaintBucket } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 
 export interface TableCellFillPickerProps {
@@ -48,7 +49,7 @@ export function TableCellFillPicker({
       theme={theme}
       disabled={disabled}
       title={t('table.cellFillColor')}
-      icon="format_color_fill"
+      icon={PaintBucket}
       autoLabel={t('colorPicker.noColor')}
     />
   );

@@ -1,5 +1,5 @@
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import { MaterialSymbol } from '../ui/Icons';
+import { MessageCircleCheck } from 'lucide-react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
 
 export interface ResolvedCommentMarkerProps extends SidebarItemRenderProps {
@@ -32,7 +32,7 @@ export function ResolvedCommentMarker({
         (e.currentTarget as HTMLElement).style.opacity = '1';
       }}
     >
-      <MaterialSymbol name="chat_bubble_check" size={20} />
+      <MessageCircleCheck size={20} />
     </div>
   );
 }

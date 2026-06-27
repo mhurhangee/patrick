@@ -14,7 +14,15 @@
 import React from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { Table } from '@eigenpal/docx-editor-core/types/document';
-import { MaterialSymbol } from './MaterialSymbol';
+import {
+  Columns3,
+  Grid3x3,
+  ListX,
+  Rows3,
+  TableCellsMerge,
+  TableCellsSplit,
+  Trash2,
+} from 'lucide-react';
 import { useTranslation } from '../../i18n';
 
 // ============================================================================
@@ -187,45 +195,43 @@ export interface TableToolbarButtonProps {
 const ICON_SIZE = 16;
 
 export function AddRowAboveIcon(): React.ReactElement {
-  return <MaterialSymbol name="table_rows" size={ICON_SIZE} style={{ transform: 'scaleY(-1)' }} />;
+  return <Rows3 size={ICON_SIZE} style={{ transform: 'scaleY(-1)' }} />;
 }
 
 export function AddRowBelowIcon(): React.ReactElement {
-  return <MaterialSymbol name="table_rows" size={ICON_SIZE} />;
+  return <Rows3 size={ICON_SIZE} />;
 }
 
 export function AddColumnLeftIcon(): React.ReactElement {
-  return <MaterialSymbol name="view_column" size={ICON_SIZE} style={{ transform: 'scaleX(-1)' }} />;
+  return <Columns3 size={ICON_SIZE} style={{ transform: 'scaleX(-1)' }} />;
 }
 
 export function AddColumnRightIcon(): React.ReactElement {
-  return <MaterialSymbol name="view_column" size={ICON_SIZE} />;
+  return <Columns3 size={ICON_SIZE} />;
 }
 
 export function DeleteRowIcon(): React.ReactElement {
-  return <MaterialSymbol name="delete_sweep" size={ICON_SIZE} />;
+  return <ListX size={ICON_SIZE} />;
 }
 
 export function DeleteColumnIcon(): React.ReactElement {
-  return (
-    <MaterialSymbol name="delete_sweep" size={ICON_SIZE} style={{ transform: 'rotate(90deg)' }} />
-  );
+  return <ListX size={ICON_SIZE} style={{ transform: 'rotate(90deg)' }} />;
 }
 
 export function MergeCellsIcon(): React.ReactElement {
-  return <MaterialSymbol name="call_merge" size={ICON_SIZE} />;
+  return <TableCellsMerge size={ICON_SIZE} />;
 }
 
 export function SplitCellIcon(): React.ReactElement {
-  return <MaterialSymbol name="call_split" size={ICON_SIZE} />;
+  return <TableCellsSplit size={ICON_SIZE} />;
 }
 
 export function DeleteTableIcon(): React.ReactElement {
-  return <MaterialSymbol name="delete" size={ICON_SIZE} className="text-destructive" />;
+  return <Trash2 size={ICON_SIZE} className="text-destructive" />;
 }
 
 export function SelectTableIcon(): React.ReactElement {
-  return <MaterialSymbol name="select_all" size={ICON_SIZE} />;
+  return <Grid3x3 size={ICON_SIZE} />;
 }
 
 // ============================================================================

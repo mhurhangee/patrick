@@ -14,7 +14,37 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
-import { MaterialSymbol } from './MaterialSymbol';
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  ChevronDown,
+  ChevronUp,
+  Columns3,
+  Frame,
+  Grid3x3,
+  Maximize,
+  MoveHorizontal,
+  MoveVertical,
+  PanelBottom,
+  PanelLeft,
+  PanelRight,
+  PanelTop,
+  Plus,
+  Rows3,
+  Settings,
+  SquareDashed,
+  Table,
+  TableCellsMerge,
+  TableCellsSplit,
+  Trash2,
+  Type,
+  WrapText,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { TableAction } from './TableToolbar';
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror/extensions';
@@ -66,7 +96,7 @@ type SimpleAction =
 interface MenuItem {
   action: SimpleAction;
   labelKey: TranslationKey;
-  icon: string;
+  icon: LucideIcon;
   shortcut?: string;
   danger?: boolean;
   separator?: boolean;
@@ -74,49 +104,49 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { action: 'addRowAbove', labelKey: 'table.insertRowAbove', icon: 'add' },
-  { action: 'addRowBelow', labelKey: 'table.insertRowBelow', icon: 'add' },
-  { action: 'addColumnLeft', labelKey: 'table.insertColumnLeft', icon: 'add' },
-  { action: 'addColumnRight', labelKey: 'table.insertColumnRight', icon: 'add', separator: true },
+  { action: 'addRowAbove', labelKey: 'table.insertRowAbove', icon: Plus },
+  { action: 'addRowBelow', labelKey: 'table.insertRowBelow', icon: Plus },
+  { action: 'addColumnLeft', labelKey: 'table.insertColumnLeft', icon: Plus },
+  { action: 'addColumnRight', labelKey: 'table.insertColumnRight', icon: Plus, separator: true },
   {
     action: 'deleteRow',
     labelKey: 'table.deleteRow',
-    icon: 'delete',
+    icon: Trash2,
     danger: true,
     disabled: (ctx) => (ctx?.rowCount ?? 0) <= 1,
   },
   {
     action: 'deleteColumn',
     labelKey: 'table.deleteColumn',
-    icon: 'delete',
+    icon: Trash2,
     danger: true,
     disabled: (ctx) => (ctx?.columnCount ?? 0) <= 1,
   },
   {
     action: 'deleteTable',
     labelKey: 'table.deleteTable',
-    icon: 'delete',
+    icon: Trash2,
     danger: true,
     separator: true,
   },
-  { action: 'borderAll', labelKey: 'table.borders.all', icon: 'border_all' },
-  { action: 'borderOutside', labelKey: 'table.borders.outside', icon: 'border_outer' },
-  { action: 'borderInside', labelKey: 'table.borders.inside', icon: 'border_inner' },
-  { action: 'borderNone', labelKey: 'table.borders.remove', icon: 'border_clear' },
-  { action: 'borderTop', labelKey: 'table.borders.top', icon: 'border_top' },
-  { action: 'borderBottom', labelKey: 'table.borders.bottom', icon: 'border_bottom' },
-  { action: 'borderLeft', labelKey: 'table.borders.left', icon: 'border_left' },
-  { action: 'borderRight', labelKey: 'table.borders.right', icon: 'border_right', separator: true },
+  { action: 'borderAll', labelKey: 'table.borders.all', icon: Grid3x3 },
+  { action: 'borderOutside', labelKey: 'table.borders.outside', icon: Frame },
+  { action: 'borderInside', labelKey: 'table.borders.inside', icon: Plus },
+  { action: 'borderNone', labelKey: 'table.borders.remove', icon: SquareDashed },
+  { action: 'borderTop', labelKey: 'table.borders.top', icon: PanelTop },
+  { action: 'borderBottom', labelKey: 'table.borders.bottom', icon: PanelBottom },
+  { action: 'borderLeft', labelKey: 'table.borders.left', icon: PanelLeft },
+  { action: 'borderRight', labelKey: 'table.borders.right', icon: PanelRight, separator: true },
   {
     action: 'mergeCells',
     labelKey: 'table.mergeCells',
-    icon: 'call_merge',
+    icon: TableCellsMerge,
     disabled: (ctx) => !ctx?.hasMultiCellSelection,
   },
   {
     action: 'splitCell',
     labelKey: 'table.splitCell',
-    icon: 'call_split',
+    icon: TableCellsSplit,
     disabled: (ctx) => !ctx?.canSplitCell,
   },
 ];
@@ -184,12 +214,12 @@ const alignmentButtonStyles: CSSProperties = {
 
 const VALIGN_OPTIONS: {
   value: 'top' | 'center' | 'bottom';
-  icon: string;
+  icon: LucideIcon;
   labelKey: 'tableAdvanced.top' | 'tableAdvanced.middle' | 'tableAdvanced.bottom';
 }[] = [
-  { value: 'top', icon: 'vertical_align_top', labelKey: 'tableAdvanced.top' },
-  { value: 'center', icon: 'vertical_align_center', labelKey: 'tableAdvanced.middle' },
-  { value: 'bottom', icon: 'vertical_align_bottom', labelKey: 'tableAdvanced.bottom' },
+  { value: 'top', icon: AlignVerticalJustifyStart, labelKey: 'tableAdvanced.top' },
+  { value: 'center', icon: AlignVerticalJustifyCenter, labelKey: 'tableAdvanced.middle' },
+  { value: 'bottom', icon: AlignVerticalJustifyEnd, labelKey: 'tableAdvanced.bottom' },
 ];
 
 function VerticalAlignRow({ onAction }: { onAction: (action: TableAction) => void }) {
@@ -218,7 +248,7 @@ function VerticalAlignRow({ onAction }: { onAction: (action: TableAction) => voi
             }}
             onClick={() => onAction({ type: 'cellVerticalAlign', align: opt.value })}
           >
-            <MaterialSymbol name={opt.icon} size={16} />
+            <opt.icon size={16} />
           </button>
         ))}
       </div>
@@ -253,9 +283,9 @@ function CellMarginsRow({ onAction }: { onAction: (action: TableAction) => void 
         onMouseLeave={() => setHoveredItem(null)}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <MaterialSymbol name="padding" size={18} />
+        <Maximize size={18} />
         <span style={{ flex: 1 }}>{t('tableAdvanced.cellMargins')}</span>
-        <MaterialSymbol name={isExpanded ? 'expand_less' : 'expand_more'} size={18} />
+        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
       </button>
 
       {isExpanded && (
@@ -354,9 +384,9 @@ function TextDirectionRow({ onAction }: { onAction: (action: TableAction) => voi
         onMouseLeave={() => setHoveredItem(null)}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <MaterialSymbol name="text_rotation_none" size={18} />
+        <Type size={18} />
         <span style={{ flex: 1 }}>{t('tableAdvanced.textDirection')}</span>
-        <MaterialSymbol name={isExpanded ? 'expand_less' : 'expand_more'} size={18} />
+        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
       </button>
 
       {isExpanded && (
@@ -414,7 +444,7 @@ function NoWrapRow({ onAction }: { onAction: (action: TableAction) => void }) {
       onMouseLeave={() => setHoveredItem(null)}
       onClick={() => onAction({ type: 'toggleNoWrap' })}
     >
-      <MaterialSymbol name="wrap_text" size={18} />
+      <WrapText size={18} />
       <span style={{ flex: 1 }}>{t('tableAdvanced.toggleNoWrap')}</span>
     </button>
   );
@@ -464,9 +494,9 @@ function RowHeightRow({ onAction }: { onAction: (action: TableAction) => void })
         onMouseLeave={() => setHoveredItem(null)}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <MaterialSymbol name="height" size={18} />
+        <MoveVertical size={18} />
         <span style={{ flex: 1 }}>{t('tableAdvanced.rowHeight')}</span>
-        <MaterialSymbol name={isExpanded ? 'expand_less' : 'expand_more'} size={18} />
+        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
       </button>
 
       {isExpanded && (
@@ -563,7 +593,7 @@ function HeaderRowRow({ onAction }: { onAction: (action: TableAction) => void })
       onMouseLeave={() => setHoveredItem(null)}
       onClick={() => onAction({ type: 'toggleHeaderRow' })}
     >
-      <MaterialSymbol name="table_rows" size={18} />
+      <Rows3 size={18} />
       <span style={{ flex: 1 }}>{t('tableAdvanced.toggleHeaderRow')}</span>
     </button>
   );
@@ -588,7 +618,7 @@ function DistributeColumnsRow({ onAction }: { onAction: (action: TableAction) =>
       onMouseLeave={() => setHoveredItem(null)}
       onClick={() => onAction({ type: 'distributeColumns' })}
     >
-      <MaterialSymbol name="view_column" size={18} />
+      <Columns3 size={18} />
       <span style={{ flex: 1 }}>{t('tableAdvanced.distributeColumns')}</span>
     </button>
   );
@@ -609,7 +639,7 @@ function AutoFitRow({ onAction }: { onAction: (action: TableAction) => void }) {
       onMouseLeave={() => setHoveredItem(null)}
       onClick={() => onAction({ type: 'autoFitContents' })}
     >
-      <MaterialSymbol name="fit_width" size={18} />
+      <MoveHorizontal size={18} />
       <span style={{ flex: 1 }}>{t('tableAdvanced.autoFit')}</span>
     </button>
   );
@@ -636,7 +666,7 @@ function TablePropertiesRow({ onAction }: { onAction: (action: TableAction) => v
         onMouseLeave={() => setHoveredItem(null)}
         onClick={() => onAction({ type: 'openTableProperties' })}
       >
-        <MaterialSymbol name="settings" size={18} />
+        <Settings size={18} />
         <span style={{ flex: 1 }}>{t('tableAdvanced.tableProperties')}</span>
       </button>
     </>
@@ -655,7 +685,7 @@ function TableAlignmentRow({
   justification: 'left' | 'center' | 'right';
 }) {
   const { t } = useTranslation();
-  const makeButton = (value: 'left' | 'center' | 'right', icon: string, label: string) => {
+  const makeButton = (value: 'left' | 'center' | 'right', Icon: LucideIcon, label: string) => {
     const isActive = justification === value;
     return (
       <button
@@ -670,7 +700,7 @@ function TableAlignmentRow({
         title={label}
         aria-label={label}
       >
-        <MaterialSymbol name={icon} size={18} />
+        <Icon size={18} />
       </button>
     );
   };
@@ -682,9 +712,9 @@ function TableAlignmentRow({
         <span style={{ fontSize: 13, color: 'var(--doc-text-muted)', flex: 1 }}>
           {t('tableAdvanced.tableAlignment')}
         </span>
-        {makeButton('left', 'format_align_left', t('tableAdvanced.alignTableLeft'))}
-        {makeButton('center', 'format_align_center', t('tableAdvanced.alignTableCenter'))}
-        {makeButton('right', 'format_align_right', t('tableAdvanced.alignTableRight'))}
+        {makeButton('left', AlignLeft, t('tableAdvanced.alignTableLeft'))}
+        {makeButton('center', AlignCenter, t('tableAdvanced.alignTableCenter'))}
+        {makeButton('right', AlignRight, t('tableAdvanced.alignTableRight'))}
       </div>
     </>
   );
@@ -794,8 +824,8 @@ export function TableOptionsDropdown({
       aria-haspopup="menu"
       data-testid="toolbar-table-options"
     >
-      <MaterialSymbol name="table" size={20} />
-      <MaterialSymbol name="arrow_drop_down" size={16} className="-ml-1" />
+      <Table size={20} />
+      <ChevronDown size={16} className="-ml-1" />
     </Button>
   );
 
@@ -844,8 +874,7 @@ export function TableOptionsDropdown({
                   disabled={isDisabled}
                   aria-disabled={isDisabled}
                 >
-                  <MaterialSymbol
-                    name={item.icon}
+                  <item.icon
                     size={18}
                     className={item.danger && !isDisabled ? 'text-destructive' : ''}
                   />

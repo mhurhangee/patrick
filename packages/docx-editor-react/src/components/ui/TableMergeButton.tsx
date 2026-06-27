@@ -3,7 +3,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { MaterialSymbol } from './MaterialSymbol';
+import { TableCellsMerge, TableCellsSplit } from 'lucide-react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
 import { cn } from '../../lib/utils';
@@ -52,7 +52,7 @@ export function TableMergeButton({
         aria-label={t('table.mergeCells')}
         data-testid="toolbar-table-merge"
       >
-        <MaterialSymbol name="call_merge" size={20} />
+        <TableCellsMerge size={20} />
       </Button>
     </Tooltip>
   );
@@ -72,7 +72,7 @@ export function TableMergeButton({
         aria-label={t('table.splitCell')}
         data-testid="toolbar-table-split"
       >
-        <MaterialSymbol name="call_split" size={20} />
+        <TableCellsSplit size={20} />
       </Button>
     </Tooltip>
   );

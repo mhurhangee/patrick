@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
-import { MaterialSymbol } from './ui/Icons';
+import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 /** @deprecated Use HeadingInfo from utils/headingCollector instead */
@@ -117,7 +117,7 @@ export const DocumentOutline = React.memo(function DocumentOutline({
           }}
           title={t('documentOutline.closeTitle')}
         >
-          <MaterialSymbol name="arrow_back" size={20} />
+          <ArrowLeft size={20} />
         </button>
         <span
           style={{

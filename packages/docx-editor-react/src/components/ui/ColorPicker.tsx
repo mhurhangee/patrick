@@ -13,7 +13,7 @@ import {
 } from '@eigenpal/docx-editor-core/utils';
 import type { ThemeMatrixCell } from '@eigenpal/docx-editor-core/utils';
 import { useFixedDropdown } from '../../hooks/useFixedDropdown';
-import { MaterialSymbol } from './MaterialSymbol';
+import { Baseline, ChevronDown, Highlighter, PencilLine, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
 
@@ -33,7 +33,7 @@ export interface ColorPickerProps {
   style?: CSSProperties;
   title?: string;
   /** Override the default icon for the mode */
-  icon?: string;
+  icon?: LucideIcon;
   /** Override the auto/no-color button label */
   autoLabel?: string;
   /**
@@ -519,13 +519,8 @@ export function ColorPicker({
         ? t('formattingBar.highlightColor')
         : t('table.borderColor');
 
-  const iconName =
-    iconOverride ??
-    (mode === 'text'
-      ? 'format_color_text'
-      : mode === 'highlight'
-        ? 'ink_highlighter'
-        : 'border_color');
+  const IconComponent =
+    iconOverride ?? (mode === 'text' ? Baseline : mode === 'highlight' ? Highlighter : PencilLine);
 
   return (
     <div
@@ -560,7 +555,7 @@ export function ColorPicker({
             title={title || defaultTitle}
             aria-label={title || defaultTitle}
           >
-            <MaterialSymbol name={iconName} size={18} />
+            <IconComponent size={18} />
             <div
               style={{
                 ...S_COLOR_BAR,
@@ -598,7 +593,7 @@ export function ColorPicker({
             aria-haspopup="true"
             aria-expanded={isOpen}
           >
-            <MaterialSymbol name="arrow_drop_down" size={18} />
+            <ChevronDown size={18} />
           </button>
         </div>
       ) : (
@@ -617,7 +612,7 @@ export function ColorPicker({
           aria-expanded={isOpen}
         >
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-            <MaterialSymbol name={iconName} size={18} />
+            <IconComponent size={18} />
             <div
               style={{
                 ...S_COLOR_BAR,
@@ -629,7 +624,7 @@ export function ColorPicker({
               }}
             />
           </div>
-          <MaterialSymbol name="arrow_drop_down" size={14} />
+          <ChevronDown size={14} />
         </button>
       )}
 

@@ -1,7 +1,7 @@
 import { useTranslation } from '../../i18n';
 import { Z_INDEX } from '../../styles/zIndex';
 import { OUTLINE_BUTTON_LEFT_OFFSET } from '../DocumentOutline';
-import { MaterialSymbol } from '../ui/Icons';
+import { List } from 'lucide-react';
 
 /**
  * Outline toggle — same reason as `CommentsSidebarToggle`: needs to render
@@ -43,7 +43,7 @@ export function OutlineToggleButton({
       }}
     >
       {/* Icon inherits the button's `color` (fill: currentColor). */}
-      <MaterialSymbol name="format_list_bulleted" size={20} />
+      <List size={20} />
     </button>
   );
 }

@@ -5,7 +5,13 @@
  */
 
 import React, { useCallback } from 'react';
-import { MaterialSymbol } from './MaterialSymbol';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
 import { cn } from '../../lib/utils';
@@ -20,31 +26,31 @@ export interface TableInsertButtonsProps {
 
 const INSERT_ACTIONS: {
   action: TableAction;
-  icon: string;
+  icon: LucideIcon;
   labelKey: TranslationKey;
   testId: string;
 }[] = [
   {
     action: 'addRowAbove',
-    icon: 'keyboard_arrow_up',
+    icon: ChevronUp,
     labelKey: 'table.insertRowAbove',
     testId: 'toolbar-table-add-row-above',
   },
   {
     action: 'addRowBelow',
-    icon: 'keyboard_arrow_down',
+    icon: ChevronDown,
     labelKey: 'table.insertRowBelow',
     testId: 'toolbar-table-add-row-below',
   },
   {
     action: 'addColumnLeft',
-    icon: 'keyboard_arrow_left',
+    icon: ChevronLeft,
     labelKey: 'table.insertColumnLeft',
     testId: 'toolbar-table-add-col-left',
   },
   {
     action: 'addColumnRight',
-    icon: 'keyboard_arrow_right',
+    icon: ChevronRight,
     labelKey: 'table.insertColumnRight',
     testId: 'toolbar-table-add-col-right',
   },
@@ -59,7 +65,7 @@ export function TableInsertButtons({ onAction, disabled = false }: TableInsertBu
 
   return (
     <>
-      {INSERT_ACTIONS.map(({ action, icon, labelKey, testId }) => {
+      {INSERT_ACTIONS.map(({ action, icon: Icon, labelKey, testId }) => {
         const label = t(labelKey);
         return (
           <Tooltip key={typeof action === 'string' ? action : action.type} content={label}>
@@ -76,7 +82,7 @@ export function TableInsertButtons({ onAction, disabled = false }: TableInsertBu
               aria-label={label}
               data-testid={testId}
             >
-              <MaterialSymbol name={icon} size={20} />
+              <Icon size={20} />
             </Button>
           </Tooltip>
         );

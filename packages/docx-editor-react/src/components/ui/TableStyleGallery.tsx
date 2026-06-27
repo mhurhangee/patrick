@@ -10,7 +10,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import type { Style } from '@eigenpal/docx-editor-core/types/document';
 import type { TableAction } from './TableToolbar';
-import { MaterialSymbol } from './MaterialSymbol';
+import { ChevronDown, Paintbrush } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
 
@@ -455,9 +455,9 @@ export function TableStyleGallery({
           color: 'var(--doc-text)',
         }}
       >
-        <MaterialSymbol name="format_paint" size={16} />
+        <Paintbrush size={16} />
         <span>{t('table.styles.label')}</span>
-        <MaterialSymbol name="expand_more" size={14} />
+        <ChevronDown size={14} />
       </button>
 
       {isOpen && (

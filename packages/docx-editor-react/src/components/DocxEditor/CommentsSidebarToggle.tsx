@@ -1,6 +1,6 @@
 import { useTranslation } from '../../i18n';
 import { ToolbarButton } from '../Toolbar';
-import { MaterialSymbol } from '../ui/Icons';
+import { MessageSquare } from 'lucide-react';
 
 /**
  * Wrapper for the comments-sidebar toggle so the button title runs through
@@ -18,7 +18,7 @@ export function CommentsSidebarToggle({
   const title = t('editor.toggleCommentsSidebar');
   return (
     <ToolbarButton onClick={onClick} active={active} title={title} ariaLabel={title}>
-      <MaterialSymbol name="comment" size={20} />
+      <MessageSquare size={20} />
     </ToolbarButton>
   );
 }
