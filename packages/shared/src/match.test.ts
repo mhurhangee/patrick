@@ -47,7 +47,7 @@ describe("snippetInText", () => {
 	});
 
 	test("a SHORT snippet gets no prefix fallback — must match whole", () => {
-		const snippet = "a".repeat(PREFIX_LEN - 10) + "ZZZ";
+		const snippet = `${"a".repeat(PREFIX_LEN - 10)}ZZZ`;
 		expect(snippet.length).toBeLessThan(PREFIX_LEN);
 		expect(snippetInText("a".repeat(PREFIX_LEN), snippet)).toBe(false);
 	});
