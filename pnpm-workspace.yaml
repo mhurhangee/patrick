@@ -11,6 +11,9 @@ allowBuilds:
   # esbuild's postinstall installs its platform binary; pulled in by tsup (the
   # vendored editor build). A fresh CI install errors if it's not listed.
   esbuild: true
+  # @parcel/watcher is @tailwindcss/cli's native file watcher — only used by
+  # `--watch`, which the editor's one-shot CSS build never uses. Skip its build.
+  '@parcel/watcher': false
 minimumReleaseAgeExclude:
   - '@ai-sdk/gateway@4.0.2'
   - '@ai-sdk/react@4.0.2'
