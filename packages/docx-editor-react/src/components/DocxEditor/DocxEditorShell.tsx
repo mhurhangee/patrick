@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { PortalContainerContext } from '@patrick/ui/lib/portal-container';
 import type { SectionProperties, TabStop } from '@eigenpal/docx-editor-core/types/document';
 import type { TrackedChangesResult } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { LocaleProvider } from '../../i18n';
@@ -138,6 +140,11 @@ export function DocxEditorShell({
   dialogs: ReactNode;
   fileInputs: ReactNode;
 }) {
+  // @patrick/ui overlays (dropdowns/popovers/tooltips) portal here — a node
+  // INSIDE this `.ep-root` — so the editor's `.ep-root`-scoped utilities (and
+  // dark mode) apply to them; otherwise they'd portal to document.body unstyled.
+  const [portalHost, setPortalHost] = useState<HTMLDivElement | null>(null);
+
   return (
     <LocaleProvider i18n={i18n}>
       <ErrorProvider>
@@ -148,6 +155,8 @@ export function DocxEditorShell({
             style={containerStyle}
             data-testid="docx-editor"
           >
+            <PortalContainerContext.Provider value={portalHost}>
+            <div ref={setPortalHost} />
             <div style={mainContentStyle}>
               <div
                 style={{
@@ -282,6 +291,7 @@ export function DocxEditorShell({
             {overlays}
             {dialogs}
             {fileInputs}
+            </PortalContainerContext.Provider>
           </div>
         </ErrorBoundary>
       </ErrorProvider>
