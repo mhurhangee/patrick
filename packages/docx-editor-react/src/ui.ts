@@ -177,20 +177,6 @@ export {
   getAllLoadingSizes,
   delay,
 } from './components/ui/LoadingIndicator';
-export {
-  ResponsiveToolbar,
-  type ResponsiveToolbarProps,
-  type ToolbarItem,
-  type ToolbarItemPriority,
-  type UseResponsiveToolbarOptions,
-  type UseResponsiveToolbarReturn,
-  ToolbarGroup as ResponsiveToolbarGroup,
-  type ToolbarGroupProps as ResponsiveToolbarGroupProps,
-  useResponsiveToolbar,
-  createToolbarItem,
-  createToolbarItems,
-  getRecommendedPriority,
-} from './components/ui/ResponsiveToolbar';
 
 // ============================================================================
 // DIALOGS
