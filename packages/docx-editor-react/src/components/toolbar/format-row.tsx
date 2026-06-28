@@ -5,7 +5,6 @@ import type { FormattingAction, SelectionFormatting } from '../Toolbar';
 import { CharacterGroup } from './groups/character-group';
 import { InsertMenu } from './groups/insert-menu';
 import { ParagraphGroup } from './groups/paragraph-group';
-import { StyleMenu } from './groups/style-menu';
 
 export interface FormatRowProps {
   currentFormatting: SelectionFormatting;
@@ -22,9 +21,10 @@ export interface FormatRowProps {
 }
 
 /**
- * The collapsing format band. Composes the scope groups (style, character,
- * paragraph, insert; contextual table/image in a later phase). Each group owns
- * its own responsive collapse via container queries on the toolbar width.
+ * The collapsing format band. Composes the scope groups (character — which now
+ * owns the Style picker, grouped with typography — then paragraph, then insert;
+ * contextual table/image in a later phase). Each group owns its own responsive
+ * collapse via container queries on the toolbar width.
  */
 export function FormatRow({
   currentFormatting,
@@ -40,18 +40,13 @@ export function FormatRow({
   onInsertTOC,
 }: FormatRowProps) {
   return (
-    <div className="flex h-10 items-center gap-1 border-t border-border px-2">
-      <StyleMenu
-        currentFormatting={currentFormatting}
-        onFormat={onFormat}
-        documentStyles={documentStyles}
-      />
-      <Separator orientation="vertical" className="mx-1 h-5" />
+    <div className="flex items-center gap-1">
       <CharacterGroup
         currentFormatting={currentFormatting}
         onFormat={onFormat}
         documentFonts={documentFonts}
         fontFamilies={fontFamilies}
+        documentStyles={documentStyles}
       />
       <Separator orientation="vertical" className="mx-1 h-5" />
       <ParagraphGroup currentFormatting={currentFormatting} onFormat={onFormat} />

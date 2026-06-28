@@ -52,7 +52,7 @@ export interface ParagraphGroupProps {
 /**
  * Paragraph-scope controls — list, indent, alignment, line spacing, each a
  * single-button dropdown (uniform with one another). Inline when wide; the whole
- * group folds into a `¶ ▾` popover below ~600px of toolbar width.
+ * group folds into a `¶ ▾` popover below ~780px of toolbar width.
  */
 export function ParagraphGroup({ currentFormatting, onFormat }: ParagraphGroupProps) {
   const listType = currentFormatting.listState?.type;
@@ -174,8 +174,8 @@ export function ParagraphGroup({ currentFormatting, onFormat }: ParagraphGroupPr
 
   return (
     <>
-      <div className="hidden items-center gap-0.5 @min-[600px]:flex">{inline}</div>
-      <div className="@min-[600px]:hidden">
+      <div className="hidden items-center gap-0.5 @min-[780px]:flex">{inline}</div>
+      <div className="@min-[780px]:hidden">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" tooltip="Paragraph" onMouseDown={keepFocus}>

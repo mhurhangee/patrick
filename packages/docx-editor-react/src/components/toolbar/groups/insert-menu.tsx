@@ -48,7 +48,7 @@ export function InsertMenu({
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" tooltip="Insert" onMouseDown={keepFocus}>
           <Plus />
-          <span className="hidden @md:inline">Insert</span>
+          <span className="hidden @min-[940px]:inline">Insert</span>
           <ChevronDown />
         </Button>
       </DropdownMenuTrigger>

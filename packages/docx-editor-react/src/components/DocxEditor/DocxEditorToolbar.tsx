@@ -162,10 +162,6 @@ export function DocxEditorToolbar({
     return (
       <div ref={toolbarRefCallback} className="z-50 flex flex-col gap-0 flex-shrink-0">
         <DocxToolbar
-          renderLogo={renderLogo}
-          documentName={documentName}
-          onDocumentNameChange={onDocumentNameChange}
-          documentNameEditable={documentNameEditable}
           renderTitleBarRight={renderTitleBarRight}
           editingMode={editingMode}
           onModeChange={handleModeChange}

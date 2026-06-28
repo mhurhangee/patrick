@@ -27,7 +27,9 @@ export function SaveStatus({ status }: { status: SaveState }) {
 					)}
 				</span>
 			</TooltipTrigger>
-			<TooltipContent>{saving ? "Saving…" : "Saved"}</TooltipContent>
+			<TooltipContent side="bottom">
+				{saving ? "Saving…" : "Saved"}
+			</TooltipContent>
 		</Tooltip>
 	);
 }

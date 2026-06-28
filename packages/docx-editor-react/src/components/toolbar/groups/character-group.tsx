@@ -2,6 +2,7 @@ import {
   type FontOption,
   normalizeFontFamilies,
 } from '@eigenpal/docx-editor-core/utils/fontOptions';
+import type { Style } from '@eigenpal/docx-editor-core/types/document';
 import { halfPointsToPoints } from '@eigenpal/docx-editor-core/utils/units';
 import { Button } from '@patrick/ui/components/button';
 import { NumberField } from '@patrick/ui/components/number-field';
@@ -40,6 +41,7 @@ import { useMemo } from 'react';
 import type { FormattingAction, SelectionFormatting } from '../../Toolbar';
 import { ColorControl } from '../color-control';
 import { TOGGLE_ACTIVE, keepFocus } from '../shared';
+import { StyleMenu } from './style-menu';
 
 // Grayscale + Office standard colours (hex without #).
 const TEXT_SWATCHES = [
@@ -79,20 +81,23 @@ export interface CharacterGroupProps {
   onFormat: (action: FormattingAction) => void;
   documentFonts?: readonly FontOption[] | undefined;
   fontFamilies?: ReadonlyArray<string | FontOption> | undefined;
+  documentStyles?: Style[] | undefined;
 }
 
 /**
- * Character-scope controls. B/I/U/S stay inline (top of the priority order); the
- * pickers + extras (font, size, super/sub, colour, highlight, link, clear) are
- * inline when the pane is wide and fold into an `Aa ▾` popover below ~820px of
- * toolbar width (container query). The popover doubles as the apply-beforehand
- * surface. The control elements are shared between the two layouts.
+ * Character-scope controls (incl. the paragraph Style picker, grouped with the
+ * typography). B/I/U/S stay inline (top of the priority order). The rest fold
+ * separately as the toolbar narrows (container queries): the least-used extras
+ * (super/sub, colour, highlight, link, clear) first → `Aa ▾`, then style + font +
+ * size into a popover. The popovers double as the apply-beforehand surface;
+ * control elements are shared between the inline strip and the popovers.
  */
 export function CharacterGroup({
   currentFormatting,
   onFormat,
   documentFonts,
   fontFamilies,
+  documentStyles,
 }: CharacterGroupProps) {
   const currentFont = currentFormatting.fontFamily || 'Arial';
   const sizePt =
@@ -140,7 +145,10 @@ export function CharacterGroup({
     </Toggle>
   );
 
-  // Shared control elements — placed in the inline strip AND the Aa popover.
+  // Shared control elements — placed in the inline strip AND the popovers.
+  const styleMenu = (
+    <StyleMenu currentFormatting={currentFormatting} onFormat={onFormat} documentStyles={documentStyles} />
+  );
   const fontSelect = (
     <Select value={currentFont} onValueChange={(v) => onFormat({ type: 'fontFamily', value: v })}>
       <SelectTrigger size="sm" className="h-7 w-[7.5rem] text-xs" aria-label="Font" onMouseDown={keepFocus}>
@@ -211,22 +219,24 @@ export function CharacterGroup({
 
   return (
     <div className="flex items-center gap-1">
-      {/* Font + size: inline when wide → fold into Font▾ below ~720px container.
-          (Breakpoints are literal classes so Tailwind generates them; they're
-          absolute px — revisit in rem if UI-scale ≠ 100% needs it.) */}
-      <div className="hidden items-center gap-1 @min-[720px]:flex">
+      {/* Typography (style, font, size): inline when wide → fold together into a
+          popover below ~900px container. (Literal breakpoint classes so Tailwind
+          generates them; absolute px — revisit in rem if UI-scale ≠ 100%.) */}
+      <div className="hidden items-center gap-1 @min-[900px]:flex">
+        {styleMenu}
         {fontSelect}
         {sizeField}
       </div>
-      <div className="@min-[720px]:hidden">
+      <div className="@min-[900px]:hidden">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" tooltip="Font & size" onMouseDown={keepFocus}>
+            <Button variant="ghost" size="sm" tooltip="Style, font & size" onMouseDown={keepFocus}>
               <Type />
               <ChevronDown />
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto flex-row items-center gap-2">
+            {styleMenu}
             {fontSelect}
             {sizeField}
           </PopoverContent>
@@ -244,15 +254,15 @@ export function CharacterGroup({
       </div>
 
       {/* Extras (super/sub, colour, highlight, link, clear): the least-used
-          character controls — fold first, into Aa▾ below ~820px. */}
-      <div className="hidden items-center gap-0.5 @min-[820px]:flex">
+          character controls — fold first, into Aa▾ below ~1000px. */}
+      <div className="hidden items-center gap-0.5 @min-[1000px]:flex">
         {superSub}
         {colorCtrl}
         {highlightCtrl}
         {linkBtn}
         {clearBtn}
       </div>
-      <div className="@min-[820px]:hidden">
+      <div className="@min-[1000px]:hidden">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" tooltip="Text formatting" onMouseDown={keepFocus}>
