@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from '@patrick/ui/components/select';
 import { useMemo } from 'react';
-import type { FormattingAction, SelectionFormatting } from '../../Toolbar';
+import type { FormattingAction, SelectionFormatting } from '../../../types/formatting';
 import { keepFocus } from '../shared';
 
 // The baseline that always applies (clears to body text). Other options come

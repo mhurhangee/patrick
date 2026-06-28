@@ -10,7 +10,7 @@ before its legacy is deleted.
 ## Status by area
 | Area | Status | Notes |
 |---|---|---|
-| Toolbar | 🚧 P0–P2d done | new: `components/toolbar/*`. Left: P2e collapse · P3 contextual table/image · P4 floating selection · P5 swap+delete legacy |
+| Toolbar | 🚧 P0–P3 + P5a done | new: `components/toolbar/*` + `src/types/*`. P4 (floating selection) **dropped** — out of scope. Left: P5b swap (remove flag + legacy branch) · P5c delete legacy toolbar |
 | Dead-code cull (A0) | 🚧 | ✅ `EditableImage` deleted (768 LOC, 0 importers). ❌ `ui/Select` + `ui/IconGridDropdown` are NOT dead (audit was wrong) — still used by legacy pickers/dropdowns; delete when those consumers go |
 | Dialogs (A2) | ⬜ | 14 inline-styled dialogs → `@patrick/ui` `Dialog` + form primitives (huge shrink) |
 | Context menus (A3) | ⬜ | `TextContextMenu`/`ContextMenu`/`ImageContextMenu` → shadcn context-menu |
@@ -24,11 +24,18 @@ before its legacy is deleted.
 `DocxEditor.tsx`, `PagedEditor.tsx`, `HiddenProseMirror.tsx`, all `DocxEditor/hooks/*` +
 `hooks/*`, selection-geometry overlays, `renderAsync.ts`.
 
-## Contract-types seam (prereq for toolbar P5)
-`SelectionFormatting` / `FormattingAction` / `TableAction` live in legacy `Toolbar.tsx` /
-`ui/TableToolbar.tsx` but the glue imports them. Move to a neutral module
-(`docx-editor-react/src/contract.ts` or core types) + repoint imports **before** deleting
-the legacy toolbar.
+## Contract-types seam — ✅ done (P5a)
+Established `docx-editor-react/src/types/` as the shared-types home (recurring problem:
+types scattered in chrome files, dragged around by glue). `types/formatting.ts`
+(`SelectionFormatting`/`FormattingAction`) + `types/table.ts` (`TableAction` + `BorderPreset`/
+`TableSelection`/`TableContext`/`TableSplitConfig`). Glue + new toolbar import from `../types/*`
+directly; legacy `Toolbar.tsx` / `ui/TableToolbar.tsx` re-export them so stragglers compile
+until P5c. Future migrated areas should put shared types here too.
+
+⚠️ Finding (for A0/table area, not P5): `ui/TableToolbar.tsx` is a misnamed grab-bag —
+its `TableToolbar` **component is dead** (never rendered, only re-exported via the unused
+`ui.ts`). What survives there = the table-**operations** re-export (`./TableToolbar/operations`,
+glue logic used by `useTableSelection`) + the dead component + icons.
 
 ## Legacy toolbar — delete at toolbar P5 (verify 0 importers each first)
 `Toolbar.tsx`, `TitleBar.tsx`, `EditorToolbar.tsx`, `EditorToolbarContext.tsx`,

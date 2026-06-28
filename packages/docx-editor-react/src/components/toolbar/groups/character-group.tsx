@@ -38,7 +38,7 @@ import {
   Underline,
 } from 'lucide-react';
 import { useMemo } from 'react';
-import type { FormattingAction, SelectionFormatting } from '../../Toolbar';
+import type { FormattingAction, SelectionFormatting } from '../../../types/formatting';
 import { ColorControl } from '../color-control';
 import { TOGGLE_ACTIVE, keepFocus } from '../shared';
 import { StyleMenu } from './style-menu';

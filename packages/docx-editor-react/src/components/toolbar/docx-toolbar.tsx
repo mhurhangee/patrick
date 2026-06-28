@@ -25,8 +25,8 @@ import {
 import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
-import type { FormattingAction, SelectionFormatting } from '../Toolbar';
-import type { TableAction } from '../ui/TableToolbar';
+import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
+import type { TableAction } from '../../types/table';
 import { FormatRow } from './format-row';
 import type { ToolbarImageContext } from './groups/image-group';
 import { TOGGLE_ACTIVE, keepFocus } from './shared';
@@ -183,7 +183,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
       </div>
 
       {/* ── Hanging tab: Mode · Comments · Save (fixed right, overlaps doc) ── */}
-      <div className="absolute top-full right-3 z-30 -mt-px flex items-center gap-0.5 rounded-b-md border border-t-0 border-border bg-background px-1 py-0.5 shadow-sm">
+      <div className="absolute top-full right-3 z-30 -mt-px flex items-center gap-0.5 rounded-b-md bg-background px-1 py-0.5 shadow-sm">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" tooltip="Editing mode" tooltipSide="bottom" onMouseDown={keepFocus}>

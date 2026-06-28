@@ -14,7 +14,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Document, Theme } from '@eigenpal/docx-editor-core/types/document';
 
 import { cn } from '../lib/utils';
-import { type SelectionFormatting } from './Toolbar';
+import type { SelectionFormatting } from '../types/formatting';
 import { useOutlineSidebar } from './DocxEditor/hooks/useOutlineSidebar';
 import { useKeyboardShortcuts } from './DocxEditor/hooks/useKeyboardShortcuts';
 import { useFileIO } from './DocxEditor/hooks/useFileIO';

@@ -21,7 +21,7 @@ import {
   Table2,
   Trash2,
 } from 'lucide-react';
-import type { TableAction } from '../../ui/TableToolbar';
+import type { TableAction } from '../../../types/table';
 import { ColorControl } from '../color-control';
 import { keepFocus } from '../shared';
 

@@ -18,7 +18,7 @@ import type {
   TableSelection,
   TableAction,
   TableSplitConfig,
-} from '../components/ui/TableToolbar';
+} from '../types/table';
 import {
   createTableContext,
   addRow,
