@@ -21,14 +21,8 @@ import {
   SendToBack,
   WrapText,
 } from 'lucide-react';
+import type { ToolbarImageContext } from '../../../types/image';
 import { keepFocus } from '../shared';
-
-/** The image fields the toolbar needs (a structural subset of the editor's). */
-export interface ToolbarImageContext {
-  wrapType: string;
-  displayMode: string;
-  cssFloat: string | null;
-}
 
 const WRAP_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'inline', label: 'In line with text', icon: WrapText },

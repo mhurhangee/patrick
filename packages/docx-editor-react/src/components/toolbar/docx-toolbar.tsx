@@ -26,9 +26,9 @@ import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
+import type { ToolbarImageContext } from '../../types/image';
 import type { TableAction } from '../../types/table';
 import { FormatRow } from './format-row';
-import type { ToolbarImageContext } from './groups/image-group';
 import { TOGGLE_ACTIVE, keepFocus } from './shared';
 
 export interface DocxToolbarProps {

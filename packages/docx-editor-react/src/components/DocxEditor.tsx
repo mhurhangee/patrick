@@ -15,6 +15,7 @@ import type { Document, Theme } from '@eigenpal/docx-editor-core/types/document'
 
 import { cn } from '../lib/utils';
 import type { SelectionFormatting } from '../types/formatting';
+import type { ImageContext } from '../types/image';
 import { useOutlineSidebar } from './DocxEditor/hooks/useOutlineSidebar';
 import { useKeyboardShortcuts } from './DocxEditor/hooks/useKeyboardShortcuts';
 import { useFileIO } from './DocxEditor/hooks/useFileIO';
@@ -536,19 +537,7 @@ interface EditorState {
   /** ProseMirror table context (for showing table toolbar) */
   pmTableContext: TableContextInfo | null;
   /** Image context when cursor is on an image node */
-  pmImageContext: {
-    pos: number;
-    wrapType: string;
-    displayMode: string;
-    cssFloat: string | null;
-    transform: string | null;
-    alt: string | null;
-    borderWidth: number | null;
-    borderColor: string | null;
-    borderStyle: string | null;
-    width: number | null;
-    height: number | null;
-  } | null;
+  pmImageContext: ImageContext | null;
 }
 
 export type { EditorMode } from './DocxEditor/internals/editing-modes';

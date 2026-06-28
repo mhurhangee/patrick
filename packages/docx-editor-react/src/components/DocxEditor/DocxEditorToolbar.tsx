@@ -6,22 +6,9 @@ import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import type { FontOption } from '../ui/FontPicker';
 import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
 import type { TableAction } from '../../types/table';
+import type { ImageContext } from '../../types/image';
 import type { EditorMode } from './internals/editing-modes';
 import { DocxToolbar } from '../toolbar/docx-toolbar';
-
-interface ImageContext {
-  pos: number;
-  wrapType: string;
-  displayMode: string;
-  cssFloat: string | null;
-  transform: string | null;
-  alt: string | null;
-  borderWidth: number | null;
-  borderColor: string | null;
-  borderStyle: string | null;
-  width: number | null;
-  height: number | null;
-}
 
 /**
  * Top-of-editor toolbar — the `DocxToolbar` chrome wired up with the document
