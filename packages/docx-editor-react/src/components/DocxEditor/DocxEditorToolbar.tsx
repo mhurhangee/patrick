@@ -181,6 +181,8 @@ export function DocxEditorToolbar({
           readOnly={readOnly}
           currentFormatting={selectionFormatting}
           onFormat={onFormat}
+          documentFonts={documentFonts}
+          fontFamilies={fontFamilies}
         />
       </div>
     );

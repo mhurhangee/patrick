@@ -1,3 +1,4 @@
+import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Button } from '@patrick/ui/components/button';
 import {
   DropdownMenu,
@@ -10,23 +11,21 @@ import {
 import { Separator } from '@patrick/ui/components/separator';
 import { Toggle } from '@patrick/ui/components/toggle';
 import {
-  Bold,
   ChevronDown,
-  Italic,
   MessageSquareText,
   MoreVertical,
   Printer,
   Redo2,
   Settings,
   Stamp,
-  Strikethrough,
-  Underline,
   Undo2,
 } from 'lucide-react';
-import type { MouseEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
 import type { FormattingAction, SelectionFormatting } from '../Toolbar';
+import { FormatRow } from './FormatRow';
+import { TOGGLE_ACTIVE, keepFocus } from './shared';
 
 export interface DocxToolbarProps {
   // App row
@@ -50,12 +49,9 @@ export interface DocxToolbarProps {
   readOnly?: boolean;
   currentFormatting: SelectionFormatting;
   onFormat: (action: FormattingAction) => void;
+  documentFonts?: readonly FontOption[] | undefined;
+  fontFamilies?: ReadonlyArray<string | FontOption> | undefined;
 }
-
-// Active-state styling for toolbar toggles: a soft emerald tint with an emerald
-// glyph, so "is this on?" reads clearly (overrides the primitive's neutral
-// data-[state=on] default).
-const TOGGLE_ACTIVE = 'data-[state=on]:bg-primary/15 data-[state=on]:text-primary';
 
 /**
  * The rebuilt editor toolbar (work in progress — mounted only behind the
@@ -65,13 +61,8 @@ const TOGGLE_ACTIVE = 'data-[state=on]:bg-primary/15 data-[state=on]:text-primar
  * callbacks) so the editor "brain" is untouched.
  *
  * Two bands: a persistent **app row** (doc name, mode, comments, undo/redo,
- * save, overflow) and a responsive **format row** that collapses by importance
- * via container queries on the toolbar width (which tracks the editor pane).
- *
- * P1 scope: the app row is fully wired; the format row proves the collapse
- * engine — the character toggles (B/I/U/S) are real, the character *pickers*
- * are a placeholder group that collapses to a single button at narrow widths.
- * Real format groups (split into their own files) land in P2.
+ * save, overflow) and a responsive **format row** (FormatRow) that collapses by
+ * importance via container queries on the toolbar width (which tracks the pane).
  */
 export function DocxToolbar(props: DocxToolbarProps) {
   const {
@@ -94,15 +85,14 @@ export function DocxToolbar(props: DocxToolbarProps) {
     readOnly,
     currentFormatting,
     onFormat,
+    documentFonts,
+    fontFamilies,
   } = props;
   const { t } = useTranslation();
 
   const currentMode = EDITING_MODES.find((m) => m.value === editingMode) ?? EDITING_MODES[0];
   const ModeIcon = currentMode.icon;
   const hasOverflow = Boolean(onPrint || onPageSetup || onWatermark);
-
-  // Keep the editor selection when clicking chrome controls.
-  const keepFocus = (e: MouseEvent) => e.preventDefault();
 
   return (
     <div className="@container flex flex-col border-b border-border bg-background text-foreground">
@@ -165,7 +155,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
                 <ChevronDown />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className='w-54'>
               <DropdownMenuRadioGroup
                 value={editingMode}
                 onValueChange={(v) => onModeChange(v as EditorMode)}
@@ -221,78 +211,12 @@ export function DocxToolbar(props: DocxToolbarProps) {
 
       {/* ── Format row (collapses by container width) ─────────────────── */}
       {!readOnly && (
-        <div className="flex h-10 items-center gap-1 border-t border-border px-2">
-          {/* Character toggles — real, always inline (top of the priority order) */}
-          <div className="flex items-center gap-0.5">
-            <Toggle
-              size="icon-sm"
-              className={TOGGLE_ACTIVE}
-              tooltip="Bold"
-              pressed={!!currentFormatting.bold}
-              onMouseDown={keepFocus}
-              onPressedChange={() => onFormat('bold')}
-            >
-              <Bold />
-            </Toggle>
-            <Toggle
-              size="icon-sm"
-              className={TOGGLE_ACTIVE}
-              tooltip="Italic"
-              pressed={!!currentFormatting.italic}
-              onMouseDown={keepFocus}
-              onPressedChange={() => onFormat('italic')}
-            >
-              <Italic />
-            </Toggle>
-            <Toggle
-              size="icon-sm"
-              className={TOGGLE_ACTIVE}
-              tooltip="Underline"
-              pressed={!!currentFormatting.underline}
-              onMouseDown={keepFocus}
-              onPressedChange={() => onFormat('underline')}
-            >
-              <Underline />
-            </Toggle>
-            <Toggle
-              size="icon-sm"
-              className={TOGGLE_ACTIVE}
-              tooltip="Strikethrough"
-              pressed={!!currentFormatting.strike}
-              onMouseDown={keepFocus}
-              onPressedChange={() => onFormat('strikethrough')}
-            >
-              <Strikethrough />
-            </Toggle>
-          </div>
-
-          <Separator orientation="vertical" className="mx-1 h-5" />
-
-          {/* Placeholder "character pickers" group — demonstrates collapse:
-              inline chips when wide, a single button below ~760px. Real font/
-              size/colour controls replace these in P2. */}
-          <div className="hidden items-center gap-0.5 text-muted-foreground @min-[760px]:flex">
-            <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-xs">
-              Font
-            </span>
-            <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-xs">
-              Size
-            </span>
-            <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-xs">
-              Colour
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            tooltip="Text formatting (placeholder)"
-            className="text-muted-foreground @min-[760px]:hidden"
-            onMouseDown={keepFocus}
-          >
-            Aa
-            <ChevronDown />
-          </Button>
-        </div>
+        <FormatRow
+          currentFormatting={currentFormatting}
+          onFormat={onFormat}
+          documentFonts={documentFonts}
+          fontFamilies={fontFamilies}
+        />
       )}
     </div>
   );
