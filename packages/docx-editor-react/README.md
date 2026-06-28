@@ -25,7 +25,7 @@ npm install @eigenpal/docx-editor-react
 ```tsx
 import { useState } from 'react';
 import { DocxEditor } from '@eigenpal/docx-editor-react';
-import '@eigenpal/docx-editor-react/styles.css';
+import '@eigenpal/docx-editor-core/styles/editor.css';
 
 export function App() {
   const [buffer, setBuffer] = useState<ArrayBuffer | null>(null);
@@ -51,7 +51,7 @@ Skip the file picker for new documents. `createEmptyDocument` returns a fresh `D
 
 ```tsx
 import { DocxEditor, createEmptyDocument } from '@eigenpal/docx-editor-react';
-import '@eigenpal/docx-editor-react/styles.css';
+import '@eigenpal/docx-editor-core/styles/editor.css';
 
 const doc = createEmptyDocument();
 // Or with options:
@@ -108,7 +108,7 @@ editor.destroy();
 - `@eigenpal/docx-editor-react/hooks` — `useAutoSave`, `useTableSelection`, ...
 - `@eigenpal/docx-editor-react/dialogs` — dialog components barrel
 - `@eigenpal/docx-editor-react/plugin-api` — plugin host and plugin-facing types
-- `@eigenpal/docx-editor-react/styles` — style constants (`EDITOR_CSS_PATH`, z-index)
+- `@eigenpal/docx-editor-core/styles/editor.css` — the editor's chrome stylesheet (plain CSS; import once where the editor mounts)
 
 ## Plugins
 

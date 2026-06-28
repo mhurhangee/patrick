@@ -5,7 +5,6 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun ../../scripts/gen-patrick-docs.ts && bun --watch src/index.ts",
-		"prebuild": "node ../../scripts/ensure-editor-built.mjs",
 		"build": "bun ../../scripts/gen-patrick-docs.ts && bun build src/index.ts --compile --outfile bin/api",
 		"typecheck": "tsc --noEmit"
 	},

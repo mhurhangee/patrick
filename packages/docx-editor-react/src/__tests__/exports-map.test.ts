@@ -7,8 +7,9 @@ const pkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) a
   exports: Record<string, string>;
 };
 
-// The React adapter holds 2 of Patrick's 5 consumed symbols (DocxEditor via '.',
-// and './styles.css'); guard its export map the way docx-editor-core's is guarded.
+// The React adapter holds Patrick's consumed DocxEditor symbol (via '.'). It is
+// consumed entirely from source (no build); the chrome stylesheet now lives in
+// docx-editor-core. Guard its export map the way docx-editor-core's is guarded.
 describe('docx-editor-react exports map', () => {
   test('every export resolves to an existing file', () => {
     const missing: string[] = [];
@@ -24,19 +25,14 @@ describe('docx-editor-react exports map', () => {
     expect(missing).toEqual([]);
   });
 
-  test('JS subpaths are source (./src); only the generated stylesheet is built', () => {
+  test('every export is source (./src); nothing is built', () => {
     const offenders = Object.entries(pkg.exports).filter(
-      ([subpath, target]) =>
-        subpath !== './styles.css' && typeof target === 'string' && target.includes('/dist/')
+      ([, target]) => typeof target === 'string' && target.includes('/dist/')
     );
     expect(offenders).toEqual([]);
-    // styles.css is the one generated artifact and legitimately lives in dist.
-    expect(pkg.exports['./styles.css']).toBe('./dist/styles.css');
   });
 
-  test('the consumer-contract entry points are present', () => {
-    for (const required of ['.', './styles.css']) {
-      expect(pkg.exports[required]).toBeDefined();
-    }
+  test('the consumer-contract entry point is present', () => {
+    expect(pkg.exports['.']).toBeDefined();
   });
 });

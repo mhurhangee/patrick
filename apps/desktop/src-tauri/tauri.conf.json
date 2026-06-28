@@ -6,8 +6,8 @@
 	"build": {
 		"frontendDist": "../../frontend/dist",
 		"devUrl": "http://localhost:5173",
-		"beforeDevCommand": "node ../../scripts/ensure-editor-built.mjs && node scripts/build-sidecar.mjs && pnpm --filter frontend dev",
-		"beforeBuildCommand": "node ../../scripts/ensure-editor-built.mjs && node scripts/build-sidecar.mjs && pnpm --filter frontend build"
+		"beforeDevCommand": "node scripts/build-sidecar.mjs && pnpm --filter frontend dev",
+		"beforeBuildCommand": "node scripts/build-sidecar.mjs && pnpm --filter frontend build"
 	},
 	"app": {
 		"security": {

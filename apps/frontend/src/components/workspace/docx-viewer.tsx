@@ -1,5 +1,5 @@
 import { DocxEditor, type DocxEditorRef } from "@eigenpal/docx-editor-react";
-import "@eigenpal/docx-editor-react/styles.css";
+import "@eigenpal/docx-editor-core/styles/editor.css";
 import { estimateTextTokens } from "@patrick/shared";
 import { Button } from "@patrick/ui/components/button";
 import { InfoTooltip } from "@patrick/ui/components/tooltip";
@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { SaveStatus } from "@/components/save-status";
+import { useTheme } from "@/components/theme-provider";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";
@@ -41,6 +42,7 @@ export function DocxViewer({
 	editable: boolean;
 }) {
 	const { activeTaskId } = useActiveTask();
+	const { resolvedTheme } = useTheme();
 	const editorRef = useRef<DocxEditorRef>(null);
 	const [buffer, setBuffer] = useState<ArrayBuffer | null>(null);
 	const [error, setError] = useState(false);
@@ -97,6 +99,7 @@ export function DocxViewer({
 				ref={editorRef}
 				documentBuffer={buffer}
 				author="Attorney"
+				colorMode={resolvedTheme}
 				onChange={() => setRev((r) => r + 1)}
 				renderTitleBarRight={() => <SaveStatus status={status} />}
 				loadingIndicator={<DocxLoading />}
@@ -113,6 +116,7 @@ function ReadOnlyDocx({
 	filename: string;
 }) {
 	const { activeTaskId } = useActiveTask();
+	const { resolvedTheme } = useTheme();
 	const ref = useRef<DocxEditorRef>(null);
 	const [zoom, setZoom] = useState(1);
 	const [page, setPage] = useState(1);
@@ -154,6 +158,7 @@ function ReadOnlyDocx({
 					ref={ref}
 					documentBuffer={buffer}
 					readOnly
+					colorMode={resolvedTheme}
 					showZoomControl={false}
 					loadingIndicator={<DocxLoading />}
 				/>

@@ -256,7 +256,7 @@
 
 /* Selection styling */
 .prosemirror-editor .ProseMirror ::selection {
-  background: rgba(66, 133, 244, 0.3);
+  background: var(--doc-selection);
 }
 
 /* Placeholder styling */
@@ -455,13 +455,13 @@
 
 /* Active cell (cursor is inside this cell) — subtle outline so user knows which cell will be affected */
 .prosemirror-editor .ProseMirror .activeCell {
-  outline: 2px solid rgba(66, 133, 244, 0.5);
+  outline: 2px solid color-mix(in oklab, var(--primary) 50%, transparent);
   outline-offset: -2px;
 }
 
 /* Selected cell highlight (multi-cell CellSelection) */
 .prosemirror-editor .ProseMirror .selectedCell {
-  background-color: rgba(66, 133, 244, 0.15);
+  background-color: var(--doc-primary-light);
 }
 
 /* Table selection */
@@ -469,7 +469,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(66, 133, 244, 0.1);
+  background: var(--doc-primary-light);
   pointer-events: none;
 }
 
@@ -489,7 +489,7 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background-color: rgba(66, 133, 244, 0.5);
+  background-color: color-mix(in oklab, var(--primary) 50%, transparent);
   cursor: col-resize;
   z-index: 20;
 }
@@ -511,12 +511,12 @@
 }
 
 .prosemirror-editor .ProseMirror table:hover .column-resize-handle {
-  background-color: rgba(66, 133, 244, 0.3);
+  background-color: color-mix(in oklab, var(--primary) 30%, transparent);
 }
 
 /* Highlight resize handle on direct hover */
 .prosemirror-editor .ProseMirror .column-resize-handle:hover {
-  background-color: rgba(66, 133, 244, 0.7);
+  background-color: color-mix(in oklab, var(--primary) 70%, transparent);
 }
 
 /* ============================================================================
@@ -618,7 +618,7 @@
 }
 .layout-page-header:hover,
 .layout-page-footer:hover {
-  background-color: rgba(37, 99, 235, 0.06);
+  background-color: color-mix(in oklab, var(--primary) 8%, transparent);
 }
 /* Show "Double-click to edit" hint on hover when area is empty */
 .layout-page-header:empty:hover::after {
@@ -688,13 +688,13 @@
 
 /* Dotted border on active header area; text caret since it's being edited */
 .paged-editor--editing-header .layout-page-header {
-  border-bottom: 1px dotted #4285f4;
+  border-bottom: 1px dotted var(--doc-primary);
   cursor: text;
 }
 
 /* Dotted border on active footer area; text caret since it's being edited */
 .paged-editor--editing-footer .layout-page-footer {
-  border-top: 1px dotted #4285f4;
+  border-top: 1px dotted var(--doc-primary);
   cursor: text;
 }
 
@@ -867,7 +867,7 @@
 }
 .layout-block-sdt-box.is-active,
 .layout-block-sdt-box.is-focused {
-  border-color: rgba(25, 103, 210, 0.5);
+  border-color: color-mix(in oklab, var(--primary) 50%, transparent);
 }
 /* Corner label chip — hidden until its control is hovered/active. */
 .layout-block-sdt-label {
@@ -883,7 +883,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: #fff;
-  background-color: rgba(25, 103, 210, 0.92);
+  background-color: color-mix(in oklab, var(--primary) 92%, transparent);
   border-radius: 4px 4px 0 0;
   display: none;
 }
@@ -907,9 +907,9 @@
   justify-content: center;
   font-size: 12px;
   line-height: 1;
-  color: #1967d2;
+  color: var(--doc-primary);
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(25, 103, 210, 0.5);
+  border: 1px solid color-mix(in oklab, var(--primary) 50%, transparent);
   border-radius: 3px;
   cursor: pointer;
   pointer-events: auto;
@@ -922,7 +922,7 @@
   opacity: 1;
 }
 .layout-sdt-widget:hover {
-  background: #e8f0fe;
+  background: var(--doc-primary-light);
 }
 
 .layout-inline-sdt-widget {
@@ -934,8 +934,8 @@
 }
 .layout-inline-sdt-widget:hover,
 .layout-inline-sdt-widget:focus {
-  background: #e8f0fe;
-  outline: 1px solid rgba(25, 103, 210, 0.55);
+  background: var(--doc-primary-light);
+  outline: 1px solid color-mix(in oklab, var(--primary) 55%, transparent);
 }
 
 /* Popup for dropdown/date content-control widgets (rendered by the adapter). */
@@ -943,10 +943,10 @@
   min-width: 120px;
   max-height: 240px;
   overflow-y: auto;
-  background: #fff;
-  border: 1px solid #dadce0;
+  background: var(--doc-surface);
+  border: 1px solid var(--doc-border-light);
   border-radius: 6px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 10px var(--doc-shadow);
   padding: 4px;
   font-size: 13px;
 }
@@ -959,24 +959,24 @@
   background: transparent;
   border-radius: 4px;
   cursor: pointer;
-  color: #202124;
+  color: var(--doc-text);
 }
 .layout-sdt-widget-option:hover {
-  background: #e8f0fe;
+  background: var(--doc-primary-light);
 }
 .layout-sdt-widget-empty {
   padding: 6px 10px;
-  color: #5f6368;
+  color: var(--doc-text-muted);
 }
 .layout-sdt-widget-date {
   font: inherit;
   padding: 4px 6px;
-  border: 1px solid #dadce0;
+  border: 1px solid var(--doc-border-light);
   border-radius: 4px;
 }
 .layout-sdt-widget-option.is-selected {
   font-weight: 600;
-  background: #f1f3f4;
+  background: var(--doc-bg-hover);
 }
 
 /* Repeating-section item add/remove affordances (bottom-right of the item box). */
@@ -999,13 +999,13 @@
   padding: 0 3px;
   font-size: 11px;
   line-height: 1;
-  color: #1967d2;
+  color: var(--doc-primary);
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(25, 103, 210, 0.5);
+  border: 1px solid color-mix(in oklab, var(--primary) 50%, transparent);
   border-radius: 3px;
   cursor: pointer;
   pointer-events: auto;
 }
 .layout-sdt-repeat-btn:hover {
-  background: #e8f0fe;
+  background: var(--doc-primary-light);
 }
