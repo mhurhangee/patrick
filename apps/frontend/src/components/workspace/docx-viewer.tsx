@@ -1,9 +1,7 @@
 import { DocxEditor, type DocxEditorRef } from "@eigenpal/docx-editor-react";
 import "@eigenpal/docx-editor-core/styles/editor.css";
 import { estimateTextTokens } from "@patrick/shared";
-import { Button } from "@patrick/ui/components/button";
 import { InfoTooltip } from "@patrick/ui/components/tooltip";
-import { Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
@@ -14,10 +12,7 @@ import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";
 import { recordDocSize } from "@/lib/doc-size";
 import { formatTokens } from "@/lib/format";
-
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2.5;
-const ZOOM_STEP = 0.1;
+import { ZoomPill } from "./zoom-pill";
 
 // Centered drawing mark — the package's loadingIndicator slot renders its child
 // raw (top-left), so it must center itself; also used for our pre-fetch state.
@@ -94,16 +89,19 @@ export function DocxViewer({
 	if (!editable) return <ReadOnlyDocx buffer={buffer} filename={filename} />;
 
 	return (
-		<div className="h-full overflow-auto">
-			<DocxEditor
-				ref={editorRef}
-				documentBuffer={buffer}
-				author="Attorney"
-				colorMode={resolvedTheme}
-				onChange={() => setRev((r) => r + 1)}
-				renderTitleBarRight={() => <SaveStatus status={status} />}
-				loadingIndicator={<DocxLoading />}
-			/>
+		<div className="relative h-full">
+			<div className="h-full overflow-auto">
+				<DocxEditor
+					ref={editorRef}
+					documentBuffer={buffer}
+					author="Attorney"
+					colorMode={resolvedTheme}
+					onChange={() => setRev((r) => r + 1)}
+					renderTitleBarRight={() => <SaveStatus status={status} />}
+					loadingIndicator={<DocxLoading />}
+				/>
+			</div>
+			<ZoomPill editorRef={editorRef} />
 		</div>
 	);
 }
@@ -118,38 +116,24 @@ function ReadOnlyDocx({
 	const { activeTaskId } = useActiveTask();
 	const { resolvedTheme } = useTheme();
 	const ref = useRef<DocxEditorRef>(null);
-	const [zoom, setZoom] = useState(1);
-	const [page, setPage] = useState(1);
-	const [pages, setPages] = useState(0);
 	const [tokens, setTokens] = useState<number | null>(null);
-	const gotTokens = useRef(false);
 
-	// The editor has no page-change event, so poll its current/total page. The
-	// character count (once the document agent is available) drives the token
-	// estimate and is recorded so the context control can cost this source.
+	// One-shot: poll until the document agent is available, then record the
+	// character count (drives the token estimate so the context control can cost
+	// this source) and stop the timer.
 	useEffect(() => {
 		const id = setInterval(() => {
 			const ed = ref.current;
 			if (!ed) return;
-			setPage(ed.getCurrentPage() || 1);
-			setPages(ed.getTotalPages() || 0);
-			if (!gotTokens.current) {
-				const chars = ed.getAgent()?.getCharacterCount(true);
-				if (chars && chars > 0) {
-					gotTokens.current = true;
-					setTokens(estimateTextTokens(chars));
-					recordDocSize(activeTaskId ?? "", filename, { chars });
-				}
+			const chars = ed.getAgent()?.getCharacterCount(true);
+			if (chars && chars > 0) {
+				setTokens(estimateTextTokens(chars));
+				recordDocSize(activeTaskId ?? "", filename, { chars });
+				clearInterval(id);
 			}
 		}, 400);
 		return () => clearInterval(id);
 	}, [activeTaskId, filename]);
-
-	const apply = (next: number) => {
-		const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +next.toFixed(2)));
-		ref.current?.setZoom(z);
-		setZoom(z);
-	};
 
 	return (
 		<div className="relative h-full">
@@ -159,39 +143,11 @@ function ReadOnlyDocx({
 					documentBuffer={buffer}
 					readOnly
 					colorMode={resolvedTheme}
-					showZoomControl={false}
 					loadingIndicator={<DocxLoading />}
 				/>
 			</div>
 
-			<div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-md backdrop-blur">
-				{pages > 0 && (
-					<>
-						<span className="px-1.5 tabular-nums">
-							{page} / {pages}
-						</span>
-						<span className="h-4 w-px bg-border" />
-					</>
-				)}
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					tooltip="Zoom out"
-					onClick={() => apply(zoom - ZOOM_STEP)}
-				>
-					<Minus />
-				</Button>
-				<span className="w-9 text-center tabular-nums">
-					{Math.round(zoom * 100)}%
-				</span>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					tooltip="Zoom in"
-					onClick={() => apply(zoom + ZOOM_STEP)}
-				>
-					<Plus />
-				</Button>
+			<ZoomPill editorRef={ref}>
 				{tokens != null && (
 					<>
 						<span className="h-4 w-px bg-border" />
@@ -202,7 +158,7 @@ function ReadOnlyDocx({
 						</InfoTooltip>
 					</>
 				)}
-			</div>
+			</ZoomPill>
 		</div>
 	);
 }

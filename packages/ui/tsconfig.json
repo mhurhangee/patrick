@@ -2,7 +2,14 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"jsx": "react-jsx",
-		"types": ["bun"]
+		"types": ["bun"],
+		// @patrick/ui is a DOM/React component library; the repo base is DOM-free
+		// (for the headless paths), so opt this package in to the DOM lib.
+		"lib": ["ES2023", "DOM", "DOM.Iterable"],
+		"paths": {
+			"@patrick/ui/components/*": ["./src/components/*"],
+			"@patrick/ui/lib/*": ["./src/lib/*"]
+		}
 	},
 	"include": ["src"]
 }

@@ -8,7 +8,7 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror';
 import { resolveColorToHex } from '@eigenpal/docx-editor-core/utils';
 import type { EditorView } from 'prosemirror-view';
-import type { SelectionFormatting } from '../../Toolbar';
+import type { SelectionFormatting } from '../../../types/formatting';
 
 interface PmImageContext {
   pos: number;

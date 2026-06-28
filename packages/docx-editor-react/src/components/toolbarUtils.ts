@@ -13,7 +13,7 @@ import type {
 import { resolveColorToHex } from '@eigenpal/docx-editor-core/utils';
 import { pointsToHalfPoints } from './ui/FontSizePicker';
 import { createDefaultListState } from './ui/ListButtons';
-import type { SelectionFormatting, FormattingAction } from './Toolbar';
+import type { SelectionFormatting, FormattingAction } from '../types/formatting';
 
 // Re-export the canonical highlight-color table from core. Local
 // import below so internal callers (extractFormattingState etc.)

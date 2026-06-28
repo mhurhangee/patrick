@@ -13,7 +13,6 @@ import type { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import type { DocxInput } from '@eigenpal/docx-editor-core/utils';
 import { useFileIO } from './hooks/useFileIO';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { DocxEditorToolbar } from './DocxEditorToolbar';
 import type { PagedEditorRef } from './PagedEditor';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -112,58 +111,6 @@ function dispatchCtrlO() {
   return event;
 }
 
-function renderToolbar({ showFileOpen, onOpen }: { showFileOpen: boolean; onOpen: () => void }) {
-  const noop = () => {};
-  return render(
-    <DocxEditorToolbar
-      toolbarRefCallback={noop}
-      document={null}
-      theme={null}
-      pmState={null}
-      selectionFormatting={{}}
-      tableContext={null}
-      imageContext={null}
-      readOnly={false}
-      editingMode="editing"
-      setEditingMode={noop}
-      setShowCommentsSidebar={noop}
-      setExpandedSidebarItem={noop}
-      showCommentsSidebar={false}
-      renderLogo={undefined}
-      documentName={undefined}
-      onDocumentNameChange={undefined}
-      documentNameEditable={true}
-      renderTitleBarRight={undefined}
-      toolbarExtra={null}
-      fontFamilies={undefined}
-      zoom={1}
-      showZoomControl={false}
-      onFormat={noop}
-      onUndo={noop}
-      onRedo={noop}
-      onPrint={noop}
-      showFileOpen={showFileOpen}
-      showHelpMenu={true}
-      onOpen={onOpen}
-      onSave={noop}
-      onZoomChange={noop}
-      onRefocusEditor={noop}
-      onInsertTable={noop}
-      onInsertImage={noop}
-      onInsertPageBreak={noop}
-      onInsertSectionBreakNextPage={noop}
-      onInsertSectionBreakContinuous={noop}
-      onInsertTOC={noop}
-      onImageWrapType={noop}
-      onImageTransform={noop}
-      onOpenImageProperties={noop}
-      onPageSetup={noop}
-      onWatermark={noop}
-      onTableAction={noop}
-    />
-  );
-}
-
 describe('File > Open customization', () => {
   test('passes the picked File to onOpen instead of loading locally', async () => {
     const file = makeDocxFile('custom.docx');
@@ -216,16 +163,10 @@ describe('File > Open customization', () => {
     expect(onError).toHaveBeenCalledWith(error);
   });
 
-  test('showFileOpen=false hides Open and leaves Ctrl+O unhandled', () => {
-    const onOpen = mock(() => {});
+  test('showFileOpen=false leaves Ctrl+O unhandled', () => {
     const onOpenDocument = mock(() => {});
 
-    const toolbar = renderToolbar({ showFileOpen: false, onOpen });
     render(<KeyboardHarness showFileOpen={false} onOpenDocument={onOpenDocument} />);
-
-    fireEvent.click(toolbar.getByRole('button', { name: 'File' }));
-    expect(toolbar.queryByText('Open')).toBeNull();
-    expect(toolbar.getByText('Save')).toBeTruthy();
 
     const event = dispatchCtrlO();
     expect(onOpenDocument).not.toHaveBeenCalled();

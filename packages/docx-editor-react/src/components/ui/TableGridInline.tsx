@@ -1,6 +1,6 @@
 /**
  * TableGridInline — a grid picker for table dimensions, rendered inline (no button/dropdown wrapper).
- * Used both standalone inside menu submenus and internally by TableGridPicker.
+ * Used standalone inside menu submenus (the Insert ▾ table picker).
  */
 
 import { useState, useCallback } from 'react';
