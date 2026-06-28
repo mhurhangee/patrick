@@ -11,10 +11,9 @@
 @source "../../../packages/ui/src";
 
 /* The vendored docx editor is consumed from source; this app's Tailwind
-   generates its utility classes (the editor no longer ships its own built CSS).
-   Its chrome stylesheet + tokens come from docx-editor-core/src/styles/editor.css
-   (imported where the editor mounts). */
-@source "../../../packages/docx-editor-core/src";
+   generates its utility classes, which live in the React adapter's components.
+   The editor's chrome stylesheet + `--doc-*` tokens come from
+   docx-editor-core/src/styles/editor.css, imported where the editor mounts. */
 @source "../../../packages/docx-editor-react/src";
 
 /* radix data-state variants, no-scrollbar utility, accordion keyframes */

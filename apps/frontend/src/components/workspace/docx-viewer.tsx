@@ -42,7 +42,7 @@ export function DocxViewer({
 	editable: boolean;
 }) {
 	const { activeTaskId } = useActiveTask();
-	const { theme } = useTheme();
+	const { resolvedTheme } = useTheme();
 	const editorRef = useRef<DocxEditorRef>(null);
 	const [buffer, setBuffer] = useState<ArrayBuffer | null>(null);
 	const [error, setError] = useState(false);
@@ -99,7 +99,7 @@ export function DocxViewer({
 				ref={editorRef}
 				documentBuffer={buffer}
 				author="Attorney"
-				colorMode={theme}
+				colorMode={resolvedTheme}
 				onChange={() => setRev((r) => r + 1)}
 				renderTitleBarRight={() => <SaveStatus status={status} />}
 				loadingIndicator={<DocxLoading />}
@@ -116,7 +116,7 @@ function ReadOnlyDocx({
 	filename: string;
 }) {
 	const { activeTaskId } = useActiveTask();
-	const { theme } = useTheme();
+	const { resolvedTheme } = useTheme();
 	const ref = useRef<DocxEditorRef>(null);
 	const [zoom, setZoom] = useState(1);
 	const [page, setPage] = useState(1);
@@ -158,7 +158,7 @@ function ReadOnlyDocx({
 					ref={ref}
 					documentBuffer={buffer}
 					readOnly
-					colorMode={theme}
+					colorMode={resolvedTheme}
 					showZoomControl={false}
 					loadingIndicator={<DocxLoading />}
 				/>

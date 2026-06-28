@@ -13,6 +13,10 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
 	theme: Theme;
+	/** `theme` with `"system"` resolved to the active OS scheme — the single
+	 * source of truth for anything that needs a concrete light/dark (e.g. the
+	 * docx editor's `colorMode`, so it never runs its own matchMedia resolver). */
+	resolvedTheme: ResolvedTheme;
 	setTheme: (theme: Theme) => void;
 };
 
@@ -93,6 +97,10 @@ export function ThemeProvider({
 		return defaultTheme;
 	});
 
+	const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme>(() =>
+		theme === "system" ? getSystemTheme() : theme,
+	);
+
 	const setTheme = React.useCallback(
 		(nextTheme: Theme) => {
 			localStorage.setItem(storageKey, nextTheme);
@@ -104,14 +112,14 @@ export function ThemeProvider({
 	const applyTheme = React.useCallback(
 		(nextTheme: Theme) => {
 			const root = document.documentElement;
-			const resolvedTheme =
-				nextTheme === "system" ? getSystemTheme() : nextTheme;
+			const resolved = nextTheme === "system" ? getSystemTheme() : nextTheme;
 			const restoreTransitions = disableTransitionOnChange
 				? disableTransitionsTemporarily()
 				: null;
 
 			root.classList.remove("light", "dark");
-			root.classList.add(resolvedTheme);
+			root.classList.add(resolved);
+			setResolvedTheme(resolved);
 
 			if (restoreTransitions) {
 				restoreTransitions();
@@ -207,9 +215,10 @@ export function ThemeProvider({
 	const value = React.useMemo(
 		() => ({
 			theme,
+			resolvedTheme,
 			setTheme,
 		}),
-		[theme, setTheme],
+		[theme, resolvedTheme, setTheme],
 	);
 
 	return (
