@@ -3,6 +3,7 @@ import {
   normalizeFontFamilies,
 } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { Style } from '@eigenpal/docx-editor-core/types/document';
+import { mapHighlightNameToHex } from '@eigenpal/docx-editor-core/utils/highlightColors';
 import { halfPointsToPoints } from '@eigenpal/docx-editor-core/utils/units';
 import { Button } from '@patrick/ui/components/button';
 import { NumberField } from '@patrick/ui/components/number-field';
@@ -40,19 +41,8 @@ import {
 import { useMemo } from 'react';
 import type { FormattingAction, SelectionFormatting } from '../../../types/formatting';
 import { ColorControl } from '../color-control';
-import { TOGGLE_ACTIVE, keepFocus } from '../shared';
+import { HIGHLIGHT_SWATCHES, STANDARD_SWATCHES, TOGGLE_ACTIVE, keepFocus } from '../shared';
 import { StyleMenu } from './style-menu';
-
-// Grayscale + Office standard colours (hex without #).
-const TEXT_SWATCHES = [
-  '000000', '434343', '666666', '999999', 'B7B7B7', 'CCCCCC', 'D9D9D9', 'EFEFEF', 'F3F3F3', 'FFFFFF',
-  'C00000', 'FF0000', 'FFC000', 'FFFF00', '92D050', '00B050', '00B0F0', '0070C0', '002060', '7030A0',
-] as const;
-// Word's named highlight palette (each maps to an OOXML highlight name).
-const HIGHLIGHT_SWATCHES = [
-  'FFFF00', '00FF00', '00FFFF', 'FF00FF', '0000FF', 'FF0000', '000080', '008080', '008000', '800080',
-  '800000', '808000', '808080', 'C0C0C0',
-] as const;
 
 const DEFAULT_FONTS: FontOption[] = [
   { name: 'Arial', fontFamily: 'Arial', category: 'sans-serif' },
@@ -189,7 +179,7 @@ export function CharacterGroup({
       icon={Baseline}
       tooltip="Text colour"
       currentColor={currentFormatting.color}
-      swatches={TEXT_SWATCHES}
+      swatches={STANDARD_SWATCHES}
       clearLabel="Automatic"
       onPick={(hex) => onFormat({ type: 'textColor', value: `#${hex}` })}
       onClear={() => onFormat({ type: 'textColor', value: { auto: true } })}
@@ -199,9 +189,17 @@ export function CharacterGroup({
     <ColorControl
       icon={Highlighter}
       tooltip="Highlight"
-      currentColor={currentFormatting.highlight}
+      // The stored highlight is an OOXML name (e.g. "yellow"); map it back to the
+      // swatch hex so the active swatch shows as selected. Custom hex is disabled
+      // since highlight only accepts the named palette.
+      currentColor={
+        currentFormatting.highlight
+          ? (mapHighlightNameToHex(currentFormatting.highlight) ?? undefined)
+          : undefined
+      }
       swatches={HIGHLIGHT_SWATCHES}
       clearLabel="No highlight"
+      allowCustomHex={false}
       onPick={(hex) => onFormat({ type: 'highlightColor', value: hex })}
       onClear={() => onFormat({ type: 'highlightColor', value: 'none' })}
     />

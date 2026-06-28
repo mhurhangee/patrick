@@ -1,3 +1,4 @@
+import { ensureHexPrefix } from '@eigenpal/docx-editor-core/utils';
 import { Button } from '@patrick/ui/components/button';
 import {
   Popover,
@@ -10,7 +11,6 @@ import { useState } from 'react';
 import { keepFocus } from './shared';
 
 const HEX6 = /^#?[0-9a-fA-F]{6}$/;
-const withHash = (hex: string) => (hex.startsWith('#') ? hex : `#${hex}`);
 const bare = (hex: string) => hex.replace(/^#/, '').toUpperCase();
 
 export interface ColorControlProps {
@@ -26,6 +26,12 @@ export interface ColorControlProps {
   onPick: (hex: string) => void;
   /** Cleared to the default (automatic text / no highlight). */
   onClear: () => void;
+  /**
+   * Whether to show the custom-hex input. Off for highlight, whose OOXML value
+   * only accepts named colours — an arbitrary hex would serialise as shading,
+   * not a highlight.
+   */
+  allowCustomHex?: boolean;
 }
 
 /**
@@ -41,6 +47,7 @@ export function ColorControl({
   clearLabel,
   onPick,
   onClear,
+  allowCustomHex = true,
 }: ColorControlProps) {
   const [open, setOpen] = useState(false);
   const [hex, setHex] = useState('');
@@ -68,7 +75,7 @@ export function ColorControl({
               // hex → #hex; a named highlight (e.g. "yellow") is already valid CSS.
               backgroundColor: currentColor
                 ? HEX6.test(currentColor)
-                  ? withHash(currentColor)
+                  ? ensureHexPrefix(currentColor)
                   : currentColor
                 : 'transparent',
             }}
@@ -102,32 +109,34 @@ export function ColorControl({
                   'flex size-4 items-center justify-center rounded-sm ring-1 ring-border ring-inset',
                   selected && 'ring-2 ring-ring',
                 )}
-                style={{ backgroundColor: withHash(s) }}
+                style={{ backgroundColor: ensureHexPrefix(s) }}
               >
                 {selected && <Check className="size-3 text-white mix-blend-difference" />}
               </button>
             );
           })}
         </div>
-        <form
-          className="mt-2 flex items-center gap-1"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (HEX6.test(hex)) pick(hex);
-          }}
-        >
-          <span className="text-xs text-muted-foreground">#</span>
-          <input
-            value={hex}
-            onChange={(e) => setHex(e.target.value)}
-            placeholder="RRGGBB"
-            spellCheck={false}
-            className="h-6 w-20 rounded-sm border border-border bg-transparent px-1.5 text-xs uppercase tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-          />
-          <Button type="submit" size="sm" variant="outline" disabled={!HEX6.test(hex)}>
-            Apply
-          </Button>
-        </form>
+        {allowCustomHex && (
+          <form
+            className="mt-2 flex items-center gap-1"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (HEX6.test(hex)) pick(hex);
+            }}
+          >
+            <span className="text-xs text-muted-foreground">#</span>
+            <input
+              value={hex}
+              onChange={(e) => setHex(e.target.value)}
+              placeholder="RRGGBB"
+              spellCheck={false}
+              className="h-6 w-20 rounded-sm border border-border bg-transparent px-1.5 text-xs uppercase tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+            />
+            <Button type="submit" size="sm" variant="outline" disabled={!HEX6.test(hex)}>
+              Apply
+            </Button>
+          </form>
+        )}
       </PopoverContent>
     </Popover>
   );

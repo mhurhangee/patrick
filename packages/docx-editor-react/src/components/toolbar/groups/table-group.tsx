@@ -23,14 +23,7 @@ import {
 } from 'lucide-react';
 import type { TableAction } from '../../../types/table';
 import { ColorControl } from '../color-control';
-import { keepFocus } from '../shared';
-
-// Grayscale + Office standard colours (hex without #) — shared shape with the
-// character colour controls.
-const SWATCHES = [
-  '000000', '434343', '666666', '999999', 'B7B7B7', 'CCCCCC', 'D9D9D9', 'EFEFEF', 'F3F3F3', 'FFFFFF',
-  'C00000', 'FF0000', 'FFC000', 'FFFF00', '92D050', '00B050', '00B0F0', '0070C0', '002060', '7030A0',
-] as const;
+import { STANDARD_SWATCHES, keepFocus } from '../shared';
 
 const BORDER_PRESETS: { action: TableAction; label: string }[] = [
   { action: 'borderAll', label: 'All borders' },
@@ -86,7 +79,7 @@ export function TableGroup({ tableContext, onTableAction }: TableGroupProps) {
         icon={Square}
         tooltip="Border colour"
         currentColor={tableContext.cellBorderColor?.rgb}
-        swatches={SWATCHES}
+        swatches={STANDARD_SWATCHES}
         clearLabel="Default (black)"
         onPick={(hex) => onTableAction({ type: 'borderColor', color: hex })}
         onClear={() => onTableAction({ type: 'borderColor', color: '000000' })}
@@ -95,7 +88,7 @@ export function TableGroup({ tableContext, onTableAction }: TableGroupProps) {
         icon={PaintBucket}
         tooltip="Cell fill"
         currentColor={tableContext.cellBackgroundColor}
-        swatches={SWATCHES}
+        swatches={STANDARD_SWATCHES}
         clearLabel="No fill"
         onPick={(hex) => onTableAction({ type: 'cellFillColor', color: hex })}
         onClear={() => onTableAction({ type: 'cellFillColor', color: null })}

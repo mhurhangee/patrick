@@ -32,3 +32,17 @@ export function mapHexToHighlightName(hex: string): string | null {
   const normalized = hex.replace(/^#/, '').toUpperCase();
   return HIGHLIGHT_HEX_TO_NAME[normalized] || null;
 }
+
+/**
+ * Reverse of {@link HIGHLIGHT_HEX_TO_NAME}: OOXML highlight name -> the hex this
+ * table serialises it from. Use this (not the renderer's colorResolver map,
+ * which uses different dark-variant hexes) when a UI must round-trip a stored
+ * highlight name back to the swatch hex it was picked from.
+ */
+export const HIGHLIGHT_NAME_TO_HEX: Record<string, string> = Object.fromEntries(
+  Object.entries(HIGHLIGHT_HEX_TO_NAME).map(([hex, name]) => [name, hex]),
+);
+
+export function mapHighlightNameToHex(name: string): string | null {
+  return HIGHLIGHT_NAME_TO_HEX[name] ?? null;
+}
