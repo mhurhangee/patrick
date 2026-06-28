@@ -2,7 +2,11 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"jsx": "react-jsx",
-		"types": ["bun"]
+		"types": ["bun"],
+		"paths": {
+			"@patrick/ui/components/*": ["./src/components/*"],
+			"@patrick/ui/lib/*": ["./src/lib/*"]
+		}
 	},
 	"include": ["src"]
 }
