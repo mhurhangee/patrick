@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import type {
   Document,
   FootnoteProperties,
@@ -8,9 +8,10 @@ import type {
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
-import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/HyperlinkDialog';
+import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/hyperlink';
 import type { FindMatch, FindOptions, FindResult } from '../dialogs/FindReplaceDialog';
 import { CursorPopover } from '../toolbar/cursor-popover';
+import { HyperlinkForm } from '../toolbar/hyperlink-popover';
 import { SplitCellForm } from '../toolbar/split-cell-popover';
 import { TablePropertiesForm } from '../toolbar/table-properties-popover';
 
@@ -18,7 +19,6 @@ import { TablePropertiesForm } from '../toolbar/table-properties-popover';
 // is owned by this component instead of the orchestrator. `lazy()` runs at
 // module load, so co-locating with the JSX keeps the code-split boundary.
 const FindReplaceDialog = lazy(() => import('../dialogs/FindReplaceDialog'));
-const HyperlinkDialog = lazy(() => import('../dialogs/HyperlinkDialog'));
 const FootnotePropertiesDialog = lazy(() =>
   import('../dialogs/FootnotePropertiesDialog').then((m) => ({
     default: m.FootnotePropertiesDialog,
@@ -54,6 +54,7 @@ export function DocxEditorDialogs({
   hyperlinkDialog,
   onHyperlinkSubmit,
   onHyperlinkRemove,
+  getCaretRect,
   tablePropsOpen,
   tablePropsRect,
   onTablePropsClose,
@@ -82,6 +83,8 @@ export function DocxEditorDialogs({
   hyperlinkDialog: ReturnType<typeof useHyperlinkDialog>;
   onHyperlinkSubmit: (data: HyperlinkData) => void;
   onHyperlinkRemove: () => void;
+  /** Painted caret rect for anchoring the cursor popovers (hyperlink). */
+  getCaretRect: () => DOMRect | null;
   // Table properties
   tablePropsOpen: boolean;
   tablePropsRect: DOMRect | null;
@@ -103,6 +106,15 @@ export function DocxEditorDialogs({
   onFootnotePropsClose: () => void;
   onApplyFootnoteProperties: (footnotePr: FootnoteProperties, endnotePr: EndnoteProperties) => void;
 }) {
+  // Capture the painted caret rect when the hyperlink popover opens (the editor
+  // still holds the selection at that point), to anchor it at the cursor.
+  const [hyperlinkRect, setHyperlinkRect] = useState<DOMRect | null>(null);
+  const hyperlinkOpen = hyperlinkDialog.state.isOpen;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: capture only on the open transition
+  useEffect(() => {
+    if (hyperlinkOpen) setHyperlinkRect(getCaretRect());
+  }, [hyperlinkOpen]);
+
   return (
     <Suspense fallback={null}>
       {findReplace.state.isOpen && (
@@ -119,17 +131,22 @@ export function DocxEditorDialogs({
           currentResult={findResultRef.current}
         />
       )}
-      {hyperlinkDialog.state.isOpen && (
-        <HyperlinkDialog
-          isOpen={hyperlinkDialog.state.isOpen}
-          onClose={hyperlinkDialog.close}
-          onSubmit={onHyperlinkSubmit}
-          onRemove={hyperlinkDialog.state.isEditing ? onHyperlinkRemove : undefined}
-          initialData={hyperlinkDialog.state.initialData}
-          selectedText={hyperlinkDialog.state.selectedText}
-          isEditing={hyperlinkDialog.state.isEditing}
-        />
-      )}
+      <CursorPopover
+        open={hyperlinkOpen}
+        onOpenChange={(o) => !o && hyperlinkDialog.close()}
+        rect={hyperlinkRect}
+      >
+        {hyperlinkOpen && (
+          <HyperlinkForm
+            initialData={hyperlinkDialog.state.initialData}
+            selectedText={hyperlinkDialog.state.selectedText}
+            isEditing={hyperlinkDialog.state.isEditing}
+            onSubmit={onHyperlinkSubmit}
+            onRemove={onHyperlinkRemove}
+            onClose={hyperlinkDialog.close}
+          />
+        )}
+      </CursorPopover>
       <CursorPopover
         open={tablePropsOpen}
         onOpenChange={(o) => !o && onTablePropsClose()}

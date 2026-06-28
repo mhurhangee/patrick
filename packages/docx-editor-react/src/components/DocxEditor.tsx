@@ -57,7 +57,7 @@ import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { type PrintOptions } from './ui/PrintPreview';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from './dialogs/FindReplaceDialog';
-import { useHyperlinkDialog } from './dialogs/HyperlinkDialog';
+import { useHyperlinkDialog } from './dialogs/hyperlink';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './DocxEditorHelpers';
@@ -1865,6 +1865,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           hyperlinkDialog={hyperlinkDialog}
           onHyperlinkSubmit={handleHyperlinkSubmit}
           onHyperlinkRemove={handleHyperlinkRemove}
+          getCaretRect={() => pagedEditorRef.current?.getCaretRect() ?? null}
           tablePropsOpen={tablePropsOpen}
           tablePropsRect={tablePropsRect}
           onTablePropsClose={() => setTablePropsOpen(false)}
