@@ -21,7 +21,7 @@ import {
   SendToBack,
   WrapText,
 } from 'lucide-react';
-import type { ToolbarImageContext } from '../../../types/image';
+import type { ImageContext } from '../../../types/image';
 import { keepFocus } from '../shared';
 
 const WRAP_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
@@ -39,7 +39,7 @@ const TRANSFORMS: { value: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV'; label: 
   { value: 'flipV', label: 'Flip vertical', icon: ArrowUpDown },
 ];
 
-function resolveWrap(ctx: ToolbarImageContext): string {
+function resolveWrap(ctx: ImageContext): string {
   if (ctx.displayMode === 'inline') return 'inline';
   if (ctx.displayMode === 'float' && ctx.cssFloat === 'left') return 'wrapRight';
   if (ctx.displayMode === 'float' && ctx.cssFloat === 'right') return 'wrapLeft';
@@ -47,7 +47,7 @@ function resolveWrap(ctx: ToolbarImageContext): string {
 }
 
 export interface ImageGroupProps {
-  imageContext: ToolbarImageContext;
+  imageContext: ImageContext;
   onImageWrapType: (wrapType: string) => void;
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
   onOpenImageProperties: () => void;
@@ -101,7 +101,13 @@ export function ImageGroup({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button variant="ghost" size="icon-sm" tooltip="Image properties" onMouseDown={keepFocus} onClick={onOpenImageProperties}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        tooltip="Image properties"
+        onMouseDown={keepFocus}
+        onClick={() => onOpenImageProperties()}
+      >
         <Settings2 />
       </Button>
     </div>

@@ -26,7 +26,7 @@ import { useImageContextMenu } from '../../ImageContextMenu';
 import { type TextContextAction, type TextContextMenuItem } from '../../TextContextMenu';
 import { findSelectionYPosition } from '../internals/pmAnchors';
 import { PENDING_COMMENT_ID } from '../commentFactories';
-import { formatKeys } from '../../dialogs/KeyboardShortcutsDialog/ShortcutItem';
+import { formatKeys } from './formatKeys';
 
 interface ContextMenuState {
   isOpen: boolean;

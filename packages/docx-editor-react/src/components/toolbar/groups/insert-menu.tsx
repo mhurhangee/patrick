@@ -1,8 +1,11 @@
+import type { Watermark } from '@eigenpal/docx-editor-core/types/document';
 import { Button } from '@patrick/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -15,11 +18,19 @@ import {
   Plus,
   Rows2,
   SeparatorHorizontal,
+  Stamp,
   Table2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { keepFocus } from '../shared';
 import { TableGrid } from './table-grid';
+
+const WATERMARK_PRESETS = ['DRAFT', 'CONFIDENTIAL'] as const;
+
+/** A simple diagonal grey text watermark. */
+function textWatermark(text: string): Watermark {
+  return { kind: 'text', text, font: 'Calibri', color: '#C0C0C0', semitransparent: true, layout: 'diagonal' };
+}
 
 export interface InsertMenuProps {
   onInsertTable: (rows: number, columns: number) => void;
@@ -28,6 +39,9 @@ export interface InsertMenuProps {
   onInsertSectionBreakNextPage: () => void;
   onInsertSectionBreakContinuous: () => void;
   onInsertTOC: () => void;
+  onApplyWatermark: (watermark: Watermark | null) => void;
+  currentWatermark?: Watermark | undefined;
+  watermarkPresets?: readonly string[] | undefined;
 }
 
 /** Insert ▾ — table (grid picker), image, breaks, and table of contents. */
@@ -38,10 +52,15 @@ export function InsertMenu({
   onInsertSectionBreakNextPage,
   onInsertSectionBreakContinuous,
   onInsertTOC,
+  onApplyWatermark,
+  currentWatermark,
+  watermarkPresets,
 }: InsertMenuProps) {
   // Controlled so the custom table grid (not a menu item) can close the menu.
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const presets = watermarkPresets ?? WATERMARK_PRESETS;
+  const watermarkValue = currentWatermark?.kind === 'text' ? currentWatermark.text : 'none';
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -52,7 +71,7 @@ export function InsertMenu({
           <ChevronDown />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className='w-48'>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Table2 className="size-4" /> Table
@@ -81,6 +100,27 @@ export function InsertMenu({
         <DropdownMenuItem onSelect={onInsertTOC}>
           <ListTree className="size-4" /> Table of contents
         </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Stamp className="size-4" /> Watermark
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={watermarkValue}
+              onValueChange={(v) => {
+                onApplyWatermark(v === 'none' ? null : textWatermark(v));
+                close();
+              }}
+            >
+              <DropdownMenuRadioItem value="none">None</DropdownMenuRadioItem>
+              {presets.map((p) => (
+                <DropdownMenuRadioItem key={p} value={p}>
+                  {p}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   );

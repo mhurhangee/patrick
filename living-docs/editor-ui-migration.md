@@ -12,7 +12,7 @@ before its legacy is deleted.
 |---|---|---|
 | Toolbar | ✅ done | new: `components/toolbar/*` + `src/types/*`. DocxToolbar is the only toolbar. Zoom → shared floating `ZoomPill` (`docx-viewer.tsx`). P5c deleted the legacy cluster (~1.9k LOC): `Toolbar`, `EditorToolbar`, `TitleBar`, `EditorToolbarContext`, `CommentsSidebarToggle`, `EditingModeDropdown`, `ui/MenuDropdown` + pruned `ui.ts`. P4 (floating selection) **dropped**. Residual: 5 legacy-only public DocxEditor props `_`-prefixed → prune holistically in A6 |
 | Dead-code cull (A0) | ✅ done | `EditableImage` (768 LOC) earlier; then the **dead-entry-point cull**: dropped the `/ui` + `/dialogs` package exports (0 external + 0 internal importers; `/hooks` + `/plugin-api` kept — `plugin-api` is used internally + is the extension surface) and deleted everything reachable only through them — **29 files, ~8.1k LOC**: `ui.ts`, `dialogs/index.ts`, the legacy `ui/*` controls (`ColorPicker`, `*Picker`s, `Align/List`-less leftovers, `ZoomControl`, `IconGridDropdown`, `TableGridInline`, `UnsavedIndicator`, `LoadingIndicator`, …), `ContextMenu`, `ResponsePreview`, 3 unwired dialogs (`InsertTable`/`InsertSymbol`/`PasteSpecial`), and orphaned glue helpers (`ClickPositionResolver`, `PointerEventHandler`, `reportIssue`, `tableSplit`). Found via knip in library mode. |
-| Dialogs (A2) | ⬜ | 14 inline-styled dialogs → `@patrick/ui` `Dialog` + form primitives (huge shrink) |
+| Dialogs (A2) | ✅ done | Triaged 11 live dialogs (need?·form?·design?). Cut 3 orphans (InsertImage/KeyboardShortcuts/ImagePosition). Popovers: ImageProperties (button) + SplitCell/TableProperties/Hyperlink (cursor-anchored via `CursorPopover`+`getCaretRect`). Watermark→Insert submenu (+core paint fix). Find/Replace→bottom bar + zoom-pill search button (`DocxEditorRef.openFind`). PageSetup rebuilt on @patrick/ui. Remaining in `dialogs/`: `FootnotePropertiesDialog` (kept as-is, low priority), `PageSetupDialog`, + `hyperlink.ts`/`findReplaceUtils.ts` (state/util). Footnote *insertion* unbuilt (deferred). |
 | Context menus (A3) | ⬜ | `TextContextMenu`/`ContextMenu`/`ImageContextMenu` → shadcn context-menu |
 | Sidebar / review cards (A4) | ⬜ | `CommentCard`/`TrackedChangeCard`/`ReplyThread`/`AddCommentCard` |
 | Remaining chrome (A5) | ⬜ | `TitleBar`, `DocumentOutline`, rulers, status indicators |
@@ -49,6 +49,21 @@ glue logic used by `useTableSelection`) + the dead component + icons.
 `EditingModeDropdown.tsx`, `CommentsSidebarToggle.tsx`, `ui/MenuDropdown.tsx` — gone, `ui.ts`
 toolbar exports pruned. The cluster was self-contained (referenced only each other + the
 Patrick-unused `/ui` barrel).
+
+## A2 progress (branch `feat/editor-dialogs-rethink`)
+✅ cut `InsertImageDialog`, `KeyboardShortcutsDialog`, `ImagePositionDialog` (all orphaned). ✅ Watermark → Insert ▸ Watermark submenu (None/DRAFT/CONFIDENTIAL) + **fixed a pre-existing core paint bug** (`computeOptionsHash` omitted the watermark, so the incremental painter never repainted it). ✅ PageSetup rebuilt on `@patrick/ui` Dialog. Left: the popover cluster + find/replace bar + footnotes-under-Insert.
+
+## Popover anchoring — decided (cursor-anchored, 2026-06-28)
+The popover cluster (ImageProperties, TableProperties, SplitCell, Hyperlink incl. Ctrl+K) all anchor to the **cursor/cell rect** via ONE primitive — not per-control toolbar-button anchoring (which only works for ImageProperties). Build a `CursorPopover` using radix `PopoverAnchor` (exported by `@patrick/ui`) at a virtual rect. Source the rect from the **painted** caret (the glue's existing `selectionRects` in `PagedEditor`) — NOT `coordsAtPos` on the hidden offscreen PM. So: expose a `getCaretRect()` from `PagedEditorRef`/glue, thread it to the toolbar, feed `CursorPopover`. This is the foundational infra the whole cluster depends on — build it first.
+
+## A2 dialog dispositions (decided with the user, 2026-06-28)
+- **Cut:** `InsertImageDialog` ✅ (dead), `KeyboardShortcutsDialog` ✅ (orphaned), `ImagePositionDialog` ⬜ (overkill — unwire from the image context menu).
+- **Reform → popover:** `HyperlinkDialog` (text + URL; unify with the existing inline `ui/HyperlinkPopup`; drop bookmark tabs/tooltip) · `ImagePropertiesDialog` (alt + dimensions; drop border) · `TablePropertiesDialog` (width/align) · `SplitCellDialog` (rows/cols steppers).
+- **Reform → find bar:** `FindReplaceDialog` → a bottom-centre **find box stacked above the zoom pill** (Option B), opened by Ctrl+F **or a search button added to the zoom pill** (`apps/frontend/.../zoom-pill.tsx`); Replace expands a 2nd row; reuse the existing find/replace logic (`useFindReplace`). Cross-boundary: the box is editor-rendered, exposed via `DocxEditorRef` so the frontend pill button can open it.
+- **Reform → Insert submenu:** `WatermarkDialog` → **Insert ▸ Watermark ▸ None / DRAFT / CONFIDENTIAL / Custom…** (simple diagonal text watermark; no modal). Also surface **footnote insertion** under the Insert menu.
+- **Keep as a (redesigned) dialog:** `PageSetupDialog` ✅ rebuilt on @patrick/ui. `FootnotePropertiesDialog` kept as-is (still wired; low priority — rebuild later).
+- **Footnote insertion: NOT a reform — unbuilt.** `insertFootnote` (core `makeInsertNote('footnote')` → `(id)=>Command`) is never invoked in the react package and needs footnote-id allocation. Surfacing it under Insert = building the feature, deferred (patent-irrelevant).
+- **Popover cluster ✅ DONE:** ImageProperties (button-anchored), SplitCell + TableProperties + Hyperlink (cursor-anchored via the `CursorPopover` + `getCaretRect` primitive). Left: **Find/Replace bar**.
 
 ## Still-live `ui/*` + hooks — cull as their consumers migrate
 After the A0 entry-point cull, the `ui/*` that REMAIN are the ones still reached from the `.`

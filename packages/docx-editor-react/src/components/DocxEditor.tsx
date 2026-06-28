@@ -56,8 +56,8 @@ import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { type PrintOptions } from './ui/PrintPreview';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
-import { useFindReplace } from './dialogs/FindReplaceDialog';
-import { useHyperlinkDialog } from './dialogs/HyperlinkDialog';
+import { useFindReplace } from '../hooks/useFindReplace';
+import { useHyperlinkDialog } from './dialogs/hyperlink';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './DocxEditorHelpers';
@@ -226,10 +226,8 @@ export interface DocxEditorProps {
    */
   fonts?: ReadonlyArray<FontDefinition>;
   /**
-   * Text-watermark presets shown in the watermark dialog's preset dropdown.
-   * Omit to use the built-in MS Word phrases (`DEFAULT_WATERMARK_PRESETS`:
-   * CONFIDENTIAL, DRAFT, DO NOT COPY, SAMPLE, URGENT, ASAP). Pass an empty
-   * array to hide the preset dropdown and require custom text.
+   * Text-watermark presets shown in the Insert ▸ Watermark menu. Omit to use the
+   * built-in defaults (DRAFT, CONFIDENTIAL).
    *
    * @example watermarkPresets={['INTERNAL', 'PROPRIETARY', 'COPY']}
    */
@@ -325,6 +323,8 @@ export interface DocxEditorRef {
   setZoom: (zoom: number) => void;
   /** Get current zoom level */
   getZoom: () => number;
+  /** Open the find/replace bar (e.g. from an app-level search button). */
+  openFind: () => void;
   /** Focus the editor */
   focus: () => void;
   /** Get current page number */
@@ -672,6 +672,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // pagedEditorRef.current.getView() for orphan cleanup) can be wired before
   // the trackedChanges effect that drives `setComments`.
   const pagedEditorRef = useRef<PagedEditorRef>(null);
+  // Stable getter for the painted caret rect — anchors the cursor popovers.
+  const getCaretRect = useCallback(() => pagedEditorRef.current?.getCaretRect() ?? null, []);
 
   const {
     comments,
@@ -1052,16 +1054,14 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // Handle shape insertion
   // Handle image wrap type change
   const {
-    imagePositionOpen,
-    setImagePositionOpen,
-    imagePropsOpen,
-    setImagePropsOpen,
     footnotePropsOpen,
     setFootnotePropsOpen,
+    imagePropsOpen,
+    setImagePropsOpen,
+    imagePropsRect,
+    handleOpenImageProperties,
     handleImageWrapType,
     handleImageTransform,
-    handleApplyImagePosition,
-    handleOpenImageProperties,
     handleApplyImageProperties,
     handleApplyFootnoteProperties,
   } = useImageActions({
@@ -1069,6 +1069,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pmImageContext: state.pmImageContext,
     zoom: state.zoom,
     getActiveEditorView,
+    getCaretRect,
     focusActiveEditor,
     pushDocument,
   });
@@ -1076,6 +1077,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const {
     tablePropsOpen,
     setTablePropsOpen,
+    tablePropsRect,
     splitCellDialogState,
     openSplitCellDialog,
     handleTableAction,
@@ -1083,6 +1085,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     handleSplitCellDialogApply,
   } = useTableDialogs({
     getActiveEditorView,
+    getCaretRect,
     focusActiveEditor,
     tableSelection,
     borderSpecRef,
@@ -1174,9 +1177,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   });
 
   const {
-    showWatermark,
-    setShowWatermark,
-    handleOpenWatermark,
     currentWatermark,
     handleWatermarkApply,
   } = useWatermarkControls({
@@ -1221,6 +1221,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     handleDirectPrint,
     zoom: state.zoom,
     setZoom: (zoom: number) => setState((prev) => ({ ...prev, zoom })),
+    openFind: () => findReplace.openFind(),
     scrollPageInfo,
     loadParsedDocument,
     loadBuffer,
@@ -1759,7 +1760,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             onImageTransform={handleImageTransform}
             onOpenImageProperties={handleOpenImageProperties}
             onPageSetup={handleOpenPageSetup}
-            onWatermark={handleOpenWatermark}
+            onApplyWatermark={handleWatermarkApply}
+            currentWatermark={currentWatermark}
+            watermarkPresets={watermarkPresets}
             onTableAction={handleTableAction}
           />
         ) : null
@@ -1857,7 +1860,11 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           imageContextMenu={imageContextMenu}
           onImageWrapApply={handleImageWrapApply}
           imageContextMenuTextActions={imageContextMenuTextActions}
-          onOpenImageProperties={handleOpenImageProperties}
+          onOpenImageProperties={() =>
+            handleOpenImageProperties(
+              new DOMRect(imageContextMenu.position.x, imageContextMenu.position.y, 0, 0)
+            )
+          }
           readOnly={readOnly}
         />
       }
@@ -1873,28 +1880,23 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           hyperlinkDialog={hyperlinkDialog}
           onHyperlinkSubmit={handleHyperlinkSubmit}
           onHyperlinkRemove={handleHyperlinkRemove}
+          getCaretRect={getCaretRect}
+          imagePropsOpen={imagePropsOpen}
+          imagePropsRect={imagePropsRect}
+          onImagePropsClose={() => setImagePropsOpen(false)}
+          onApplyImageProperties={handleApplyImageProperties}
+          pmImageContext={state.pmImageContext}
           tablePropsOpen={tablePropsOpen}
+          tablePropsRect={tablePropsRect}
           onTablePropsClose={() => setTablePropsOpen(false)}
           pmTableContext={state.pmTableContext}
           getActiveEditorView={getActiveEditorView}
           splitCellDialogState={splitCellDialogState}
           onSplitCellDialogClose={handleSplitCellDialogClose}
           onSplitCellDialogApply={handleSplitCellDialogApply}
-          imagePositionOpen={imagePositionOpen}
-          onImagePositionClose={() => setImagePositionOpen(false)}
-          onApplyImagePosition={handleApplyImagePosition}
-          imagePropsOpen={imagePropsOpen}
-          onImagePropsClose={() => setImagePropsOpen(false)}
-          onApplyImageProperties={handleApplyImageProperties}
-          pmImageContext={state.pmImageContext}
           showPageSetup={showPageSetup}
           onPageSetupClose={() => setShowPageSetup(false)}
           onPageSetupApply={handlePageSetupApply}
-          showWatermark={showWatermark}
-          onWatermarkClose={() => setShowWatermark(false)}
-          onWatermarkApply={handleWatermarkApply}
-          currentWatermark={currentWatermark}
-          watermarkPresets={watermarkPresets}
           document={history.state}
           footnotePropsOpen={footnotePropsOpen}
           onFootnotePropsClose={() => setFootnotePropsOpen(false)}

@@ -7,7 +7,7 @@ import {
   insertHyperlink,
 } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
-import type { HyperlinkData, useHyperlinkDialog } from '../../dialogs/HyperlinkDialog';
+import type { HyperlinkData, useHyperlinkDialog } from '../../dialogs/hyperlink';
 import type { HyperlinkPopupData } from '../../ui/HyperlinkPopup';
 
 /**

@@ -1,6 +1,6 @@
 import type { DocxEditorRef } from "@eigenpal/docx-editor-react";
 import { Button } from "@patrick/ui/components/button";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Search } from "lucide-react";
 import { type ReactNode, type RefObject, useEffect, useState } from "react";
 
 const MIN_ZOOM = 0.5;
@@ -43,6 +43,15 @@ export function ZoomPill({
 
 	return (
 		<div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-md backdrop-blur">
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				tooltip="Find (Ctrl+F)"
+				onClick={() => editorRef.current?.openFind()}
+			>
+				<Search />
+			</Button>
+			<span className="h-4 w-px bg-border" />
 			{pages > 0 && (
 				<>
 					<span className="px-1.5 tabular-nums">

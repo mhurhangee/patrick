@@ -204,6 +204,11 @@ export interface PagedEditorRef {
   getState(): EditorState | null;
   /** Get the ProseMirror EditorView. */
   getView(): EditorView | null;
+  /**
+   * Viewport rect of the painted caret / selection (for anchoring popovers at
+   * the cursor). Reads the painted overlay, not the offscreen hidden PM.
+   */
+  getCaretRect(): DOMRect | null;
   /** Focus the editor. */
   focus(): void;
   /** Blur the editor. */
@@ -797,6 +802,7 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
       scrollToParaIdImpl,
       scrollToPageImpl,
       setIsFocused,
+      getPagesContainer: () => pagesContainerRef.current,
       onReadyRef,
     });
 

@@ -10,8 +10,7 @@ import {
   toolbarValueToLayoutTarget,
 } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
-import type { ImagePositionData } from '../../dialogs/ImagePositionDialog';
-import type { ImagePropertiesData } from '../../dialogs/ImagePropertiesDialog';
+import type { ImagePropertiesData } from '../../../types/image';
 
 /** Minimal shape the hook needs from the parent's selection-tracker state. */
 interface ImageContext {
@@ -36,6 +35,7 @@ export function useImageActions({
   pmImageContext,
   zoom,
   getActiveEditorView,
+  getCaretRect,
   focusActiveEditor,
   pushDocument,
 }: {
@@ -43,12 +43,26 @@ export function useImageActions({
   pmImageContext: ImageContext | null | undefined;
   zoom: number;
   getActiveEditorView: () => EditorView | null | undefined;
+  getCaretRect: () => DOMRect | null;
   focusActiveEditor: () => void;
   pushDocument: (doc: Document) => void;
 }) {
-  const [imagePositionOpen, setImagePositionOpen] = useState(false);
-  const [imagePropsOpen, setImagePropsOpen] = useState(false);
   const [footnotePropsOpen, setFootnotePropsOpen] = useState(false);
+  const [imagePropsOpen, setImagePropsOpen] = useState(false);
+  const [imagePropsRect, setImagePropsRect] = useState<DOMRect | null>(null);
+
+  // Opened from the toolbar button (no arg → anchor at the painted caret/image
+  // box, which is live because the button keeps editor focus) or from the image
+  // context menu, which passes its click point: opening the menu blurs the
+  // editor and clears the image selection, so the image box is gone by the time
+  // the action fires — the menu's own coords are the only stable anchor.
+  const handleOpenImageProperties = useCallback(
+    (rect?: DOMRect | null) => {
+      setImagePropsRect(rect ?? getCaretRect());
+      setImagePropsOpen(true);
+    },
+    [getCaretRect]
+  );
 
   const handleImageWrapType = useCallback(
     (toolbarValue: string) => {
@@ -128,36 +142,6 @@ export function useImageActions({
     [getActiveEditorView, focusActiveEditor, pmImageContext]
   );
 
-  const handleApplyImagePosition = useCallback(
-    (data: ImagePositionData) => {
-      const view = getActiveEditorView();
-      if (!view || !pmImageContext) return;
-
-      const pos = pmImageContext.pos;
-      const node = view.state.doc.nodeAt(pos);
-      if (!node || node.type.name !== 'image') return;
-
-      const tr = view.state.tr.setNodeMarkup(pos, undefined, {
-        ...node.attrs,
-        position: {
-          horizontal: data.horizontal,
-          vertical: data.vertical,
-        },
-        distTop: data.distTop ?? node.attrs.distTop,
-        distBottom: data.distBottom ?? node.attrs.distBottom,
-        distLeft: data.distLeft ?? node.attrs.distLeft,
-        distRight: data.distRight ?? node.attrs.distRight,
-      });
-      view.dispatch(tr.scrollIntoView());
-      focusActiveEditor();
-    },
-    [getActiveEditorView, focusActiveEditor, pmImageContext]
-  );
-
-  const handleOpenImageProperties = useCallback(() => {
-    setImagePropsOpen(true);
-  }, []);
-
   const handleApplyImageProperties = useCallback(
     (data: ImagePropertiesData) => {
       const view = getActiveEditorView();
@@ -205,16 +189,14 @@ export function useImageActions({
   );
 
   return {
-    imagePositionOpen,
-    setImagePositionOpen,
-    imagePropsOpen,
-    setImagePropsOpen,
     footnotePropsOpen,
     setFootnotePropsOpen,
+    imagePropsOpen,
+    setImagePropsOpen,
+    imagePropsRect,
+    handleOpenImageProperties,
     handleImageWrapType,
     handleImageTransform,
-    handleApplyImagePosition,
-    handleOpenImageProperties,
     handleApplyImageProperties,
     handleApplyFootnoteProperties,
   };

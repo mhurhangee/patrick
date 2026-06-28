@@ -1,6 +1,6 @@
 /**
- * Image contract — the selected-image state the glue tracks and the toolbar's
- * image controls read. React-package types only.
+ * Image contract — the selected-image state the glue tracks, the toolbar's image
+ * controls read, and the editable properties they apply. React-package types only.
  */
 
 /** Full image context the glue resolves for the selected image node. */
@@ -18,5 +18,12 @@ export interface ImageContext {
   height: number | null;
 }
 
-/** The subset the toolbar's image group needs to resolve wrap state. */
-export type ToolbarImageContext = Pick<ImageContext, 'wrapType' | 'displayMode' | 'cssFloat'>;
+/** The editable image properties applied from the image-properties popover. */
+export interface ImagePropertiesData {
+  alt?: string;
+  borderWidth?: number;
+  borderColor?: string;
+  borderStyle?: string;
+  width?: number;
+  height?: number;
+}

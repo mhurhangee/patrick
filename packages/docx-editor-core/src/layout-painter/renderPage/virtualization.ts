@@ -139,6 +139,10 @@ function computeOptionsHash(options: RenderPageOptions): string {
   }
   if (options.titlePg) parts.push('titlePg');
 
+  // Watermark is painted on every page, so a change must re-render all of them
+  // (it never changes a page's fragment fingerprint).
+  if (options.watermark) parts.push(`wm:${JSON.stringify(options.watermark)}`);
+
   // Theme changes
   if (options.theme) {
     parts.push(`thm:${options.theme.name ?? 'default'}`);

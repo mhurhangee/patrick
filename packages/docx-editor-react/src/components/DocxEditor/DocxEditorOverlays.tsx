@@ -39,7 +39,7 @@ export function DocxEditorOverlays({
   imageContextMenu: ReturnType<typeof useImageContextMenu>;
   onImageWrapApply: React.ComponentProps<typeof ImageContextMenu>['onApplyLayout'];
   imageContextMenuTextActions: React.ComponentProps<typeof ImageContextMenu>['textActions'];
-  onOpenImageProperties: () => void;
+  onOpenImageProperties?: () => void;
   readOnly: boolean;
 }) {
   return (

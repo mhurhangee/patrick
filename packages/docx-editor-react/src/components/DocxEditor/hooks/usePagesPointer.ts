@@ -800,9 +800,16 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
       const { from, to } = view.state.selection;
       const pmPos = getPositionFromMouse(e.clientX, e.clientY);
 
-      // Right-click inside an existing range keeps the selection; otherwise
-      // move cursor to the right-click position.
-      if (pmPos !== null && (from === to || pmPos < from || pmPos > to)) {
+      if (imageInfo) {
+        // Right-clicking an image selects it (NodeSelection) so the selection
+        // tracker populates the image context the properties popover reads;
+        // a plain cursor move would leave that context empty.
+        surface.setNodeSelection(imageInfo.pos);
+        surface.focus();
+        if (!hfEditMode) setIsFocused(true);
+      } else if (pmPos !== null && (from === to || pmPos < from || pmPos > to)) {
+        // Right-click inside an existing range keeps the selection; otherwise
+        // move cursor to the right-click position.
         surface.setSelection(pmPos);
         surface.focus();
         if (!hfEditMode) setIsFocused(true);

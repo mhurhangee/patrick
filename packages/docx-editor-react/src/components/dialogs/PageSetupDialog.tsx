@@ -1,32 +1,44 @@
 /**
- * Page Setup Dialog
- *
- * Modal for editing page layout properties:
- * - Page size (Letter, A4, Legal, etc.)
- * - Orientation (portrait/landscape)
- * - Margins (top, bottom, left, right) in inches
+ * Page Setup dialog — page size, orientation, and margins. One of the few editor
+ * actions that stays a real modal (it's a deliberate, multi-field document
+ * setting). Built on @patrick/ui.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import type { CSSProperties } from 'react';
 import type { SectionProperties } from '@eigenpal/docx-editor-core/types/document';
 import { TWIPS_PER_INCH } from '@eigenpal/docx-editor-core/utils';
-import { useTranslation } from '../../i18n';
+import { Button } from '@patrick/ui/components/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@patrick/ui/components/dialog';
+import { Label } from '@patrick/ui/components/label';
+import { NumberField } from '@patrick/ui/components/number-field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@patrick/ui/components/select';
+import { useEffect, useState } from 'react';
 
-/** Common page sizes in twips (width x height in portrait orientation) */
+/** Common page sizes in twips (width x height in portrait orientation). */
 const PAGE_SIZES = [
-  { labelKey: 'dialogs.pageSetup.pageSizes.letter' as const, width: 12240, height: 15840 },
-  { labelKey: 'dialogs.pageSetup.pageSizes.a4' as const, width: 11906, height: 16838 },
-  { labelKey: 'dialogs.pageSetup.pageSizes.legal' as const, width: 12240, height: 20160 },
-  { labelKey: 'dialogs.pageSetup.pageSizes.a3' as const, width: 16838, height: 23811 },
-  { labelKey: 'dialogs.pageSetup.pageSizes.a5' as const, width: 8391, height: 11906 },
-  { labelKey: 'dialogs.pageSetup.pageSizes.b5' as const, width: 9979, height: 14175 },
-  { labelKey: 'dialogs.pageSetup.pageSizes.executive' as const, width: 10440, height: 15120 },
+  { label: 'Letter', width: 12240, height: 15840 },
+  { label: 'A4', width: 11906, height: 16838 },
+  { label: 'Legal', width: 12240, height: 20160 },
+  { label: 'A3', width: 16838, height: 23811 },
+  { label: 'A5', width: 8391, height: 11906 },
+  { label: 'B5', width: 9979, height: 14175 },
+  { label: 'Executive', width: 10440, height: 15120 },
 ] as const;
 
-// ============================================================================
-// TYPES
-// ============================================================================
+const DEFAULT_WIDTH = 12240;
+const DEFAULT_HEIGHT = 15840;
+const DEFAULT_MARGIN = 1440;
 
 export interface PageSetupDialogProps {
   isOpen: boolean;
@@ -35,137 +47,17 @@ export interface PageSetupDialogProps {
   currentProps?: SectionProperties;
 }
 
-// ============================================================================
-// HELPERS
-// ============================================================================
+const twipsToInches = (twips: number) => Math.round((twips / TWIPS_PER_INCH) * 100) / 100;
+const inchesToTwips = (inches: number) => Math.round(inches * TWIPS_PER_INCH);
 
-function twipsToInches(twips: number): number {
-  return Math.round((twips / TWIPS_PER_INCH) * 100) / 100;
-}
-
-function inchesToTwips(inches: number): number {
-  return Math.round(inches * TWIPS_PER_INCH);
-}
-
-/** Find matching page size preset, ignoring orientation */
+/** Matching page-size preset (orientation-agnostic), or -1 for a custom size. */
 function findPageSizeIndex(w: number, h: number): number {
-  // Normalize to portrait (smaller dimension = width)
   const pw = Math.min(w, h);
   const ph = Math.max(w, h);
   return PAGE_SIZES.findIndex((s) => Math.abs(s.width - pw) < 20 && Math.abs(s.height - ph) < 20);
 }
 
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const overlayStyle: CSSProperties = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'var(--doc-overlay)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 10000,
-};
-
-const dialogStyle: CSSProperties = {
-  backgroundColor: 'var(--doc-surface)',
-  borderRadius: 8,
-  boxShadow: '0 4px 20px var(--doc-shadow)',
-  minWidth: 400,
-  maxWidth: 480,
-  width: '100%',
-  margin: 20,
-};
-
-const headerStyle: CSSProperties = {
-  padding: '16px 20px 12px',
-  borderBottom: '1px solid var(--doc-border)',
-  fontSize: 16,
-  fontWeight: 600,
-};
-
-const bodyStyle: CSSProperties = {
-  padding: '16px 20px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 14,
-};
-
-const sectionLabelStyle: CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: 'var(--doc-text-muted)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-};
-
-const rowStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-};
-
-const labelStyle: CSSProperties = {
-  width: 80,
-  fontSize: 13,
-  color: 'var(--doc-text-muted)',
-};
-
-const inputStyle: CSSProperties = {
-  flex: 1,
-  padding: '6px 8px',
-  border: '1px solid var(--doc-border)',
-  borderRadius: 4,
-  fontSize: 13,
-};
-
-const selectStyle: CSSProperties = {
-  ...inputStyle,
-};
-
-const unitStyle: CSSProperties = {
-  fontSize: 11,
-  color: 'var(--doc-text-muted)',
-  width: 16,
-};
-
-const footerStyle: CSSProperties = {
-  padding: '12px 20px 16px',
-  borderTop: '1px solid var(--doc-border)',
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: 8,
-};
-
-const btnStyle: CSSProperties = {
-  padding: '6px 16px',
-  fontSize: 13,
-  border: '1px solid var(--doc-border)',
-  borderRadius: 4,
-  cursor: 'pointer',
-};
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-// Default Word values (Letter, 1" margins)
-const DEFAULT_WIDTH = 12240;
-const DEFAULT_HEIGHT = 15840;
-const DEFAULT_MARGIN = 1440;
-
-export function PageSetupDialog({
-  isOpen,
-  onClose,
-  onApply,
-  currentProps,
-}: PageSetupDialogProps): React.ReactElement | null {
-  const { t } = useTranslation();
+export function PageSetupDialog({ isOpen, onClose, onApply, currentProps }: PageSetupDialogProps) {
   const [pageWidth, setPageWidth] = useState(DEFAULT_WIDTH);
   const [pageHeight, setPageHeight] = useState(DEFAULT_HEIGHT);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
@@ -178,198 +70,123 @@ export function PageSetupDialog({
     if (!isOpen) return;
     const w = currentProps?.pageWidth || DEFAULT_WIDTH;
     const h = currentProps?.pageHeight || DEFAULT_HEIGHT;
-    const orient = currentProps?.orientation || (w > h ? 'landscape' : 'portrait');
     setPageWidth(w);
     setPageHeight(h);
-    setOrientation(orient);
+    setOrientation(currentProps?.orientation || (w > h ? 'landscape' : 'portrait'));
     setMarginTop(currentProps?.marginTop ?? DEFAULT_MARGIN);
     setMarginBottom(currentProps?.marginBottom ?? DEFAULT_MARGIN);
     setMarginLeft(currentProps?.marginLeft ?? DEFAULT_MARGIN);
     setMarginRight(currentProps?.marginRight ?? DEFAULT_MARGIN);
   }, [isOpen, currentProps]);
 
-  const handlePageSizeChange = useCallback(
-    (index: number) => {
-      if (index < 0) return;
-      const size = PAGE_SIZES[index];
-      if (orientation === 'landscape') {
-        setPageWidth(size.height);
-        setPageHeight(size.width);
-      } else {
-        setPageWidth(size.width);
-        setPageHeight(size.height);
-      }
-    },
-    [orientation]
-  );
+  const handlePageSizeChange = (index: number) => {
+    const size = PAGE_SIZES[index];
+    if (!size) return;
+    const [w, h] = orientation === 'landscape' ? [size.height, size.width] : [size.width, size.height];
+    setPageWidth(w);
+    setPageHeight(h);
+  };
 
-  const handleOrientationChange = useCallback(
-    (newOrientation: 'portrait' | 'landscape') => {
-      if (newOrientation === orientation) return;
-      setOrientation(newOrientation);
-      // Swap width and height
-      setPageWidth(pageHeight);
-      setPageHeight(pageWidth);
-    },
-    [orientation, pageWidth, pageHeight]
-  );
+  const handleOrientationChange = (next: 'portrait' | 'landscape') => {
+    if (next === orientation) return;
+    setOrientation(next);
+    setPageWidth(pageHeight);
+    setPageHeight(pageWidth);
+  };
 
-  const handleApply = useCallback(() => {
-    onApply({
-      pageWidth,
-      pageHeight,
-      orientation,
-      marginTop,
-      marginBottom,
-      marginLeft,
-      marginRight,
-    });
+  const handleApply = () => {
+    onApply({ pageWidth, pageHeight, orientation, marginTop, marginBottom, marginLeft, marginRight });
     onClose();
-  }, [
-    pageWidth,
-    pageHeight,
-    orientation,
-    marginTop,
-    marginBottom,
-    marginLeft,
-    marginRight,
-    onApply,
-    onClose,
-  ]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'Enter') handleApply();
-    },
-    [onClose, handleApply]
-  );
-
-  if (!isOpen) return null;
+  };
 
   const sizeIndex = findPageSizeIndex(pageWidth, pageHeight);
 
-  return (
-    <div style={overlayStyle} onClick={onClose} onKeyDown={handleKeyDown}>
-      <div
-        style={dialogStyle}
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-label={t('dialogs.pageSetup.title')}
-      >
-        <div style={headerStyle}>{t('dialogs.pageSetup.title')}</div>
-
-        <div style={bodyStyle}>
-          {/* Page size section */}
-          <div style={sectionLabelStyle}>{t('dialogs.pageSetup.pageSize')}</div>
-
-          <div style={rowStyle}>
-            <label style={labelStyle}>{t('dialogs.pageSetup.sizeLabel')}</label>
-            <select
-              style={selectStyle}
-              value={sizeIndex}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-            >
-              {PAGE_SIZES.map((size, i) => (
-                <option key={size.labelKey} value={i}>
-                  {t(size.labelKey)}
-                </option>
-              ))}
-              {sizeIndex < 0 && <option value={-1}>{t('dialogs.pageSetup.custom')}</option>}
-            </select>
-          </div>
-
-          <div style={rowStyle}>
-            <label style={labelStyle}>{t('dialogs.pageSetup.orientation')}</label>
-            <select
-              style={selectStyle}
-              value={orientation}
-              onChange={(e) => handleOrientationChange(e.target.value as 'portrait' | 'landscape')}
-            >
-              <option value="portrait">{t('dialogs.pageSetup.portrait')}</option>
-              <option value="landscape">{t('dialogs.pageSetup.landscape')}</option>
-            </select>
-          </div>
-
-          {/* Margins section */}
-          <div style={{ ...sectionLabelStyle, marginTop: 4 }}>{t('dialogs.pageSetup.margins')}</div>
-
-          <div style={rowStyle}>
-            <label style={labelStyle}>{t('dialogs.pageSetup.top')}</label>
-            <input
-              type="number"
-              style={inputStyle}
-              min={0}
-              max={10}
-              step={0.1}
-              value={twipsToInches(marginTop)}
-              onChange={(e) => setMarginTop(inchesToTwips(Number(e.target.value) || 0))}
-            />
-            <span style={unitStyle}>in</span>
-          </div>
-
-          <div style={rowStyle}>
-            <label style={labelStyle}>{t('dialogs.pageSetup.bottom')}</label>
-            <input
-              type="number"
-              style={inputStyle}
-              min={0}
-              max={10}
-              step={0.1}
-              value={twipsToInches(marginBottom)}
-              onChange={(e) => setMarginBottom(inchesToTwips(Number(e.target.value) || 0))}
-            />
-            <span style={unitStyle}>in</span>
-          </div>
-
-          <div style={rowStyle}>
-            <label style={labelStyle}>{t('dialogs.pageSetup.left')}</label>
-            <input
-              type="number"
-              style={inputStyle}
-              min={0}
-              max={10}
-              step={0.1}
-              value={twipsToInches(marginLeft)}
-              onChange={(e) => setMarginLeft(inchesToTwips(Number(e.target.value) || 0))}
-            />
-            <span style={unitStyle}>in</span>
-          </div>
-
-          <div style={rowStyle}>
-            <label style={labelStyle}>{t('dialogs.pageSetup.right')}</label>
-            <input
-              type="number"
-              style={inputStyle}
-              min={0}
-              max={10}
-              step={0.1}
-              value={twipsToInches(marginRight)}
-              onChange={(e) => setMarginRight(inchesToTwips(Number(e.target.value) || 0))}
-            />
-            <span style={unitStyle}>in</span>
-          </div>
-        </div>
-
-        <div style={footerStyle}>
-          <button type="button" style={btnStyle} onClick={onClose}>
-            {t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            style={{
-              ...btnStyle,
-              backgroundColor: 'var(--doc-primary)',
-              color: 'var(--doc-on-primary)',
-              borderColor: 'var(--doc-primary)',
-            }}
-            onClick={handleApply}
-          >
-            {t('common.apply')}
-          </button>
-        </div>
-      </div>
+  const margin = (label: string, value: number, set: (twips: number) => void) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-14 text-muted-foreground">{label}</Label>
+      <NumberField
+        value={twipsToInches(value)}
+        onValueChange={(inches) => set(inchesToTwips(inches))}
+        min={0}
+        max={10}
+        step={0.1}
+        className="flex-1"
+        aria-label={`${label} margin (inches)`}
+      />
+      <span className="w-4 text-xs text-muted-foreground">in</span>
     </div>
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Page setup</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <Label className="w-20 text-muted-foreground">Size</Label>
+            <Select
+              value={String(sizeIndex)}
+              onValueChange={(v) => handlePageSizeChange(Number(v))}
+            >
+              <SelectTrigger size="sm" className="flex-1" aria-label="Page size">
+                <SelectValue>{sizeIndex >= 0 ? PAGE_SIZES[sizeIndex]?.label : 'Custom'}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZES.map((size, i) => (
+                  <SelectItem key={size.label} value={String(i)}>
+                    {size.label}
+                  </SelectItem>
+                ))}
+                {sizeIndex < 0 && (
+                  <SelectItem value="-1" disabled>
+                    Custom
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="w-20 text-muted-foreground">Orientation</Label>
+            <Select
+              value={orientation}
+              onValueChange={(v) => handleOrientationChange(v as 'portrait' | 'landscape')}
+            >
+              <SelectTrigger size="sm" className="flex-1" aria-label="Orientation">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="portrait">Portrait</SelectItem>
+                <SelectItem value="landscape">Landscape</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Margins
+            </Label>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              {margin('Top', marginTop, setMarginTop)}
+              {margin('Bottom', marginBottom, setMarginBottom)}
+              {margin('Left', marginLeft, setMarginLeft)}
+              {margin('Right', marginRight, setMarginRight)}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleApply}>
+            Apply
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,5 +1,5 @@
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
-import type { Style } from '@eigenpal/docx-editor-core/types/document';
+import type { Style, Watermark } from '@eigenpal/docx-editor-core/types/document';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Button } from '@patrick/ui/components/button';
 import {
@@ -19,14 +19,13 @@ import {
   Printer,
   Redo2,
   Settings,
-  Stamp,
   Undo2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
-import type { ToolbarImageContext } from '../../types/image';
+import type { ImageContext } from '../../types/image';
 import type { TableAction } from '../../types/table';
 import { FormatRow } from './format-row';
 import { TOGGLE_ACTIVE, keepFocus } from './shared';
@@ -45,7 +44,9 @@ export interface DocxToolbarProps {
   onRedo: () => void;
   onPrint?: (() => void) | undefined;
   onPageSetup?: (() => void) | undefined;
-  onWatermark?: (() => void) | undefined;
+  onApplyWatermark: (watermark: Watermark | null) => void;
+  currentWatermark?: Watermark | undefined;
+  watermarkPresets?: readonly string[] | undefined;
   readOnly?: boolean;
   currentFormatting: SelectionFormatting;
   onFormat: (action: FormattingAction) => void;
@@ -60,7 +61,7 @@ export interface DocxToolbarProps {
   onInsertTOC: () => void;
   tableContext?: TableContextInfo | null;
   onTableAction: (action: TableAction) => void;
-  imageContext?: ToolbarImageContext | null;
+  imageContext?: ImageContext | null;
   onImageWrapType: (wrapType: string) => void;
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
   onOpenImageProperties: () => void;
@@ -88,7 +89,9 @@ export function DocxToolbar(props: DocxToolbarProps) {
     onRedo,
     onPrint,
     onPageSetup,
-    onWatermark,
+    onApplyWatermark,
+    currentWatermark,
+    watermarkPresets,
     readOnly,
     currentFormatting,
     onFormat,
@@ -112,7 +115,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
 
   const currentMode = EDITING_MODES.find((m) => m.value === editingMode) ?? EDITING_MODES[0];
   const ModeIcon = currentMode.icon;
-  const hasOverflow = Boolean(onPrint || onPageSetup || onWatermark);
+  const hasOverflow = Boolean(onPrint || onPageSetup);
 
   return (
     <div className="@container relative flex-shrink-0 border-b border-border bg-background text-foreground z-31">
@@ -140,6 +143,9 @@ export function DocxToolbar(props: DocxToolbarProps) {
               onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
               onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
               onInsertTOC={onInsertTOC}
+              onApplyWatermark={onApplyWatermark}
+              currentWatermark={currentWatermark}
+              watermarkPresets={watermarkPresets}
               tableContext={tableContext}
               onTableAction={onTableAction}
               imageContext={imageContext}
@@ -168,11 +174,6 @@ export function DocxToolbar(props: DocxToolbarProps) {
               {onPageSetup && (
                 <DropdownMenuItem onSelect={onPageSetup}>
                   <Settings className="size-4" /> Page setup
-                </DropdownMenuItem>
-              )}
-              {onWatermark && (
-                <DropdownMenuItem onSelect={onWatermark}>
-                  <Stamp className="size-4" /> Watermark
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

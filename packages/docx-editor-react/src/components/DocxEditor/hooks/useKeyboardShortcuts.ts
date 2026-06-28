@@ -7,7 +7,7 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror';
 import type { useTableSelection } from '../../../hooks/useTableSelection';
 import type { useFindReplace } from '../../../hooks/useFindReplace';
-import type { useHyperlinkDialog } from '../../dialogs/HyperlinkDialog';
+import type { useHyperlinkDialog } from '../../dialogs/hyperlink';
 import type { PagedEditorRef } from '../PagedEditor';
 
 /**
