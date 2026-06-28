@@ -1,3 +1,4 @@
+import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import type { Style } from '@eigenpal/docx-editor-core/types/document';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Button } from '@patrick/ui/components/button';
@@ -25,7 +26,9 @@ import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
 import type { FormattingAction, SelectionFormatting } from '../Toolbar';
+import type { TableAction } from '../ui/TableToolbar';
 import { FormatRow } from './format-row';
+import type { ToolbarImageContext } from './groups/image-group';
 import { TOGGLE_ACTIVE, keepFocus } from './shared';
 
 export interface DocxToolbarProps {
@@ -55,6 +58,12 @@ export interface DocxToolbarProps {
   onInsertSectionBreakNextPage: () => void;
   onInsertSectionBreakContinuous: () => void;
   onInsertTOC: () => void;
+  tableContext?: TableContextInfo | null;
+  onTableAction: (action: TableAction) => void;
+  imageContext?: ToolbarImageContext | null;
+  onImageWrapType: (wrapType: string) => void;
+  onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
+  onOpenImageProperties: () => void;
 }
 
 /**
@@ -94,6 +103,12 @@ export function DocxToolbar(props: DocxToolbarProps) {
     onInsertSectionBreakNextPage,
     onInsertSectionBreakContinuous,
     onInsertTOC,
+    tableContext,
+    onTableAction,
+    imageContext,
+    onImageWrapType,
+    onImageTransform,
+    onOpenImageProperties,
   } = props;
   const { t } = useTranslation();
 
@@ -127,6 +142,12 @@ export function DocxToolbar(props: DocxToolbarProps) {
               onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
               onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
               onInsertTOC={onInsertTOC}
+              tableContext={tableContext}
+              onTableAction={onTableAction}
+              imageContext={imageContext}
+              onImageWrapType={onImageWrapType}
+              onImageTransform={onImageTransform}
+              onOpenImageProperties={onOpenImageProperties}
             />
           </>
         )}

@@ -186,6 +186,12 @@ export function DocxEditorToolbar({
           onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
           onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
           onInsertTOC={onInsertTOC}
+          tableContext={tableContext}
+          onTableAction={onTableAction}
+          imageContext={imageContext}
+          onImageWrapType={onImageWrapType}
+          onImageTransform={onImageTransform}
+          onOpenImageProperties={onOpenImageProperties}
         />
       </div>
     );

@@ -1,10 +1,14 @@
+import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import type { Style } from '@eigenpal/docx-editor-core/types/document';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Separator } from '@patrick/ui/components/separator';
 import type { FormattingAction, SelectionFormatting } from '../Toolbar';
+import type { TableAction } from '../ui/TableToolbar';
 import { CharacterGroup } from './groups/character-group';
+import { ImageGroup, type ToolbarImageContext } from './groups/image-group';
 import { InsertMenu } from './groups/insert-menu';
 import { ParagraphGroup } from './groups/paragraph-group';
+import { TableGroup } from './groups/table-group';
 
 export interface FormatRowProps {
   currentFormatting: SelectionFormatting;
@@ -18,13 +22,20 @@ export interface FormatRowProps {
   onInsertSectionBreakNextPage: () => void;
   onInsertSectionBreakContinuous: () => void;
   onInsertTOC: () => void;
+  // Contextual groups (appear by cursor, orthogonal to width)
+  tableContext?: TableContextInfo | null;
+  onTableAction: (action: TableAction) => void;
+  imageContext?: ToolbarImageContext | null;
+  onImageWrapType: (wrapType: string) => void;
+  onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
+  onOpenImageProperties: () => void;
 }
 
 /**
- * The collapsing format band. Composes the scope groups (character — which now
- * owns the Style picker, grouped with typography — then paragraph, then insert;
- * contextual table/image in a later phase). Each group owns its own responsive
- * collapse via container queries on the toolbar width.
+ * The collapsing format band. Composes the scope groups (character — which owns
+ * the Style picker, grouped with typography — paragraph, insert) plus the
+ * contextual table/image groups, which appear when the cursor is in a table /
+ * an image is selected. Each group owns its own responsive collapse.
  */
 export function FormatRow({
   currentFormatting,
@@ -38,6 +49,12 @@ export function FormatRow({
   onInsertSectionBreakNextPage,
   onInsertSectionBreakContinuous,
   onInsertTOC,
+  tableContext,
+  onTableAction,
+  imageContext,
+  onImageWrapType,
+  onImageTransform,
+  onOpenImageProperties,
 }: FormatRowProps) {
   return (
     <div className="flex items-center gap-1">
@@ -59,6 +76,24 @@ export function FormatRow({
         onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
         onInsertTOC={onInsertTOC}
       />
+
+      {tableContext?.isInTable && (
+        <>
+          <Separator orientation="vertical" className="mx-1 h-5" />
+          <TableGroup tableContext={tableContext} onTableAction={onTableAction} />
+        </>
+      )}
+      {imageContext && (
+        <>
+          <Separator orientation="vertical" className="mx-1 h-5" />
+          <ImageGroup
+            imageContext={imageContext}
+            onImageWrapType={onImageWrapType}
+            onImageTransform={onImageTransform}
+            onOpenImageProperties={onOpenImageProperties}
+          />
+        </>
+      )}
     </div>
   );
 }
