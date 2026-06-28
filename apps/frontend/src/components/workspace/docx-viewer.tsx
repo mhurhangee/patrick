@@ -4,7 +4,14 @@ import { estimateTextTokens } from "@patrick/shared";
 import { Button } from "@patrick/ui/components/button";
 import { InfoTooltip } from "@patrick/ui/components/tooltip";
 import { Minus, Plus } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	type ReactNode,
+	type RefObject,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { SaveStatus } from "@/components/save-status";
@@ -94,16 +101,85 @@ export function DocxViewer({
 	if (!editable) return <ReadOnlyDocx buffer={buffer} filename={filename} />;
 
 	return (
-		<div className="h-full overflow-auto">
-			<DocxEditor
-				ref={editorRef}
-				documentBuffer={buffer}
-				author="Attorney"
-				colorMode={resolvedTheme}
-				onChange={() => setRev((r) => r + 1)}
-				renderTitleBarRight={() => <SaveStatus status={status} />}
-				loadingIndicator={<DocxLoading />}
-			/>
+		<div className="relative h-full">
+			<div className="h-full overflow-auto">
+				<DocxEditor
+					ref={editorRef}
+					documentBuffer={buffer}
+					author="Attorney"
+					colorMode={resolvedTheme}
+					onChange={() => setRev((r) => r + 1)}
+					renderTitleBarRight={() => <SaveStatus status={status} />}
+					loadingIndicator={<DocxLoading />}
+				/>
+			</div>
+			<ZoomPill editorRef={editorRef} />
+		</div>
+	);
+}
+
+/**
+ * Floating zoom + page-count pill, bottom-center. The editor exposes no
+ * page-change event, so we poll current/total page; zoom drives the editor via
+ * its imperative `setZoom`. Shared by the editable and read-only viewers (the
+ * new toolbar carries no zoom widget). `children` appends extra readouts (the
+ * read-only viewer's token estimate).
+ */
+function ZoomPill({
+	editorRef,
+	children,
+}: {
+	editorRef: RefObject<DocxEditorRef | null>;
+	children?: ReactNode;
+}) {
+	const [zoom, setZoom] = useState(1);
+	const [page, setPage] = useState(1);
+	const [pages, setPages] = useState(0);
+
+	useEffect(() => {
+		const id = setInterval(() => {
+			const ed = editorRef.current;
+			if (!ed) return;
+			setPage(ed.getCurrentPage() || 1);
+			setPages(ed.getTotalPages() || 0);
+		}, 400);
+		return () => clearInterval(id);
+	}, [editorRef]);
+
+	const apply = (next: number) => {
+		const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +next.toFixed(2)));
+		editorRef.current?.setZoom(z);
+		setZoom(z);
+	};
+
+	return (
+		<div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-md backdrop-blur">
+			{pages > 0 && (
+				<>
+					<span className="px-1.5 tabular-nums">
+						{page} / {pages}
+					</span>
+					<span className="h-4 w-px bg-border" />
+				</>
+			)}
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				tooltip="Zoom out"
+				onClick={() => apply(zoom - ZOOM_STEP)}
+			>
+				<Minus />
+			</Button>
+			<span className="w-9 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				tooltip="Zoom in"
+				onClick={() => apply(zoom + ZOOM_STEP)}
+			>
+				<Plus />
+			</Button>
+			{children}
 		</div>
 	);
 }
@@ -118,38 +194,24 @@ function ReadOnlyDocx({
 	const { activeTaskId } = useActiveTask();
 	const { resolvedTheme } = useTheme();
 	const ref = useRef<DocxEditorRef>(null);
-	const [zoom, setZoom] = useState(1);
-	const [page, setPage] = useState(1);
-	const [pages, setPages] = useState(0);
 	const [tokens, setTokens] = useState<number | null>(null);
 	const gotTokens = useRef(false);
 
-	// The editor has no page-change event, so poll its current/total page. The
-	// character count (once the document agent is available) drives the token
+	// The character count (once the document agent is available) drives the token
 	// estimate and is recorded so the context control can cost this source.
 	useEffect(() => {
 		const id = setInterval(() => {
 			const ed = ref.current;
-			if (!ed) return;
-			setPage(ed.getCurrentPage() || 1);
-			setPages(ed.getTotalPages() || 0);
-			if (!gotTokens.current) {
-				const chars = ed.getAgent()?.getCharacterCount(true);
-				if (chars && chars > 0) {
-					gotTokens.current = true;
-					setTokens(estimateTextTokens(chars));
-					recordDocSize(activeTaskId ?? "", filename, { chars });
-				}
+			if (!ed || gotTokens.current) return;
+			const chars = ed.getAgent()?.getCharacterCount(true);
+			if (chars && chars > 0) {
+				gotTokens.current = true;
+				setTokens(estimateTextTokens(chars));
+				recordDocSize(activeTaskId ?? "", filename, { chars });
 			}
 		}, 400);
 		return () => clearInterval(id);
 	}, [activeTaskId, filename]);
-
-	const apply = (next: number) => {
-		const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +next.toFixed(2)));
-		ref.current?.setZoom(z);
-		setZoom(z);
-	};
 
 	return (
 		<div className="relative h-full">
@@ -159,39 +221,11 @@ function ReadOnlyDocx({
 					documentBuffer={buffer}
 					readOnly
 					colorMode={resolvedTheme}
-					showZoomControl={false}
 					loadingIndicator={<DocxLoading />}
 				/>
 			</div>
 
-			<div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-md backdrop-blur">
-				{pages > 0 && (
-					<>
-						<span className="px-1.5 tabular-nums">
-							{page} / {pages}
-						</span>
-						<span className="h-4 w-px bg-border" />
-					</>
-				)}
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					tooltip="Zoom out"
-					onClick={() => apply(zoom - ZOOM_STEP)}
-				>
-					<Minus />
-				</Button>
-				<span className="w-9 text-center tabular-nums">
-					{Math.round(zoom * 100)}%
-				</span>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					tooltip="Zoom in"
-					onClick={() => apply(zoom + ZOOM_STEP)}
-				>
-					<Plus />
-				</Button>
+			<ZoomPill editorRef={ref}>
 				{tokens != null && (
 					<>
 						<span className="h-4 w-px bg-border" />
@@ -202,7 +236,7 @@ function ReadOnlyDocx({
 						</InfoTooltip>
 					</>
 				)}
-			</div>
+			</ZoomPill>
 		</div>
 	);
 }
