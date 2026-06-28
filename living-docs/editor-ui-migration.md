@@ -12,7 +12,7 @@ before its legacy is deleted.
 |---|---|---|
 | Toolbar | ✅ done | new: `components/toolbar/*` + `src/types/*`. DocxToolbar is the only toolbar. Zoom → shared floating `ZoomPill` (`docx-viewer.tsx`). P5c deleted the legacy cluster (~1.9k LOC): `Toolbar`, `EditorToolbar`, `TitleBar`, `EditorToolbarContext`, `CommentsSidebarToggle`, `EditingModeDropdown`, `ui/MenuDropdown` + pruned `ui.ts`. P4 (floating selection) **dropped**. Residual: 5 legacy-only public DocxEditor props `_`-prefixed → prune holistically in A6 |
 | Dead-code cull (A0) | ✅ done | `EditableImage` (768 LOC) earlier; then the **dead-entry-point cull**: dropped the `/ui` + `/dialogs` package exports (0 external + 0 internal importers; `/hooks` + `/plugin-api` kept — `plugin-api` is used internally + is the extension surface) and deleted everything reachable only through them — **29 files, ~8.1k LOC**: `ui.ts`, `dialogs/index.ts`, the legacy `ui/*` controls (`ColorPicker`, `*Picker`s, `Align/List`-less leftovers, `ZoomControl`, `IconGridDropdown`, `TableGridInline`, `UnsavedIndicator`, `LoadingIndicator`, …), `ContextMenu`, `ResponsePreview`, 3 unwired dialogs (`InsertTable`/`InsertSymbol`/`PasteSpecial`), and orphaned glue helpers (`ClickPositionResolver`, `PointerEventHandler`, `reportIssue`, `tableSplit`). Found via knip in library mode. |
-| Dialogs (A2) | ⬜ | 14 inline-styled dialogs → `@patrick/ui` `Dialog` + form primitives (huge shrink) |
+| Dialogs (A2) | 🚧 | Triaged the 11 live dialogs (need? · right form? · good design?). ✅ cut orphans `InsertImageDialog` + `KeyboardShortcutsDialog` (kept `formatKeys` util). See dispositions below. |
 | Context menus (A3) | ⬜ | `TextContextMenu`/`ContextMenu`/`ImageContextMenu` → shadcn context-menu |
 | Sidebar / review cards (A4) | ⬜ | `CommentCard`/`TrackedChangeCard`/`ReplyThread`/`AddCommentCard` |
 | Remaining chrome (A5) | ⬜ | `TitleBar`, `DocumentOutline`, rulers, status indicators |
@@ -49,6 +49,13 @@ glue logic used by `useTableSelection`) + the dead component + icons.
 `EditingModeDropdown.tsx`, `CommentsSidebarToggle.tsx`, `ui/MenuDropdown.tsx` — gone, `ui.ts`
 toolbar exports pruned. The cluster was self-contained (referenced only each other + the
 Patrick-unused `/ui` barrel).
+
+## A2 dialog dispositions (decided with the user, 2026-06-28)
+- **Cut:** `InsertImageDialog` ✅ (dead), `KeyboardShortcutsDialog` ✅ (orphaned), `ImagePositionDialog` ⬜ (overkill — unwire from the image context menu).
+- **Reform → popover:** `HyperlinkDialog` (text + URL; unify with the existing inline `ui/HyperlinkPopup`; drop bookmark tabs/tooltip) · `ImagePropertiesDialog` (alt + dimensions; drop border) · `TablePropertiesDialog` (width/align) · `SplitCellDialog` (rows/cols steppers).
+- **Reform → find bar:** `FindReplaceDialog` → a bottom-centre **find box stacked above the zoom pill** (Option B), opened by Ctrl+F **or a search button added to the zoom pill** (`apps/frontend/.../zoom-pill.tsx`); Replace expands a 2nd row; reuse the existing find/replace logic (`useFindReplace`). Cross-boundary: the box is editor-rendered, exposed via `DocxEditorRef` so the frontend pill button can open it.
+- **Reform → Insert submenu:** `WatermarkDialog` → **Insert ▸ Watermark ▸ None / DRAFT / CONFIDENTIAL / Custom…** (simple diagonal text watermark; no modal). Also surface **footnote insertion** under the Insert menu.
+- **Keep as a (redesigned) dialog:** `PageSetupDialog` (size/orientation/margins — real filing need). `FootnotePropertiesDialog` kept, low priority.
 
 ## Still-live `ui/*` + hooks — cull as their consumers migrate
 After the A0 entry-point cull, the `ui/*` that REMAIN are the ones still reached from the `.`
