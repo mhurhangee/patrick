@@ -49,6 +49,8 @@ interface SplitCellDialogState {
   source: 'pm' | 'legacy' | null;
   capturedCellRow: number | null;
   capturedCellCol: number | null;
+  /** Painted caret rect captured when opening, to anchor the popover at the cell. */
+  rect: DOMRect | null;
 }
 
 interface BorderSpec {
@@ -71,6 +73,7 @@ interface BorderSpec {
  */
 export function useTableDialogs({
   getActiveEditorView,
+  getCaretRect,
   focusActiveEditor,
   tableSelection,
   borderSpecRef,
@@ -78,6 +81,7 @@ export function useTableDialogs({
   getCachedStyleResolver,
 }: {
   getActiveEditorView: () => EditorView | null | undefined;
+  getCaretRect: () => DOMRect | null;
   focusActiveEditor: () => void;
   tableSelection: ReturnType<typeof useTableSelection>;
   borderSpecRef: React.RefObject<BorderSpec>;
@@ -96,6 +100,7 @@ export function useTableDialogs({
     source: null,
     capturedCellRow: null,
     capturedCellCol: null,
+    rect: null,
   });
 
   const openSplitCellDialog = useCallback(() => {
@@ -111,8 +116,10 @@ export function useTableDialogs({
       source: pmConfig ? 'pm' : 'legacy',
       capturedCellRow: pmConfig?.capturedCellRow ?? null,
       capturedCellCol: pmConfig?.capturedCellCol ?? null,
+      // Capture the caret rect now (before the menu/focus shift) to anchor the popover.
+      rect: getCaretRect(),
     });
-  }, [getActiveEditorView, tableSelection]);
+  }, [getActiveEditorView, getCaretRect, tableSelection]);
 
   const handleTableAction = useCallback(
     (action: TableAction) => {

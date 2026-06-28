@@ -10,6 +10,8 @@ import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
 import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/HyperlinkDialog';
 import type { FindMatch, FindOptions, FindResult } from '../dialogs/FindReplaceDialog';
+import { CursorPopover } from '../toolbar/cursor-popover';
+import { SplitCellForm } from '../toolbar/split-cell-popover';
 
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
@@ -19,7 +21,6 @@ const HyperlinkDialog = lazy(() => import('../dialogs/HyperlinkDialog'));
 const TablePropertiesDialog = lazy(() =>
   import('../dialogs/TablePropertiesDialog').then((m) => ({ default: m.TablePropertiesDialog }))
 );
-const SplitCellDialog = lazy(() => import('../dialogs/SplitCellDialog'));
 const FootnotePropertiesDialog = lazy(() =>
   import('../dialogs/FootnotePropertiesDialog').then((m) => ({
     default: m.FootnotePropertiesDialog,
@@ -35,6 +36,7 @@ interface SplitCellDialogState {
   initialCols: number;
   minRows: number;
   minCols: number;
+  rect: DOMRect | null;
 }
 
 /**
@@ -141,17 +143,22 @@ export function DocxEditorDialogs({
           currentProps={pmTableContext?.table?.attrs}
         />
       )}
-      {splitCellDialogState.isOpen && (
-        <SplitCellDialog
-          isOpen={splitCellDialogState.isOpen}
-          onClose={onSplitCellDialogClose}
-          onApply={onSplitCellDialogApply}
-          initialRows={splitCellDialogState.initialRows}
-          initialCols={splitCellDialogState.initialCols}
-          minRows={splitCellDialogState.minRows}
-          minCols={splitCellDialogState.minCols}
-        />
-      )}
+      <CursorPopover
+        open={splitCellDialogState.isOpen}
+        onOpenChange={(o) => !o && onSplitCellDialogClose()}
+        rect={splitCellDialogState.rect}
+      >
+        {splitCellDialogState.isOpen && (
+          <SplitCellForm
+            initialRows={splitCellDialogState.initialRows}
+            initialCols={splitCellDialogState.initialCols}
+            minRows={splitCellDialogState.minRows}
+            minCols={splitCellDialogState.minCols}
+            onApply={onSplitCellDialogApply}
+            onClose={onSplitCellDialogClose}
+          />
+        )}
+      </CursorPopover>
       {showPageSetup && (
         <PageSetupDialog
           isOpen={showPageSetup}

@@ -41,6 +41,8 @@ interface RefApiInputs {
   scrollToParaIdImpl: (paraId: string, options?: ScrollToParaIdOptions) => boolean;
   scrollToPageImpl: (pageNumber: number) => void;
   setIsFocused: React.Dispatch<React.SetStateAction<boolean>>;
+  /** The painted pages container — root for reading the caret/selection rects. */
+  getPagesContainer: () => HTMLElement | null;
 }
 
 /**
@@ -77,11 +79,21 @@ function buildRefApi(inputs: RefApiInputs): PagedEditorRef {
     scrollToParaIdImpl,
     scrollToPageImpl,
     setIsFocused,
+    getPagesContainer,
   } = inputs;
   return {
     getDocument: () => hiddenPMRef.current?.getDocument() ?? null,
     getState: () => hiddenPMRef.current?.getState() ?? null,
     getView: () => hiddenPMRef.current?.getView() ?? null,
+    getCaretRect: () => {
+      const root = getPagesContainer();
+      if (!root) return null;
+      // The painted overlay tags the caret and each selection rect; prefer the
+      // collapsed-cursor caret, fall back to the first range rect.
+      const el = (root.querySelector('[data-testid="caret"]') ??
+        root.querySelector('[data-testid^="selection-rect-"]')) as HTMLElement | null;
+      return el ? el.getBoundingClientRect() : null;
+    },
     focus: () => {
       hiddenPMRef.current?.focus();
       setIsFocused(true);
@@ -178,6 +190,7 @@ export function usePagedEditorRefApi(opts: UsePagedEditorRefApiOptions): void {
     scrollToParaIdImpl,
     scrollToPageImpl,
     setIsFocused,
+    getPagesContainer,
     onReadyRef,
   } = opts;
 
@@ -194,6 +207,7 @@ export function usePagedEditorRefApi(opts: UsePagedEditorRefApiOptions): void {
         scrollToParaIdImpl,
         scrollToPageImpl,
         setIsFocused,
+        getPagesContainer,
       }),
     [layout, runLayoutPipeline, scrollToPositionImpl, scrollToParaIdImpl, scrollToPageImpl]
   );
@@ -214,6 +228,7 @@ export function usePagedEditorRefApi(opts: UsePagedEditorRefApiOptions): void {
           scrollToParaIdImpl,
           scrollToPageImpl,
           setIsFocused,
+          getPagesContainer,
         })
       );
     }

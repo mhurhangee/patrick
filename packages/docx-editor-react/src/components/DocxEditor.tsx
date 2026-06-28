@@ -1075,6 +1075,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     handleSplitCellDialogApply,
   } = useTableDialogs({
     getActiveEditorView,
+    getCaretRect: () => pagedEditorRef.current?.getCaretRect() ?? null,
     focusActiveEditor,
     tableSelection,
     borderSpecRef,
