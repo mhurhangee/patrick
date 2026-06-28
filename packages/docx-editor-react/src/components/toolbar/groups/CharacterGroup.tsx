@@ -12,14 +12,37 @@ import {
 } from '@patrick/ui/components/select';
 import { Separator } from '@patrick/ui/components/separator';
 import { Toggle } from '@patrick/ui/components/toggle';
-import { Bold, Italic, RemoveFormatting, Strikethrough, Subscript, Superscript, Underline } from 'lucide-react';
+import {
+  Baseline,
+  Bold,
+  Highlighter,
+  Italic,
+  Link2,
+  RemoveFormatting,
+  Strikethrough,
+  Subscript,
+  Superscript,
+  Underline,
+} from 'lucide-react';
 import { useMemo } from 'react';
 import {
   type FontOption,
   normalizeFontFamilies,
 } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { FormattingAction, SelectionFormatting } from '../../Toolbar';
+import { ColorControl } from '../ColorControl';
 import { TOGGLE_ACTIVE, keepFocus } from '../shared';
+
+// Grayscale + Office standard colours (hex without #).
+const TEXT_SWATCHES = [
+  '000000', '434343', '666666', '999999', 'B7B7B7', 'CCCCCC', 'D9D9D9', 'EFEFEF', 'F3F3F3', 'FFFFFF',
+  'C00000', 'FF0000', 'FFC000', 'FFFF00', '92D050', '00B050', '00B0F0', '0070C0', '002060', '7030A0',
+] as const;
+// Word's named highlight palette (each maps to an OOXML highlight name).
+const HIGHLIGHT_SWATCHES = [
+  'FFFF00', '00FF00', '00FFFF', 'FF00FF', '0000FF', 'FF0000', '000080', '008080', '008000', '800080',
+  '800000', '808000', '808080', 'C0C0C0',
+] as const;
 
 const DEFAULT_FONTS: FontOption[] = [
   { name: 'Arial', fontFamily: 'Arial', category: 'sans-serif' },
@@ -199,6 +222,35 @@ export function CharacterGroup({
         >
           <Subscript />
         </Toggle>
+
+        <ColorControl
+          icon={Baseline}
+          tooltip="Text colour"
+          currentColor={currentFormatting.color}
+          swatches={TEXT_SWATCHES}
+          clearLabel="Automatic"
+          onPick={(hex) => onFormat({ type: 'textColor', value: `#${hex}` })}
+          onClear={() => onFormat({ type: 'textColor', value: { auto: true } })}
+        />
+        <ColorControl
+          icon={Highlighter}
+          tooltip="Highlight"
+          currentColor={currentFormatting.highlight}
+          swatches={HIGHLIGHT_SWATCHES}
+          clearLabel="No highlight"
+          onPick={(hex) => onFormat({ type: 'highlightColor', value: hex })}
+          onClear={() => onFormat({ type: 'highlightColor', value: 'none' })}
+        />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          tooltip="Insert link"
+          onMouseDown={keepFocus}
+          onClick={() => onFormat('insertLink')}
+        >
+          <Link2 />
+        </Button>
+
         <Button
           variant="ghost"
           size="icon-sm"
