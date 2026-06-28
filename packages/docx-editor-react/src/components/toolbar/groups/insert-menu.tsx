@@ -71,7 +71,7 @@ export function InsertMenu({
           <ChevronDown />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className='w-48'>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Table2 className="size-4" /> Table
