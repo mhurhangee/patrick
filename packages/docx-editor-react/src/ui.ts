@@ -12,27 +12,6 @@
  * @public
  */
 
-// ============================================================================
-// TOOLBAR
-// ============================================================================
-
-export {
-  EditorToolbar,
-  type EditorToolbarProps,
-  type TitleBarProps,
-  type LogoProps,
-  type DocumentNameProps,
-  type TitleBarRightProps,
-} from './components/EditorToolbar';
-
-export {
-  Toolbar,
-  type ToolbarProps,
-  ToolbarButton,
-  ToolbarGroup,
-  ToolbarSeparator,
-} from './components/Toolbar';
-
 export {
   ContextMenu,
   type ContextMenuProps,

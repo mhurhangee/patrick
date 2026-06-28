@@ -10,7 +10,7 @@ before its legacy is deleted.
 ## Status by area
 | Area | Status | Notes |
 |---|---|---|
-| Toolbar | 🚧 P0–P3 + P5a + P5b done | new: `components/toolbar/*` + `src/types/*`. DocxToolbar is now the only toolbar (flag gone). Zoom dropped from the toolbar → restored as a shared floating `ZoomPill` (editable + read-only viewers, `docx-viewer.tsx`). 5 legacy-only public DocxEditor props `_`-prefixed (prune holistically in A6). P4 (floating selection) **dropped**. Left: P5c delete legacy toolbar files |
+| Toolbar | ✅ done | new: `components/toolbar/*` + `src/types/*`. DocxToolbar is the only toolbar. Zoom → shared floating `ZoomPill` (`docx-viewer.tsx`). P5c deleted the legacy cluster (~1.9k LOC): `Toolbar`, `EditorToolbar`, `TitleBar`, `EditorToolbarContext`, `CommentsSidebarToggle`, `EditingModeDropdown`, `ui/MenuDropdown` + pruned `ui.ts`. P4 (floating selection) **dropped**. Residual: 5 legacy-only public DocxEditor props `_`-prefixed → prune holistically in A6 |
 | Dead-code cull (A0) | 🚧 | ✅ `EditableImage` deleted (768 LOC, 0 importers). ❌ `ui/Select` + `ui/IconGridDropdown` are NOT dead (audit was wrong) — still used by legacy pickers/dropdowns; delete when those consumers go |
 | Dialogs (A2) | ⬜ | 14 inline-styled dialogs → `@patrick/ui` `Dialog` + form primitives (huge shrink) |
 | Context menus (A3) | ⬜ | `TextContextMenu`/`ContextMenu`/`ImageContextMenu` → shadcn context-menu |
@@ -37,11 +37,16 @@ its `TableToolbar` **component is dead** (never rendered, only re-exported via t
 `ui.ts`). What survives there = the table-**operations** re-export (`./TableToolbar/operations`,
 glue logic used by `useTableSelection`) + the dead component + icons.
 
-## Legacy toolbar — delete at toolbar P5 (verify 0 importers each first)
+## Legacy toolbar cluster — ✅ deleted (P5c)
 `Toolbar.tsx`, `TitleBar.tsx`, `EditorToolbar.tsx`, `EditorToolbarContext.tsx`,
-`EditingModeDropdown.tsx`, `CommentsSidebarToggle.tsx`, `hooks/useFixedDropdown.ts`, and the
-toolbar-only `ui/*` (`Button`, `Tooltip`, `Select`, `MenuDropdown`, `ColorPicker`,
-`IconGridDropdown`, `AlignmentButtons`, `ListButtons`, `FontPicker`, `FontSizePicker`,
-`StylePicker`, `LineSpacingPicker`, `ZoomControl`, `HyperlinkPopup`, `TableGridInline`, the
-`Table*Picker`/`Image*Dropdown`). ⚠️ some `ui/*` are shared with dialogs/menus — re-check
-importers per file at deletion.
+`EditingModeDropdown.tsx`, `CommentsSidebarToggle.tsx`, `ui/MenuDropdown.tsx` — gone, `ui.ts`
+toolbar exports pruned. The cluster was self-contained (referenced only each other + the
+Patrick-unused `/ui` barrel).
+
+## Orphaned ui/* + hooks — cull in A6 (verify 0 importers each first)
+`hooks/useFixedDropdown.ts` and the toolbar-only `ui/*` (`Button`, `Tooltip`, `Select`,
+`ColorPicker`, `IconGridDropdown`, `AlignmentButtons`, `ListButtons`, `FontPicker`,
+`FontSizePicker`, `StylePicker`, `LineSpacingPicker`, `ZoomControl`, `HyperlinkPopup`,
+`TableGridInline`, the `Table*Picker`/`Image*Dropdown`). ⚠️ some are shared with dialogs/menus
+(still consumed via `ui.ts` / surviving chrome) — re-check importers per file at deletion.
+Also prune the 5 `_`-prefixed dead public `DocxEditor` props here.
