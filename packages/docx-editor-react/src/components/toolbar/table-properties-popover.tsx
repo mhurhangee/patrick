@@ -13,8 +13,7 @@ import type { TablePropertiesValue } from '../../types/table';
 
 /**
  * Table-properties form shown in a cursor-anchored popover (off the table menu):
- * preferred width (auto / fixed twips / percentage) + alignment. Replaces the
- * old modal.
+ * preferred width (auto / fixed twips / percentage) + alignment.
  */
 export function TablePropertiesForm({
   current,

@@ -3,7 +3,7 @@ import type { Style, Watermark } from '@eigenpal/docx-editor-core/types/document
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Separator } from '@patrick/ui/components/separator';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
-import type { ImageContext, ImagePropertiesData } from '../../types/image';
+import type { ImageContext } from '../../types/image';
 import type { TableAction } from '../../types/table';
 import { CharacterGroup } from './groups/character-group';
 import { ImageGroup } from './groups/image-group';
@@ -32,7 +32,7 @@ export interface FormatRowProps {
   imageContext?: ImageContext | null;
   onImageWrapType: (wrapType: string) => void;
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
-  onApplyImageProperties: (data: ImagePropertiesData) => void;
+  onOpenImageProperties: () => void;
 }
 
 /**
@@ -61,7 +61,7 @@ export function FormatRow({
   imageContext,
   onImageWrapType,
   onImageTransform,
-  onApplyImageProperties,
+  onOpenImageProperties,
 }: FormatRowProps) {
   return (
     <div className="flex items-center gap-1">
@@ -100,7 +100,7 @@ export function FormatRow({
             imageContext={imageContext}
             onImageWrapType={onImageWrapType}
             onImageTransform={onImageTransform}
-            onApplyImageProperties={onApplyImageProperties}
+            onOpenImageProperties={onOpenImageProperties}
           />
         </>
       )}

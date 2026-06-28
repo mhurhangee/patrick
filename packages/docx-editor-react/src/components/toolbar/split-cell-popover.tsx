@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 /**
  * Split-cell form shown in a cursor-anchored popover (off the table menu) — the
- * number of rows/columns to split the current cell into. Replaces the old modal.
+ * number of rows/columns to split the current cell into.
  */
 export function SplitCellForm({
   initialRows,

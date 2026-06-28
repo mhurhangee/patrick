@@ -25,9 +25,9 @@ import { useState } from 'react';
 import { keepFocus } from '../shared';
 import { TableGrid } from './table-grid';
 
-const DEFAULT_WATERMARK_PRESETS = ['DRAFT', 'CONFIDENTIAL'] as const;
+const WATERMARK_PRESETS = ['DRAFT', 'CONFIDENTIAL'] as const;
 
-/** A simple diagonal grey text watermark — the preset shape (matches the old dialog's defaults). */
+/** A simple diagonal grey text watermark. */
 function textWatermark(text: string): Watermark {
   return { kind: 'text', text, font: 'Calibri', color: '#C0C0C0', semitransparent: true, layout: 'diagonal' };
 }
@@ -59,7 +59,7 @@ export function InsertMenu({
   // Controlled so the custom table grid (not a menu item) can close the menu.
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
-  const presets = watermarkPresets ?? DEFAULT_WATERMARK_PRESETS;
+  const presets = watermarkPresets ?? WATERMARK_PRESETS;
   const watermarkValue = currentWatermark?.kind === 'text' ? currentWatermark.text : 'none';
 
   return (

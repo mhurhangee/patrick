@@ -30,6 +30,17 @@ export function normalizeUrl(url: string): string {
   return trimmed;
 }
 
+/** Whether `url` normalizes to a parseable web/mail/tel/ftp link. */
+export function isValidUrl(url: string): boolean {
+  if (!url.trim()) return false;
+  try {
+    const parsed = new URL(normalizeUrl(url));
+    return ['http:', 'https:', 'mailto:', 'tel:', 'ftp:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
 export interface UseHyperlinkDialogState {
   isOpen: boolean;
   initialData?: HyperlinkData;

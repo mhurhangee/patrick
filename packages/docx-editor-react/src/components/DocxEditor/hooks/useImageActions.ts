@@ -35,6 +35,7 @@ export function useImageActions({
   pmImageContext,
   zoom,
   getActiveEditorView,
+  getCaretRect,
   focusActiveEditor,
   pushDocument,
 }: {
@@ -42,10 +43,26 @@ export function useImageActions({
   pmImageContext: ImageContext | null | undefined;
   zoom: number;
   getActiveEditorView: () => EditorView | null | undefined;
+  getCaretRect: () => DOMRect | null;
   focusActiveEditor: () => void;
   pushDocument: (doc: Document) => void;
 }) {
   const [footnotePropsOpen, setFootnotePropsOpen] = useState(false);
+  const [imagePropsOpen, setImagePropsOpen] = useState(false);
+  const [imagePropsRect, setImagePropsRect] = useState<DOMRect | null>(null);
+
+  // Opened from the toolbar button (no arg → anchor at the painted caret/image
+  // box, which is live because the button keeps editor focus) or from the image
+  // context menu, which passes its click point: opening the menu blurs the
+  // editor and clears the image selection, so the image box is gone by the time
+  // the action fires — the menu's own coords are the only stable anchor.
+  const handleOpenImageProperties = useCallback(
+    (rect?: DOMRect | null) => {
+      setImagePropsRect(rect ?? getCaretRect());
+      setImagePropsOpen(true);
+    },
+    [getCaretRect]
+  );
 
   const handleImageWrapType = useCallback(
     (toolbarValue: string) => {
@@ -174,6 +191,10 @@ export function useImageActions({
   return {
     footnotePropsOpen,
     setFootnotePropsOpen,
+    imagePropsOpen,
+    setImagePropsOpen,
+    imagePropsRect,
+    handleOpenImageProperties,
     handleImageWrapType,
     handleImageTransform,
     handleApplyImageProperties,

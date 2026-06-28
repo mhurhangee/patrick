@@ -8,11 +8,9 @@ import { useAspectLockedSize } from '../../../hooks/useAspectLockedSize';
 import type { ImageContext, ImagePropertiesData } from '../../../types/image';
 
 /**
- * The image-properties form shown in a popover off the image group's properties
- * button: alt text + dimensions (with an aspect-ratio lock). Border styling from
- * the old modal is dropped (fringe for figures); existing border attrs are
- * preserved on apply. Mounts fresh each time the popover opens, so it seeds from
- * the current image on mount.
+ * The image-properties form (alt text + dimensions with an aspect-ratio lock).
+ * Border is not editable here; existing border attrs are preserved on apply.
+ * Mounts fresh each open, so it seeds from the current image on mount.
  */
 export function ImagePropertiesForm({
   imageContext,

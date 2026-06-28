@@ -92,8 +92,11 @@ function buildRefApi(inputs: RefApiInputs): PagedEditorRef {
       // stealing focus. Prefer the collapsed caret, fall back to a range rect.
       const root = getPagesContainer()?.parentElement;
       if (!root) return null;
+      // Caret (collapsed) → selection rect (range) → image box (an image
+      // NodeSelection paints only the image overlay, no caret/selection rect).
       const el = (root.querySelector('[data-testid="caret"]') ??
-        root.querySelector('[data-testid^="selection-rect-"]')) as HTMLElement | null;
+        root.querySelector('[data-testid^="selection-rect-"]') ??
+        root.querySelector('[data-testid="image-selection-box"]')) as HTMLElement | null;
       return el ? el.getBoundingClientRect() : null;
     },
     focus: () => {

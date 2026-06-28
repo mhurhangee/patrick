@@ -672,6 +672,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // pagedEditorRef.current.getView() for orphan cleanup) can be wired before
   // the trackedChanges effect that drives `setComments`.
   const pagedEditorRef = useRef<PagedEditorRef>(null);
+  // Stable getter for the painted caret rect — anchors the cursor popovers.
+  const getCaretRect = useCallback(() => pagedEditorRef.current?.getCaretRect() ?? null, []);
 
   const {
     comments,
@@ -1054,6 +1056,10 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const {
     footnotePropsOpen,
     setFootnotePropsOpen,
+    imagePropsOpen,
+    setImagePropsOpen,
+    imagePropsRect,
+    handleOpenImageProperties,
     handleImageWrapType,
     handleImageTransform,
     handleApplyImageProperties,
@@ -1063,6 +1069,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pmImageContext: state.pmImageContext,
     zoom: state.zoom,
     getActiveEditorView,
+    getCaretRect,
     focusActiveEditor,
     pushDocument,
   });
@@ -1078,7 +1085,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     handleSplitCellDialogApply,
   } = useTableDialogs({
     getActiveEditorView,
-    getCaretRect: () => pagedEditorRef.current?.getCaretRect() ?? null,
+    getCaretRect,
     focusActiveEditor,
     tableSelection,
     borderSpecRef,
@@ -1751,7 +1758,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             onInsertTOC={handleInsertTOC}
             onImageWrapType={handleImageWrapType}
             onImageTransform={handleImageTransform}
-            onApplyImageProperties={handleApplyImageProperties}
+            onOpenImageProperties={handleOpenImageProperties}
             onPageSetup={handleOpenPageSetup}
             onApplyWatermark={handleWatermarkApply}
             currentWatermark={currentWatermark}
@@ -1853,6 +1860,11 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           imageContextMenu={imageContextMenu}
           onImageWrapApply={handleImageWrapApply}
           imageContextMenuTextActions={imageContextMenuTextActions}
+          onOpenImageProperties={() =>
+            handleOpenImageProperties(
+              new DOMRect(imageContextMenu.position.x, imageContextMenu.position.y, 0, 0)
+            )
+          }
           readOnly={readOnly}
         />
       }
@@ -1868,7 +1880,12 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           hyperlinkDialog={hyperlinkDialog}
           onHyperlinkSubmit={handleHyperlinkSubmit}
           onHyperlinkRemove={handleHyperlinkRemove}
-          getCaretRect={() => pagedEditorRef.current?.getCaretRect() ?? null}
+          getCaretRect={getCaretRect}
+          imagePropsOpen={imagePropsOpen}
+          imagePropsRect={imagePropsRect}
+          onImagePropsClose={() => setImagePropsOpen(false)}
+          onApplyImageProperties={handleApplyImageProperties}
+          pmImageContext={state.pmImageContext}
           tablePropsOpen={tablePropsOpen}
           tablePropsRect={tablePropsRect}
           onTablePropsClose={() => setTablePropsOpen(false)}

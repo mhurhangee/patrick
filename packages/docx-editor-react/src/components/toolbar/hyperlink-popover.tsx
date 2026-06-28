@@ -2,13 +2,9 @@ import { Button } from '@patrick/ui/components/button';
 import { Input } from '@patrick/ui/components/input';
 import { Label } from '@patrick/ui/components/label';
 import { useState } from 'react';
-import { type HyperlinkData, normalizeUrl } from '../dialogs/hyperlink';
+import { type HyperlinkData, isValidUrl, normalizeUrl } from '../dialogs/hyperlink';
 
-/**
- * Insert/edit a hyperlink — a small text + URL popover anchored at the selection
- * (replaces the old modal with its URL/bookmark tabs + tooltip). Bookmarks and
- * tooltips were patent-irrelevant cruft and are dropped.
- */
+/** Insert/edit a hyperlink — a text + URL popover anchored at the selection. */
 export function HyperlinkForm({
   initialData,
   selectedText,
@@ -27,8 +23,9 @@ export function HyperlinkForm({
   const [text, setText] = useState(initialData?.displayText ?? selectedText ?? '');
   const [url, setUrl] = useState(initialData?.url ?? '');
 
+  const valid = isValidUrl(url);
   const submit = () => {
-    if (!url.trim()) return;
+    if (!valid) return;
     onSubmit({ url: normalizeUrl(url), displayText: text || undefined, tooltip: initialData?.tooltip });
     onClose();
   };
@@ -81,7 +78,7 @@ export function HyperlinkForm({
           <Button variant="outline" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button size="sm" onClick={submit} disabled={!url.trim()}>
+          <Button size="sm" onClick={submit} disabled={!valid}>
             {isEditing ? 'Update' : 'Insert'}
           </Button>
         </div>

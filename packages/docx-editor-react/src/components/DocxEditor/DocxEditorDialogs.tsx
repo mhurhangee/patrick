@@ -10,9 +10,11 @@ import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
 import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/hyperlink';
 import type { FindMatch, FindOptions, FindResult } from '@eigenpal/docx-editor-core/utils/findReplace';
+import type { ImageContext, ImagePropertiesData } from '../../types/image';
 import { CursorPopover } from '../toolbar/cursor-popover';
 import { FindReplaceBar } from '../toolbar/find-replace-bar';
 import { HyperlinkForm } from '../toolbar/hyperlink-popover';
+import { ImagePropertiesForm } from '../toolbar/groups/image-properties-popover';
 import { SplitCellForm } from '../toolbar/split-cell-popover';
 import { TablePropertiesForm } from '../toolbar/table-properties-popover';
 
@@ -63,6 +65,11 @@ export function DocxEditorDialogs({
   splitCellDialogState,
   onSplitCellDialogClose,
   onSplitCellDialogApply,
+  imagePropsOpen,
+  imagePropsRect,
+  onImagePropsClose,
+  onApplyImageProperties,
+  pmImageContext,
   showPageSetup,
   onPageSetupClose,
   onPageSetupApply,
@@ -96,6 +103,11 @@ export function DocxEditorDialogs({
   onSplitCellDialogClose: () => void;
   onSplitCellDialogApply: (rows: number, cols: number) => void;
   // Image properties
+  imagePropsOpen: boolean;
+  imagePropsRect: DOMRect | null;
+  onImagePropsClose: () => void;
+  onApplyImageProperties: (data: ImagePropertiesData) => void;
+  pmImageContext: ImageContext | null | undefined;
   // Page setup
   showPageSetup: boolean;
   onPageSetupClose: () => void;
@@ -174,6 +186,19 @@ export function DocxEditorDialogs({
             minCols={splitCellDialogState.minCols}
             onApply={onSplitCellDialogApply}
             onClose={onSplitCellDialogClose}
+          />
+        )}
+      </CursorPopover>
+      <CursorPopover
+        open={imagePropsOpen}
+        onOpenChange={(o) => !o && onImagePropsClose()}
+        rect={imagePropsRect}
+      >
+        {imagePropsOpen && pmImageContext && (
+          <ImagePropertiesForm
+            imageContext={pmImageContext}
+            onApply={onApplyImageProperties}
+            onClose={onImagePropsClose}
           />
         )}
       </CursorPopover>

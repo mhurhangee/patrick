@@ -425,8 +425,11 @@ export function ImageSelectionOverlay({
         }}
       />
 
-      {/* Draggable body area - click and drag to move */}
+      {/* Draggable body area - click and drag to move. Tagged so getCaretRect
+          can anchor the image-properties popover at the selected image (an image
+          NodeSelection paints no caret/selection rect). */}
       <div
+        data-testid="image-selection-box"
         style={{
           position: 'absolute',
           left,

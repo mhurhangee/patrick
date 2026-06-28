@@ -25,7 +25,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
-import type { ImageContext, ImagePropertiesData } from '../../types/image';
+import type { ImageContext } from '../../types/image';
 import type { TableAction } from '../../types/table';
 import { FormatRow } from './format-row';
 import { TOGGLE_ACTIVE, keepFocus } from './shared';
@@ -64,7 +64,7 @@ export interface DocxToolbarProps {
   imageContext?: ImageContext | null;
   onImageWrapType: (wrapType: string) => void;
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
-  onApplyImageProperties: (data: ImagePropertiesData) => void;
+  onOpenImageProperties: () => void;
 }
 
 /**
@@ -109,7 +109,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
     imageContext,
     onImageWrapType,
     onImageTransform,
-    onApplyImageProperties,
+    onOpenImageProperties,
   } = props;
   const { t } = useTranslation();
 
@@ -151,7 +151,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
               imageContext={imageContext}
               onImageWrapType={onImageWrapType}
               onImageTransform={onImageTransform}
-              onApplyImageProperties={onApplyImageProperties}
+              onOpenImageProperties={onOpenImageProperties}
             />
           </>
         )}
