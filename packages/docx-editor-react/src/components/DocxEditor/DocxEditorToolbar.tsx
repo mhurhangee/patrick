@@ -10,6 +10,8 @@ import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import { CommentsSidebarToggle } from './CommentsSidebarToggle';
 import { EditingModeDropdown } from './EditingModeDropdown';
 import type { EditorMode } from './internals/editing-modes';
+import { DocxToolbar } from '../toolbar/DocxToolbar';
+import { useNewToolbarFlag } from '../toolbar/use-new-toolbar-flag';
 
 interface ImageContext {
   pos: number;
@@ -141,6 +143,48 @@ export function DocxEditorToolbar({
   const toolbarStyle: CSSProperties = {
     transition: 'border-radius 220ms cubic-bezier(0.4, 0, 0.2, 1)',
   };
+
+  const canUndo = pmState ? undoDepth(pmState) > 0 : false;
+  const canRedo = pmState ? redoDepth(pmState) > 0 : false;
+  // Dev flag: mount the rebuilt toolbar in place of the legacy one (temporary).
+  const useNext = useNewToolbarFlag();
+
+  const handleModeChange = (mode: EditorMode) => {
+    setEditingMode(mode);
+    if (mode === 'suggesting') setShowCommentsSidebar(true);
+  };
+  const handleToggleComments = () => {
+    setShowCommentsSidebar((v) => !v);
+    setExpandedSidebarItem(null);
+  };
+
+  if (useNext) {
+    return (
+      <div ref={toolbarRefCallback} className="z-50 flex flex-col gap-0 flex-shrink-0">
+        <DocxToolbar
+          renderLogo={renderLogo}
+          documentName={documentName}
+          onDocumentNameChange={onDocumentNameChange}
+          documentNameEditable={documentNameEditable}
+          renderTitleBarRight={renderTitleBarRight}
+          editingMode={editingMode}
+          onModeChange={handleModeChange}
+          commentsActive={showCommentsSidebar}
+          onToggleComments={handleToggleComments}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={onUndo}
+          onRedo={onRedo}
+          onPrint={onPrint}
+          onPageSetup={onPageSetup}
+          onWatermark={onWatermark}
+          readOnly={readOnly}
+          currentFormatting={selectionFormatting}
+          onFormat={onFormat}
+        />
+      </div>
+    );
+  }
 
   return (
     <div ref={toolbarRefCallback} className="z-50 flex flex-col gap-0 flex-shrink-0">
