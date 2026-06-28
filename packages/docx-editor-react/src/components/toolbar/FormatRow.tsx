@@ -1,6 +1,8 @@
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
+import { Separator } from '@patrick/ui/components/separator';
 import type { FormattingAction, SelectionFormatting } from '../Toolbar';
 import { CharacterGroup } from './groups/CharacterGroup';
+import { ParagraphGroup } from './groups/ParagraphGroup';
 
 export interface FormatRowProps {
   currentFormatting: SelectionFormatting;
@@ -23,6 +25,8 @@ export function FormatRow({ currentFormatting, onFormat, documentFonts, fontFami
         documentFonts={documentFonts}
         fontFamilies={fontFamilies}
       />
+      <Separator orientation="vertical" className="mx-1 h-5" />
+      <ParagraphGroup currentFormatting={currentFormatting} onFormat={onFormat} />
     </div>
   );
 }
