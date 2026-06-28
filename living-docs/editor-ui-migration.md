@@ -20,6 +20,13 @@ before its legacy is deleted.
 | Shell responsiveness (B) | ⬜ | fit-width zoom + pane px-floors/auto-collapse (the "editor behind chat") |
 | Dark-mode highlights (B) | ⬜ | counter-invert highlighted runs (needs painter to tag them) |
 
+## Code-review follow-ups (toolbar branch, deferred — minor)
+From the high-effort review; confirmed-real but low priority:
+- **font `groups` memo** (`character-group.tsx`) lists `currentFont` in deps → rebuilds the whole font catalogue on every cursor move between differently-fonted runs. Memoize the stable category groups on `[documentFonts, fontFamilies]`, append the current font in a cheap derived step.
+- **`ZoomPill` 400ms polling** (`docx-viewer.tsx`) runs for every editor's lifetime (page count needs it; zoom % doesn't). Consider sharing one timer / pausing when the doc isn't visible.
+- **hex `<input>`** in `color-control.tsx` is hand-rolled vs `@patrick/ui` `Input` — swap when revisiting colour controls (A-series).
+- Pre-existing core quirk (not from this branch): `highlightColors.ts` (serialise) and `colorResolver.ts` `HIGHLIGHT_COLORS` (render) disagree on the dark-variant hexes, so picked vs rendered highlight differ slightly for the 5 dark colours.
+
 ## 🔒 Glue / brain — keep, never rewrite
 `DocxEditor.tsx`, `PagedEditor.tsx`, `HiddenProseMirror.tsx`, all `DocxEditor/hooks/*` +
 `hooks/*`, selection-geometry overlays, `renderAsync.ts`.
