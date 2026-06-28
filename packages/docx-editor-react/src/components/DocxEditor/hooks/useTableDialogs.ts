@@ -91,6 +91,7 @@ export function useTableDialogs({
   ) => ReturnType<typeof createStyleResolver>;
 }) {
   const [tablePropsOpen, setTablePropsOpen] = useState(false);
+  const [tablePropsRect, setTablePropsRect] = useState<DOMRect | null>(null);
   const [splitCellDialogState, setSplitCellDialogState] = useState<SplitCellDialogState>({
     isOpen: false,
     initialRows: 1,
@@ -229,6 +230,7 @@ export function useTableDialogs({
             } else if (action.type === 'autoFitContents') {
               autoFitContents()(view.state, view.dispatch);
             } else if (action.type === 'openTableProperties') {
+              setTablePropsRect(getCaretRect());
               setTablePropsOpen(true);
             } else if (action.type === 'applyTableStyle') {
               // Resolve style data from built-in presets or the document's stylesheet.
@@ -358,6 +360,7 @@ export function useTableDialogs({
   return {
     tablePropsOpen,
     setTablePropsOpen,
+    tablePropsRect,
     splitCellDialogState,
     openSplitCellDialog,
     handleTableAction,

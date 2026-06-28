@@ -12,15 +12,13 @@ import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/HyperlinkDial
 import type { FindMatch, FindOptions, FindResult } from '../dialogs/FindReplaceDialog';
 import { CursorPopover } from '../toolbar/cursor-popover';
 import { SplitCellForm } from '../toolbar/split-cell-popover';
+import { TablePropertiesForm } from '../toolbar/table-properties-popover';
 
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
 // module load, so co-locating with the JSX keeps the code-split boundary.
 const FindReplaceDialog = lazy(() => import('../dialogs/FindReplaceDialog'));
 const HyperlinkDialog = lazy(() => import('../dialogs/HyperlinkDialog'));
-const TablePropertiesDialog = lazy(() =>
-  import('../dialogs/TablePropertiesDialog').then((m) => ({ default: m.TablePropertiesDialog }))
-);
 const FootnotePropertiesDialog = lazy(() =>
   import('../dialogs/FootnotePropertiesDialog').then((m) => ({
     default: m.FootnotePropertiesDialog,
@@ -57,6 +55,7 @@ export function DocxEditorDialogs({
   onHyperlinkSubmit,
   onHyperlinkRemove,
   tablePropsOpen,
+  tablePropsRect,
   onTablePropsClose,
   pmTableContext,
   getActiveEditorView,
@@ -85,6 +84,7 @@ export function DocxEditorDialogs({
   onHyperlinkRemove: () => void;
   // Table properties
   tablePropsOpen: boolean;
+  tablePropsRect: DOMRect | null;
   onTablePropsClose: () => void;
   pmTableContext: { table?: { attrs?: Record<string, unknown> } } | null | undefined;
   getActiveEditorView: () => EditorView | null | undefined;
@@ -130,19 +130,22 @@ export function DocxEditorDialogs({
           isEditing={hyperlinkDialog.state.isEditing}
         />
       )}
-      {tablePropsOpen && (
-        <TablePropertiesDialog
-          isOpen={tablePropsOpen}
-          onClose={onTablePropsClose}
-          onApply={(props) => {
-            const view = getActiveEditorView();
-            if (view) {
-              setTableProperties(props)(view.state, view.dispatch);
-            }
-          }}
-          currentProps={pmTableContext?.table?.attrs}
-        />
-      )}
+      <CursorPopover
+        open={tablePropsOpen}
+        onOpenChange={(o) => !o && onTablePropsClose()}
+        rect={tablePropsRect}
+      >
+        {tablePropsOpen && (
+          <TablePropertiesForm
+            current={pmTableContext?.table?.attrs}
+            onApply={(props) => {
+              const view = getActiveEditorView();
+              if (view) setTableProperties(props)(view.state, view.dispatch);
+            }}
+            onClose={onTablePropsClose}
+          />
+        )}
+      </CursorPopover>
       <CursorPopover
         open={splitCellDialogState.isOpen}
         onOpenChange={(o) => !o && onSplitCellDialogClose()}

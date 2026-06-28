@@ -110,3 +110,10 @@ export interface TableSplitConfig {
   initialRows: number;
   initialCols: number;
 }
+
+/** Editable table-level properties (matches the core `setTableProperties` command). */
+export interface TablePropertiesValue {
+  width?: number | null;
+  widthType?: string | null;
+  justification?: 'left' | 'center' | 'right' | null;
+}

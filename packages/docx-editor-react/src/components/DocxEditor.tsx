@@ -1068,6 +1068,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const {
     tablePropsOpen,
     setTablePropsOpen,
+    tablePropsRect,
     splitCellDialogState,
     openSplitCellDialog,
     handleTableAction,
@@ -1865,6 +1866,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           onHyperlinkSubmit={handleHyperlinkSubmit}
           onHyperlinkRemove={handleHyperlinkRemove}
           tablePropsOpen={tablePropsOpen}
+          tablePropsRect={tablePropsRect}
           onTablePropsClose={() => setTablePropsOpen(false)}
           pmTableContext={state.pmTableContext}
           getActiveEditorView={getActiveEditorView}
