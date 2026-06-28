@@ -115,7 +115,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
   const hasOverflow = Boolean(onPrint || onPageSetup || onWatermark);
 
   return (
-    <div className="@container relative flex-shrink-0 border-b border-border bg-background text-foreground">
+    <div className="@container relative flex-shrink-0 border-b border-border bg-background text-foreground z-31">
       {/* ── Main band: undo/redo · format groups · overflow ──────────────── */}
       <div className="flex h-10 items-center gap-1 px-2">
         <Button variant="ghost" size="icon-sm" tooltip="Undo" disabled={!canUndo} onMouseDown={keepFocus} onClick={onUndo}>
@@ -181,7 +181,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
       </div>
 
       {/* ── Hanging tab: Mode · Comments · Save (fixed right, overlaps doc) ── */}
-      <div className="absolute top-full right-3 z-30 -mt-px flex items-center gap-0.5 rounded-b-md bg-background px-1 py-0.5 shadow-sm">
+      <div className="absolute top-full right-3 z-30 flex items-center gap-0.5 rounded-b-md border border-t-0 border-border bg-background/70 px-1 py-0.5 shadow-sm">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" tooltip="Editing mode" tooltipSide="bottom" onMouseDown={keepFocus}>
