@@ -50,6 +50,12 @@ glue logic used by `useTableSelection`) + the dead component + icons.
 toolbar exports pruned. The cluster was self-contained (referenced only each other + the
 Patrick-unused `/ui` barrel).
 
+## A2 progress (branch `feat/editor-dialogs-rethink`)
+✅ cut `InsertImageDialog`, `KeyboardShortcutsDialog`, `ImagePositionDialog` (all orphaned). ✅ Watermark → Insert ▸ Watermark submenu (None/DRAFT/CONFIDENTIAL) + **fixed a pre-existing core paint bug** (`computeOptionsHash` omitted the watermark, so the incremental painter never repainted it). ✅ PageSetup rebuilt on `@patrick/ui` Dialog. Left: the popover cluster + find/replace bar + footnotes-under-Insert.
+
+## Popover anchoring — decided (cursor-anchored, 2026-06-28)
+The popover cluster (ImageProperties, TableProperties, SplitCell, Hyperlink incl. Ctrl+K) all anchor to the **cursor/cell rect** via ONE primitive — not per-control toolbar-button anchoring (which only works for ImageProperties). Build a `CursorPopover` using radix `PopoverAnchor` (exported by `@patrick/ui`) at a virtual rect. Source the rect from the **painted** caret (the glue's existing `selectionRects` in `PagedEditor`) — NOT `coordsAtPos` on the hidden offscreen PM. So: expose a `getCaretRect()` from `PagedEditorRef`/glue, thread it to the toolbar, feed `CursorPopover`. This is the foundational infra the whole cluster depends on — build it first.
+
 ## A2 dialog dispositions (decided with the user, 2026-06-28)
 - **Cut:** `InsertImageDialog` ✅ (dead), `KeyboardShortcutsDialog` ✅ (orphaned), `ImagePositionDialog` ⬜ (overkill — unwire from the image context menu).
 - **Reform → popover:** `HyperlinkDialog` (text + URL; unify with the existing inline `ui/HyperlinkPopup`; drop bookmark tabs/tooltip) · `ImagePropertiesDialog` (alt + dimensions; drop border) · `TablePropertiesDialog` (width/align) · `SplitCellDialog` (rows/cols steppers).
