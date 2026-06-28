@@ -56,7 +56,7 @@ import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { type PrintOptions } from './ui/PrintPreview';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
-import { useFindReplace } from './dialogs/FindReplaceDialog';
+import { useFindReplace } from '../hooks/useFindReplace';
 import { useHyperlinkDialog } from './dialogs/hyperlink';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
@@ -323,6 +323,8 @@ export interface DocxEditorRef {
   setZoom: (zoom: number) => void;
   /** Get current zoom level */
   getZoom: () => number;
+  /** Open the find/replace bar (e.g. from an app-level search button). */
+  openFind: () => void;
   /** Focus the editor */
   focus: () => void;
   /** Get current page number */
@@ -1212,6 +1214,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     handleDirectPrint,
     zoom: state.zoom,
     setZoom: (zoom: number) => setState((prev) => ({ ...prev, zoom })),
+    openFind: () => findReplace.openFind(),
     scrollPageInfo,
     loadParsedDocument,
     loadBuffer,

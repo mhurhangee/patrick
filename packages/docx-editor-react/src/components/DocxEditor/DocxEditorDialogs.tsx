@@ -9,8 +9,9 @@ import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/comma
 import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
 import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/hyperlink';
-import type { FindMatch, FindOptions, FindResult } from '../dialogs/FindReplaceDialog';
+import type { FindMatch, FindOptions, FindResult } from '@eigenpal/docx-editor-core/utils/findReplace';
 import { CursorPopover } from '../toolbar/cursor-popover';
+import { FindReplaceBar } from '../toolbar/find-replace-bar';
 import { HyperlinkForm } from '../toolbar/hyperlink-popover';
 import { SplitCellForm } from '../toolbar/split-cell-popover';
 import { TablePropertiesForm } from '../toolbar/table-properties-popover';
@@ -18,7 +19,6 @@ import { TablePropertiesForm } from '../toolbar/table-properties-popover';
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
 // module load, so co-locating with the JSX keeps the code-split boundary.
-const FindReplaceDialog = lazy(() => import('../dialogs/FindReplaceDialog'));
 const FootnotePropertiesDialog = lazy(() =>
   import('../dialogs/FootnotePropertiesDialog').then((m) => ({
     default: m.FootnotePropertiesDialog,
@@ -117,20 +117,18 @@ export function DocxEditorDialogs({
 
   return (
     <Suspense fallback={null}>
-      {findReplace.state.isOpen && (
-        <FindReplaceDialog
-          isOpen={findReplace.state.isOpen}
-          onClose={findReplace.close}
-          onFind={onFind}
-          onFindNext={onFindNext}
-          onFindPrevious={onFindPrevious}
-          onReplace={onReplace}
-          onReplaceAll={onReplaceAll}
-          initialSearchText={findReplace.state.searchText}
-          replaceMode={findReplace.state.replaceMode}
-          currentResult={findResultRef.current}
-        />
-      )}
+      <FindReplaceBar
+        isOpen={findReplace.state.isOpen}
+        onClose={findReplace.close}
+        onFind={onFind}
+        onFindNext={onFindNext}
+        onFindPrevious={onFindPrevious}
+        onReplace={onReplace}
+        onReplaceAll={onReplaceAll}
+        initialSearchText={findReplace.state.searchText}
+        replaceMode={findReplace.state.replaceMode}
+        currentResult={findResultRef.current}
+      />
       <CursorPopover
         open={hyperlinkOpen}
         onOpenChange={(o) => !o && hyperlinkDialog.close()}
