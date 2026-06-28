@@ -10,7 +10,6 @@ import {
   toolbarValueToLayoutTarget,
 } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
-import type { ImagePositionData } from '../../dialogs/ImagePositionDialog';
 import type { ImagePropertiesData } from '../../dialogs/ImagePropertiesDialog';
 
 /** Minimal shape the hook needs from the parent's selection-tracker state. */
@@ -46,7 +45,6 @@ export function useImageActions({
   focusActiveEditor: () => void;
   pushDocument: (doc: Document) => void;
 }) {
-  const [imagePositionOpen, setImagePositionOpen] = useState(false);
   const [imagePropsOpen, setImagePropsOpen] = useState(false);
   const [footnotePropsOpen, setFootnotePropsOpen] = useState(false);
 
@@ -128,32 +126,6 @@ export function useImageActions({
     [getActiveEditorView, focusActiveEditor, pmImageContext]
   );
 
-  const handleApplyImagePosition = useCallback(
-    (data: ImagePositionData) => {
-      const view = getActiveEditorView();
-      if (!view || !pmImageContext) return;
-
-      const pos = pmImageContext.pos;
-      const node = view.state.doc.nodeAt(pos);
-      if (!node || node.type.name !== 'image') return;
-
-      const tr = view.state.tr.setNodeMarkup(pos, undefined, {
-        ...node.attrs,
-        position: {
-          horizontal: data.horizontal,
-          vertical: data.vertical,
-        },
-        distTop: data.distTop ?? node.attrs.distTop,
-        distBottom: data.distBottom ?? node.attrs.distBottom,
-        distLeft: data.distLeft ?? node.attrs.distLeft,
-        distRight: data.distRight ?? node.attrs.distRight,
-      });
-      view.dispatch(tr.scrollIntoView());
-      focusActiveEditor();
-    },
-    [getActiveEditorView, focusActiveEditor, pmImageContext]
-  );
-
   const handleOpenImageProperties = useCallback(() => {
     setImagePropsOpen(true);
   }, []);
@@ -205,15 +177,12 @@ export function useImageActions({
   );
 
   return {
-    imagePositionOpen,
-    setImagePositionOpen,
     imagePropsOpen,
     setImagePropsOpen,
     footnotePropsOpen,
     setFootnotePropsOpen,
     handleImageWrapType,
     handleImageTransform,
-    handleApplyImagePosition,
     handleOpenImageProperties,
     handleApplyImageProperties,
     handleApplyFootnoteProperties,

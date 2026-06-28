@@ -1050,15 +1050,12 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // Handle shape insertion
   // Handle image wrap type change
   const {
-    imagePositionOpen,
-    setImagePositionOpen,
     imagePropsOpen,
     setImagePropsOpen,
     footnotePropsOpen,
     setFootnotePropsOpen,
     handleImageWrapType,
     handleImageTransform,
-    handleApplyImagePosition,
     handleOpenImageProperties,
     handleApplyImageProperties,
     handleApplyFootnoteProperties,
@@ -1877,9 +1874,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           splitCellDialogState={splitCellDialogState}
           onSplitCellDialogClose={handleSplitCellDialogClose}
           onSplitCellDialogApply={handleSplitCellDialogApply}
-          imagePositionOpen={imagePositionOpen}
-          onImagePositionClose={() => setImagePositionOpen(false)}
-          onApplyImagePosition={handleApplyImagePosition}
           imagePropsOpen={imagePropsOpen}
           onImagePropsClose={() => setImagePropsOpen(false)}
           onApplyImageProperties={handleApplyImageProperties}

@@ -10,7 +10,6 @@ import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
 import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/HyperlinkDialog';
 import type { FindMatch, FindOptions, FindResult } from '../dialogs/FindReplaceDialog';
-import type { ImagePositionData } from '../dialogs/ImagePositionDialog';
 import type { ImagePropertiesData } from '../dialogs/ImagePropertiesDialog';
 
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
@@ -22,9 +21,6 @@ const TablePropertiesDialog = lazy(() =>
   import('../dialogs/TablePropertiesDialog').then((m) => ({ default: m.TablePropertiesDialog }))
 );
 const SplitCellDialog = lazy(() => import('../dialogs/SplitCellDialog'));
-const ImagePositionDialog = lazy(() =>
-  import('../dialogs/ImagePositionDialog').then((m) => ({ default: m.ImagePositionDialog }))
-);
 const ImagePropertiesDialog = lazy(() =>
   import('../dialogs/ImagePropertiesDialog').then((m) => ({ default: m.ImagePropertiesDialog }))
 );
@@ -78,9 +74,6 @@ export function DocxEditorDialogs({
   splitCellDialogState,
   onSplitCellDialogClose,
   onSplitCellDialogApply,
-  imagePositionOpen,
-  onImagePositionClose,
-  onApplyImagePosition,
   imagePropsOpen,
   onImagePropsClose,
   onApplyImageProperties,
@@ -114,10 +107,7 @@ export function DocxEditorDialogs({
   splitCellDialogState: SplitCellDialogState;
   onSplitCellDialogClose: () => void;
   onSplitCellDialogApply: (rows: number, cols: number) => void;
-  // Image position / properties
-  imagePositionOpen: boolean;
-  onImagePositionClose: () => void;
-  onApplyImagePosition: (data: ImagePositionData) => void;
+  // Image properties
   imagePropsOpen: boolean;
   onImagePropsClose: () => void;
   onApplyImageProperties: (data: ImagePropertiesData) => void;
@@ -181,13 +171,6 @@ export function DocxEditorDialogs({
           initialCols={splitCellDialogState.initialCols}
           minRows={splitCellDialogState.minRows}
           minCols={splitCellDialogState.minCols}
-        />
-      )}
-      {imagePositionOpen && (
-        <ImagePositionDialog
-          isOpen={imagePositionOpen}
-          onClose={onImagePositionClose}
-          onApply={onApplyImagePosition}
         />
       )}
       {imagePropsOpen && (
