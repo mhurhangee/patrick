@@ -117,19 +117,19 @@ function ReadOnlyDocx({
 	const { resolvedTheme } = useTheme();
 	const ref = useRef<DocxEditorRef>(null);
 	const [tokens, setTokens] = useState<number | null>(null);
-	const gotTokens = useRef(false);
 
-	// The character count (once the document agent is available) drives the token
-	// estimate and is recorded so the context control can cost this source.
+	// One-shot: poll until the document agent is available, then record the
+	// character count (drives the token estimate so the context control can cost
+	// this source) and stop the timer.
 	useEffect(() => {
 		const id = setInterval(() => {
 			const ed = ref.current;
-			if (!ed || gotTokens.current) return;
+			if (!ed) return;
 			const chars = ed.getAgent()?.getCharacterCount(true);
 			if (chars && chars > 0) {
-				gotTokens.current = true;
 				setTokens(estimateTextTokens(chars));
 				recordDocSize(activeTaskId ?? "", filename, { chars });
+				clearInterval(id);
 			}
 		}, 400);
 		return () => clearInterval(id);
