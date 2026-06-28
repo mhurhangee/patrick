@@ -73,6 +73,7 @@ describe('package.json exports map (source consumption)', () => {
       './prosemirror/extensions/nodes/TableExtension',
       './prosemirror/template/prosemirror-plugin',
       './prosemirror/editor.css',
+      './styles/editor.css',
       './docx',
       './docx/wrapTypes',
       './docx/serializer',

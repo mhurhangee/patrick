@@ -8,20 +8,15 @@
     "./ui": "./src/ui.ts",
     "./dialogs": "./src/components/dialogs/index.ts",
     "./hooks": "./src/hooks/index.ts",
-    "./plugin-api": "./src/plugin-api/index.ts",
-    "./styles": "./src/styles/index.ts",
-    "./styles.css": "./dist/styles.css"
+    "./plugin-api": "./src/plugin-api/index.ts"
   },
   "sideEffects": [
     "*.css"
   ],
   "files": [
-    "src",
-    "dist"
+    "src"
   ],
   "scripts": {
-    "build": "bun run build:css",
-    "build:css": "node scripts/build-css.mjs",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -58,7 +53,6 @@
     "@happy-dom/global-registrator": "^20.8.3",
     "@testing-library/react": "^16.0.0",
     "@types/bun": "^1.0.0",
-    "@tailwindcss/cli": "^4.3.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "class-variance-authority": "^0.7.0",
@@ -71,8 +65,6 @@
     "prosemirror-tables": "^1.8.5",
     "prosemirror-transform": "^1.12.0",
     "prosemirror-view": "^1.41.6",
-    "tailwindcss": "^4.3.1",
-    "tw-animate-css": "^1.4.0",
     "typescript": "^5.3.3"
   },
   "keywords": [

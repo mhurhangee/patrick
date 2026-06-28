@@ -78,7 +78,8 @@
     "./prosemirror/plugins/selectionTracker": "./src/prosemirror/plugins/selectionTracker.ts",
     "./prosemirror/schema": "./src/prosemirror/schema/index.ts",
     "./prosemirror/styles": "./src/prosemirror/styles/index.ts",
-    "./utils/paragraphFlashTypes": "./src/utils/paragraphFlashTypes.ts"
+    "./utils/paragraphFlashTypes": "./src/utils/paragraphFlashTypes.ts",
+    "./styles/editor.css": "./src/styles/editor.css"
   },
   "files": [
     "src"
