@@ -226,10 +226,8 @@ export interface DocxEditorProps {
    */
   fonts?: ReadonlyArray<FontDefinition>;
   /**
-   * Text-watermark presets shown in the watermark dialog's preset dropdown.
-   * Omit to use the built-in MS Word phrases (`DEFAULT_WATERMARK_PRESETS`:
-   * CONFIDENTIAL, DRAFT, DO NOT COPY, SAMPLE, URGENT, ASAP). Pass an empty
-   * array to hide the preset dropdown and require custom text.
+   * Text-watermark presets shown in the Insert ▸ Watermark menu. Omit to use the
+   * built-in defaults (DRAFT, CONFIDENTIAL).
    *
    * @example watermarkPresets={['INTERNAL', 'PROPRIETARY', 'COPY']}
    */
@@ -1174,9 +1172,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   });
 
   const {
-    showWatermark,
-    setShowWatermark,
-    handleOpenWatermark,
     currentWatermark,
     handleWatermarkApply,
   } = useWatermarkControls({
@@ -1759,7 +1754,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             onImageTransform={handleImageTransform}
             onOpenImageProperties={handleOpenImageProperties}
             onPageSetup={handleOpenPageSetup}
-            onWatermark={handleOpenWatermark}
+            onApplyWatermark={handleWatermarkApply}
+            currentWatermark={currentWatermark}
+            watermarkPresets={watermarkPresets}
             onTableAction={handleTableAction}
           />
         ) : null
@@ -1890,11 +1887,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           showPageSetup={showPageSetup}
           onPageSetupClose={() => setShowPageSetup(false)}
           onPageSetupApply={handlePageSetupApply}
-          showWatermark={showWatermark}
-          onWatermarkClose={() => setShowWatermark(false)}
-          onWatermarkApply={handleWatermarkApply}
-          currentWatermark={currentWatermark}
-          watermarkPresets={watermarkPresets}
           document={history.state}
           footnotePropsOpen={footnotePropsOpen}
           onFootnotePropsClose={() => setFootnotePropsOpen(false)}

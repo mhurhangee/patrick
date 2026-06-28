@@ -1,7 +1,7 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { EditorState as PMEditorState } from 'prosemirror-state';
 import { undoDepth, redoDepth } from 'prosemirror-history';
-import type { Document } from '@eigenpal/docx-editor-core/types/document';
+import type { Document, Watermark } from '@eigenpal/docx-editor-core/types/document';
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import type { FontOption } from '../ui/FontPicker';
 import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
@@ -52,7 +52,9 @@ export function DocxEditorToolbar({
   onImageTransform,
   onOpenImageProperties,
   onPageSetup,
-  onWatermark,
+  onApplyWatermark,
+  currentWatermark,
+  watermarkPresets,
   onTableAction,
 }: {
   toolbarRefCallback: (el: HTMLDivElement | null) => void;
@@ -84,7 +86,9 @@ export function DocxEditorToolbar({
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
   onOpenImageProperties: () => void;
   onPageSetup: () => void;
-  onWatermark: () => void;
+  onApplyWatermark: (watermark: Watermark | null) => void;
+  currentWatermark: Watermark | undefined;
+  watermarkPresets: readonly string[] | undefined;
   onTableAction: (action: TableAction) => void;
 }) {
   const canUndo = pmState ? undoDepth(pmState) > 0 : false;
@@ -113,7 +117,9 @@ export function DocxEditorToolbar({
         onRedo={onRedo}
         onPrint={onPrint}
         onPageSetup={onPageSetup}
-        onWatermark={onWatermark}
+        onApplyWatermark={onApplyWatermark}
+        currentWatermark={currentWatermark}
+        watermarkPresets={watermarkPresets}
         readOnly={readOnly}
         currentFormatting={selectionFormatting}
         onFormat={onFormat}

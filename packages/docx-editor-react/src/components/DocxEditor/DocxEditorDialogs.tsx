@@ -4,7 +4,6 @@ import type {
   FootnoteProperties,
   EndnoteProperties,
   SectionProperties,
-  Watermark,
 } from '@eigenpal/docx-editor-core/types/document';
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
@@ -36,9 +35,6 @@ const FootnotePropertiesDialog = lazy(() =>
 );
 const PageSetupDialog = lazy(() =>
   import('../dialogs/PageSetupDialog').then((m) => ({ default: m.PageSetupDialog }))
-);
-const WatermarkDialog = lazy(() =>
-  import('../dialogs/WatermarkDialog').then((m) => ({ default: m.WatermarkDialog }))
 );
 
 interface PmImageContextDialogData {
@@ -92,11 +88,6 @@ export function DocxEditorDialogs({
   showPageSetup,
   onPageSetupClose,
   onPageSetupApply,
-  showWatermark,
-  onWatermarkClose,
-  onWatermarkApply,
-  currentWatermark,
-  watermarkPresets,
   document,
   footnotePropsOpen,
   onFootnotePropsClose,
@@ -135,12 +126,6 @@ export function DocxEditorDialogs({
   showPageSetup: boolean;
   onPageSetupClose: () => void;
   onPageSetupApply: (props: Partial<SectionProperties>) => void;
-  // Watermark
-  showWatermark: boolean;
-  onWatermarkClose: () => void;
-  onWatermarkApply: (watermark: Watermark | null) => void;
-  currentWatermark: Watermark | undefined;
-  watermarkPresets?: readonly string[];
   document: Document | null;
   // Footnote properties
   footnotePropsOpen: boolean;
@@ -230,15 +215,6 @@ export function DocxEditorDialogs({
           onClose={onPageSetupClose}
           onApply={onPageSetupApply}
           currentProps={document?.package.document?.finalSectionProperties}
-        />
-      )}
-      {showWatermark && (
-        <WatermarkDialog
-          isOpen={showWatermark}
-          onClose={onWatermarkClose}
-          onApply={onWatermarkApply}
-          current={currentWatermark}
-          presets={watermarkPresets}
         />
       )}
       {footnotePropsOpen && (

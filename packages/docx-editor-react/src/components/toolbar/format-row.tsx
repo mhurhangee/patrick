@@ -1,5 +1,5 @@
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
-import type { Style } from '@eigenpal/docx-editor-core/types/document';
+import type { Style, Watermark } from '@eigenpal/docx-editor-core/types/document';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Separator } from '@patrick/ui/components/separator';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
@@ -23,6 +23,9 @@ export interface FormatRowProps {
   onInsertSectionBreakNextPage: () => void;
   onInsertSectionBreakContinuous: () => void;
   onInsertTOC: () => void;
+  onApplyWatermark: (watermark: Watermark | null) => void;
+  currentWatermark?: Watermark | undefined;
+  watermarkPresets?: readonly string[] | undefined;
   // Contextual groups (appear by cursor, orthogonal to width)
   tableContext?: TableContextInfo | null;
   onTableAction: (action: TableAction) => void;
@@ -50,6 +53,9 @@ export function FormatRow({
   onInsertSectionBreakNextPage,
   onInsertSectionBreakContinuous,
   onInsertTOC,
+  onApplyWatermark,
+  currentWatermark,
+  watermarkPresets,
   tableContext,
   onTableAction,
   imageContext,
@@ -76,6 +82,9 @@ export function FormatRow({
         onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
         onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
         onInsertTOC={onInsertTOC}
+        onApplyWatermark={onApplyWatermark}
+        currentWatermark={currentWatermark}
+        watermarkPresets={watermarkPresets}
       />
 
       {tableContext?.isInTable && (
