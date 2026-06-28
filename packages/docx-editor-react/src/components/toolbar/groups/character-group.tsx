@@ -1,6 +1,15 @@
+import {
+  type FontOption,
+  normalizeFontFamilies,
+} from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { halfPointsToPoints } from '@eigenpal/docx-editor-core/utils/units';
 import { Button } from '@patrick/ui/components/button';
 import { NumberField } from '@patrick/ui/components/number-field';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@patrick/ui/components/popover';
 import {
   Select,
   SelectContent,
@@ -15,20 +24,19 @@ import { Toggle } from '@patrick/ui/components/toggle';
 import {
   Baseline,
   Bold,
+  ChevronDown,
   Highlighter,
   Italic,
   Link2,
   RemoveFormatting,
+  type LucideIcon,
   Strikethrough,
   Subscript,
   Superscript,
+  Type,
   Underline,
 } from 'lucide-react';
 import { useMemo } from 'react';
-import {
-  type FontOption,
-  normalizeFontFamilies,
-} from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { FormattingAction, SelectionFormatting } from '../../Toolbar';
 import { ColorControl } from '../color-control';
 import { TOGGLE_ACTIVE, keepFocus } from '../shared';
@@ -64,12 +72,7 @@ const CATEGORY_LABEL: Record<NonNullable<FontOption['category']>, string> = {
   monospace: 'Monospace',
   other: 'Other',
 };
-const CATEGORY_ORDER: NonNullable<FontOption['category']>[] = [
-  'sans-serif',
-  'serif',
-  'monospace',
-  'other',
-];
+const CATEGORY_ORDER: NonNullable<FontOption['category']>[] = ['sans-serif', 'serif', 'monospace', 'other'];
 
 export interface CharacterGroupProps {
   currentFormatting: SelectionFormatting;
@@ -79,9 +82,11 @@ export interface CharacterGroupProps {
 }
 
 /**
- * Character-scope controls: font family + size, the B/I/U/S toggles, super/sub,
- * and clear formatting. Colour / highlight / link land in P2c (and the whole
- * group collapses into an `Aa ▾` popover at narrow widths then).
+ * Character-scope controls. B/I/U/S stay inline (top of the priority order); the
+ * pickers + extras (font, size, super/sub, colour, highlight, link, clear) are
+ * inline when the pane is wide and fold into an `Aa ▾` popover below ~820px of
+ * toolbar width (container query). The popover doubles as the apply-beforehand
+ * surface. The control elements are shared between the two layouts.
  */
 export function CharacterGroup({
   currentFormatting,
@@ -93,14 +98,11 @@ export function CharacterGroup({
   const sizePt =
     currentFormatting.fontSize !== undefined ? halfPointsToPoints(currentFormatting.fontSize) : 11;
 
-  // Document fonts first, then a curated default set; deduped by name, with the
-  // current selection guaranteed present so the Select can show it.
   const groups = useMemo(() => {
-    const docFonts = (documentFonts ?? []).map((f) => ({ ...f }));
     const propFonts = normalizeFontFamilies(fontFamilies) ?? [];
     const seen = new Set<string>();
     const document: FontOption[] = [];
-    for (const f of [...docFonts, ...propFonts]) {
+    for (const f of [...(documentFonts ?? []), ...propFonts]) {
       if (seen.has(f.fontFamily)) continue;
       seen.add(f.fontFamily);
       document.push(f);
@@ -125,141 +127,149 @@ export function CharacterGroup({
     return result;
   }, [documentFonts, fontFamilies, currentFont]);
 
+  const fmtToggle = (label: string, Icon: LucideIcon, on: boolean, action: FormattingAction) => (
+    <Toggle
+      size="icon-sm"
+      className={TOGGLE_ACTIVE}
+      tooltip={label}
+      pressed={on}
+      onMouseDown={keepFocus}
+      onPressedChange={() => onFormat(action)}
+    >
+      <Icon />
+    </Toggle>
+  );
+
+  // Shared control elements — placed in the inline strip AND the Aa popover.
+  const fontSelect = (
+    <Select value={currentFont} onValueChange={(v) => onFormat({ type: 'fontFamily', value: v })}>
+      <SelectTrigger size="sm" className="h-7 w-[7.5rem] text-xs" aria-label="Font" onMouseDown={keepFocus}>
+        <SelectValue placeholder="Font" />
+      </SelectTrigger>
+      <SelectContent>
+        {groups.map((g) => (
+          <SelectGroup key={g.label}>
+            <SelectLabel>{g.label}</SelectLabel>
+            {g.fonts.map((f) => (
+              <SelectItem key={f.fontFamily} value={f.fontFamily} style={{ fontFamily: f.fontFamily }}>
+                {f.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+  const sizeField = (
+    <NumberField
+      value={sizePt}
+      onValueChange={(pt) => onFormat({ type: 'fontSize', value: pt })}
+      min={1}
+      max={400}
+      className="w-14"
+      aria-label="Font size"
+    />
+  );
+  const superSub = (
+    <>
+      {fmtToggle('Superscript', Superscript, !!currentFormatting.superscript, 'superscript')}
+      {fmtToggle('Subscript', Subscript, !!currentFormatting.subscript, 'subscript')}
+    </>
+  );
+  const colorCtrl = (
+    <ColorControl
+      icon={Baseline}
+      tooltip="Text colour"
+      currentColor={currentFormatting.color}
+      swatches={TEXT_SWATCHES}
+      clearLabel="Automatic"
+      onPick={(hex) => onFormat({ type: 'textColor', value: `#${hex}` })}
+      onClear={() => onFormat({ type: 'textColor', value: { auto: true } })}
+    />
+  );
+  const highlightCtrl = (
+    <ColorControl
+      icon={Highlighter}
+      tooltip="Highlight"
+      currentColor={currentFormatting.highlight}
+      swatches={HIGHLIGHT_SWATCHES}
+      clearLabel="No highlight"
+      onPick={(hex) => onFormat({ type: 'highlightColor', value: hex })}
+      onClear={() => onFormat({ type: 'highlightColor', value: 'none' })}
+    />
+  );
+  const linkBtn = (
+    <Button variant="ghost" size="icon-sm" tooltip="Insert link" onMouseDown={keepFocus} onClick={() => onFormat('insertLink')}>
+      <Link2 />
+    </Button>
+  );
+  const clearBtn = (
+    <Button variant="ghost" size="icon-sm" tooltip="Clear formatting" onMouseDown={keepFocus} onClick={() => onFormat('clearFormatting')}>
+      <RemoveFormatting />
+    </Button>
+  );
+
   return (
     <div className="flex items-center gap-1">
-      <Select value={currentFont} onValueChange={(v) => onFormat({ type: 'fontFamily', value: v })}>
-        <SelectTrigger
-          size="sm"
-          className="h-7 w-[7.5rem] text-xs"
-          aria-label="Font"
-          onMouseDown={keepFocus}
-        >
-          <SelectValue placeholder="Font" />
-        </SelectTrigger>
-        <SelectContent>
-          {groups.map((g) => (
-            <SelectGroup key={g.label}>
-              <SelectLabel>{g.label}</SelectLabel>
-              {g.fonts.map((f) => (
-                <SelectItem key={f.fontFamily} value={f.fontFamily} style={{ fontFamily: f.fontFamily }}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <NumberField
-        value={sizePt}
-        onValueChange={(pt) => onFormat({ type: 'fontSize', value: pt })}
-        min={1}
-        max={400}
-        className="w-14"
-        aria-label="Font size"
-      />
+      {/* Font + size: inline when wide → fold into Font▾ below ~720px container.
+          (Breakpoints are literal classes so Tailwind generates them; they're
+          absolute px — revisit in rem if UI-scale ≠ 100% needs it.) */}
+      <div className="hidden items-center gap-1 @min-[720px]:flex">
+        {fontSelect}
+        {sizeField}
+      </div>
+      <div className="@min-[720px]:hidden">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" tooltip="Font & size" onMouseDown={keepFocus}>
+              <Type />
+              <ChevronDown />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto flex-row items-center gap-2">
+            {fontSelect}
+            {sizeField}
+          </PopoverContent>
+        </Popover>
+      </div>
 
       <Separator orientation="vertical" className="mx-1 h-5" />
 
+      {/* B/I/U/S — always inline */}
       <div className="flex items-center gap-0.5">
-        <Toggle
-          size="icon-sm"
-          className={TOGGLE_ACTIVE}
-          tooltip="Bold"
-          pressed={!!currentFormatting.bold}
-          onMouseDown={keepFocus}
-          onPressedChange={() => onFormat('bold')}
-        >
-          <Bold />
-        </Toggle>
-        <Toggle
-          size="icon-sm"
-          className={TOGGLE_ACTIVE}
-          tooltip="Italic"
-          pressed={!!currentFormatting.italic}
-          onMouseDown={keepFocus}
-          onPressedChange={() => onFormat('italic')}
-        >
-          <Italic />
-        </Toggle>
-        <Toggle
-          size="icon-sm"
-          className={TOGGLE_ACTIVE}
-          tooltip="Underline"
-          pressed={!!currentFormatting.underline}
-          onMouseDown={keepFocus}
-          onPressedChange={() => onFormat('underline')}
-        >
-          <Underline />
-        </Toggle>
-        <Toggle
-          size="icon-sm"
-          className={TOGGLE_ACTIVE}
-          tooltip="Strikethrough"
-          pressed={!!currentFormatting.strike}
-          onMouseDown={keepFocus}
-          onPressedChange={() => onFormat('strikethrough')}
-        >
-          <Strikethrough />
-        </Toggle>
-        <Toggle
-          size="icon-sm"
-          className={TOGGLE_ACTIVE}
-          tooltip="Superscript"
-          pressed={!!currentFormatting.superscript}
-          onMouseDown={keepFocus}
-          onPressedChange={() => onFormat('superscript')}
-        >
-          <Superscript />
-        </Toggle>
-        <Toggle
-          size="icon-sm"
-          className={TOGGLE_ACTIVE}
-          tooltip="Subscript"
-          pressed={!!currentFormatting.subscript}
-          onMouseDown={keepFocus}
-          onPressedChange={() => onFormat('subscript')}
-        >
-          <Subscript />
-        </Toggle>
+        {fmtToggle('Bold', Bold, !!currentFormatting.bold, 'bold')}
+        {fmtToggle('Italic', Italic, !!currentFormatting.italic, 'italic')}
+        {fmtToggle('Underline', Underline, !!currentFormatting.underline, 'underline')}
+        {fmtToggle('Strikethrough', Strikethrough, !!currentFormatting.strike, 'strikethrough')}
+      </div>
 
-        <ColorControl
-          icon={Baseline}
-          tooltip="Text colour"
-          currentColor={currentFormatting.color}
-          swatches={TEXT_SWATCHES}
-          clearLabel="Automatic"
-          onPick={(hex) => onFormat({ type: 'textColor', value: `#${hex}` })}
-          onClear={() => onFormat({ type: 'textColor', value: { auto: true } })}
-        />
-        <ColorControl
-          icon={Highlighter}
-          tooltip="Highlight"
-          currentColor={currentFormatting.highlight}
-          swatches={HIGHLIGHT_SWATCHES}
-          clearLabel="No highlight"
-          onPick={(hex) => onFormat({ type: 'highlightColor', value: hex })}
-          onClear={() => onFormat({ type: 'highlightColor', value: 'none' })}
-        />
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          tooltip="Insert link"
-          onMouseDown={keepFocus}
-          onClick={() => onFormat('insertLink')}
-        >
-          <Link2 />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          tooltip="Clear formatting"
-          onMouseDown={keepFocus}
-          onClick={() => onFormat('clearFormatting')}
-        >
-          <RemoveFormatting />
-        </Button>
+      {/* Extras (super/sub, colour, highlight, link, clear): the least-used
+          character controls — fold first, into Aa▾ below ~820px. */}
+      <div className="hidden items-center gap-0.5 @min-[820px]:flex">
+        {superSub}
+        {colorCtrl}
+        {highlightCtrl}
+        {linkBtn}
+        {clearBtn}
+      </div>
+      <div className="@min-[820px]:hidden">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" tooltip="Text formatting" onMouseDown={keepFocus}>
+              <span className="font-medium">Aa</span>
+              <ChevronDown />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto flex-row items-center gap-0.5">
+            {superSub}
+            <Separator orientation="vertical" className="mx-0.5 h-5" />
+            {colorCtrl}
+            {highlightCtrl}
+            {linkBtn}
+            <Separator orientation="vertical" className="mx-0.5 h-5" />
+            {clearBtn}
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

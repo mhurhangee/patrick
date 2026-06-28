@@ -7,21 +7,27 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@patrick/ui/components/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@patrick/ui/components/popover';
 import { Separator } from '@patrick/ui/components/separator';
-import { Toggle } from '@patrick/ui/components/toggle';
 import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
   AlignRight,
   AlignVerticalSpaceAround,
+  ChevronDown,
   IndentDecrease,
   IndentIncrease,
   List,
   ListOrdered,
+  Pilcrow,
 } from 'lucide-react';
 import type { FormattingAction, SelectionFormatting } from '../../Toolbar';
-import { TOGGLE_ACTIVE, keepFocus } from '../shared';
+import { keepFocus } from '../shared';
 
 const ALIGN_OPTIONS: { value: ParagraphAlignment; label: string; icon: typeof AlignLeft }[] = [
   { value: 'left', label: 'Left', icon: AlignLeft },
@@ -44,42 +50,51 @@ export interface ParagraphGroupProps {
 }
 
 /**
- * Paragraph-scope controls: lists + indent (prominent inline — heavily used for
- * claims), alignment (single-choice → a dropdown, collapsed by default), and
- * line spacing. Folds into a `¶ ▾` button at narrow widths in a later phase.
+ * Paragraph-scope controls — list, indent, alignment, line spacing, each a
+ * single-button dropdown (uniform with one another). Inline when wide; the whole
+ * group folds into a `¶ ▾` popover below ~600px of toolbar width.
  */
 export function ParagraphGroup({ currentFormatting, onFormat }: ParagraphGroupProps) {
   const listType = currentFormatting.listState?.type;
+  const listValue = listType === 'bullet' ? 'bullet' : listType === 'numbered' ? 'numbered' : 'none';
+  const ListIcon = listType === 'numbered' ? ListOrdered : List;
   const alignValue = currentFormatting.alignment ?? 'left';
-  const currentAlign =
-    ALIGN_OPTIONS.find((o) => o.value === alignValue) ?? ALIGN_OPTIONS[0];
-  const AlignIcon = currentAlign.icon;
+  const AlignIcon = (ALIGN_OPTIONS.find((o) => o.value === alignValue) ?? ALIGN_OPTIONS[0]).icon;
   const canOutdent = (currentFormatting.indentLeft ?? 0) > 0 || Boolean(currentFormatting.listState);
   const spacingTwips = currentFormatting.lineSpacing ?? 240;
 
-  return (
-    <div className="flex items-center gap-0.5">
-      <Toggle
-        size="icon-sm"
-        className={TOGGLE_ACTIVE}
-        tooltip="Bulleted list"
-        pressed={listType === 'bullet'}
-        onMouseDown={keepFocus}
-        onPressedChange={() => onFormat('bulletList')}
-      >
-        <List />
-      </Toggle>
-      <Toggle
-        size="icon-sm"
-        className={TOGGLE_ACTIVE}
-        tooltip="Numbered list"
-        pressed={listType === 'numbered'}
-        onMouseDown={keepFocus}
-        onPressedChange={() => onFormat('numberedList')}
-      >
-        <ListOrdered />
-      </Toggle>
+  // The list actions are toggles; map a radio choice to the right toggle.
+  const setList = (v: string) => {
+    if (v === listValue) return;
+    if (v === 'bullet') onFormat('bulletList');
+    else if (v === 'numbered') onFormat('numberedList');
+    else if (listValue === 'bullet') onFormat('bulletList');
+    else if (listValue === 'numbered') onFormat('numberedList');
+  };
 
+  const listMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" tooltip="List" onMouseDown={keepFocus}>
+          <ListIcon />
+          <ChevronDown />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup value={listValue} onValueChange={setList}>
+          <DropdownMenuRadioItem value="none">None</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="bullet">
+            <List className="size-4" /> Bulleted
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="numbered">
+            <ListOrdered className="size-4" /> Numbered
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+  const indent = (
+    <>
       <Button
         variant="ghost"
         size="icon-sm"
@@ -99,49 +114,80 @@ export function ParagraphGroup({ currentFormatting, onFormat }: ParagraphGroupPr
       >
         <IndentIncrease />
       </Button>
+    </>
+  );
+  const alignMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" tooltip="Alignment" onMouseDown={keepFocus}>
+          <AlignIcon />
+          <ChevronDown />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup
+          value={alignValue}
+          onValueChange={(v) => onFormat({ type: 'alignment', value: v as ParagraphAlignment })}
+        >
+          {ALIGN_OPTIONS.map((o) => (
+            <DropdownMenuRadioItem key={o.value} value={o.value}>
+              <o.icon className="size-4" />
+              {o.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+  const spacingMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" tooltip="Line spacing" onMouseDown={keepFocus}>
+          <AlignVerticalSpaceAround />
+          <ChevronDown />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup
+          value={String(spacingTwips)}
+          onValueChange={(v) => onFormat({ type: 'lineSpacing', value: Number(v) })}
+        >
+          {SPACING_OPTIONS.map((s) => (
+            <DropdownMenuRadioItem key={s.twips} value={String(s.twips)}>
+              {s.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
+  const inline = (
+    <>
+      {listMenu}
+      {indent}
       <Separator orientation="vertical" className="mx-1 h-5" />
+      {alignMenu}
+      {spacingMenu}
+    </>
+  );
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" tooltip="Alignment" onMouseDown={keepFocus}>
-            <AlignIcon />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={alignValue}
-            onValueChange={(v) => onFormat({ type: 'alignment', value: v as ParagraphAlignment })}
-          >
-            {ALIGN_OPTIONS.map((o) => (
-              <DropdownMenuRadioItem key={o.value} value={o.value}>
-                <o.icon className="size-4" />
-                {o.label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" tooltip="Line spacing" onMouseDown={keepFocus}>
-            <AlignVerticalSpaceAround />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuRadioGroup
-            value={String(spacingTwips)}
-            onValueChange={(v) => onFormat({ type: 'lineSpacing', value: Number(v) })}
-          >
-            {SPACING_OPTIONS.map((s) => (
-              <DropdownMenuRadioItem key={s.twips} value={String(s.twips)}>
-                {s.label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+  return (
+    <>
+      <div className="hidden items-center gap-0.5 @min-[600px]:flex">{inline}</div>
+      <div className="@min-[600px]:hidden">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" tooltip="Paragraph" onMouseDown={keepFocus}>
+              <Pilcrow />
+              <ChevronDown />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto flex-row items-center gap-0.5">
+            {inline}
+          </PopoverContent>
+        </Popover>
+      </div>
+    </>
   );
 }
