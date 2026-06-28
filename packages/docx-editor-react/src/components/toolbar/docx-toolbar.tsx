@@ -1,3 +1,4 @@
+import type { Style } from '@eigenpal/docx-editor-core/types/document';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Button } from '@patrick/ui/components/button';
 import {
@@ -24,7 +25,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
 import type { FormattingAction, SelectionFormatting } from '../Toolbar';
-import { FormatRow } from './FormatRow';
+import { FormatRow } from './format-row';
 import { TOGGLE_ACTIVE, keepFocus } from './shared';
 
 export interface DocxToolbarProps {
@@ -51,6 +52,13 @@ export interface DocxToolbarProps {
   onFormat: (action: FormattingAction) => void;
   documentFonts?: readonly FontOption[] | undefined;
   fontFamilies?: ReadonlyArray<string | FontOption> | undefined;
+  documentStyles?: Style[] | undefined;
+  onInsertTable: (rows: number, columns: number) => void;
+  onInsertImage: () => void;
+  onInsertPageBreak: () => void;
+  onInsertSectionBreakNextPage: () => void;
+  onInsertSectionBreakContinuous: () => void;
+  onInsertTOC: () => void;
 }
 
 /**
@@ -87,6 +95,13 @@ export function DocxToolbar(props: DocxToolbarProps) {
     onFormat,
     documentFonts,
     fontFamilies,
+    documentStyles,
+    onInsertTable,
+    onInsertImage,
+    onInsertPageBreak,
+    onInsertSectionBreakNextPage,
+    onInsertSectionBreakContinuous,
+    onInsertTOC,
   } = props;
   const { t } = useTranslation();
 
@@ -216,6 +231,13 @@ export function DocxToolbar(props: DocxToolbarProps) {
           onFormat={onFormat}
           documentFonts={documentFonts}
           fontFamilies={fontFamilies}
+          documentStyles={documentStyles}
+          onInsertTable={onInsertTable}
+          onInsertImage={onInsertImage}
+          onInsertPageBreak={onInsertPageBreak}
+          onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
+          onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
+          onInsertTOC={onInsertTOC}
         />
       )}
     </div>

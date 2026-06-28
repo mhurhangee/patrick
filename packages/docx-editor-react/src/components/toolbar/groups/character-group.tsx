@@ -30,7 +30,7 @@ import {
   normalizeFontFamilies,
 } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { FormattingAction, SelectionFormatting } from '../../Toolbar';
-import { ColorControl } from '../ColorControl';
+import { ColorControl } from '../color-control';
 import { TOGGLE_ACTIVE, keepFocus } from '../shared';
 
 // Grayscale + Office standard colours (hex without #).

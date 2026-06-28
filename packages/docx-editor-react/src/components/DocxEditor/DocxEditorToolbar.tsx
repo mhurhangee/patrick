@@ -10,7 +10,7 @@ import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import { CommentsSidebarToggle } from './CommentsSidebarToggle';
 import { EditingModeDropdown } from './EditingModeDropdown';
 import type { EditorMode } from './internals/editing-modes';
-import { DocxToolbar } from '../toolbar/DocxToolbar';
+import { DocxToolbar } from '../toolbar/docx-toolbar';
 import { useNewToolbarFlag } from '../toolbar/use-new-toolbar-flag';
 
 interface ImageContext {
@@ -183,6 +183,13 @@ export function DocxEditorToolbar({
           onFormat={onFormat}
           documentFonts={documentFonts}
           fontFamilies={fontFamilies}
+          documentStyles={document?.package.styles?.styles}
+          onInsertTable={onInsertTable}
+          onInsertImage={onInsertImage}
+          onInsertPageBreak={onInsertPageBreak}
+          onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
+          onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
+          onInsertTOC={onInsertTOC}
         />
       </div>
     );
