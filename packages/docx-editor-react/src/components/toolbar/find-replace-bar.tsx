@@ -87,6 +87,9 @@ export function FindReplaceBar({
   const [matchCase, setMatchCase] = useState(false);
   const [matchWholeWord, setMatchWholeWord] = useState(false);
   const [result, setResult] = useState<FindResult | null>(null);
+  // The query `result` reflects — so "No results" only shows once a search has
+  // settled on the current text, not during the debounce (which would flash).
+  const [searchedText, setSearchedText] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
   const onFindRef = useRef(onFind);
   onFindRef.current = onFind;
@@ -98,6 +101,7 @@ export function FindReplaceBar({
     setReplaceText('');
     setShowReplace(replaceMode);
     setResult(null);
+    setSearchedText('');
     const id = setTimeout(() => searchRef.current?.select(), 50);
     return () => clearTimeout(id);
   }, [isOpen]);
@@ -110,10 +114,12 @@ export function FindReplaceBar({
     if (!isOpen) return;
     if (!searchText.trim()) {
       setResult(null);
+      setSearchedText('');
       return;
     }
     const id = window.setTimeout(() => {
       setResult(onFindRef.current(searchText, { matchCase, matchWholeWord }));
+      setSearchedText(searchText);
     }, AUTO_SEARCH_DELAY_MS);
     return () => window.clearTimeout(id);
   }, [isOpen, searchText, matchCase, matchWholeWord]);
@@ -150,9 +156,15 @@ export function FindReplaceBar({
     if (onReplaceAll(searchText, replaceText, { matchCase, matchWholeWord }) > 0) setResult(null);
   };
 
-  // With a query, always show a status ("No results" when onFind yields nothing);
-  // blank only when the field is empty.
-  const countText = searchText.trim() ? getMatchCountText(result) || 'No results' : '';
+  // Empty field → blank. While a search is still pending (debounce in flight),
+  // keep the prior count rather than flashing "No results". Once settled on the
+  // current text, show the count or "No results".
+  const settled = searchedText === searchText;
+  const countText = !searchText.trim()
+    ? ''
+    : settled
+      ? getMatchCountText(result) || 'No results'
+      : getMatchCountText(result);
 
   return (
     <div className="absolute bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-start gap-1.5 rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-md">
