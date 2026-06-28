@@ -86,10 +86,12 @@ function buildRefApi(inputs: RefApiInputs): PagedEditorRef {
     getState: () => hiddenPMRef.current?.getState() ?? null,
     getView: () => hiddenPMRef.current?.getView() ?? null,
     getCaretRect: () => {
-      const root = getPagesContainer();
+      // The SelectionOverlay (which tags the caret + selection rects) is a
+      // SIBLING of the pages container, so query their shared parent. The caret
+      // stays in the DOM at opacity:0 when blurred, so its rect survives a menu
+      // stealing focus. Prefer the collapsed caret, fall back to a range rect.
+      const root = getPagesContainer()?.parentElement;
       if (!root) return null;
-      // The painted overlay tags the caret and each selection rect; prefer the
-      // collapsed-cursor caret, fall back to the first range rect.
       const el = (root.querySelector('[data-testid="caret"]') ??
         root.querySelector('[data-testid^="selection-rect-"]')) as HTMLElement | null;
       return el ? el.getBoundingClientRect() : null;
