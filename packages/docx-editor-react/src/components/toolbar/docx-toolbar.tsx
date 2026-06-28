@@ -67,10 +67,8 @@ export interface DocxToolbarProps {
 }
 
 /**
- * The rebuilt editor toolbar (work in progress — mounted only behind the
- * `patrick:new-toolbar` dev flag; see use-new-toolbar-flag.ts). Built on
- * @patrick/ui primitives; consumes the same toolbar contract as the legacy
- * toolbar so the editor "brain" is untouched.
+ * The editor toolbar. Built on @patrick/ui primitives; consumes the formatting
+ * contract (`../../types/*`) so the editor "brain" is untouched.
  *
  * One **main band** (undo/redo · responsive format groups · overflow) plus a
  * **hanging tab** off the bottom-right (Mode · Comments · Save) that overlaps the

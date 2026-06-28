@@ -10,7 +10,7 @@ before its legacy is deleted.
 ## Status by area
 | Area | Status | Notes |
 |---|---|---|
-| Toolbar | 🚧 P0–P3 + P5a done | new: `components/toolbar/*` + `src/types/*`. P4 (floating selection) **dropped** — out of scope. Left: P5b swap (remove flag + legacy branch) · P5c delete legacy toolbar |
+| Toolbar | 🚧 P0–P3 + P5a + P5b done | new: `components/toolbar/*` + `src/types/*`. DocxToolbar is now the only toolbar (flag gone). Zoom dropped from the toolbar → restored as a shared floating `ZoomPill` (editable + read-only viewers, `docx-viewer.tsx`). 5 legacy-only public DocxEditor props `_`-prefixed (prune holistically in A6). P4 (floating selection) **dropped**. Left: P5c delete legacy toolbar files |
 | Dead-code cull (A0) | 🚧 | ✅ `EditableImage` deleted (768 LOC, 0 importers). ❌ `ui/Select` + `ui/IconGridDropdown` are NOT dead (audit was wrong) — still used by legacy pickers/dropdowns; delete when those consumers go |
 | Dialogs (A2) | ⬜ | 14 inline-styled dialogs → `@patrick/ui` `Dialog` + form primitives (huge shrink) |
 | Context menus (A3) | ⬜ | `TextContextMenu`/`ContextMenu`/`ImageContextMenu` → shadcn context-menu |

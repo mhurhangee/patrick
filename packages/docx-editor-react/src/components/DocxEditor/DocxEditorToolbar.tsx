@@ -1,18 +1,13 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { EditorState as PMEditorState } from 'prosemirror-state';
 import { undoDepth, redoDepth } from 'prosemirror-history';
-import type { Theme, Document } from '@eigenpal/docx-editor-core/types/document';
-import { EditorToolbar } from '../EditorToolbar';
-import { ToolbarSeparator } from '../Toolbar';
-import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
-import type { FontOption } from '../ui/FontPicker';
-import type { TableAction } from '../../types/table';
+import type { Document } from '@eigenpal/docx-editor-core/types/document';
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
-import { CommentsSidebarToggle } from './CommentsSidebarToggle';
-import { EditingModeDropdown } from './EditingModeDropdown';
+import type { FontOption } from '../ui/FontPicker';
+import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
+import type { TableAction } from '../../types/table';
 import type { EditorMode } from './internals/editing-modes';
 import { DocxToolbar } from '../toolbar/docx-toolbar';
-import { useNewToolbarFlag } from '../toolbar/use-new-toolbar-flag';
 
 interface ImageContext {
   pos: number;
@@ -29,24 +24,17 @@ interface ImageContext {
 }
 
 /**
- * Top-of-editor toolbar — the EditorToolbar compound component wired up
- * with the document state (selection formatting, table/image context,
- * undo/redo depth), plus the title bar slots (logo, document name,
- * right-side actions, menu bar) and the trailing toolbar extras
- * (comments sidebar toggle, editing mode dropdown, agent-panel toggle).
+ * Top-of-editor toolbar — the `DocxToolbar` chrome wired up with the document
+ * state (selection formatting, table/image context, undo/redo depth) and the
+ * editing-mode / comments-sidebar handlers.
  *
- * Rounded bottom-right corner mirrors the agent panel's top-left when
- * the panel is open; the radius transition smooths the open/close.
- *
- * `pmState` drives `canUndo` / `canRedo` via `undoDepth` / `redoDepth`
- * computed inside the toolbar rather than the orchestrator so the deps
- * stay local.
+ * `pmState` drives `canUndo` / `canRedo` via `undoDepth` / `redoDepth` computed
+ * here rather than in the orchestrator so the deps stay local.
  */
 export function DocxEditorToolbar({
   toolbarRefCallback,
   // Doc state
   document,
-  theme,
   pmState,
   selectionFormatting,
   tableContext,
@@ -59,27 +47,14 @@ export function DocxEditorToolbar({
   setExpandedSidebarItem,
   showCommentsSidebar,
   // Customisation slots
-  renderLogo,
-  documentName,
-  onDocumentNameChange,
-  documentNameEditable,
   renderTitleBarRight,
-  toolbarExtra,
   fontFamilies,
   documentFonts,
-  zoom,
-  showZoomControl,
   // Handlers
   onFormat,
   onUndo,
   onRedo,
   onPrint,
-  showFileOpen,
-  showHelpMenu,
-  onOpen,
-  onSave,
-  onZoomChange,
-  onRefocusEditor,
   onInsertTable,
   onInsertImage,
   onInsertPageBreak,
@@ -95,7 +70,6 @@ export function DocxEditorToolbar({
 }: {
   toolbarRefCallback: (el: HTMLDivElement | null) => void;
   document: Document | null;
-  theme: Theme | null | undefined;
   pmState: PMEditorState | null;
   selectionFormatting: SelectionFormatting;
   tableContext: TableContextInfo | null;
@@ -103,29 +77,16 @@ export function DocxEditorToolbar({
   readOnly: boolean;
   editingMode: EditorMode;
   setEditingMode: (mode: EditorMode) => void;
-  setShowCommentsSidebar: React.Dispatch<React.SetStateAction<boolean>>;
-  setExpandedSidebarItem: React.Dispatch<React.SetStateAction<string | null>>;
+  setShowCommentsSidebar: Dispatch<SetStateAction<boolean>>;
+  setExpandedSidebarItem: Dispatch<SetStateAction<string | null>>;
   showCommentsSidebar: boolean;
-  renderLogo: (() => ReactNode) | undefined;
-  documentName: string | undefined;
-  onDocumentNameChange: ((name: string) => void) | undefined;
-  documentNameEditable: boolean | undefined;
   renderTitleBarRight: (() => ReactNode) | undefined;
-  toolbarExtra: ReactNode;
   fontFamilies: ReadonlyArray<string | FontOption> | undefined;
   documentFonts?: readonly FontOption[];
-  zoom: number;
-  showZoomControl: boolean;
   onFormat: (action: FormattingAction) => void;
   onUndo: () => void;
   onRedo: () => void;
   onPrint: () => void;
-  showFileOpen: boolean;
-  showHelpMenu: boolean;
-  onOpen: () => void;
-  onSave: () => void | Promise<void>;
-  onZoomChange: (zoom: number) => void;
-  onRefocusEditor: () => void;
   onInsertTable: (rows: number, columns: number) => void;
   onInsertImage: () => void;
   onInsertPageBreak: () => void;
@@ -139,16 +100,8 @@ export function DocxEditorToolbar({
   onWatermark: () => void;
   onTableAction: (action: TableAction) => void;
 }) {
-  // Radius transition matches the agent panel's open/close so the seam
-  // between toolbar bottom-right and panel top-left is smooth.
-  const toolbarStyle: CSSProperties = {
-    transition: 'border-radius 220ms cubic-bezier(0.4, 0, 0.2, 1)',
-  };
-
   const canUndo = pmState ? undoDepth(pmState) > 0 : false;
   const canRedo = pmState ? redoDepth(pmState) > 0 : false;
-  // Dev flag: mount the rebuilt toolbar in place of the legacy one (temporary).
-  const useNext = useNewToolbarFlag();
 
   const handleModeChange = (mode: EditorMode) => {
     setEditingMode(mode);
@@ -159,120 +112,40 @@ export function DocxEditorToolbar({
     setExpandedSidebarItem(null);
   };
 
-  if (useNext) {
-    return (
-      <div ref={toolbarRefCallback} className="z-50 flex flex-col gap-0 flex-shrink-0">
-        <DocxToolbar
-          renderTitleBarRight={renderTitleBarRight}
-          editingMode={editingMode}
-          onModeChange={handleModeChange}
-          commentsActive={showCommentsSidebar}
-          onToggleComments={handleToggleComments}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          onUndo={onUndo}
-          onRedo={onRedo}
-          onPrint={onPrint}
-          onPageSetup={onPageSetup}
-          onWatermark={onWatermark}
-          readOnly={readOnly}
-          currentFormatting={selectionFormatting}
-          onFormat={onFormat}
-          documentFonts={documentFonts}
-          fontFamilies={fontFamilies}
-          documentStyles={document?.package.styles?.styles}
-          onInsertTable={onInsertTable}
-          onInsertImage={onInsertImage}
-          onInsertPageBreak={onInsertPageBreak}
-          onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
-          onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
-          onInsertTOC={onInsertTOC}
-          tableContext={tableContext}
-          onTableAction={onTableAction}
-          imageContext={imageContext}
-          onImageWrapType={onImageWrapType}
-          onImageTransform={onImageTransform}
-          onOpenImageProperties={onOpenImageProperties}
-        />
-      </div>
-    );
-  }
-
   return (
     <div ref={toolbarRefCallback} className="z-50 flex flex-col gap-0 flex-shrink-0">
-      <EditorToolbar
-        style={toolbarStyle}
-        currentFormatting={selectionFormatting}
-        onFormat={onFormat}
+      <DocxToolbar
+        renderTitleBarRight={renderTitleBarRight}
+        editingMode={editingMode}
+        onModeChange={handleModeChange}
+        commentsActive={showCommentsSidebar}
+        onToggleComments={handleToggleComments}
+        canUndo={canUndo}
+        canRedo={canRedo}
         onUndo={onUndo}
         onRedo={onRedo}
-        canUndo={pmState ? undoDepth(pmState) > 0 : false}
-        canRedo={pmState ? redoDepth(pmState) > 0 : false}
-        disabled={readOnly}
-        documentStyles={document?.package.styles?.styles}
-        theme={document?.package.theme || theme}
-        fontFamilies={fontFamilies}
-        documentFonts={documentFonts}
         onPrint={onPrint}
-        onOpen={showFileOpen ? onOpen : undefined}
-        onSave={onSave}
-        showZoomControl={showZoomControl}
-        zoom={zoom}
-        onZoomChange={onZoomChange}
-        onRefocusEditor={onRefocusEditor}
+        onPageSetup={onPageSetup}
+        onWatermark={onWatermark}
+        readOnly={readOnly}
+        currentFormatting={selectionFormatting}
+        onFormat={onFormat}
+        documentFonts={documentFonts}
+        fontFamilies={fontFamilies}
+        documentStyles={document?.package.styles?.styles}
         onInsertTable={onInsertTable}
-        showTableInsert={true}
-        showHelpMenu={showHelpMenu}
         onInsertImage={onInsertImage}
         onInsertPageBreak={onInsertPageBreak}
         onInsertSectionBreakNextPage={onInsertSectionBreakNextPage}
         onInsertSectionBreakContinuous={onInsertSectionBreakContinuous}
         onInsertTOC={onInsertTOC}
+        tableContext={tableContext}
+        onTableAction={onTableAction}
         imageContext={imageContext}
         onImageWrapType={onImageWrapType}
         onImageTransform={onImageTransform}
         onOpenImageProperties={onOpenImageProperties}
-        onPageSetup={onPageSetup}
-        onWatermark={onWatermark}
-        tableContext={tableContext}
-        onTableAction={onTableAction}
-      >
-        <EditorToolbar.TitleBar>
-          {renderLogo && <EditorToolbar.Logo>{renderLogo()}</EditorToolbar.Logo>}
-          {documentName !== undefined && (
-            <EditorToolbar.DocumentName
-              value={documentName}
-              onChange={onDocumentNameChange}
-              editable={documentNameEditable}
-            />
-          )}
-          {renderTitleBarRight && (
-            <EditorToolbar.TitleBarRight>{renderTitleBarRight()}</EditorToolbar.TitleBarRight>
-          )}
-          <EditorToolbar.MenuBar />
-        </EditorToolbar.TitleBar>
-        <EditorToolbar.Toolbar>
-          <ToolbarSeparator />
-          <CommentsSidebarToggle
-            active={showCommentsSidebar}
-            onClick={() => {
-              // Reset expansion so reshowing the sidebar lands on the default
-              // collapsed state — resolved threads stay as checkmarks, not opened.
-              setShowCommentsSidebar((v) => !v);
-              setExpandedSidebarItem(null);
-            }}
-          />
-          <ToolbarSeparator />
-          <EditingModeDropdown
-            mode={editingMode}
-            onModeChange={(mode) => {
-              setEditingMode(mode);
-              if (mode === 'suggesting') setShowCommentsSidebar(true);
-            }}
-          />
-          {toolbarExtra}
-        </EditorToolbar.Toolbar>
-      </EditorToolbar>
+      />
     </div>
   );
 }

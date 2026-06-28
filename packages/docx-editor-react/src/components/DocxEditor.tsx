@@ -588,8 +588,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     theme,
     showToolbar = true,
     showFileOpen = true,
-    showHelpMenu = true,
-    showZoomControl = true,
+    showHelpMenu: _showHelpMenu = true,
+    showZoomControl: _showZoomControl = true,
     showMarginGuides: _showMarginGuides = false,
     marginGuideColor: _marginGuideColor,
     showRuler = false,
@@ -597,7 +597,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     initialZoom = 1.0,
     readOnly: readOnlyProp = false,
     disableFindReplaceShortcuts = false,
-    toolbarExtra,
+    toolbarExtra: _toolbarExtra,
     className = '',
     style,
     placeholder,
@@ -629,10 +629,10 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pluginOverlays,
     pluginSidebarItems,
     pluginRenderedDomContext,
-    renderLogo,
+    renderLogo: _renderLogo,
     documentName,
     onDocumentNameChange,
-    documentNameEditable = true,
+    documentNameEditable: _documentNameEditable = true,
     renderTitleBarRight,
     i18n,
   },
@@ -892,7 +892,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     docxInputRef,
     handleSave,
     handleDirectPrint,
-    handleDownloadDocument,
     handleOpenDocument,
     handleDocxFileChange,
     handleInsertImageClick,
@@ -1118,10 +1117,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     historyStateRef,
     getCachedStyleResolver,
   });
-
-  const handleZoomChange = useCallback((zoom: number) => {
-    setState((prev) => ({ ...prev, zoom }));
-  }, []);
 
   const {
     hyperlinkPopupData,
@@ -1748,7 +1743,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           <DocxEditorToolbar
             toolbarRefCallback={toolbarRefCallback}
             document={history.state}
-            theme={theme}
             pmState={pmState}
             selectionFormatting={state.selectionFormatting}
             tableContext={state.pmTableContext}
@@ -1759,26 +1753,13 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             setShowCommentsSidebar={setShowCommentsSidebar}
             setExpandedSidebarItem={setExpandedSidebarItem}
             showCommentsSidebar={showCommentsSidebar}
-            renderLogo={renderLogo}
-            documentName={documentName}
-            onDocumentNameChange={onDocumentNameChange}
-            documentNameEditable={documentNameEditable}
             renderTitleBarRight={renderTitleBarRight}
-            toolbarExtra={toolbarExtra}
             fontFamilies={fontFamilies}
             documentFonts={documentFonts}
-            zoom={state.zoom}
-            showZoomControl={showZoomControl}
             onFormat={handleFormat}
             onUndo={undoActiveEditor}
             onRedo={redoActiveEditor}
             onPrint={handleDirectPrint}
-            showFileOpen={showFileOpen}
-            showHelpMenu={showHelpMenu}
-            onOpen={handleOpenDocument}
-            onSave={handleDownloadDocument}
-            onZoomChange={handleZoomChange}
-            onRefocusEditor={focusActiveEditor}
             onInsertTable={handleInsertTable}
             onInsertImage={handleInsertImageClick}
             onInsertPageBreak={handleInsertPageBreak}
