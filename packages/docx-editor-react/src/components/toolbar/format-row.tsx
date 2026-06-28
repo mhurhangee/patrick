@@ -3,7 +3,7 @@ import type { Style, Watermark } from '@eigenpal/docx-editor-core/types/document
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Separator } from '@patrick/ui/components/separator';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
-import type { ToolbarImageContext } from '../../types/image';
+import type { ImageContext, ImagePropertiesData } from '../../types/image';
 import type { TableAction } from '../../types/table';
 import { CharacterGroup } from './groups/character-group';
 import { ImageGroup } from './groups/image-group';
@@ -29,10 +29,10 @@ export interface FormatRowProps {
   // Contextual groups (appear by cursor, orthogonal to width)
   tableContext?: TableContextInfo | null;
   onTableAction: (action: TableAction) => void;
-  imageContext?: ToolbarImageContext | null;
+  imageContext?: ImageContext | null;
   onImageWrapType: (wrapType: string) => void;
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
-  onOpenImageProperties: () => void;
+  onApplyImageProperties: (data: ImagePropertiesData) => void;
 }
 
 /**
@@ -61,7 +61,7 @@ export function FormatRow({
   imageContext,
   onImageWrapType,
   onImageTransform,
-  onOpenImageProperties,
+  onApplyImageProperties,
 }: FormatRowProps) {
   return (
     <div className="flex items-center gap-1">
@@ -100,7 +100,7 @@ export function FormatRow({
             imageContext={imageContext}
             onImageWrapType={onImageWrapType}
             onImageTransform={onImageTransform}
-            onOpenImageProperties={onOpenImageProperties}
+            onApplyImageProperties={onApplyImageProperties}
           />
         </>
       )}

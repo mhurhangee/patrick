@@ -6,7 +6,7 @@ import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import type { FontOption } from '../ui/FontPicker';
 import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
 import type { TableAction } from '../../types/table';
-import type { ImageContext } from '../../types/image';
+import type { ImageContext, ImagePropertiesData } from '../../types/image';
 import type { EditorMode } from './internals/editing-modes';
 import { DocxToolbar } from '../toolbar/docx-toolbar';
 
@@ -50,7 +50,7 @@ export function DocxEditorToolbar({
   onInsertTOC,
   onImageWrapType,
   onImageTransform,
-  onOpenImageProperties,
+  onApplyImageProperties,
   onPageSetup,
   onApplyWatermark,
   currentWatermark,
@@ -84,7 +84,7 @@ export function DocxEditorToolbar({
   onInsertTOC: () => void;
   onImageWrapType: (value: string) => void;
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
-  onOpenImageProperties: () => void;
+  onApplyImageProperties: (data: ImagePropertiesData) => void;
   onPageSetup: () => void;
   onApplyWatermark: (watermark: Watermark | null) => void;
   currentWatermark: Watermark | undefined;
@@ -137,7 +137,7 @@ export function DocxEditorToolbar({
         imageContext={imageContext}
         onImageWrapType={onImageWrapType}
         onImageTransform={onImageTransform}
-        onOpenImageProperties={onOpenImageProperties}
+        onApplyImageProperties={onApplyImageProperties}
       />
     </div>
   );

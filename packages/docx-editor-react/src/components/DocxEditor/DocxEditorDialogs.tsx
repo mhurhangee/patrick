@@ -10,7 +10,6 @@ import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
 import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/HyperlinkDialog';
 import type { FindMatch, FindOptions, FindResult } from '../dialogs/FindReplaceDialog';
-import type { ImagePropertiesData } from '../dialogs/ImagePropertiesDialog';
 
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
@@ -21,9 +20,6 @@ const TablePropertiesDialog = lazy(() =>
   import('../dialogs/TablePropertiesDialog').then((m) => ({ default: m.TablePropertiesDialog }))
 );
 const SplitCellDialog = lazy(() => import('../dialogs/SplitCellDialog'));
-const ImagePropertiesDialog = lazy(() =>
-  import('../dialogs/ImagePropertiesDialog').then((m) => ({ default: m.ImagePropertiesDialog }))
-);
 const FootnotePropertiesDialog = lazy(() =>
   import('../dialogs/FootnotePropertiesDialog').then((m) => ({
     default: m.FootnotePropertiesDialog,
@@ -32,15 +28,6 @@ const FootnotePropertiesDialog = lazy(() =>
 const PageSetupDialog = lazy(() =>
   import('../dialogs/PageSetupDialog').then((m) => ({ default: m.PageSetupDialog }))
 );
-
-interface PmImageContextDialogData {
-  alt?: string | null;
-  borderWidth?: number | null;
-  borderColor?: string | null;
-  borderStyle?: string | null;
-  width?: number | null;
-  height?: number | null;
-}
 
 interface SplitCellDialogState {
   isOpen: boolean;
@@ -74,10 +61,6 @@ export function DocxEditorDialogs({
   splitCellDialogState,
   onSplitCellDialogClose,
   onSplitCellDialogApply,
-  imagePropsOpen,
-  onImagePropsClose,
-  onApplyImageProperties,
-  pmImageContext,
   showPageSetup,
   onPageSetupClose,
   onPageSetupApply,
@@ -108,10 +91,6 @@ export function DocxEditorDialogs({
   onSplitCellDialogClose: () => void;
   onSplitCellDialogApply: (rows: number, cols: number) => void;
   // Image properties
-  imagePropsOpen: boolean;
-  onImagePropsClose: () => void;
-  onApplyImageProperties: (data: ImagePropertiesData) => void;
-  pmImageContext: PmImageContextDialogData | null | undefined;
   // Page setup
   showPageSetup: boolean;
   onPageSetupClose: () => void;
@@ -171,25 +150,6 @@ export function DocxEditorDialogs({
           initialCols={splitCellDialogState.initialCols}
           minRows={splitCellDialogState.minRows}
           minCols={splitCellDialogState.minCols}
-        />
-      )}
-      {imagePropsOpen && (
-        <ImagePropertiesDialog
-          isOpen={imagePropsOpen}
-          onClose={onImagePropsClose}
-          onApply={onApplyImageProperties}
-          currentData={
-            pmImageContext
-              ? {
-                  alt: pmImageContext.alt ?? undefined,
-                  borderWidth: pmImageContext.borderWidth ?? undefined,
-                  borderColor: pmImageContext.borderColor ?? undefined,
-                  borderStyle: pmImageContext.borderStyle ?? undefined,
-                  width: pmImageContext.width ?? undefined,
-                  height: pmImageContext.height ?? undefined,
-                }
-              : undefined
-          }
         />
       )}
       {showPageSetup && (

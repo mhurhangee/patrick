@@ -7,6 +7,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@patrick/ui/components/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@patrick/ui/components/popover';
 import {
   ArrowLeftRight,
   ArrowUpDown,
@@ -21,8 +22,10 @@ import {
   SendToBack,
   WrapText,
 } from 'lucide-react';
-import type { ToolbarImageContext } from '../../../types/image';
+import { useState } from 'react';
+import type { ImageContext, ImagePropertiesData } from '../../../types/image';
 import { keepFocus } from '../shared';
+import { ImagePropertiesForm } from './image-properties-popover';
 
 const WRAP_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'inline', label: 'In line with text', icon: WrapText },
@@ -39,7 +42,7 @@ const TRANSFORMS: { value: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV'; label: 
   { value: 'flipV', label: 'Flip vertical', icon: ArrowUpDown },
 ];
 
-function resolveWrap(ctx: ToolbarImageContext): string {
+function resolveWrap(ctx: ImageContext): string {
   if (ctx.displayMode === 'inline') return 'inline';
   if (ctx.displayMode === 'float' && ctx.cssFloat === 'left') return 'wrapRight';
   if (ctx.displayMode === 'float' && ctx.cssFloat === 'right') return 'wrapLeft';
@@ -47,10 +50,10 @@ function resolveWrap(ctx: ToolbarImageContext): string {
 }
 
 export interface ImageGroupProps {
-  imageContext: ToolbarImageContext;
+  imageContext: ImageContext;
   onImageWrapType: (wrapType: string) => void;
   onImageTransform: (action: 'rotateCW' | 'rotateCCW' | 'flipH' | 'flipV') => void;
-  onOpenImageProperties: () => void;
+  onApplyImageProperties: (data: ImagePropertiesData) => void;
 }
 
 /** Contextual image controls — appear in the format band when an image is selected. */
@@ -58,8 +61,9 @@ export function ImageGroup({
   imageContext,
   onImageWrapType,
   onImageTransform,
-  onOpenImageProperties,
+  onApplyImageProperties,
 }: ImageGroupProps) {
+  const [propsOpen, setPropsOpen] = useState(false);
   const wrapValue = resolveWrap(imageContext);
   const WrapIcon = (WRAP_OPTIONS.find((o) => o.value === wrapValue) ?? WRAP_OPTIONS[0]).icon;
 
@@ -101,9 +105,20 @@ export function ImageGroup({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button variant="ghost" size="icon-sm" tooltip="Image properties" onMouseDown={keepFocus} onClick={onOpenImageProperties}>
-        <Settings2 />
-      </Button>
+      <Popover open={propsOpen} onOpenChange={setPropsOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon-sm" tooltip="Image properties" onMouseDown={keepFocus}>
+            <Settings2 />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto">
+          <ImagePropertiesForm
+            imageContext={imageContext}
+            onApply={onApplyImageProperties}
+            onClose={() => setPropsOpen(false)}
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

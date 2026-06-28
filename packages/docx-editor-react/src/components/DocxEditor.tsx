@@ -1050,13 +1050,10 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // Handle shape insertion
   // Handle image wrap type change
   const {
-    imagePropsOpen,
-    setImagePropsOpen,
     footnotePropsOpen,
     setFootnotePropsOpen,
     handleImageWrapType,
     handleImageTransform,
-    handleOpenImageProperties,
     handleApplyImageProperties,
     handleApplyFootnoteProperties,
   } = useImageActions({
@@ -1749,7 +1746,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             onInsertTOC={handleInsertTOC}
             onImageWrapType={handleImageWrapType}
             onImageTransform={handleImageTransform}
-            onOpenImageProperties={handleOpenImageProperties}
+            onApplyImageProperties={handleApplyImageProperties}
             onPageSetup={handleOpenPageSetup}
             onApplyWatermark={handleWatermarkApply}
             currentWatermark={currentWatermark}
@@ -1851,7 +1848,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           imageContextMenu={imageContextMenu}
           onImageWrapApply={handleImageWrapApply}
           imageContextMenuTextActions={imageContextMenuTextActions}
-          onOpenImageProperties={handleOpenImageProperties}
           readOnly={readOnly}
         />
       }
@@ -1874,10 +1870,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           splitCellDialogState={splitCellDialogState}
           onSplitCellDialogClose={handleSplitCellDialogClose}
           onSplitCellDialogApply={handleSplitCellDialogApply}
-          imagePropsOpen={imagePropsOpen}
-          onImagePropsClose={() => setImagePropsOpen(false)}
-          onApplyImageProperties={handleApplyImageProperties}
-          pmImageContext={state.pmImageContext}
           showPageSetup={showPageSetup}
           onPageSetupClose={() => setShowPageSetup(false)}
           onPageSetupApply={handlePageSetupApply}

@@ -10,7 +10,7 @@ import {
   toolbarValueToLayoutTarget,
 } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
-import type { ImagePropertiesData } from '../../dialogs/ImagePropertiesDialog';
+import type { ImagePropertiesData } from '../../../types/image';
 
 /** Minimal shape the hook needs from the parent's selection-tracker state. */
 interface ImageContext {
@@ -45,7 +45,6 @@ export function useImageActions({
   focusActiveEditor: () => void;
   pushDocument: (doc: Document) => void;
 }) {
-  const [imagePropsOpen, setImagePropsOpen] = useState(false);
   const [footnotePropsOpen, setFootnotePropsOpen] = useState(false);
 
   const handleImageWrapType = useCallback(
@@ -126,10 +125,6 @@ export function useImageActions({
     [getActiveEditorView, focusActiveEditor, pmImageContext]
   );
 
-  const handleOpenImageProperties = useCallback(() => {
-    setImagePropsOpen(true);
-  }, []);
-
   const handleApplyImageProperties = useCallback(
     (data: ImagePropertiesData) => {
       const view = getActiveEditorView();
@@ -177,13 +172,10 @@ export function useImageActions({
   );
 
   return {
-    imagePropsOpen,
-    setImagePropsOpen,
     footnotePropsOpen,
     setFootnotePropsOpen,
     handleImageWrapType,
     handleImageTransform,
-    handleOpenImageProperties,
     handleApplyImageProperties,
     handleApplyFootnoteProperties,
   };
