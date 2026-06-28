@@ -3,8 +3,6 @@
  *
  * Curated root entry for the documented React editor API. Advanced surfaces
  * stay public through explicit subpaths:
- * - `@eigenpal/docx-editor-react/ui`
- * - `@eigenpal/docx-editor-react/dialogs`
  * - `@eigenpal/docx-editor-react/hooks`
  * - `@eigenpal/docx-editor-react/plugin-api`
  *

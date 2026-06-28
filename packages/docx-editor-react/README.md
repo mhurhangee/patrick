@@ -104,9 +104,7 @@ editor.destroy();
 ## Subpaths
 
 - `@eigenpal/docx-editor-react` — `DocxEditor`, `renderAsync`, public types
-- `@eigenpal/docx-editor-react/ui` — toolbar primitives, pickers, sidebars, dialogs
 - `@eigenpal/docx-editor-react/hooks` — `useAutoSave`, `useTableSelection`, ...
-- `@eigenpal/docx-editor-react/dialogs` — dialog components barrel
 - `@eigenpal/docx-editor-react/plugin-api` — plugin host and plugin-facing types
 - `@eigenpal/docx-editor-core/styles/editor.css` — the editor's chrome stylesheet (plain CSS; import once where the editor mounts)
 

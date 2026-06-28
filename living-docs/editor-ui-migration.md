@@ -11,7 +11,7 @@ before its legacy is deleted.
 | Area | Status | Notes |
 |---|---|---|
 | Toolbar | ✅ done | new: `components/toolbar/*` + `src/types/*`. DocxToolbar is the only toolbar. Zoom → shared floating `ZoomPill` (`docx-viewer.tsx`). P5c deleted the legacy cluster (~1.9k LOC): `Toolbar`, `EditorToolbar`, `TitleBar`, `EditorToolbarContext`, `CommentsSidebarToggle`, `EditingModeDropdown`, `ui/MenuDropdown` + pruned `ui.ts`. P4 (floating selection) **dropped**. Residual: 5 legacy-only public DocxEditor props `_`-prefixed → prune holistically in A6 |
-| Dead-code cull (A0) | 🚧 | ✅ `EditableImage` deleted (768 LOC, 0 importers). ❌ `ui/Select` + `ui/IconGridDropdown` are NOT dead (audit was wrong) — still used by legacy pickers/dropdowns; delete when those consumers go |
+| Dead-code cull (A0) | ✅ done | `EditableImage` (768 LOC) earlier; then the **dead-entry-point cull**: dropped the `/ui` + `/dialogs` package exports (0 external + 0 internal importers; `/hooks` + `/plugin-api` kept — `plugin-api` is used internally + is the extension surface) and deleted everything reachable only through them — **29 files, ~8.1k LOC**: `ui.ts`, `dialogs/index.ts`, the legacy `ui/*` controls (`ColorPicker`, `*Picker`s, `Align/List`-less leftovers, `ZoomControl`, `IconGridDropdown`, `TableGridInline`, `UnsavedIndicator`, `LoadingIndicator`, …), `ContextMenu`, `ResponsePreview`, 3 unwired dialogs (`InsertTable`/`InsertSymbol`/`PasteSpecial`), and orphaned glue helpers (`ClickPositionResolver`, `PointerEventHandler`, `reportIssue`, `tableSplit`). Found via knip in library mode. |
 | Dialogs (A2) | ⬜ | 14 inline-styled dialogs → `@patrick/ui` `Dialog` + form primitives (huge shrink) |
 | Context menus (A3) | ⬜ | `TextContextMenu`/`ContextMenu`/`ImageContextMenu` → shadcn context-menu |
 | Sidebar / review cards (A4) | ⬜ | `CommentCard`/`TrackedChangeCard`/`ReplyThread`/`AddCommentCard` |
@@ -50,10 +50,11 @@ glue logic used by `useTableSelection`) + the dead component + icons.
 toolbar exports pruned. The cluster was self-contained (referenced only each other + the
 Patrick-unused `/ui` barrel).
 
-## Orphaned ui/* + hooks — cull in A6 (verify 0 importers each first)
-`hooks/useFixedDropdown.ts` and the toolbar-only `ui/*` (`Button`, `Tooltip`, `Select`,
-`ColorPicker`, `IconGridDropdown`, `AlignmentButtons`, `ListButtons`, `FontPicker`,
-`FontSizePicker`, `StylePicker`, `LineSpacingPicker`, `ZoomControl`, `HyperlinkPopup`,
-`TableGridInline`, the `Table*Picker`/`Image*Dropdown`). ⚠️ some are shared with dialogs/menus
-(still consumed via `ui.ts` / surviving chrome) — re-check importers per file at deletion.
-Also prune the 5 `_`-prefixed dead public `DocxEditor` props here.
+## Still-live `ui/*` + hooks — cull as their consumers migrate
+After the A0 entry-point cull, the `ui/*` that REMAIN are the ones still reached from the `.`
+entry via surviving chrome: `Button`, `Tooltip`, `Select`, `FontPicker`, `FontSizePicker`,
+`ListButtons`, `normalizeFontFamilies`, `HyperlinkPopup`, `HorizontalRuler`, `PrintPreview`,
+`TableToolbar` (its **operations** are live glue; its component is dead-in-file), plus
+`hooks/useFixedDropdown.ts`. These die when the dialogs (A2), context menus (A3), and remaining
+chrome (A5) that consume them are rebuilt — re-run knip after each area. Also still pending:
+the 5 `_`-prefixed dead public `DocxEditor` props (prune once the API is settled).
