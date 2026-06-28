@@ -2,10 +2,19 @@ import type { FindMatch, FindOptions, FindResult } from '@eigenpal/docx-editor-c
 import { getMatchCountText } from '@eigenpal/docx-editor-core/utils/findReplace';
 import { Button } from '@patrick/ui/components/button';
 import { Input } from '@patrick/ui/components/input';
-import { Toggle } from '@patrick/ui/components/toggle';
-import { CaseSensitive, ChevronDown, ChevronUp, Replace, WholeWord, X } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@patrick/ui/components/tooltip';
+import { cn } from '@patrick/ui/lib/utils';
+import {
+  CaseSensitive,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Replace,
+  ReplaceAll,
+  WholeWord,
+  X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { TOGGLE_ACTIVE } from './shared';
 
 const AUTO_SEARCH_DELAY_MS = 220;
 
@@ -22,10 +31,43 @@ export interface FindReplaceBarProps {
   currentResult?: FindResult | null;
 }
 
+/** A small inline toggle that lives inside the find field (case / whole-word). */
+function FieldToggle({
+  pressed,
+  onPressedChange,
+  label,
+  children,
+}: {
+  pressed: boolean;
+  onPressedChange: (v: boolean) => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          aria-pressed={pressed}
+          onClick={() => onPressedChange(!pressed)}
+          className={cn(
+            'flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:size-4',
+            pressed && 'bg-primary/15 text-primary hover:bg-primary/15 hover:text-primary',
+          )}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 /**
- * Find/Replace as a compact bar pinned bottom-centre (above the zoom pill), in
- * the spirit of a browser's find bar — not a centered modal. Reuses the editor's
- * find/replace handlers; opened by Ctrl+F or the zoom pill's search button.
+ * Find/Replace as a compact bar pinned bottom-centre (browser/VS Code style) —
+ * not a modal. Case/whole-word toggles live inside the find field; a left
+ * chevron expands the replace row. Reuses the editor's find/replace handlers.
  */
 export function FindReplaceBar({
   isOpen,
@@ -49,7 +91,6 @@ export function FindReplaceBar({
   const onFindRef = useRef(onFind);
   onFindRef.current = onFind;
 
-  // Seed + focus when opened.
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-seed only on open transition
   useEffect(() => {
     if (!isOpen) return;
@@ -61,12 +102,10 @@ export function FindReplaceBar({
     return () => clearTimeout(id);
   }, [isOpen]);
 
-  // External result sync (next/prev/replace update it through the glue).
   useEffect(() => {
     if (currentResult !== undefined) setResult(currentResult ?? null);
   }, [currentResult]);
 
-  // Debounced search as the query/options change.
   useEffect(() => {
     if (!isOpen) return;
     if (!searchText.trim()) {
@@ -111,71 +150,92 @@ export function FindReplaceBar({
     if (onReplaceAll(searchText, replaceText, { matchCase, matchWholeWord }) > 0) setResult(null);
   };
 
+  // With a query, always show a status ("No results" when onFind yields nothing);
+  // blank only when the field is empty.
+  const countText = searchText.trim() ? getMatchCountText(result) || 'No results' : '';
+
   return (
-    <div className="absolute bottom-16 left-1/2 z-40 -translate-x-1/2 rounded-md border border-border bg-background/95 p-1.5 shadow-md backdrop-blur">
-      <div className="flex items-center gap-1">
-        <Input
-          ref={searchRef}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              e.shiftKey ? prev() : next();
-            } else if (e.key === 'Escape') {
-              onClose();
-            }
-          }}
-          placeholder="Find"
-          autoFocus
-          className="h-7 w-48 text-sm"
-        />
-        <span className="w-24 shrink-0 px-1 text-xs tabular-nums text-muted-foreground">
-          {getMatchCountText(result)}
-        </span>
-        <Toggle size="icon-sm" className={TOGGLE_ACTIVE} tooltip="Match case" pressed={matchCase} onPressedChange={setMatchCase}>
-          <CaseSensitive />
-        </Toggle>
-        <Toggle size="icon-sm" className={TOGGLE_ACTIVE} tooltip="Whole word" pressed={matchWholeWord} onPressedChange={setMatchWholeWord}>
-          <WholeWord />
-        </Toggle>
-        <Button variant="ghost" size="icon-sm" tooltip="Previous (Shift+Enter)" onClick={prev}>
-          <ChevronUp />
-        </Button>
-        <Button variant="ghost" size="icon-sm" tooltip="Next (Enter)" onClick={next}>
-          <ChevronDown />
-        </Button>
-        <Toggle size="icon-sm" className={TOGGLE_ACTIVE} tooltip="Replace" pressed={showReplace} onPressedChange={setShowReplace}>
-          <Replace />
-        </Toggle>
-        <Button variant="ghost" size="icon-sm" tooltip="Close (Esc)" onClick={onClose}>
-          <X />
-        </Button>
-      </div>
-      {showReplace && (
-        <div className="mt-1 flex items-center gap-1">
-          <Input
-            value={replaceText}
-            onChange={(e) => setReplaceText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                replace();
-              } else if (e.key === 'Escape') {
-                onClose();
-              }
-            }}
-            placeholder="Replace with"
-            className="h-7 w-48 text-sm"
-          />
-          <Button variant="outline" size="sm" onClick={replace}>
-            Replace
+    <div className="absolute bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-start gap-1.5 rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-md">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="mt-0.5 shrink-0"
+        tooltip={showReplace ? 'Hide replace' : 'Show replace'}
+        onClick={() => setShowReplace((v) => !v)}
+      >
+        {showReplace ? <ChevronDown /> : <ChevronRight />}
+      </Button>
+
+      <div className="flex flex-col gap-1.5">
+        {/* Find row */}
+        <div className="flex items-center gap-1">
+          <div className="relative">
+            <Input
+              ref={searchRef}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.shiftKey ? prev() : next();
+                } else if (e.key === 'Escape') {
+                  onClose();
+                }
+              }}
+              placeholder="Find"
+              autoFocus
+              className="h-7 w-56 pr-14 text-sm"
+            />
+            <div className="absolute inset-y-0 right-1 flex items-center gap-0.5">
+              <FieldToggle pressed={matchCase} onPressedChange={setMatchCase} label="Match case">
+                <CaseSensitive />
+              </FieldToggle>
+              <FieldToggle pressed={matchWholeWord} onPressedChange={setMatchWholeWord} label="Whole word">
+                <WholeWord />
+              </FieldToggle>
+            </div>
+          </div>
+
+          <span className="w-20 shrink-0 px-1 text-center text-xs tabular-nums text-muted-foreground">
+            {countText || ' '}
+          </span>
+          <Button variant="ghost" size="icon-sm" tooltip="Previous (Shift+Enter)" onClick={prev}>
+            <ChevronUp />
           </Button>
-          <Button variant="outline" size="sm" onClick={replaceAll}>
-            All
+          <Button variant="ghost" size="icon-sm" tooltip="Next (Enter)" onClick={next}>
+            <ChevronDown />
+          </Button>
+          <Button variant="ghost" size="icon-sm" tooltip="Close (Esc)" onClick={onClose}>
+            <X />
           </Button>
         </div>
-      )}
+
+        {/* Replace row */}
+        {showReplace && (
+          <div className="flex items-center gap-1">
+            <Input
+              value={replaceText}
+              onChange={(e) => setReplaceText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  replace();
+                } else if (e.key === 'Escape') {
+                  onClose();
+                }
+              }}
+              placeholder="Replace"
+              className="h-7 w-56 text-sm"
+            />
+            <Button variant="default" size="icon-sm" tooltip="Replace" onClick={replace}>
+              <Replace />
+            </Button>
+            <Button variant="secondary" size="icon-sm" tooltip="Replace all" onClick={replaceAll}>
+              <ReplaceAll />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
