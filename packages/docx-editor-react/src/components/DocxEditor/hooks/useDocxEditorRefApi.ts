@@ -78,7 +78,7 @@ export function useDocxEditorRefApi({
   zoom: number;
   setZoom: (zoom: number) => void;
   openFind: () => void;
-  scrollPageInfo: { currentPage: number; totalPages: number; visible: boolean };
+  scrollPageInfo: { currentPage: number; totalPages: number };
   loadParsedDocument: (doc: Document) => void;
   loadBuffer: (buffer: DocxInput) => Promise<void>;
   comments: Comment[];

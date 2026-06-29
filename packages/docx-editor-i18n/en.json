@@ -638,9 +638,6 @@
   "sidebar": {
     "ariaLabel": "Annotations sidebar"
   },
-  "viewer": {
-    "pageIndicator": "{current} of {total}"
-  },
   "titleBar": {
     "untitled": "Untitled",
     "documentNameAriaLabel": "Document name",

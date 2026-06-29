@@ -1669,7 +1669,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
         scrollLeft: editorScrollLeft,
       }}
       onToggleOutline={handleToggleOutline}
-      scrollPageInfo={scrollPageInfo}
       toolbar={
         showToolbar && !readOnlyProp ? (
           <DocxEditorToolbar

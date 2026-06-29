@@ -9,14 +9,7 @@ import {
   OUTLINE_BUTTON_LEFT_OFFSET,
 } from '../outline/document-outline';
 import { OutlineToggleButton } from '../outline/outline-toggle-button';
-import { PageIndicator } from './PageIndicator';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
-
-interface ScrollPageInfo {
-  currentPage: number;
-  totalPages: number;
-  visible: boolean;
-}
 
 interface OutlineProps {
   headings: HeadingInfo[];
@@ -28,9 +21,9 @@ interface OutlineProps {
 
 /**
  * Outer chrome of the editor: the locale provider + error boundary, the
- * scroll container with its background-click handler, the floating page
- * indicator, the document outline panel + toggle button, plus slots for the
- * toolbar, paged-area body, overlays, dialogs, and hidden file inputs.
+ * scroll container with its background-click handler, the document outline
+ * panel + toggle button, plus slots for the toolbar, paged-area body,
+ * overlays, dialogs, and hidden file inputs.
  *
  * The expanded-sidebar-item highlight styles are computed here from
  * `expandedSidebarItem` + `trackedChanges` because they need to live
@@ -59,7 +52,6 @@ export function DocxEditorShell({
   onEditorContextMenu,
   outlineProps,
   onToggleOutline,
-  scrollPageInfo,
   toolbar,
   pagedArea,
   overlays,
@@ -88,7 +80,6 @@ export function DocxEditorShell({
   onEditorContextMenu: (e: React.MouseEvent) => void;
   outlineProps: OutlineProps;
   onToggleOutline: () => void;
-  scrollPageInfo: ScrollPageInfo;
   toolbar: ReactNode;
   pagedArea: ReactNode;
   overlays: ReactNode;
@@ -162,14 +153,6 @@ export function DocxEditorShell({
                     </div>
                   </div>
                 </div>
-
-                {scrollPageInfo.totalPages > 1 && (
-                  <PageIndicator
-                    currentPage={scrollPageInfo.currentPage}
-                    totalPages={scrollPageInfo.totalPages}
-                    visible={scrollPageInfo.visible}
-                  />
-                )}
 
                 {showOutline && (
                   <DocumentOutline {...outlineProps} leftOffset={OUTLINE_LEFT_OFFSET} />
