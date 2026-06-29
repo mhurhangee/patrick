@@ -48,6 +48,7 @@ Minor cleanups in chrome we already wrote (outside the audit scope):
 - hex `<input>` in `color-control.tsx` is hand-rolled vs `@patrick/ui` `Input`.
 - `highlightColors.ts` (serialise) and `colorResolver` `HIGHLIGHT_COLORS` (render) disagree on the 5 dark-variant hexes → picked ≠ rendered highlight.
 - `BUILTIN_STYLES` table-style presets (`internals/table-style-presets.ts`, extracted in the dead-code cull) are pure DOM-free Word data but live in the react package, while core owns table-style resolution (`newTableStyle.ts`, `styleResolver`) and the planned patent table transforms. [low] *Trigger:* if/when a core-side table transform needs the presets — move them to core then (no current core consumer, so premature now). Flagged by code-review altitude pass on the cull.
+- core `ClipboardManager` + `AutoSaveManager` are now orphaned: their only consumers were the react `useClipboard`/`useAutoSave` hooks, deleted in the dead-hooks cull. They remain exported from core's public barrel (`managers/index.ts` + `core.ts`). [low] *Trigger:* a core public-surface pass — decide keep-as-public-API vs remove (also covers the `managers/types.ts` Clipboard/AutoSave option/snapshot types). Removing them is a core-export change, out of scope for the react cull.
 
 ## Provenance / docs framing (one pass once the rework settles)
 

@@ -1,29 +1,19 @@
 /**
  * useFindReplace Hook
  *
- * React hook for managing find/replace dialog state.
- * Extracted from FindReplaceDialog.tsx.
+ * React hook for the find/replace bar's open/close + match-index state.
+ * The bar owns its own search text, replace text, and find options; the
+ * bridge owns the authoritative match list. This hook only tracks what the
+ * shell needs: whether the bar is open, the seed search text, replace mode,
+ * and the current match index.
  */
 
 import { useState, useCallback } from 'react';
-import type { FindMatch, FindOptions } from '@eigenpal/docx-editor-core/utils/findReplace';
-import { createDefaultFindOptions } from '@eigenpal/docx-editor-core/utils/findReplace';
+import type { FindMatch } from '@eigenpal/docx-editor-core/utils/findReplace';
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-/**
- * Options for the useFindReplace hook
- */
-export interface FindReplaceOptions {
-  /** Whether to show replace functionality initially */
-  initialReplaceMode?: boolean;
-  /** Callback when matches change */
-  onMatchesChange?: (matches: FindMatch[]) => void;
-  /** Callback when current match changes */
-  onCurrentMatchChange?: (match: FindMatch | null, index: number) => void;
-}
 
 /**
  * State for the find/replace hook
@@ -33,10 +23,6 @@ export interface FindReplaceState {
   isOpen: boolean;
   /** Current search text */
   searchText: string;
-  /** Current replace text */
-  replaceText: string;
-  /** Find options */
-  options: FindOptions;
   /** All matches found */
   matches: FindMatch[];
   /** Current match index */
@@ -70,15 +56,13 @@ export interface UseFindReplaceReturn {
 /**
  * Hook for managing find/replace dialog state
  */
-export function useFindReplace(hookOptions?: FindReplaceOptions): UseFindReplaceReturn {
+export function useFindReplace(): UseFindReplaceReturn {
   const [state, setState] = useState<FindReplaceState>({
     isOpen: false,
     searchText: '',
-    replaceText: '',
-    options: createDefaultFindOptions(),
     matches: [],
     currentIndex: 0,
-    replaceMode: hookOptions?.initialReplaceMode ?? false,
+    replaceMode: false,
   });
 
   const openFind = useCallback((selectedText?: string) => {
@@ -110,23 +94,14 @@ export function useFindReplace(hookOptions?: FindReplaceOptions): UseFindReplace
     }));
   }, []);
 
-  const setMatches = useCallback(
-    (matches: FindMatch[], currentIndex: number = 0) => {
-      const newIndex = Math.max(0, Math.min(currentIndex, matches.length - 1));
-      setState((prev) => ({
-        ...prev,
-        matches,
-        currentIndex: matches.length > 0 ? newIndex : 0,
-      }));
-      hookOptions?.onMatchesChange?.(matches);
-      if (matches.length > 0) {
-        hookOptions?.onCurrentMatchChange?.(matches[newIndex], newIndex);
-      } else {
-        hookOptions?.onCurrentMatchChange?.(null, -1);
-      }
-    },
-    [hookOptions]
-  );
+  const setMatches = useCallback((matches: FindMatch[], currentIndex: number = 0) => {
+    const newIndex = Math.max(0, Math.min(currentIndex, matches.length - 1));
+    setState((prev) => ({
+      ...prev,
+      matches,
+      currentIndex: matches.length > 0 ? newIndex : 0,
+    }));
+  }, []);
 
   const goToMatch = useCallback((index: number) => {
     setState((prev) => {

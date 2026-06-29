@@ -948,8 +948,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           setHeadingInfos(collectHeadings(view.state.doc));
         }
       }
-      // Mirror latest PM state so `useTrackedChanges` (and the threading effect)
-      // re-derive from the new doc — including for transactions that came in
+      // Mirror latest PM state so the tracked-changes memo (and the threading
+      // effect) re-derive from the new doc — including for transactions that came in
       // remotely via ySyncPlugin in collab mode.
       const view = pagedEditorRef.current?.getView();
       if (view) setPmState(view.state);
@@ -1317,8 +1317,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       const view = pagedEditorRef.current?.getView();
       if (view) acceptChange(from, to)(view.state, view.dispatch);
       // No explicit re-extract: the dispatch fires `handleDocumentChange`,
-      // which mirrors the new PM state into `pmState` and `useTrackedChanges`
-      // re-derives.
+      // which mirrors the new PM state into `pmState` and the tracked-changes
+      // memo re-derives.
     },
     onRejectChange: (from, to) => {
       const view = pagedEditorRef.current?.getView();
