@@ -69,13 +69,16 @@ export function UnifiedSidebar({
 
   const hasPositions = resolved.length > 0;
 
-  // Build position map for O(1) lookup by item ID
-  const positionMap = useMemo(() => {
-    const map = new Map<string, number>();
+  // Per-id lookup of resolved Y and the room each card may grow into (gap to the
+  // next card's anchor, which drives the collapsed cards' adaptive clamp).
+  const { positionMap, availableMap } = useMemo(() => {
+    const positions = new Map<string, number>();
+    const available = new Map<string, number | undefined>();
     for (const r of resolved) {
-      map.set(r.item.id, r.y);
+      positions.set(r.item.id, r.y);
+      available.set(r.item.id, r.availableBelow);
     }
-    return map;
+    return { positionMap: positions, availableMap: available };
   }, [resolved]);
 
   // Track newly positioned cards in an effect (not during render)
@@ -194,7 +197,7 @@ export function UnifiedSidebar({
         top: 0,
         left: `calc(50% - ${SIDEBAR_DOCUMENT_SHIFT}px + ${(pageWidth * zoom) / 2 + SIDEBAR_PAGE_GAP}px)`,
         width: SIDEBAR_WIDTH,
-        fontFamily: "'Google Sans', Roboto, Arial, sans-serif",
+        fontFamily: 'var(--font-sans)',
         zIndex: 40,
         backgroundColor: 'transparent',
         overflowY: 'visible',
@@ -234,11 +237,24 @@ export function UnifiedSidebar({
                 : 'none';
 
           return (
-            <div key={item.id} style={{ ...style, transition }}>
+            // Elevate the expanded card so the card below slides *under* it
+            // during the reflow instead of briefly painting over its new
+            // height (it sits later in the DOM, so it would otherwise win). The
+            // transient compose card sits above everything so a neighbour can't
+            // paint over its action buttons before the layout re-measures.
+            <div
+              key={item.id}
+              style={{
+                ...style,
+                transition,
+                zIndex: item.isTemporary ? 50 : isExpanded ? 1 : undefined,
+              }}
+            >
               {item.render({
                 isExpanded,
                 onToggleExpand: () => toggleExpand(item.id),
                 measureRef: getMeasureRef(item.id),
+                availableHeight: availableMap.get(item.id),
               })}
             </div>
           );

@@ -44,6 +44,12 @@ export interface SidebarItemRenderProps {
   onToggleExpand: () => void;
   /** Ref callback to measure the rendered card height. */
   measureRef: (el: HTMLDivElement | null) => void;
+  /**
+   * Vertical room (px) a collapsed card may grow into before crowding the next
+   * card — lets a card show its full content when isolated and clamp when
+   * clustered. `undefined` = unbounded (last card / lots of space).
+   */
+  availableHeight?: number;
 }
 
 /**

@@ -1,12 +1,17 @@
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
+import type { TrackedChangeEntry } from '@eigenpal/docx-editor-core/utils/comments';
+import { truncateText } from '@eigenpal/docx-editor-core/utils/comments';
+import { Button } from '@patrick/ui/components/button';
 import { Check, X } from 'lucide-react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
-import type { TrackedChangeEntry } from './cardUtils';
-import { formatDate, getInitials, avatarStyle, ICON_BUTTON_STYLE, truncateText } from './cardUtils';
-import { ReplyThread } from './ReplyThread';
-import { ReplyInput } from './ReplyInput';
-import { CARD_STYLE_COLLAPSED, CARD_STYLE_EXPANDED } from './cardStyles';
 import { useTranslation } from '../../i18n';
+import { ReplyInput } from './reply-input';
+import { ReviewCardShell } from './review-card-shell';
+
+/** Redline colour semantics: insertion = emerald, deletion = red, property/structure = muted. */
+const INSERT = 'font-medium text-emerald-600 dark:text-emerald-400';
+const DELETE = 'font-medium text-destructive';
+const NEUTRAL = 'font-medium text-muted-foreground';
 
 export interface TrackedChangeCardProps extends SidebarItemRenderProps {
   change: TrackedChangeEntry;
@@ -40,6 +45,7 @@ export function TrackedChangeCard({
   isExpanded,
   onToggleExpand,
   measureRef,
+  availableHeight,
   onAccept,
   onReject,
   onAcceptById,
@@ -85,48 +91,20 @@ export function TrackedChangeCard({
   };
 
   return (
-    <div
-      ref={measureRef}
-      className="docx-tracked-change-card"
-      onClick={() => onToggleExpand()}
-      onMouseDown={(e) => e.stopPropagation()}
-      style={isExpanded ? CARD_STYLE_EXPANDED : CARD_STYLE_COLLAPSED}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <div style={avatarStyle(authorName)}>{getInitials(authorName)}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--doc-text)' }}>
-            {authorName}
-          </div>
-          {change.date && (
-            <div style={{ fontSize: 11, color: 'var(--doc-text-muted)' }}>
-              {formatDate(change.date)}
-            </div>
-          )}
-        </div>
-        {isExpanded && (
-          <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
-            <button onClick={handleAccept} title={t('common.accept')} style={ICON_BUTTON_STYLE}>
-              <Check size={20} />
-            </button>
-            <button onClick={handleReject} title={t('common.reject')} style={ICON_BUTTON_STYLE}>
-              <X size={20} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div style={{ fontSize: 13, lineHeight: '20px', color: 'var(--doc-text)', marginTop: 6 }}>
-        {change.type === 'replacement' ? (
+    <ReviewCardShell
+      author={authorName}
+      date={change.date}
+      isExpanded={isExpanded}
+      onToggleExpand={onToggleExpand}
+      measureRef={measureRef}
+      availableHeight={availableHeight}
+      body={
+        change.type === 'replacement' ? (
           <>
             {t('trackedChanges.replaced')}{' '}
-            <span style={{ color: 'var(--doc-error)', fontWeight: 500 }}>
-              &quot;{truncateText(change.deletedText || '')}&quot;
-            </span>{' '}
+            <span className={DELETE}>&quot;{truncateText(change.deletedText || '')}&quot;</span>{' '}
             {t('trackedChanges.with')}{' '}
-            <span style={{ color: 'var(--doc-success)', fontWeight: 500 }}>
-              &quot;{truncateText(change.text)}&quot;
-            </span>
+            <span className={INSERT}>&quot;{truncateText(change.text)}&quot;</span>
           </>
         ) : change.type === 'paragraphMarkInsertion' ? (
           <>
@@ -134,9 +112,7 @@ export function TrackedChangeCard({
             {change.text ? (
               <>
                 {': '}
-                <span style={{ color: 'var(--doc-success)', fontWeight: 500 }}>
-                  &quot;{truncateText(change.text)}&quot;
-                </span>
+                <span className={INSERT}>&quot;{truncateText(change.text)}&quot;</span>
               </>
             ) : null}
           </>
@@ -146,9 +122,7 @@ export function TrackedChangeCard({
             {change.text ? (
               <>
                 {': '}
-                <span style={{ color: 'var(--doc-error)', fontWeight: 500 }}>
-                  &quot;{truncateText(change.text)}&quot;
-                </span>
+                <span className={DELETE}>&quot;{truncateText(change.text)}&quot;</span>
               </>
             ) : null}
           </>
@@ -158,70 +132,53 @@ export function TrackedChangeCard({
             {change.text ? (
               <>
                 {': '}
-                <span style={{ color: 'var(--doc-text-muted)', fontWeight: 500 }}>
-                  &quot;{truncateText(change.text)}&quot;
-                </span>
+                <span className={NEUTRAL}>&quot;{truncateText(change.text)}&quot;</span>
               </>
             ) : null}
           </>
         ) : change.type === 'rowInserted' ? (
-          <span style={{ color: 'var(--doc-success)', fontWeight: 500 }}>
-            {t('revisions.rowInserted')}
-          </span>
+          <span className={INSERT}>{t('revisions.rowInserted')}</span>
         ) : change.type === 'rowDeleted' ? (
-          <span style={{ color: 'var(--doc-error)', fontWeight: 500 }}>
-            {t('revisions.rowDeleted')}
-          </span>
+          <span className={DELETE}>{t('revisions.rowDeleted')}</span>
         ) : change.type === 'cellInserted' ? (
-          <span style={{ color: 'var(--doc-success)', fontWeight: 500 }}>
-            {t('revisions.cellInserted')}
-          </span>
+          <span className={INSERT}>{t('revisions.cellInserted')}</span>
         ) : change.type === 'cellDeleted' ? (
-          <span style={{ color: 'var(--doc-error)', fontWeight: 500 }}>
-            {t('revisions.cellDeleted')}
-          </span>
+          <span className={DELETE}>{t('revisions.cellDeleted')}</span>
         ) : change.type === 'cellMerged' ? (
-          <span style={{ color: 'var(--doc-text-muted)', fontWeight: 500 }}>
-            {t('revisions.cellMerged')}
-          </span>
+          <span className={NEUTRAL}>{t('revisions.cellMerged')}</span>
         ) : change.type === 'rowPropertiesChanged' ? (
-          <span style={{ color: 'var(--doc-text-muted)' }}>
-            {t('revisions.rowPropertiesChanged')}
-          </span>
+          <span className="text-muted-foreground">{t('revisions.rowPropertiesChanged')}</span>
         ) : change.type === 'cellPropertiesChanged' ? (
-          <span style={{ color: 'var(--doc-text-muted)' }}>
-            {t('revisions.cellPropertiesChanged')}
-          </span>
+          <span className="text-muted-foreground">{t('revisions.cellPropertiesChanged')}</span>
         ) : change.type === 'tablePropertiesChanged' ? (
-          <span style={{ color: 'var(--doc-text-muted)' }}>
-            {t('revisions.tablePropertiesChanged')}
-          </span>
+          <span className="text-muted-foreground">{t('revisions.tablePropertiesChanged')}</span>
         ) : change.type === 'tableInserted' ? (
-          <span style={{ color: 'var(--doc-success)', fontWeight: 500 }}>
-            {t('revisions.tableInserted')}
-          </span>
+          <span className={INSERT}>{t('revisions.tableInserted')}</span>
         ) : change.type === 'tableDeleted' ? (
-          <span style={{ color: 'var(--doc-error)', fontWeight: 500 }}>
-            {t('revisions.tableDeleted')}
-          </span>
+          <span className={DELETE}>{t('revisions.tableDeleted')}</span>
         ) : (
           <>
-            {change.type === 'insertion' ? t('trackedChanges.added') : t('trackedChanges.deleted')}{' '}
-            <span
-              style={{
-                color: change.type === 'insertion' ? 'var(--doc-success)' : 'var(--doc-error)',
-                fontWeight: 500,
-              }}
-            >
+            {change.type === 'insertion'
+              ? t('trackedChanges.added')
+              : t('trackedChanges.deleted')}{' '}
+            <span className={change.type === 'insertion' ? INSERT : DELETE}>
               &quot;{truncateText(change.text)}&quot;
             </span>
           </>
-        )}
-      </div>
-
-      <ReplyThread replies={replies} isExpanded={isExpanded} />
-
-      {isExpanded && <ReplyInput onSubmit={(text) => onReply?.(change.revisionId, text)} />}
-    </div>
+        )
+      }
+      actions={
+        <>
+          <Button variant="ghost" size="icon-sm" tooltip={t('common.accept')} onClick={handleAccept}>
+            <Check />
+          </Button>
+          <Button variant="ghost" size="icon-sm" tooltip={t('common.reject')} onClick={handleReject}>
+            <X />
+          </Button>
+        </>
+      }
+      replies={replies}
+      replyInput={<ReplyInput onSubmit={(text) => onReply?.(change.revisionId, text)} />}
+    />
   );
 }
