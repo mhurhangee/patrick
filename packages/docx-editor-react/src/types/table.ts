@@ -49,14 +49,6 @@ export type TableAction =
   | { type: 'toggleHeaderRow' }
   | { type: 'distributeColumns' }
   | { type: 'autoFitContents' }
-  | {
-      type: 'tableProperties';
-      props: {
-        width?: number | null;
-        widthType?: string | null;
-        justification?: 'left' | 'center' | 'right' | null;
-      };
-    }
   | { type: 'openTableProperties' }
   | { type: 'applyTableStyle'; styleId: string };
 
