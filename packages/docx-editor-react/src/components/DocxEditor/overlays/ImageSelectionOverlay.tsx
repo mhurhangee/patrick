@@ -186,13 +186,6 @@ export function ImageSelectionOverlay({
   imageInfoRef.current = imageInfo;
   zoomRef.current = zoom;
 
-  // Mirror the gesture flags into refs so the (rarely re-run) scroll/resize
-  // effect can read the *current* gesture state without re-subscribing.
-  const isResizingRef = useRef(isResizing);
-  const isDraggingRef = useRef(isDragging);
-  isResizingRef.current = isResizing;
-  isDraggingRef.current = isDragging;
-
   // Update overlay position when imageInfo or layout changes
   const updatePosition = useCallback(() => {
     if (!imageInfo || !overlayRef.current) {
@@ -234,9 +227,6 @@ export function ImageSelectionOverlay({
     if (!container) return;
 
     const handleScrollOrResize = () => {
-      // Mid-gesture the live preview (resize) / ghost (drag) owns the geometry;
-      // re-reading the un-committed DOM image rect here would snap it back.
-      if (isResizingRef.current || isDraggingRef.current) return;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(updatePosition);
     };
