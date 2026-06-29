@@ -11,6 +11,7 @@ import { Button } from '@patrick/ui/components/button';
 import { Input } from '@patrick/ui/components/input';
 import { Check, Copy, Link, Pencil, Type, Unlink } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { isValidUrl } from '../../lib/hyperlink';
 import { useTranslation } from '../../i18n';
 
 export type HyperlinkMode = 'view' | 'edit';
@@ -24,7 +25,7 @@ export interface HyperlinkPopoverProps {
   onApply: (text: string, url: string) => void;
   onRemove: () => void;
   onNavigate: (href: string) => void;
-  onCopy: (href: string) => void;
+  onCopy: (href: string) => Promise<boolean>;
   onRequestEdit: () => void;
   onClose: () => void;
 }
@@ -55,9 +56,11 @@ function HyperlinkView({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    onCopy(href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1400);
+    onCopy(href).then((ok) => {
+      if (!ok) return;
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    });
   };
 
   return (
@@ -125,7 +128,7 @@ function HyperlinkEditForm({
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const valid = url.trim().length > 0;
+  const valid = isValidUrl(url);
   const submit = () => {
     if (valid) onApply(text, url);
   };

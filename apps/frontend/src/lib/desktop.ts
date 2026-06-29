@@ -30,7 +30,11 @@ export async function pickFolder(): Promise<string | null> {
  */
 export function openExternal(url: string): void {
 	if (isTauri()) {
-		void shellOpen(url);
+		shellOpen(url).catch((err) => {
+			// A rejected open (scheme outside shell:allow-open, malformed href) would
+			// otherwise be a silent unhandled rejection.
+			console.error("Failed to open external URL:", url, err);
+		});
 	} else {
 		window.open(url, "_blank", "noopener,noreferrer");
 	}

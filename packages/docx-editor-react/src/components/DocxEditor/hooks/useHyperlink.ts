@@ -2,7 +2,6 @@ import {
   findHyperlinkRangeAt,
   insertHyperlink,
   removeHyperlink,
-  setHyperlink,
 } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
 import { useCallback, useState } from 'react';
@@ -63,16 +62,16 @@ export function useHyperlink({
       setSession({ ...CLOSED, open: true, mode: 'edit', displayText: selectedText }),
     []
   );
-  /** Ctrl+K on an existing link — edit it. Resolves the link's text when the
-   *  caret is inside it (no selection) so the Text field isn't empty. */
+  /** Ctrl+K on an existing link — edit it. Always prefills the link's FULL text
+   *  (resolved from its range), not any partial selection inside it — editing a
+   *  link acts on the whole link, and prefilling a fragment would make apply()
+   *  overwrite the rest of the link with that fragment. */
   const openEdit = useCallback(
     (data: { href: string; tooltip?: string; displayText?: string }) => {
-      let displayText = data.displayText ?? '';
-      if (!displayText) {
-        const view = getActiveEditorView();
-        const hit = view ? findHyperlinkRangeAt(view.state) : null;
-        if (view && hit) displayText = view.state.doc.textBetween(hit.start, hit.end);
-      }
+      const view = getActiveEditorView();
+      const hit = view ? findHyperlinkRangeAt(view.state) : null;
+      const displayText =
+        view && hit ? view.state.doc.textBetween(hit.start, hit.end) : (data.displayText ?? '');
       setSession({
         ...CLOSED,
         open: true,
@@ -88,9 +87,12 @@ export function useHyperlink({
   const requestEdit = useCallback(() => setSession((s) => ({ ...s, mode: 'edit' })), []);
   const close = useCallback(() => setSession(CLOSED), []);
 
-  /** Create or change a link. When the text is unchanged the mark is applied in
-   *  place (preserving all run formatting); when it changes, the original run's
-   *  marks are carried onto the new text so font/bold/colour survive. */
+  /** Create or change a link over an existing range. When the display text is
+   *  unchanged the hyperlink mark is re-pointed in place, so every run keeps its
+   *  own formatting; when the text is genuinely retyped there's no sound way to
+   *  map the old runs onto new characters, so the new text inherits the range's
+   *  leading-run marks. Either way the explicit text colour is dropped (matching
+   *  core setHyperlink) so Word's hyperlink blue shows through. */
   const apply = useCallback(
     (text: string, rawUrl: string) => {
       const view = getActiveEditorView();
@@ -98,41 +100,32 @@ export function useHyperlink({
       const url = normalizeUrl(rawUrl);
       const { schema } = view.state;
       const hlType = schema.marks.hyperlink;
+      const textColorType = schema.marks.textColor;
       const hasText = text.trim().length > 0;
+
+      const relink = (start: number, end: number, currentText: string, tooltip?: string) => {
+        const display = hasText ? text : currentText;
+        const mark = hlType.create(tooltip ? { href: url, tooltip } : { href: url });
+        if (display === currentText) {
+          let tr = view.state.tr.removeMark(start, end, hlType);
+          if (textColorType) tr = tr.removeMark(start, end, textColorType);
+          view.dispatch(tr.addMark(start, end, mark).scrollIntoView());
+        } else {
+          const baseMarks = (view.state.doc.nodeAt(start)?.marks ?? []).filter(
+            (m) => m.type !== hlType && m.type !== textColorType
+          );
+          const node = schema.text(display, [...baseMarks, mark]);
+          view.dispatch(view.state.tr.replaceWith(start, end, node).scrollIntoView());
+        }
+      };
 
       const hit = findHyperlinkRangeAt(view.state);
       if (hit) {
-        const rangeText = view.state.doc.textBetween(hit.start, hit.end);
-        const display = hasText ? text : rangeText;
-        const newMark = hlType.create({ href: url, tooltip: hit.mark.attrs.tooltip });
-        if (display === rangeText) {
-          view.dispatch(
-            view.state.tr
-              .removeMark(hit.start, hit.end, hlType)
-              .addMark(hit.start, hit.end, newMark)
-              .scrollIntoView()
-          );
-        } else {
-          const baseMarks = (view.state.doc.nodeAt(hit.start)?.marks ?? []).filter(
-            (m) => m.type !== hlType
-          );
-          const node = schema.text(display, [...baseMarks, newMark]);
-          view.dispatch(view.state.tr.replaceWith(hit.start, hit.end, node).scrollIntoView());
-        }
+        relink(hit.start, hit.end, view.state.doc.textBetween(hit.start, hit.end), hit.mark.attrs.tooltip);
       } else {
         const { from, to, empty } = view.state.selection;
         if (!empty) {
-          const selected = view.state.doc.textBetween(from, to);
-          const display = hasText ? text : selected;
-          if (display === selected) {
-            setHyperlink(url)(view.state, view.dispatch);
-          } else {
-            const baseMarks = (view.state.doc.nodeAt(from)?.marks ?? []).filter(
-              (m) => m.type !== hlType
-            );
-            const node = schema.text(display, [...baseMarks, hlType.create({ href: url })]);
-            view.dispatch(view.state.tr.replaceWith(from, to, node).scrollIntoView());
-          }
+          relink(from, to, view.state.doc.textBetween(from, to));
         } else {
           insertHyperlink(hasText ? text : url, url, undefined)(view.state, view.dispatch);
         }
@@ -166,9 +159,16 @@ export function useHyperlink({
     [onOpenLink]
   );
 
-  const copy = useCallback((href: string) => {
-    navigator.clipboard.writeText(href).catch(() => {});
-  }, []);
+  /** Copy the href; resolves true only on a successful clipboard write so the UI
+   *  doesn't flash a false "copied" when the write is denied/unavailable. */
+  const copy = useCallback(
+    (href: string): Promise<boolean> =>
+      navigator.clipboard.writeText(href).then(
+        () => true,
+        () => false
+      ),
+    []
+  );
 
   return { session, openView, openCreate, openEdit, requestEdit, close, apply, remove, navigate, copy };
 }

@@ -644,11 +644,13 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
       if (anchorEl) {
         const href = anchorEl.getAttribute('href') || '';
         const isExternal = href.length > 0 && !href.startsWith('#');
-        // Read-only (no editable surface): external links just open.
+        // Read-only (no editable surface): external links just open. Fall back
+        // to window.open when the host gives no opener (web), matching navigate.
         if (!surface) {
           if (isExternal) {
             e.preventDefault();
-            onOpenLink?.(href);
+            if (onOpenLink) onOpenLink(href);
+            else window.open(href, '_blank', 'noopener,noreferrer');
           }
           return;
         }
