@@ -22,7 +22,6 @@ import type {
   Measure,
   ParagraphBlock,
   TableBlock,
-  TableMeasure,
   TextBoxBlock,
 } from '@eigenpal/docx-editor-core/layout-engine';
 import {
@@ -125,6 +124,3 @@ export function measureBlocks(
 ): Measure[] {
   return measureBlocksWithFloats(blocks, contentWidth, measureBlock, pageGeometry);
 }
-
-// TableMeasure used internally above; re-exported for tests that compare types.
-export type { TableMeasure };

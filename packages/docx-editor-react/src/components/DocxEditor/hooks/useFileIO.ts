@@ -35,7 +35,6 @@ export function useFileIO({
   pagedEditorRef,
   containerRef,
   comments,
-  documentName,
   onSave,
   onOpen,
   onError,
@@ -49,7 +48,6 @@ export function useFileIO({
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   comments: Comment[];
-  documentName: string | undefined;
   onSave: ((buffer: ArrayBuffer) => void) | undefined;
   onOpen: ((file: File) => void | Promise<void>) | undefined;
   onError: ((error: Error) => void) | undefined;
@@ -203,21 +201,6 @@ body { background: white; }
     onPrint?.();
   }, [containerRef, onPrint]);
 
-  const handleDownloadDocument = useCallback(async () => {
-    const buffer = await handleSave();
-    if (!buffer) return;
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = `${(documentName?.trim() || 'document').replace(/\.docx$/i, '')}.docx`;
-    a.click();
-    // Defer revoke so Safari has time to start the download.
-    setTimeout(() => URL.revokeObjectURL(url), 0);
-  }, [handleSave, documentName]);
-
   const handleOpenDocument = useCallback(() => {
     docxInputRef.current?.click();
   }, []);
@@ -274,7 +257,6 @@ body { background: white; }
     docxInputRef,
     handleSave,
     handleDirectPrint,
-    handleDownloadDocument,
     handleOpenDocument,
     handleDocxFileChange,
     handleInsertImageClick,

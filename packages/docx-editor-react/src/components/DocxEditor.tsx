@@ -615,7 +615,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pluginSidebarItems,
     pluginRenderedDomContext,
     renderLogo: _renderLogo,
-    documentName,
+    // documentName fed only the (removed) download handler; it now joins the
+    // other not-yet-wired title-bar chrome props pending the Phase 2 review.
+    documentName: _documentName,
     onDocumentNameChange,
     documentNameEditable: _documentNameEditable = true,
     renderTitleBarRight,
@@ -888,7 +890,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pagedEditorRef,
     containerRef,
     comments,
-    documentName,
     onSave,
     onOpen,
     onError,

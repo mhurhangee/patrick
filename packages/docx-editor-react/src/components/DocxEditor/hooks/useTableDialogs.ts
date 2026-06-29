@@ -299,9 +299,6 @@ export function useTableDialogs({
                 })(view.state, view.dispatch);
               }
             }
-          } else {
-            // Fallback to the legacy table-selection handler for anything not yet routed.
-            tableSelection.handleAction(action);
           }
       }
 
