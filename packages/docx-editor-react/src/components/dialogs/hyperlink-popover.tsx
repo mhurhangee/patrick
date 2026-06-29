@@ -2,7 +2,8 @@ import { Button } from '@patrick/ui/components/button';
 import { Input } from '@patrick/ui/components/input';
 import { Label } from '@patrick/ui/components/label';
 import { useState } from 'react';
-import { type HyperlinkData, isValidUrl, normalizeUrl } from '../dialogs/hyperlink';
+import { isValidUrl, normalizeUrl } from '../../lib/hyperlink';
+import type { HyperlinkData } from '../../types/hyperlink';
 
 /** Insert/edit a hyperlink — a text + URL popover anchored at the selection. */
 export function HyperlinkForm({

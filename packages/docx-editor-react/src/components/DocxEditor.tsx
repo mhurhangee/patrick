@@ -57,7 +57,7 @@ import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { type PrintOptions } from './ui/PrintPreview';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../hooks/useFindReplace';
-import { useHyperlinkDialog } from './dialogs/hyperlink';
+import { useHyperlinkDialog } from '../hooks/use-hyperlink-dialog';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './DocxEditorHelpers';

@@ -39,7 +39,7 @@ import type { EditorView } from 'prosemirror-view';
 import type { FormattingAction } from '../../../types/formatting';
 import { pointsToHalfPoints } from '../../ui/FontSizePicker';
 import { mapHexToHighlightName } from '../../toolbarUtils';
-import type { useHyperlinkDialog } from '../../dialogs/hyperlink';
+import type { useHyperlinkDialog } from '../../../hooks/use-hyperlink-dialog';
 import type { PagedEditorRef } from '../PagedEditor';
 
 /**

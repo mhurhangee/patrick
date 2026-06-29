@@ -6,7 +6,7 @@ import {
   type FindMatch,
   type FindOptions,
   type FindResult,
-} from '../../dialogs/findReplaceUtils';
+} from '../../../lib/find-replace-utils';
 import type { useFindReplace } from '../../../hooks/useFindReplace';
 import type { PagedEditorRef } from '../PagedEditor';
 

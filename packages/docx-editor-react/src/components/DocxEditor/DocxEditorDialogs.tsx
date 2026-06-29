@@ -8,26 +8,27 @@ import type {
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
-import type { useHyperlinkDialog, HyperlinkData } from '../dialogs/hyperlink';
+import type { useHyperlinkDialog } from '../../hooks/use-hyperlink-dialog';
+import type { HyperlinkData } from '../../types/hyperlink';
 import type { FindMatch, FindOptions, FindResult } from '@eigenpal/docx-editor-core/utils/findReplace';
 import type { ImageContext, ImagePropertiesData } from '../../types/image';
-import { CursorPopover } from '../toolbar/cursor-popover';
-import { FindReplaceBar } from '../toolbar/find-replace-bar';
-import { HyperlinkForm } from '../toolbar/hyperlink-popover';
+import { CursorPopover } from '../primitives/cursor-popover';
+import { FindReplaceBar } from '../dialogs/find-replace-bar';
+import { HyperlinkForm } from '../dialogs/hyperlink-popover';
 import { ImagePropertiesForm } from '../toolbar/groups/image-properties-popover';
-import { SplitCellForm } from '../toolbar/split-cell-popover';
-import { TablePropertiesForm } from '../toolbar/table-properties-popover';
+import { SplitCellForm } from '../dialogs/split-cell-popover';
+import { TablePropertiesForm } from '../dialogs/table-properties-popover';
 
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
 // module load, so co-locating with the JSX keeps the code-split boundary.
 const FootnotePropertiesDialog = lazy(() =>
-  import('../dialogs/FootnotePropertiesDialog').then((m) => ({
+  import('../dialogs/footnote-properties-dialog').then((m) => ({
     default: m.FootnotePropertiesDialog,
   }))
 );
 const PageSetupDialog = lazy(() =>
-  import('../dialogs/PageSetupDialog').then((m) => ({ default: m.PageSetupDialog }))
+  import('../dialogs/page-setup-dialog').then((m) => ({ default: m.PageSetupDialog }))
 );
 
 interface SplitCellDialogState {

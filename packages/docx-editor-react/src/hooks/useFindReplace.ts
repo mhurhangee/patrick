@@ -6,8 +6,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { FindMatch, FindOptions } from '../components/dialogs/findReplaceUtils';
-import { createDefaultFindOptions } from '../components/dialogs/findReplaceUtils';
+import type { FindMatch, FindOptions } from '../lib/find-replace-utils';
+import { createDefaultFindOptions } from '../lib/find-replace-utils';
 
 // ============================================================================
 // TYPES
