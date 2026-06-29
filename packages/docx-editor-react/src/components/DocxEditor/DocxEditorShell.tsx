@@ -27,11 +27,10 @@ interface OutlineProps {
 }
 
 /**
- * Outer chrome of the editor: i18n + error provider wrappers, the
- * scroll container with its background-click handler, horizontal and
- * vertical rulers, the floating page indicator, document outline panel
- * + toggle button, agent panel mount, plus slots for the toolbar,
- * paged-area body, overlays, dialogs, and hidden file inputs.
+ * Outer chrome of the editor: the locale provider + error boundary, the
+ * scroll container with its background-click handler, the floating page
+ * indicator, the document outline panel + toggle button, plus slots for the
+ * toolbar, paged-area body, overlays, dialogs, and hidden file inputs.
  *
  * The expanded-sidebar-item highlight styles are computed here from
  * `expandedSidebarItem` + `trackedChanges` because they need to live

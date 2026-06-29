@@ -1,8 +1,7 @@
 /**
  * ErrorBoundary — catches render errors in the editor subtree and shows a
- * recoverable fallback (the only error UI the editor actually renders). The
- * fallback is built on @patrick/ui's Empty + Button so it inherits Patrick's
- * tokens (incl. dark mode) instead of the legacy `--doc-*` chrome.
+ * recoverable fallback. The fallback is built on @patrick/ui's Empty + Button,
+ * so it picks up Patrick's tokens (incl. dark mode).
  */
 
 import { Button } from '@patrick/ui/components/button';

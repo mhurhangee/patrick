@@ -18,9 +18,6 @@ export type {
   AutoSaveSnapshot,
   CellCoordinates,
   TableSelectionSnapshot,
-  ErrorSeverity,
-  ErrorNotification,
-  ErrorManagerSnapshot,
   PluginLifecycleConfig,
   PluginLifecycleSnapshot,
 } from './types';
@@ -51,8 +48,6 @@ export {
   rgbToHex,
 } from './ClipboardManager';
 export type { ClipboardSelection } from './ClipboardManager';
-
-export { ErrorManager } from './ErrorManager';
 
 export { PluginLifecycleManager, injectStyles } from './PluginLifecycleManager';
 

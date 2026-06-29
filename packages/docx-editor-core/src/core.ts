@@ -303,7 +303,6 @@ export {
   // Manager classes
   AutoSaveManager,
   TableSelectionManager,
-  ErrorManager,
   PluginLifecycleManager,
   // AutoSave utilities
   formatLastSaveTime,
@@ -340,10 +339,6 @@ export type {
   // TableSelection types
   CellCoordinates,
   TableSelectionSnapshot,
-  // Error types
-  ErrorSeverity,
-  ErrorNotification,
-  ErrorManagerSnapshot,
   // Plugin types
   PluginLifecycleConfig,
   PluginLifecycleSnapshot,
