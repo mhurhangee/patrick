@@ -855,11 +855,6 @@
   pointer-events: none;
 }
 
-/* Hyperlink popup icon button hover */
-.ep-hyperlink-popup__icon-btn:hover {
-  background: var(--doc-bg-hover);
-}
-
 /* =============================================================================
  * ProseMirror decoration forwarding overlay
  *

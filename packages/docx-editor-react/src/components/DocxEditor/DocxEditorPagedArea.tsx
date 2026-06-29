@@ -31,7 +31,7 @@ import { CommentMarginMarkers } from '../sidebar/comment-margin-markers';
 import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';
 import { PENDING_COMMENT_ID } from './commentFactories';
-import type { HyperlinkPopupData } from '../ui/HyperlinkPopup';
+import type { HyperlinkPopupData } from '../dialogs/hyperlink-popup';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import type { ReactSidebarItem } from '../../plugin-api/types';
 import type { RenderedDomContext } from '../../plugin-api/types';

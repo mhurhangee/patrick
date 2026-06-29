@@ -73,7 +73,7 @@ import { usePagesPointer } from './hooks/usePagesPointer';
 import { usePagedEditorRefApi } from './hooks/usePagedEditorRefApi';
 import { useLayoutTriggers } from './hooks/useLayoutTriggers';
 import { TableInsertButton } from './overlays/TableInsertButton';
-import { HyperlinkPopup, type HyperlinkPopupData } from '../ui/HyperlinkPopup';
+import { HyperlinkPopup, type HyperlinkPopupData } from '../dialogs/hyperlink-popup';
 
 export { DEFAULT_PAGE_WIDTH };
 

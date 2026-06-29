@@ -9,7 +9,7 @@ import {
 import type { EditorView } from 'prosemirror-view';
 import type { useHyperlinkDialog } from '../../../hooks/use-hyperlink-dialog';
 import type { HyperlinkData } from '../../../types/hyperlink';
-import type { HyperlinkPopupData } from '../../ui/HyperlinkPopup';
+import type { HyperlinkPopupData } from '../../dialogs/hyperlink-popup';
 
 /**
  * Owns the dialog-driven hyperlink flow (insert / edit / remove) and the
