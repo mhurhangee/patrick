@@ -35,12 +35,15 @@ Phase 4 runs with no one watching. **Never stop to ask; never surface a question
 - `TableInsertButton.tsx` — keep as-is. Tiny positioned "+" visual, driven by `usePagesPointer`; clean. No change.
 - `SelectionOverlay.tsx` — keep. Removed the dead `pageGap` prop (declared + passed at the PagedEditor call site, never read) and merged the two fragile caret-blink effects (which shared one timer ref across mismatched dep arrays) into a single effect. Behaviour preserved.
 - `DecorationLayer.tsx` — keep. Well-built plugin-decoration forwarder. Skipped the wasted `style` `setAttribute` in the attr-forward loop (it was overwritten by `cssText` on the next line).
-- `ImageSelectionOverlay.tsx` — keep. Fixed three carried bugs: (1) drag-ghost now zoom-scaled (was unzoomed px → wrong size at zoom≠1); (2) left-button-only guard on the body-drag and resize-handle mousedown (right/middle no longer start drag/resize machinery, so the context menu routes cleanly); (3) scroll/resize no longer calls `updatePosition` mid-gesture (was snapping the live preview/ghost back to the un-committed DOM rect). Also dropped the never-read `width`/`height` from `ImageSelectionInfo` + its producer, and the dead `export default`.
+- `ImageSelectionOverlay.tsx` — keep. Fixed two carried bugs: (1) drag-ghost now zoom-scaled (was unzoomed px → wrong size at zoom≠1); (2) left-button-only guard on the body-drag and resize-handle mousedown (right/middle no longer start drag/resize machinery, so the context menu routes cleanly). Also dropped the never-read `width`/`height` from `ImageSelectionInfo` + its producer, and the dead `export default`. **Deferred (review #96):** the third carried item — scroll/resize snapping the overlay back mid-gesture — was reverted: the attempted guard (mirror `isResizing/isDragging` into refs, bail in `handleScrollOrResize`) introduced a worse, *persistent* failure mode (a dropped out-of-window `mouseup` leaves the flag stuck → scroll re-sync disabled for the session), whereas the original snap-back is a *transient, self-correcting* flicker (next mousemove restores the preview). Net-negative trade, so left as-is. See deferred-items note below.
 
 #### Needs smoke-test before `phase4 → main`
-- **Image resize/drag at zoom ≠ 1** (`ImageSelectionOverlay`) — confirm the drag ghost matches the image size at e.g. 150% zoom, and that scrolling mid-resize no longer snaps the box.
+- **Image drag at zoom ≠ 1** (`ImageSelectionOverlay`) — confirm the drag ghost matches the image size at e.g. 150% zoom.
 - **Right-click a selected image** — context menu opens; no drag/resize gets initiated by the right-click.
 - **Caret blink** (`SelectionOverlay`) — caret blinks when focused, is solid immediately after typing/arrow-key nav, hides on blur, steady (non-blinking) if `blinkInterval=0`.
+
+#### Deferred minor items (logged, not fixed — revisit if they ever bite)
+- `ImageSelectionOverlay` scroll/resize **snap-back during an active resize**: a scroll or window-resize landing mid-resize briefly reads the un-committed DOM image rect into `overlayRect`, flickering the live preview; self-corrects on the next `mousemove`. A guard was tried and reverted (review #96) because the cure (a persistent gesture flag) was worse than the disease. Only worth revisiting if the flicker is ever actually observed.
 
 #### Features cut (log every one)
 _(none yet — overlays group removed only dead props/fields/code, no features)_
