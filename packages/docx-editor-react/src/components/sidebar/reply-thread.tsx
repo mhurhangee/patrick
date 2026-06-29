@@ -1,6 +1,6 @@
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import { formatDate, getCommentText } from '@eigenpal/docx-editor-core/utils/comments';
-import { cn } from '@patrick/ui/lib/utils';
+import { MessageSquare } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { AuthorAvatar } from './author-avatar';
 
@@ -9,25 +9,27 @@ export interface ReplyThreadProps {
   isExpanded: boolean;
 }
 
-/** Replies under a comment/change — all when expanded, just the latest when collapsed. */
+/**
+ * Replies under a comment/change. Collapsed shows just a compact count (so a
+ * threaded card stays within its anchor slot); expanded shows the full thread.
+ */
 export function ReplyThread({ replies, isExpanded }: ReplyThreadProps) {
   const { t } = useTranslation();
   if (replies.length === 0) return null;
-  const visibleReplies = isExpanded ? replies : replies.slice(-1);
-  const hiddenCount = isExpanded ? 0 : replies.length - 1;
+
+  if (!isExpanded) {
+    return (
+      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+        <MessageSquare className="size-3" />
+        {replies.length}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-2">
-      {hiddenCount > 0 && (
-        <div className="border-border border-t py-1.5 text-xs font-medium text-primary">
-          {t('comments.replyCount', { count: hiddenCount })}
-        </div>
-      )}
-      {visibleReplies.map((reply) => (
-        <div
-          key={reply.id}
-          className={cn('border-border border-t pt-2', isExpanded && 'mb-2')}
-        >
+      {replies.map((reply) => (
+        <div key={reply.id} className="mb-2 border-border border-t pt-2">
           <div className="flex items-start gap-2.5">
             <AuthorAvatar name={reply.author || 'U'} className="size-6" />
             <div className="min-w-0 flex-1">
@@ -37,12 +39,7 @@ export function ReplyThread({ replies, isExpanded }: ReplyThreadProps) {
               <div className="text-[11px] text-muted-foreground">{formatDate(reply.date)}</div>
             </div>
           </div>
-          <div
-            className={cn(
-              'mt-1 text-[13px] leading-5 text-foreground',
-              !isExpanded && 'line-clamp-2'
-            )}
-          >
+          <div className="mt-1 text-[13px] leading-5 text-foreground">
             {getCommentText(reply.content)}
           </div>
         </div>

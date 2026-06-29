@@ -1,11 +1,7 @@
 import { getInitials } from '@eigenpal/docx-editor-core/utils/comments';
 import { cn } from '@patrick/ui/lib/utils';
 
-/**
- * Initials chip for a comment/change author, on the Patrick coral brand colour.
- * A5 will branch this to render the Patrick mark when the author is Patrick —
- * for now everyone gets initials.
- */
+/** Initials chip for a comment/change author, on the Patrick coral brand colour. */
 export function AuthorAvatar({ name, className }: { name: string; className?: string }) {
   return (
     <div
