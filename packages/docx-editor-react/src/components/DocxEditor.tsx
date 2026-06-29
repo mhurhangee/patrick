@@ -59,7 +59,7 @@ import { useFindReplace } from '../hooks/useFindReplace';
 import { useHyperlinkDialog } from '../hooks/use-hyperlink-dialog';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
-import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './DocxEditorHelpers';
+import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './states/editor-states';
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
 import type { FontDefinition, ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
 import { useFontLifecycle } from '../hooks/useFontLifecycle';
