@@ -87,8 +87,11 @@ export function useImageInteractions(
           }
         }
         if (!contentEl) {
-          // Below all pages — fall back to the last page's content area.
-          contentEl = pages[pages.length - 1].querySelector('.layout-page-content') as HTMLElement;
+          // Outside every page band: above the first page → first page's
+          // content; below the last page → last page's content.
+          const firstRect = pages[0].getBoundingClientRect();
+          const fallbackPage = clientY < firstRect.top ? pages[0] : pages[pages.length - 1];
+          contentEl = fallbackPage.querySelector('.layout-page-content') as HTMLElement;
         }
         if (!contentEl) return;
 
