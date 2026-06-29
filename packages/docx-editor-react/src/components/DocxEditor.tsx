@@ -159,14 +159,6 @@ export interface DocxEditorProps {
    * Set false when you provide your own open action elsewhere.
    */
   showFileOpen?: boolean;
-  /** Whether to show the Help menu in the menu bar (default: true) */
-  showHelpMenu?: boolean;
-  /** Whether to show zoom control (default: true) */
-  showZoomControl?: boolean;
-  /** Whether to show page margin guides/boundaries (default: false) */
-  showMarginGuides?: boolean;
-  /** Color for margin guides (default: '#c0c0c0') */
-  marginGuideColor?: string;
   /** Initial zoom level (default: 1.0) */
   initialZoom?: number;
   /** Whether the editor is read-only. When true, hides toolbar and rulers */
@@ -176,8 +168,6 @@ export interface DocxEditorProps {
    * This lets the browser or host app handle native find/history shortcuts.
    */
   disableFindReplaceShortcuts?: boolean;
-  /** Custom toolbar actions */
-  toolbarExtra?: ReactNode;
   /** Additional CSS class name */
   className?: string;
   /** Additional inline styles */
@@ -232,12 +222,6 @@ export interface DocxEditorProps {
    * menu entry; omit to hide.
    */
   onPrint?: () => void;
-  /** Callback when content is copied */
-  onCopy?: () => void;
-  /** Callback when content is cut */
-  onCut?: () => void;
-  /** Callback when content is pasted */
-  onPaste?: () => void;
   /** Editor mode: 'editing' (direct edits), 'suggesting' (track changes), or 'viewing' (read-only). Default: 'editing' */
   mode?: EditorMode;
   /** Callback when the editing mode changes */
@@ -285,14 +269,8 @@ export interface DocxEditorProps {
   pluginSidebarItems?: ReactSidebarItem[];
   /** Rendered DOM context from PluginHost (for sidebar position resolution). */
   pluginRenderedDomContext?: RenderedDomContext | null;
-  /** Custom logo/icon for the title bar */
-  renderLogo?: () => ReactNode;
-  /** Document name shown in the title bar */
-  documentName?: string;
   /** Callback when document name changes */
   onDocumentNameChange?: (name: string) => void;
-  /** Whether the document name is editable (default: true) */
-  documentNameEditable?: boolean;
   /** Custom right-side actions for the title bar */
   renderTitleBarRight?: () => ReactNode;
   /** Translation overrides. Import a locale JSON file and pass it directly. */
@@ -560,14 +538,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     theme,
     showToolbar = true,
     showFileOpen = true,
-    showHelpMenu: _showHelpMenu = true,
-    showZoomControl: _showZoomControl = true,
-    showMarginGuides: _showMarginGuides = false,
-    marginGuideColor: _marginGuideColor,
     initialZoom = 1.0,
     readOnly: readOnlyProp = false,
     disableFindReplaceShortcuts = false,
-    toolbarExtra: _toolbarExtra,
     className = '',
     style,
     placeholder,
@@ -578,9 +551,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     fonts,
     watermarkPresets,
     onPrint,
-    onCopy: _onCopy,
-    onCut: _onCut,
-    onPaste: _onPaste,
     mode: modeProp,
     onModeChange,
     onCommentAdd,
@@ -598,10 +568,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pluginOverlays,
     pluginSidebarItems,
     pluginRenderedDomContext,
-    renderLogo: _renderLogo,
-    documentName: _documentName,
     onDocumentNameChange,
-    documentNameEditable: _documentNameEditable = true,
     renderTitleBarRight,
     i18n,
   },
