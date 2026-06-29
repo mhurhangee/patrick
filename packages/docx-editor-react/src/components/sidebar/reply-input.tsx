@@ -1,37 +1,13 @@
+import { Button } from '@patrick/ui/components/button';
+import { Input } from '@patrick/ui/components/input';
 import { useState } from 'react';
-import { submitButtonStyle, CANCEL_BUTTON_STYLE } from './cardUtils';
 import { useTranslation } from '../../i18n';
-
-const ACTIVE_INPUT_STYLE: React.CSSProperties = {
-  width: '100%',
-  border: '1px solid var(--doc-primary)',
-  borderRadius: 20,
-  outline: 'none',
-  fontSize: 14,
-  padding: '8px 16px',
-  fontFamily: 'inherit',
-  boxSizing: 'border-box',
-  color: 'var(--doc-text)',
-};
-
-const INACTIVE_INPUT_STYLE: React.CSSProperties = {
-  width: '100%',
-  border: '1px solid var(--doc-border-light)',
-  borderRadius: 20,
-  outline: 'none',
-  fontSize: 14,
-  padding: '8px 16px',
-  fontFamily: 'inherit',
-  color: 'var(--doc-text-subtle)',
-  cursor: 'text',
-  backgroundColor: 'var(--doc-surface)',
-  boxSizing: 'border-box',
-};
 
 export interface ReplyInputProps {
   onSubmit: (text: string) => void;
 }
 
+/** Collapsed placeholder that expands into a single-line reply field. */
 export function ReplyInput({ onSubmit }: ReplyInputProps) {
   const [active, setActive] = useState(false);
   const [text, setText] = useState('');
@@ -39,8 +15,9 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
 
   if (!active) {
     return (
-      <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 12 }}>
-        <input
+      // biome-ignore lint/a11y/noStaticElementInteractions: stops the card toggle / editor blur
+      <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+        <Input
           readOnly
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
@@ -48,19 +25,24 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
             setActive(true);
           }}
           placeholder={t('comments.replyPlaceholder')}
-          style={INACTIVE_INPUT_STYLE}
+          className="h-8 cursor-text rounded-full text-muted-foreground"
         />
       </div>
     );
   }
 
   const trimmed = text.trim();
+  const submit = () => {
+    if (trimmed) onSubmit(trimmed);
+    setText('');
+    setActive(false);
+  };
 
   return (
-    <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 12 }}>
-      <input
+    // biome-ignore lint/a11y/noStaticElementInteractions: stops the card toggle / editor blur
+    <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+      <Input
         ref={(el) => el?.focus({ preventScroll: true })}
-        type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onMouseDown={(e) => e.stopPropagation()}
@@ -68,9 +50,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
           e.stopPropagation();
           if (e.key === 'Enter') {
             e.preventDefault();
-            if (trimmed) onSubmit(trimmed);
-            setText('');
-            setActive(false);
+            submit();
           }
           if (e.key === 'Escape') {
             setActive(false);
@@ -78,31 +58,30 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
           }
         }}
         placeholder={t('comments.replyPlaceholder')}
-        style={ACTIVE_INPUT_STYLE}
+        className="h-8 rounded-full"
       />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-        <button
+      <div className="mt-2 flex justify-end gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={(e) => {
             e.stopPropagation();
             setActive(false);
             setText('');
           }}
-          style={CANCEL_BUTTON_STYLE}
         >
           {t('common.cancel')}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm"
+          disabled={!trimmed}
           onClick={(e) => {
             e.stopPropagation();
-            if (trimmed) onSubmit(trimmed);
-            setText('');
-            setActive(false);
+            submit();
           }}
-          disabled={!trimmed}
-          style={submitButtonStyle(!!trimmed)}
         >
           {t('common.reply')}
-        </button>
+        </Button>
       </div>
     </div>
   );

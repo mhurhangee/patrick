@@ -194,7 +194,7 @@ export function UnifiedSidebar({
         top: 0,
         left: `calc(50% - ${SIDEBAR_DOCUMENT_SHIFT}px + ${(pageWidth * zoom) / 2 + SIDEBAR_PAGE_GAP}px)`,
         width: SIDEBAR_WIDTH,
-        fontFamily: "'Google Sans', Roboto, Arial, sans-serif",
+        fontFamily: 'var(--font-sans)',
         zIndex: 40,
         backgroundColor: 'transparent',
         overflowY: 'visible',

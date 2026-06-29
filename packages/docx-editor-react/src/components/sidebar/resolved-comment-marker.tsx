@@ -6,6 +6,7 @@ export interface ResolvedCommentMarkerProps extends SidebarItemRenderProps {
   comment: Comment;
 }
 
+/** The collapsed dot for a resolved comment — click to expand the full card. */
 export function ResolvedCommentMarker({
   comment,
   measureRef,
@@ -18,21 +19,9 @@ export function ResolvedCommentMarker({
       data-comment-resolved="true"
       onClick={onToggleExpand}
       onMouseDown={(e) => e.stopPropagation()}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        cursor: 'pointer',
-        color: 'var(--doc-text-muted)',
-        padding: 2,
-      }}
-      onMouseOver={(e) => {
-        (e.currentTarget as HTMLElement).style.opacity = '0.7';
-      }}
-      onMouseOut={(e) => {
-        (e.currentTarget as HTMLElement).style.opacity = '1';
-      }}
+      className="inline-flex cursor-pointer items-center p-0.5 text-muted-foreground transition-opacity hover:opacity-70"
     >
-      <MessageCircleCheck size={20} />
+      <MessageCircleCheck className="size-5" />
     </div>
   );
 }
