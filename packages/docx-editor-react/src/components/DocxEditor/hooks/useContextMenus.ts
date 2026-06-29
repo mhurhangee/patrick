@@ -22,8 +22,8 @@ import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import { en as defaultLocale } from '@eigenpal/docx-editor-i18n';
 import { useTranslation } from '../../../i18n';
 import type { Translations } from '@eigenpal/docx-editor-i18n';
-import { useImageContextMenu } from '../../ImageContextMenu';
-import { type TextContextAction, type TextContextMenuItem } from '../../TextContextMenu';
+import { useImageContextMenu } from '../../../hooks/use-image-context-menu';
+import type { TextContextAction, TextContextMenuItem } from '../../../types/context-menu';
 import { findSelectionYPosition } from '../internals/pmAnchors';
 import { PENDING_COMMENT_ID } from '../commentFactories';
 import { formatKeys } from './formatKeys';
@@ -57,6 +57,7 @@ export function useContextMenus({
   getActiveEditorView,
   focusActiveEditor,
   openSplitCellDialog,
+  openTableProperties,
   scrollContainerRef,
   editorContentRef,
   i18n,
@@ -65,6 +66,7 @@ export function useContextMenus({
   getActiveEditorView: () => EditorView | null | undefined;
   focusActiveEditor: () => void;
   openSplitCellDialog: () => void;
+  openTableProperties: () => void;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   editorContentRef: React.RefObject<HTMLDivElement | null>;
   i18n: Translations | undefined;
@@ -263,6 +265,7 @@ export function useContextMenus({
           action: 'selectTable',
           label: i18n?.table?.selectTable ?? defaultLocale.table.selectTable,
         },
+        { action: 'tableProperties', label: 'Table properties' },
         {
           action: 'deleteTable',
           label: i18n?.table?.deleteTable ?? defaultLocale.table.deleteTable,
@@ -372,6 +375,9 @@ export function useContextMenus({
         case 'splitCell':
           openSplitCellDialog();
           break;
+        case 'tableProperties':
+          openTableProperties();
+          break;
         case 'selectTable':
           pmSelectTable(view.state, view.dispatch);
           break;
@@ -404,6 +410,7 @@ export function useContextMenus({
       getActiveEditorView,
       focusActiveEditor,
       openSplitCellDialog,
+      openTableProperties,
       scrollContainerRef,
       editorContentRef,
       onAddComment,

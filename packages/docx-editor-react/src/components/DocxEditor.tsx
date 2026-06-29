@@ -1135,6 +1135,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     getActiveEditorView,
     focusActiveEditor,
     openSplitCellDialog,
+    openTableProperties: () => handleTableAction({ type: 'openTableProperties' }),
     scrollContainerRef,
     editorContentRef,
     i18n,
