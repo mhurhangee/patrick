@@ -57,7 +57,7 @@ import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { type PrintOptions } from './ui/PrintPreview';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../hooks/useFindReplace';
-import { useHyperlinkDialog } from './dialogs/hyperlink';
+import { useHyperlinkDialog } from '../hooks/use-hyperlink-dialog';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './DocxEditorHelpers';
@@ -1054,8 +1054,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // Handle shape insertion
   // Handle image wrap type change
   const {
-    footnotePropsOpen,
-    setFootnotePropsOpen,
     imagePropsOpen,
     setImagePropsOpen,
     imagePropsRect,
@@ -1063,15 +1061,12 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     handleImageWrapType,
     handleImageTransform,
     handleApplyImageProperties,
-    handleApplyFootnoteProperties,
   } = useImageActions({
-    document: history.state,
     pmImageContext: state.pmImageContext,
     zoom: state.zoom,
     getActiveEditorView,
     getCaretRect,
     focusActiveEditor,
-    pushDocument,
   });
 
   const {
@@ -1898,9 +1893,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           onPageSetupClose={() => setShowPageSetup(false)}
           onPageSetupApply={handlePageSetupApply}
           document={history.state}
-          footnotePropsOpen={footnotePropsOpen}
-          onFootnotePropsClose={() => setFootnotePropsOpen(false)}
-          onApplyFootnoteProperties={handleApplyFootnoteProperties}
         />
       }
       fileInputs={
