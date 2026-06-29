@@ -888,7 +888,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
             selectionRects={hfEditMode ? [] : selectionRects}
             caretPosition={hfEditMode ? null : caretPosition}
             isFocused={isFocused && !hfEditMode}
-            pageGap={pageGap}
             readOnly={readOnly}
           />
 

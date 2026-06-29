@@ -28,10 +28,6 @@ export interface ImageSelectionInfo {
   element: HTMLElement;
   /** ProseMirror position of the image node */
   pmPos: number;
-  /** Current width in pixels */
-  width: number;
-  /** Current height in pixels */
-  height: number;
 }
 
 export interface ImageSelectionOverlayProps {
@@ -250,6 +246,7 @@ export function ImageSelectionOverlay({
   // mousedown/mousemove/mouseup synchronously before React can re-render.
   const handleResizeStart = useCallback(
     (handle: ResizeHandle, e: React.MouseEvent) => {
+      if (e.button !== 0) return; // left-button only; let right/middle through
       if (!imageInfo || !overlayRect) return;
 
       e.preventDefault();
@@ -329,6 +326,7 @@ export function ImageSelectionOverlay({
   // Handle drag-to-move: mousedown on image body (not a handle) starts a move drag
   const handleBodyMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (e.button !== 0) return; // left-button only; let right/middle through
       if (!imageInfo || !overlayRect) return;
 
       e.preventDefault();
@@ -348,6 +346,12 @@ export function ImageSelectionOverlay({
           return; // Haven't moved enough to start dragging
         }
 
+        // `overlayRect` is in unzoomed page coords; the ghost is fixed-position
+        // in screen px, so scale by zoom or it renders too small/large at zoom≠1.
+        const z = zoomRef.current;
+        const ghostW = overlayRect.width * z;
+        const ghostH = overlayRect.height * z;
+
         if (!dragStarted) {
           dragStarted = true;
           setIsDragging(true);
@@ -359,14 +363,14 @@ export function ImageSelectionOverlay({
             'position: fixed; pointer-events: none; z-index: 10000; ' +
             'opacity: 0.5; border: 2px dashed #2563eb; border-radius: 4px; ' +
             'background: rgba(37, 99, 235, 0.1);';
-          ghostEl.style.width = `${overlayRect.width}px`;
-          ghostEl.style.height = `${overlayRect.height}px`;
+          ghostEl.style.width = `${ghostW}px`;
+          ghostEl.style.height = `${ghostH}px`;
           document.body.appendChild(ghostEl);
         }
 
         if (ghostEl) {
-          ghostEl.style.left = `${moveEvent.clientX - overlayRect.width / 2}px`;
-          ghostEl.style.top = `${moveEvent.clientY - overlayRect.height / 2}px`;
+          ghostEl.style.left = `${moveEvent.clientX - ghostW / 2}px`;
+          ghostEl.style.top = `${moveEvent.clientY - ghostH / 2}px`;
         }
       };
 
@@ -494,5 +498,3 @@ function Handle({ handle, style, onMouseDown }: HandleProps): React.ReactElement
     />
   );
 }
-
-export default ImageSelectionOverlay;

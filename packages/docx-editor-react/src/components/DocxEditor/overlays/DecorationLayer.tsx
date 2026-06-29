@@ -158,7 +158,9 @@ function syncDecorations(
       // Forward every attr that came from the decoration spec — class, style,
       // data-*, aria-*, title, etc. Plugins wire UX through these.
       for (const [name, value] of Object.entries(attrs)) {
-        if (name === 'nodeName') continue; // tag name doesn't apply on an overlay div
+        // `nodeName` is the tag name, not an attribute; `style` is applied via
+        // cssText just below, so setting it here would only be overwritten.
+        if (name === 'nodeName' || name === 'style') continue;
         el.setAttribute(name, value);
       }
       const baseStyle =

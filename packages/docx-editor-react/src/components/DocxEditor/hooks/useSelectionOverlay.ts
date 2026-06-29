@@ -87,15 +87,12 @@ export function useSelectionOverlay(opts: UseSelectionOverlayOptions): UseSelect
   const buildImageSelectionInfo = useCallback(
     (el: HTMLElement, pmPos: number): ImageSelectionInfo => {
       const imgTag = el.tagName === 'IMG' ? el : el.querySelector('img');
-      const rect = (imgTag ?? el).getBoundingClientRect();
       return {
         element: (imgTag ?? el) as HTMLElement,
         pmPos,
-        width: Math.round(rect.width / zoom),
-        height: Math.round(rect.height / zoom),
       };
     },
-    [zoom]
+    []
   );
 
   const updateSelectionOverlay = useCallback(

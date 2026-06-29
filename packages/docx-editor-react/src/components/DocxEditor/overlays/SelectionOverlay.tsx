@@ -25,8 +25,6 @@ export interface SelectionOverlayProps {
   isFocused: boolean;
   /** Hide caret/selection when in read-only mode. */
   readOnly?: boolean;
-  /** Gap between pages (for coordinate adjustment). */
-  pageGap?: number;
   /** Custom caret color. */
   caretColor?: string;
   /** Custom selection background color. */
@@ -107,53 +105,32 @@ const Caret: React.FC<{
   const [visible, setVisible] = useState(isFocused);
   const blinkTimerRef = useRef<number | null>(null);
 
+  // One effect owns the blink timer. Re-running on position change restarts the
+  // cycle so the caret is solid right after typing/navigation; a 0 interval means
+  // a steady (non-blinking) caret.
   useEffect(() => {
-    // Clear any existing timer
-    if (blinkTimerRef.current) {
-      window.clearInterval(blinkTimerRef.current);
-      blinkTimerRef.current = null;
-    }
-
-    // Only blink when focused and interval is set
-    if (isFocused && blinkInterval > 0) {
-      setVisible(true);
-      blinkTimerRef.current = window.setInterval(() => {
-        setVisible((v) => !v);
-      }, blinkInterval);
-    } else {
-      // Hide caret when not focused
-      setVisible(false);
-    }
-
-    return () => {
+    const clearTimer = () => {
       if (blinkTimerRef.current) {
         window.clearInterval(blinkTimerRef.current);
+        blinkTimerRef.current = null;
       }
     };
-  }, [isFocused, blinkInterval]);
+    clearTimer();
 
-  // Reset blink cycle when position changes (show immediately after typing/navigation)
-  useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused) {
+      setVisible(false);
+      return;
+    }
 
     setVisible(true);
-
-    // Restart blink timer from this moment
-    if (blinkTimerRef.current) {
-      window.clearInterval(blinkTimerRef.current);
-    }
     if (blinkInterval > 0) {
       blinkTimerRef.current = window.setInterval(() => {
         setVisible((v) => !v);
       }, blinkInterval);
     }
 
-    return () => {
-      if (blinkTimerRef.current) {
-        window.clearInterval(blinkTimerRef.current);
-      }
-    };
-  }, [position.x, position.y, isFocused, blinkInterval]);
+    return clearTimer;
+  }, [isFocused, blinkInterval, position.x, position.y]);
 
   return <div style={caretStyles(position, color, width, visible)} data-testid="caret" />;
 };
