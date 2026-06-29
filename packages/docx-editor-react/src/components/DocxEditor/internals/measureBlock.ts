@@ -37,7 +37,7 @@ import {
 /**
  * Measure a block based on its type.
  */
-export function measureBlock(
+function measureBlock(
   block: FlowBlock,
   contentWidth: number,
   floatingZones?: FloatingImageZone[],

@@ -28,7 +28,7 @@ import { enclosingSdtGroupIds, applySdtFocus } from '@eigenpal/docx-editor-core/
 
 import type { HiddenProseMirrorRef } from '../HiddenProseMirror';
 import type { ImageSelectionInfo } from '../overlays/ImageSelectionOverlay';
-import type { LayoutSelectionGate } from '../internals/LayoutSelectionGate';
+import type { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 import {
   applyCellSelectionHighlight,
   computeSelectionRectsFromDom,

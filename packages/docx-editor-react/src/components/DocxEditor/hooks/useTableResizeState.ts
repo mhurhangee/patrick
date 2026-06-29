@@ -34,7 +34,7 @@ import {
   TWIPS_PER_PIXEL,
   MIN_CELL_WIDTH_TWIPS,
   MIN_ROW_HEIGHT_TWIPS,
-} from '../internals/tableResize';
+} from '@eigenpal/docx-editor-core/prosemirror/tableResize';
 
 export interface UseTableResizeStateOptions {
   hiddenPMRef: React.RefObject<HiddenProseMirrorRef | null>;
