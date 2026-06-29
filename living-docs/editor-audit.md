@@ -4,6 +4,17 @@ Multi-agent audit (2026-06-29) of every un-reworked file in `docx-editor-react` 
 
 Legend: kind · severity · `recommendation` · verify. Act on ✅conf first; ◐partial = public-but-unused, needs keep/trim decision; re-check `unverified` before touching.
 
+## Plan — audit → action
+
+UI strangler-fig (A1–A5) shipped; this is the package-wide cleanup phase. Work the confirmed findings area by area on `refactor/editor-dead-code-cull` (or sub-branches), grep-verifying each `unverified` item before touching it, proving every step with `pnpm check` (typecheck + biome + knip) + `bun test`, and `/code-review` before merge.
+
+- **Phase 1 — dead-code cull** (the 64 `delete`, mostly `✅conf`): the `ui/` pickers (`FontPicker`/`FontSizePicker`/`ListButtons`/`PrintPreview`/`TableStyleGallery`) — extract the live helpers (`FontOption`, `pointsToHalfPoints`, `createDefaultListState`, `getBuiltinTableStyle`, `PrintOptions`) first, then delete → `Button`/`Select` fall out; `toolbarUtils.ts` (whole module); scattered dead exports/refs/branches across shell/hooks/overlays. knip is the proof.
+- **Phase 2 — public-surface keep-or-trim** (the 12 `partial`, public-but-unused-in-repo): `renderAsync`, the `/hooks` subpath entry, `onCopy/onCut/onPaste`, `FontSizePicker` — each a decision (keep as public API vs trim to what Patrick uses), brought up individually.
+- **Phase 3 — confirmed bug / half-baked fixes** (the 28 `fix`): e.g. `useLayoutTriggers` font-load effect, `useScrollPageInfo` dup, `ImageSelectionOverlay` ghost-sizing/button-filter, `DocxEditor` print-preview + chrome props, `useWatermarkControls` staleness, `useTableResizeState` null-width.
+- **Defer** (own future passes, sub-issues filed in `IDEAS.md`): headers/footers, plugins.
+- **Re-run** (hit the limit mid-audit): `ui/TableToolbar/operations.ts`, `hooks/useHistory.ts` — grep-audit inline when their area comes up.
+- **Caveat**: 56 findings are still `unverified` (verify run stopped on token cost). Treat them as candidates — grep-confirm before acting; never blind-delete an `unverified`/`partial`.
+
 ## Counts by subsystem
 
 | Subsystem | files | findings | delete | fix | ✅conf |
