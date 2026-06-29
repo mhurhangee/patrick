@@ -1,6 +1,8 @@
 import { Toaster } from 'sonner';
-import { TextContextMenu, type TextContextMenuItem } from '../TextContextMenu';
-import { ImageContextMenu, useImageContextMenu } from '../ImageContextMenu';
+import { ImageContextMenu } from '../context-menus/image-context-menu';
+import { TextContextMenu } from '../context-menus/text-context-menu';
+import type { useImageContextMenu } from '../../hooks/use-image-context-menu';
+import type { TextContextMenuItem } from '../../types/context-menu';
 
 interface ContextMenuState {
   isOpen: boolean;
