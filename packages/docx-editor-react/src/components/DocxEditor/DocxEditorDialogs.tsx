@@ -1,10 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import type {
-  Document,
-  FootnoteProperties,
-  EndnoteProperties,
-  SectionProperties,
-} from '@eigenpal/docx-editor-core/types/document';
+import type { Document, SectionProperties } from '@eigenpal/docx-editor-core/types/document';
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
@@ -22,11 +17,6 @@ import { TablePropertiesForm } from '../dialogs/table-properties-popover';
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
 // module load, so co-locating with the JSX keeps the code-split boundary.
-const FootnotePropertiesDialog = lazy(() =>
-  import('../dialogs/footnote-properties-dialog').then((m) => ({
-    default: m.FootnotePropertiesDialog,
-  }))
-);
 const PageSetupDialog = lazy(() =>
   import('../dialogs/page-setup-dialog').then((m) => ({ default: m.PageSetupDialog }))
 );
@@ -75,9 +65,6 @@ export function DocxEditorDialogs({
   onPageSetupClose,
   onPageSetupApply,
   document,
-  footnotePropsOpen,
-  onFootnotePropsClose,
-  onApplyFootnoteProperties,
 }: {
   // Find/Replace
   findReplace: ReturnType<typeof useFindReplace>;
@@ -114,10 +101,6 @@ export function DocxEditorDialogs({
   onPageSetupClose: () => void;
   onPageSetupApply: (props: Partial<SectionProperties>) => void;
   document: Document | null;
-  // Footnote properties
-  footnotePropsOpen: boolean;
-  onFootnotePropsClose: () => void;
-  onApplyFootnoteProperties: (footnotePr: FootnoteProperties, endnotePr: EndnoteProperties) => void;
 }) {
   // Capture the painted caret rect when the hyperlink popover opens (the editor
   // still holds the selection at that point), to anchor it at the cursor.
@@ -209,15 +192,6 @@ export function DocxEditorDialogs({
           onClose={onPageSetupClose}
           onApply={onPageSetupApply}
           currentProps={document?.package.document?.finalSectionProperties}
-        />
-      )}
-      {footnotePropsOpen && (
-        <FootnotePropertiesDialog
-          isOpen={footnotePropsOpen}
-          onClose={onFootnotePropsClose}
-          onApply={onApplyFootnoteProperties}
-          footnotePr={document?.package.document?.finalSectionProperties?.footnotePr}
-          endnotePr={document?.package.document?.finalSectionProperties?.endnotePr}
         />
       )}
     </Suspense>

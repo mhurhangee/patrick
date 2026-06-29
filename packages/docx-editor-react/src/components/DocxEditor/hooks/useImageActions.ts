@@ -1,9 +1,4 @@
 import { useCallback, useState } from 'react';
-import type {
-  Document,
-  FootnoteProperties,
-  EndnoteProperties,
-} from '@eigenpal/docx-editor-core/types/document';
 import { setImageWrapType } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import {
   captureInlinePositionEmu,
@@ -23,7 +18,6 @@ interface ImageContext {
  *  - 90° rotate + horizontal/vertical flip via transform attr
  *  - position dialog (horizontal/vertical anchor + distFrom* offsets)
  *  - properties dialog (alt text, border, width/height)
- *  - footnote/endnote properties dialog (footnote numbering/format)
  *
  * Owns the open/closed state for each dialog; the JSX consumer reads the
  * `*Open` flags + the apply/cancel callbacks. `pmImageContext` comes
@@ -31,23 +25,18 @@ interface ImageContext {
  * image right-click flow.
  */
 export function useImageActions({
-  document,
   pmImageContext,
   zoom,
   getActiveEditorView,
   getCaretRect,
   focusActiveEditor,
-  pushDocument,
 }: {
-  document: Document | null;
   pmImageContext: ImageContext | null | undefined;
   zoom: number;
   getActiveEditorView: () => EditorView | null | undefined;
   getCaretRect: () => DOMRect | null;
   focusActiveEditor: () => void;
-  pushDocument: (doc: Document) => void;
 }) {
-  const [footnotePropsOpen, setFootnotePropsOpen] = useState(false);
   const [imagePropsOpen, setImagePropsOpen] = useState(false);
   const [imagePropsRect, setImagePropsRect] = useState<DOMRect | null>(null);
 
@@ -166,31 +155,7 @@ export function useImageActions({
     [getActiveEditorView, focusActiveEditor, pmImageContext]
   );
 
-  const handleApplyFootnoteProperties = useCallback(
-    (footnotePr: FootnoteProperties, endnotePr: EndnoteProperties) => {
-      if (!document?.package) return;
-      const newDoc = {
-        ...document.package.document,
-        finalSectionProperties: {
-          ...document.package.document.finalSectionProperties,
-          footnotePr,
-          endnotePr,
-        },
-      };
-      pushDocument({
-        ...document,
-        package: {
-          ...document.package,
-          document: newDoc,
-        },
-      });
-    },
-    [document, pushDocument]
-  );
-
   return {
-    footnotePropsOpen,
-    setFootnotePropsOpen,
     imagePropsOpen,
     setImagePropsOpen,
     imagePropsRect,
@@ -198,6 +163,5 @@ export function useImageActions({
     handleImageWrapType,
     handleImageTransform,
     handleApplyImageProperties,
-    handleApplyFootnoteProperties,
   };
 }
