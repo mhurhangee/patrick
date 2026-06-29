@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { TrackedChangesResult } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { LocaleProvider } from '../../i18n';
 import { cn } from '../../lib/utils';
-import { ErrorBoundary, ErrorProvider } from '../ErrorBoundary';
+import { ErrorBoundary } from '../states/error-boundary';
 import {
   DocumentOutline,
   OUTLINE_LEFT_OFFSET,
@@ -98,8 +98,7 @@ export function DocxEditorShell({
 }) {
   return (
     <LocaleProvider i18n={i18n}>
-      <ErrorProvider>
-        <ErrorBoundary onError={onEditorError}>
+      <ErrorBoundary onError={onEditorError}>
           <div
             ref={containerRef}
             className={cn('ep-root docx-editor', isDark && 'dark', className)}
@@ -194,8 +193,7 @@ export function DocxEditorShell({
             {dialogs}
             {fileInputs}
           </div>
-        </ErrorBoundary>
-      </ErrorProvider>
+      </ErrorBoundary>
     </LocaleProvider>
   );
 }
