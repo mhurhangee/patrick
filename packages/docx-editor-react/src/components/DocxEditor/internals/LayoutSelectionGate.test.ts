@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it, beforeEach } from 'bun:test';
-import { LayoutSelectionGate } from './LayoutSelectionGate';
+import { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 
 describe('LayoutSelectionGate', () => {
   let gate: LayoutSelectionGate;

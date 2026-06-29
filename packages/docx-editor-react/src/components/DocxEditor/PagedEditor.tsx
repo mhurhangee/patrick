@@ -35,7 +35,7 @@ import type { ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
 import { DEFAULT_PAGE_HEIGHT_PX } from '@eigenpal/docx-editor-core/layout-bridge';
 
 // Selection sync
-import { LayoutSelectionGate } from './internals/LayoutSelectionGate';
+import { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 
 // Visual line navigation hook
 import { useVisualLineNavigation } from '../../hooks/useVisualLineNavigation';

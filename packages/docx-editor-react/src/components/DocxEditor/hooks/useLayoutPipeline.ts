@@ -41,7 +41,7 @@ import type {
 } from '@eigenpal/docx-editor-core/types/document';
 
 import type { HiddenProseMirrorRef } from '../HiddenProseMirror';
-import type { LayoutSelectionGate } from '../internals/LayoutSelectionGate';
+import type { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 import { computeAnchorPositions } from '../internals/sidebarAnchorPositions';
 import { measureBlocks } from '../internals/measureBlock';
 import { createRenderedDomContext } from '../../../plugin-api/RenderedDomContext';
