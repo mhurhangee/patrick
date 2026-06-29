@@ -21,7 +21,6 @@ export {
   type DocxEditorRef,
   type EditorMode,
 } from './components/DocxEditor';
-export { renderAsync, type RenderAsyncOptions, type DocxEditorHandle } from './renderAsync';
 
 // Document factory helpers — re-exported from `@eigenpal/docx-editor-core` so
 // the common "spawn a blank editor" affordance is available without forcing
