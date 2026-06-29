@@ -111,8 +111,6 @@ describe('package.json exports map (source consumption)', () => {
       './layout-bridge/toFlowBlocks',
       './layout-engine/types',
       './layout-painter/renderPage',
-      './managers/AutoSaveManager',
-      './managers/TableSelectionManager',
       './managers/types',
       './prosemirror/commands/formatting',
       './prosemirror/commands/pageBreak',

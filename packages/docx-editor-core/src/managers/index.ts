@@ -10,44 +10,7 @@
 export { Subscribable } from './Subscribable';
 
 // Types
-export type {
-  EditorHandle,
-  AutoSaveStatus,
-  AutoSaveManagerOptions,
-  SavedDocumentData,
-  AutoSaveSnapshot,
-  CellCoordinates,
-  TableSelectionSnapshot,
-  PluginLifecycleConfig,
-  PluginLifecycleSnapshot,
-} from './types';
-
-// Manager classes
-export {
-  AutoSaveManager,
-  formatLastSaveTime,
-  getAutoSaveStatusLabel,
-  getAutoSaveStorageSize,
-  formatStorageSize,
-  isAutoSaveSupported,
-} from './AutoSaveManager';
-
-export { TableSelectionManager } from './TableSelectionManager';
-export {
-  TABLE_DATA_ATTRIBUTES,
-  findTableFromClick,
-  getTableFromDocument,
-  updateTableInDocument,
-  deleteTableFromDocument,
-} from './TableSelectionManager';
-
-export {
-  getSelectionRuns,
-  createSelectionFromDOM,
-  extractFormattingFromElement,
-  rgbToHex,
-} from './ClipboardManager';
-export type { ClipboardSelection } from './ClipboardManager';
+export type { PluginLifecycleConfig, PluginLifecycleSnapshot } from './types';
 
 export { PluginLifecycleManager, injectStyles } from './PluginLifecycleManager';
 
