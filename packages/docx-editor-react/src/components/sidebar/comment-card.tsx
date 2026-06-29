@@ -6,6 +6,7 @@ import { Check, Trash2, Undo2 } from 'lucide-react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
 import { useTranslation } from '../../i18n';
 import { AuthorAvatar } from './author-avatar';
+import { collapsedClamp } from './collapsed-clamp';
 import { ReplyInput } from './reply-input';
 import { ReplyThread } from './reply-thread';
 
@@ -24,6 +25,7 @@ export function CommentCard({
   isExpanded,
   onToggleExpand,
   measureRef,
+  availableHeight,
   onReply,
   onResolve,
   onUnresolve,
@@ -48,10 +50,8 @@ export function CommentCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div
-              className={cn(
-                'min-w-0 flex-1 text-[13px] leading-snug text-foreground',
-                !isExpanded && 'line-clamp-2'
-              )}
+              className="min-w-0 flex-1 text-[13px] leading-snug text-foreground"
+              style={isExpanded ? undefined : collapsedClamp(availableHeight)}
             >
               {getCommentText(comment.content)}
             </div>

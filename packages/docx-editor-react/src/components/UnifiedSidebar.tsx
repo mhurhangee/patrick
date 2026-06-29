@@ -78,6 +78,16 @@ export function UnifiedSidebar({
     return map;
   }, [resolved]);
 
+  // Room each card may grow into (gap to the next card's anchor) — drives the
+  // collapsed cards' adaptive clamp.
+  const availableMap = useMemo(() => {
+    const map = new Map<string, number | undefined>();
+    for (const r of resolved) {
+      map.set(r.item.id, r.availableBelow);
+    }
+    return map;
+  }, [resolved]);
+
   // Track newly positioned cards in an effect (not during render)
   useEffect(() => {
     for (const r of resolved) {
@@ -234,11 +244,15 @@ export function UnifiedSidebar({
                 : 'none';
 
           return (
-            <div key={item.id} style={{ ...style, transition }}>
+            // Elevate the expanded card so the card below slides *under* it
+            // during the reflow instead of briefly painting over its new
+            // height (it sits later in the DOM, so it would otherwise win).
+            <div key={item.id} style={{ ...style, transition, zIndex: isExpanded ? 1 : undefined }}>
               {item.render({
                 isExpanded,
                 onToggleExpand: () => toggleExpand(item.id),
                 measureRef: getMeasureRef(item.id),
+                availableHeight: availableMap.get(item.id),
               })}
             </div>
           );

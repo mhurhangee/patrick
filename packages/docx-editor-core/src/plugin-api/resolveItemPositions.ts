@@ -28,6 +28,13 @@ export interface ResolvableSidebarItem extends SidebarItem {
 export interface ResolvedPosition<T extends ResolvableSidebarItem = ResolvableSidebarItem> {
   item: T;
   y: number;
+  /**
+   * Vertical space (px) between this card's anchor and the next card's anchor —
+   * how much room a collapsed card can grow into before it would crowd the next
+   * one. `undefined` for the last card (unbounded). Derived from anchor gaps
+   * (not resolved/pushed positions) so it stays stable as cards clip.
+   */
+  availableBelow?: number;
 }
 
 export function resolveItemPositions<T extends ResolvableSidebarItem>(
@@ -85,10 +92,15 @@ export function resolveItemPositions<T extends ResolvableSidebarItem>(
 
   const result: ResolvedPosition<T>[] = [];
   let lastBottom = 0;
-  for (const pos of positioned) {
+  for (let i = 0; i < positioned.length; i++) {
+    const pos = positioned[i];
     const height = cardHeights.get(pos.item.id) ?? pos.item.estimatedHeight ?? 80;
     const y = Math.max(pos.targetY, lastBottom + MIN_CARD_GAP);
-    result.push({ item: pos.item, y });
+    // Room a collapsed card may grow into = gap to the NEXT card's anchor.
+    // Anchor-based (not `y`) so clipping a crowded card can't shift the budget.
+    const next = positioned[i + 1];
+    const availableBelow = next ? next.targetY - pos.targetY - MIN_CARD_GAP : undefined;
+    result.push({ item: pos.item, y, availableBelow });
     lastBottom = y + height;
   }
   return result;
