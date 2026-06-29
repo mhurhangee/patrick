@@ -30,13 +30,20 @@ Phase 4 runs with no one watching. **Never stop to ask; never surface a question
 - **Progress log:** keep the per-file verdict + status in the **Progress** list below as I go (this is the durable state across compactions). When the run ends (all in-scope files done, blocker pile, or context limit), **write a clear summary at the top of this file**.
 
 #### Progress (per-file: verdict + status)
-_(none yet)_
+
+**Group 1 — `overlays/` (4 files) — audited + fixed (PR `p4/overlays` → phase4).** Verdicts: all four *used · fit · keep*. Physical relocation rides the later `DocxEditor → editor` rename (overlays stay under the engine dir), so this group is audit+fix only.
+- `TableInsertButton.tsx` — keep as-is. Tiny positioned "+" visual, driven by `usePagesPointer`; clean. No change.
+- `SelectionOverlay.tsx` — keep. Removed the dead `pageGap` prop (declared + passed at the PagedEditor call site, never read) and merged the two fragile caret-blink effects (which shared one timer ref across mismatched dep arrays) into a single effect. Behaviour preserved.
+- `DecorationLayer.tsx` — keep. Well-built plugin-decoration forwarder. Skipped the wasted `style` `setAttribute` in the attr-forward loop (it was overwritten by `cssText` on the next line).
+- `ImageSelectionOverlay.tsx` — keep. Fixed three carried bugs: (1) drag-ghost now zoom-scaled (was unzoomed px → wrong size at zoom≠1); (2) left-button-only guard on the body-drag and resize-handle mousedown (right/middle no longer start drag/resize machinery, so the context menu routes cleanly); (3) scroll/resize no longer calls `updatePosition` mid-gesture (was snapping the live preview/ghost back to the un-committed DOM rect). Also dropped the never-read `width`/`height` from `ImageSelectionInfo` + its producer, and the dead `export default`.
 
 #### Needs smoke-test before `phase4 → main`
-_(none yet)_
+- **Image resize/drag at zoom ≠ 1** (`ImageSelectionOverlay`) — confirm the drag ghost matches the image size at e.g. 150% zoom, and that scrolling mid-resize no longer snaps the box.
+- **Right-click a selected image** — context menu opens; no drag/resize gets initiated by the right-click.
+- **Caret blink** (`SelectionOverlay`) — caret blinks when focused, is solid immediately after typing/arrow-key nav, hides on blur, steady (non-blinking) if `blinkInterval=0`.
 
 #### Features cut (log every one)
-_(none yet)_
+_(none yet — overlays group removed only dead props/fields/code, no features)_
 
 #### Blocked / for-the-user
 _(none yet)_
