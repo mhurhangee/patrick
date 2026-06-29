@@ -50,7 +50,8 @@ export function App() {
 Skip the file picker for new documents. `createEmptyDocument` returns a fresh `Document` model you can pass straight to the editor:
 
 ```tsx
-import { DocxEditor, createEmptyDocument } from '@eigenpal/docx-editor-react';
+import { DocxEditor } from '@eigenpal/docx-editor-react';
+import { createEmptyDocument } from '@eigenpal/docx-editor-core';
 import '@eigenpal/docx-editor-core/styles/editor.css';
 
 const doc = createEmptyDocument();
@@ -60,7 +61,7 @@ const doc = createEmptyDocument();
 <DocxEditor document={doc} mode="editing" />;
 ```
 
-`createDocumentWithText(text, options?)` is the same idea with a starting paragraph already typed. Both helpers are re-exported from `@eigenpal/docx-editor-core` so you don't need a separate dependency.
+`createDocumentWithText(text, options?)` is the same idea with a starting paragraph already typed. Both helpers live in `@eigenpal/docx-editor-core`.
 
 ## Customize File > Open
 
@@ -91,20 +92,9 @@ Set `showFileOpen={false}` to hide the built-in Open item and leave Cmd/Ctrl+O f
 
 > **Forking the adapter?** Keep your fork thin. Depend on `@eigenpal/docx-editor-core` directly so parser, serializer, and rendering fixes land in your build automatically, without backporting each upstream change by hand.
 
-## Imperative mounting
-
-```ts
-import { renderAsync } from '@eigenpal/docx-editor-react';
-
-const editor = await renderAsync(file, document.getElementById('editor')!, { mode: 'editing' });
-await editor.save();
-editor.destroy();
-```
-
 ## Subpaths
 
-- `@eigenpal/docx-editor-react` — `DocxEditor`, `renderAsync`, public types
-- `@eigenpal/docx-editor-react/hooks` — `useAutoSave`, `useTableSelection`, ...
+- `@eigenpal/docx-editor-react` — `DocxEditor`, `DocxEditorRef`
 - `@eigenpal/docx-editor-react/plugin-api` — plugin host and plugin-facing types
 - `@eigenpal/docx-editor-core/styles/editor.css` — the editor's chrome stylesheet (plain CSS; import once where the editor mounts)
 
