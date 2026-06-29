@@ -47,7 +47,7 @@ import { DocxEditorShell } from './DocxEditor/DocxEditorShell';
 import type { FontOption } from './ui/FontPicker';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from './DocumentOutline';
 import { RULER_WIDTH } from './ui/VerticalRuler';
-import { SIDEBAR_DOCUMENT_SHIFT } from './sidebar/constants';
+import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 import { useCommentSidebarItems, type CommentCallbacks } from '../hooks/useCommentSidebarItems';
 import { extractTrackedChanges } from '../hooks/useTrackedChanges';
 import { type EditorState as PMEditorState } from 'prosemirror-state';

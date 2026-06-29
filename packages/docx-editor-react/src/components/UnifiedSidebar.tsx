@@ -7,11 +7,14 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { ReactSidebarItem, RenderedDomContext } from '../plugin-api/types';
-import { SIDEBAR_WIDTH, SIDEBAR_PAGE_GAP, SIDEBAR_DOCUMENT_SHIFT } from './sidebar/constants';
-import { resolveItemPositions } from './sidebar/resolveItemPositions';
+import { resolveItemPositions } from '@eigenpal/docx-editor-core/plugin-api/resolveItemPositions';
+import {
+  SIDEBAR_DOCUMENT_SHIFT,
+  SIDEBAR_PAGE_GAP,
+  SIDEBAR_WIDTH,
+} from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 import { useTranslation } from '../i18n';
 
-export { SIDEBAR_WIDTH, SIDEBAR_PAGE_GAP, SIDEBAR_DOCUMENT_SHIFT } from './sidebar/constants';
 
 export interface UnifiedSidebarProps {
   items: ReactSidebarItem[];
@@ -55,7 +58,7 @@ export function UnifiedSidebar({
 
   const resolved = useMemo(
     () =>
-      resolveItemPositions(
+      resolveItemPositions<ReactSidebarItem>(
         items,
         anchorPositions,
         renderedDomContext,

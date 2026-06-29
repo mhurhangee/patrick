@@ -6,7 +6,7 @@ import {
   type FindMatch,
   type FindOptions,
   type FindResult,
-} from '../../../lib/find-replace-utils';
+} from '@eigenpal/docx-editor-core/utils/findReplace';
 import type { useFindReplace } from '../../../hooks/useFindReplace';
 import type { PagedEditorRef } from '../PagedEditor';
 

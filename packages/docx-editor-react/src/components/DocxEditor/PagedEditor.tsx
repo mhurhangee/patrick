@@ -41,7 +41,7 @@ import { LayoutSelectionGate } from './internals/LayoutSelectionGate';
 import { useVisualLineNavigation } from '../../hooks/useVisualLineNavigation';
 
 // Sidebar constants
-import { SIDEBAR_DOCUMENT_SHIFT } from '../sidebar/constants';
+import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 
 // Types
 import type {

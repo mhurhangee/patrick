@@ -13,7 +13,7 @@ import {
 } from '../DocumentOutline';
 import { OutlineToggleButton } from './OutlineToggleButton';
 import { PageIndicator } from './PageIndicator';
-import { SIDEBAR_DOCUMENT_SHIFT } from '../sidebar/constants';
+import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 import { Z_INDEX } from '../../styles/zIndex';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
 
