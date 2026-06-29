@@ -58,8 +58,6 @@
     "./layout-bridge/toFlowBlocks": "./src/layout-bridge/toFlowBlocks.ts",
     "./layout-engine/types": "./src/layout-engine/types.ts",
     "./layout-painter/renderPage": "./src/layout-painter/renderPage.ts",
-    "./managers/AutoSaveManager": "./src/managers/AutoSaveManager.ts",
-    "./managers/TableSelectionManager": "./src/managers/TableSelectionManager.ts",
     "./managers/types": "./src/managers/types.ts",
     "./prosemirror/commands/formatting": "./src/prosemirror/commands/formatting.ts",
     "./prosemirror/commands/pageBreak": "./src/prosemirror/commands/pageBreak.ts",

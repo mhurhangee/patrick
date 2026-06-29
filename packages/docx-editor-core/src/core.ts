@@ -301,26 +301,7 @@ export {
   // Base class
   Subscribable,
   // Manager classes
-  AutoSaveManager,
-  TableSelectionManager,
   PluginLifecycleManager,
-  // AutoSave utilities
-  formatLastSaveTime,
-  getAutoSaveStatusLabel,
-  getAutoSaveStorageSize,
-  formatStorageSize,
-  isAutoSaveSupported,
-  // TableSelection utilities
-  TABLE_DATA_ATTRIBUTES,
-  findTableFromClick,
-  getTableFromDocument,
-  updateTableInDocument,
-  deleteTableFromDocument,
-  // Clipboard utilities
-  getSelectionRuns,
-  createSelectionFromDOM,
-  extractFormattingFromElement,
-  rgbToHex,
   // PluginLifecycle utilities
   injectStyles,
   // Coordinators
@@ -329,21 +310,9 @@ export {
 } from './managers';
 
 export type {
-  // EditorHandle interface
-  EditorHandle,
-  // AutoSave types
-  AutoSaveStatus,
-  AutoSaveManagerOptions,
-  SavedDocumentData,
-  AutoSaveSnapshot,
-  // TableSelection types
-  CellCoordinates,
-  TableSelectionSnapshot,
   // Plugin types
   PluginLifecycleConfig,
   PluginLifecycleSnapshot,
-  // Clipboard types
-  ClipboardSelection,
   // LayoutCoordinator types
   SelectionRect,
   CaretPosition,
