@@ -357,12 +357,10 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
     const onSelectionChangeRef = useRef(onSelectionChange);
     const onDocumentChangeRef = useRef(onDocumentChange);
     const onReadyRef = useRef(onReady);
-    const onRenderedDomContextReadyRef = useRef(onRenderedDomContextReady);
     // Keep refs in sync with latest props
     onSelectionChangeRef.current = onSelectionChange;
     onDocumentChangeRef.current = onDocumentChange;
     onReadyRef.current = onReady;
-    onRenderedDomContextReadyRef.current = onRenderedDomContextReady;
 
     // State
     const [isFocused, setIsFocused] = useState(false);
@@ -696,12 +694,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
             }
           }
           return;
-        }
-
-        // PageUp/PageDown - let container handle scrolling
-        if (['PageUp', 'PageDown'].includes(e.key) && !e.metaKey && !e.ctrlKey) {
-          // Let PM handle the cursor movement first
-          // If PM doesn't handle it (at bounds), the container will scroll
         }
 
         // Cmd/Ctrl+Home - scroll to top and move cursor to start

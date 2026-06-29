@@ -39,7 +39,7 @@ import { toProseDoc, createEmptyDoc } from '@eigenpal/docx-editor-core/prosemirr
 import { fromProseDoc } from '@eigenpal/docx-editor-core/prosemirror/conversion';
 import type { ExtensionManager } from '@eigenpal/docx-editor-core/prosemirror/extensions';
 import { stripScrollFlag } from '@eigenpal/docx-editor-core/editor';
-import type { Document, Theme, StyleDefinitions } from '@eigenpal/docx-editor-core/types/document';
+import type { Document, StyleDefinitions } from '@eigenpal/docx-editor-core/types/document';
 
 // Import ProseMirror CSS
 import 'prosemirror-view/style/prosemirror.css';
@@ -54,8 +54,6 @@ export interface HiddenProseMirrorProps {
   document: Document | null;
   /** Document styles for style resolution */
   styles?: StyleDefinitions | null;
-  /** Theme for styling */
-  theme?: Theme | null;
   /** Width in pixels (should match document content width) */
   widthPx?: number;
   /** Whether the editor is read-only */
@@ -208,7 +206,6 @@ const HiddenProseMirrorComponent = forwardRef<HiddenProseMirrorRef, HiddenProseM
     const {
       document,
       styles,
-      theme: _theme,
       widthPx = 612, // Default Letter width at 72dpi
       readOnly = false,
       onTransaction,
@@ -402,12 +399,6 @@ const HiddenProseMirrorComponent = forwardRef<HiddenProseMirrorRef, HiddenProseM
     }, [document, styles, extensionManager, externalPlugins]);
     // NOTE: onSelectionChange removed from dependencies - accessed via ref to prevent infinite loops
 
-    // Update editable state
-    useEffect(() => {
-      if (!viewRef.current) return;
-      // EditorView will call editable() on each check, so we don't need to update
-    }, [readOnly]);
-
     // ========================================================================
     // Imperative Handle
     // ========================================================================
@@ -541,5 +532,3 @@ const HiddenProseMirrorComponent = forwardRef<HiddenProseMirrorRef, HiddenProseM
 );
 
 export const HiddenProseMirror = memo(HiddenProseMirrorComponent);
-
-export default HiddenProseMirror;
