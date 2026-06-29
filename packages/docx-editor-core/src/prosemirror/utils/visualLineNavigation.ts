@@ -21,6 +21,7 @@
 import { TextSelection } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 import { findVerticalScrollParent } from '../../utils/findVerticalScrollParent';
+import { findBodyEmptyRuns, findBodyPmSpans } from '../../layout-bridge/findBodyPmSpans';
 
 const CONTENT_LINE_SELECTOR = '.layout-page-content .layout-line';
 
@@ -50,17 +51,18 @@ function scrollIntoViewIfNeeded(el: HTMLElement): void {
 
 /** @internal */
 export function getCaretClientX(container: HTMLElement, pmPos: number): number | null {
-  const spans = container.querySelectorAll('span[data-pm-start][data-pm-end]');
-  for (const span of Array.from(spans)) {
-    const spanEl = span as HTMLElement;
+  // Body-scoped: header/footer runs carry PM positions that overlap body
+  // positions, so an unscoped span query could resolve the caret X against an
+  // HF span and mis-place vertical navigation (see findBodyPmSpans).
+  for (const spanEl of findBodyPmSpans(container)) {
     const pmStart = Number(spanEl.dataset.pmStart);
     const pmEnd = Number(spanEl.dataset.pmEnd);
     if (spanEl.classList.contains('layout-run-tab')) {
       if (pmPos >= pmStart && pmPos < pmEnd) return spanEl.getBoundingClientRect().left;
       continue;
     }
-    if (pmPos >= pmStart && pmPos <= pmEnd && span.firstChild?.nodeType === Node.TEXT_NODE) {
-      const textNode = span.firstChild as Text;
+    if (pmPos >= pmStart && pmPos <= pmEnd && spanEl.firstChild?.nodeType === Node.TEXT_NODE) {
+      const textNode = spanEl.firstChild as Text;
       const charIndex = Math.min(pmPos - pmStart, textNode.length);
       const ownerDoc = spanEl.ownerDocument;
       if (!ownerDoc) continue;
@@ -70,8 +72,7 @@ export function getCaretClientX(container: HTMLElement, pmPos: number): number |
       return range.getBoundingClientRect().left;
     }
   }
-  const emptyRuns = container.querySelectorAll('.layout-empty-run');
-  for (const emptyRun of Array.from(emptyRuns)) {
+  for (const emptyRun of findBodyEmptyRuns(container)) {
     const paragraph = emptyRun.closest('.layout-paragraph') as HTMLElement;
     if (!paragraph) continue;
     const pmStart = Number(paragraph.dataset.pmStart);
