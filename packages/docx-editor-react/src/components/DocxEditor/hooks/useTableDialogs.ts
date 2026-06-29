@@ -38,7 +38,7 @@ import {
 import type { EditorView } from 'prosemirror-view';
 import type { useTableSelection } from '../../../hooks/useTableSelection';
 import type { TableAction } from '../../../types/table';
-import { getBuiltinTableStyle, type TableStylePreset } from '../../ui/TableStyleGallery';
+import { getBuiltinTableStyle, type TableStylePreset } from '../internals/table-style-presets';
 
 interface SplitCellDialogState {
   isOpen: boolean;
