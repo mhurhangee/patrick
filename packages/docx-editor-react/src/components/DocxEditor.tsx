@@ -609,8 +609,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pluginSidebarItems,
     pluginRenderedDomContext,
     renderLogo: _renderLogo,
-    // documentName fed only the (removed) download handler; it now joins the
-    // other not-yet-wired title-bar chrome props pending the Phase 2 review.
     documentName: _documentName,
     onDocumentNameChange,
     documentNameEditable: _documentNameEditable = true,
@@ -1147,7 +1145,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     getBodyEditorView: () => pagedEditorRef.current?.getView(),
   });
 
-  const { scrollPageInfo, setScrollPageInfo } = useScrollPageInfo({
+  const scrollPageInfoRef = useScrollPageInfo({
     scrollContainerRef,
     pagedEditorRef,
   });
@@ -1185,7 +1183,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     zoom: state.zoom,
     setZoom: (zoom: number) => setState((prev) => ({ ...prev, zoom })),
     openFind: () => findReplace.openFind(),
-    scrollPageInfo,
+    scrollPageInfoRef,
     loadParsedDocument,
     loadBuffer,
     comments,
@@ -1764,9 +1762,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             resolvedIdsForRender={resolvedIdsForRender}
             setShowCommentsSidebar={setShowCommentsSidebar}
             onTotalPagesChange={(totalPages) => {
-              setScrollPageInfo((prev) =>
-                prev.totalPages === totalPages ? prev : { ...prev, totalPages }
-              );
+              scrollPageInfoRef.current.totalPages = totalPages;
             }}
             floatingCommentBtn={floatingCommentBtn}
             isAddingComment={isAddingComment}

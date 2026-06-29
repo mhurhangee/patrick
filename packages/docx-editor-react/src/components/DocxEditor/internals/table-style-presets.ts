@@ -1,9 +1,7 @@
 /**
- * Built-in table style presets (matching common Word styles) and the
- * by-id lookup used when applying a table style. Pure data + lookup — the
- * visual gallery that once rendered these was removed in the UI rebuild;
- * table styling is now applied through the toolbar/context-menu actions
- * resolved in useTableDialogs.
+ * Built-in table style presets (matching common Word styles) plus a by-id
+ * lookup. Pure data + lookup, consumed by useTableDialogs when applying a
+ * table style from the toolbar/context-menu actions.
  */
 
 export interface TableStylePreset {

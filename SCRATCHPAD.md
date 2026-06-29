@@ -47,6 +47,7 @@ Minor cleanups in chrome we already wrote (outside the audit scope):
 - `ZoomPill` 400ms polling runs for every editor's lifetime (`docx-viewer.tsx`; share one timer / pause when not visible).
 - hex `<input>` in `color-control.tsx` is hand-rolled vs `@patrick/ui` `Input`.
 - `highlightColors.ts` (serialise) and `colorResolver` `HIGHLIGHT_COLORS` (render) disagree on the 5 dark-variant hexes → picked ≠ rendered highlight.
+- `BUILTIN_STYLES` table-style presets (`internals/table-style-presets.ts`, extracted in the dead-code cull) are pure DOM-free Word data but live in the react package, while core owns table-style resolution (`newTableStyle.ts`, `styleResolver`) and the planned patent table transforms. [low] *Trigger:* if/when a core-side table transform needs the presets — move them to core then (no current core consumer, so premature now). Flagged by code-review altitude pass on the cull.
 
 ## Provenance / docs framing (one pass once the rework settles)
 

@@ -57,7 +57,7 @@ export function useDocxEditorRefApi({
   zoom,
   setZoom,
   openFind,
-  scrollPageInfo,
+  scrollPageInfoRef,
   loadParsedDocument,
   loadBuffer,
   comments,
@@ -78,7 +78,7 @@ export function useDocxEditorRefApi({
   zoom: number;
   setZoom: (zoom: number) => void;
   openFind: () => void;
-  scrollPageInfo: { currentPage: number; totalPages: number };
+  scrollPageInfoRef: React.RefObject<{ currentPage: number; totalPages: number }>;
   loadParsedDocument: (doc: Document) => void;
   loadBuffer: (buffer: DocxInput) => Promise<void>;
   comments: Comment[];
@@ -104,8 +104,8 @@ export function useDocxEditorRefApi({
       focus: () => {
         pagedEditorRef.current?.focus();
       },
-      getCurrentPage: () => scrollPageInfo.currentPage,
-      getTotalPages: () => scrollPageInfo.totalPages,
+      getCurrentPage: () => scrollPageInfoRef.current.currentPage,
+      getTotalPages: () => scrollPageInfoRef.current.totalPages,
       scrollToPage: (pageNumber: number) => {
         pagedEditorRef.current?.scrollToPage(pageNumber);
       },
@@ -280,7 +280,6 @@ export function useDocxEditorRefApi({
     [
       document,
       zoom,
-      scrollPageInfo,
       handleSave,
       handleDirectPrint,
       loadParsedDocument,
