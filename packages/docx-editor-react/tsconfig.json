@@ -17,7 +17,6 @@
     "noFallthroughCasesInSwitch": true,
     "declaration": true,
     "declarationMap": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@eigenpal/docx-editor-core": ["../docx-editor-core/src/core.ts"],
