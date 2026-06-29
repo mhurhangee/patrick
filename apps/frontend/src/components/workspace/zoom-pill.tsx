@@ -68,7 +68,9 @@ export function ZoomPill({
 			>
 				<Minus />
 			</Button>
-			<span className="w-9 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
+			<span className="w-9 text-center tabular-nums">
+				{Math.round(zoom * 100)}%
+			</span>
 			<Button
 				variant="ghost"
 				size="icon-sm"
