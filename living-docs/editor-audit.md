@@ -15,6 +15,24 @@ UI strangler-fig (A1–A5) shipped; this is the package-wide cleanup phase. Work
 - **Re-run** (hit the limit mid-audit): `ui/TableToolbar/operations.ts`, `hooks/useHistory.ts` — grep-audit inline when their area comes up.
 - **Caveat**: 56 findings are still `unverified` (verify run stopped on token cost). Treat them as candidates — grep-confirm before acting; never blind-delete an `unverified`/`partial`.
 
+## Progress (branch `refactor/editor-dead-code-cull`)
+
+**Phase 1 — Bucket 1 (scattered ✅conf dead-code) SHIPPED.** Commits:
+- `cb20a7a` drop deprecated `baseUrl` from both editor tsconfigs (TS7 prep).
+- `3eb3dbc` remove redundant floating `PageIndicator` (zoom-pill shows page count); kept `useScrollPageInfo` (backs the ref API).
+- `f896ab1` **A6 ui-cull**: delete the dead `ui/` pickers + `toolbarUtils` (FontPicker, FontSizePicker, ListButtons, Button, Select, fontPickerValue, normalizeFontFamilies, toolbarUtils) — live helpers repointed to core; normalizeFontFamilies test moved to core.
+- `aca6b0d` extract `TableStylePreset`/`getBuiltinTableStyle` → `internals/table-style-presets`, delete `TableStyleGallery`.
+- `fc808dd` delete dead `TableToolbar` component, keep `TableToolbar/operations.ts` (repointed consumers).
+- `740645c` G1 shell: HiddenProseMirror (default export, no-op readOnly effect, unused `theme` prop), PagedEditor (`onRenderedDomContextReadyRef`, no-op PageUp/PageDown), UnifiedSidebar (`sidebarRef`).
+- `faa77d0` G2/G3: useFileIO `handleDownloadDocument`(+`documentName` opt), useTableDialogs dead `else`, useTableResizeState `resizeRowIsEdgeRef`, SelectionOverlay orphan hook+default export, measureBlock `TableMeasure` re-export, zIndex `ruler`/`toolbar` keys.
+- `a2fd5d5` DocxEditor paragraph-indent `EditorState` fields (fed the removed ruler).
+
+`components/ui/` is now 2 files (live `TableToolbar/operations.ts` + deferred `PrintPreview.tsx`).
+
+**Remaining Phase 1 — Bucket 2 (unverified whole-file/hook culls, need inline grep-verify; some overlap Phase 2 public-surface):** `useSelectionHighlight` (whole file), `useWheelZoom` (whole file), `useClipboard`, `useFindReplace` dead methods, `useTrackedChanges` hook, `useAutoSave`, the `hooks/index.ts` `/hooks` entry, the `useTableSelection` legacy-path question. Plus minor `keep-note`s (EditingModeDef/measureBlock export keywords, index.ts VERSION).
+
+**Deferred to Phase 3** (noted while culling): `PrintPreview.tsx` + the `printOptions`/`_documentName` chrome props — remove the half-baked print-preview feature as one unit.
+
 ## Counts by subsystem
 
 | Subsystem | files | findings | delete | fix | ✅conf |
