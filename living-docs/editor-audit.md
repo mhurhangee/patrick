@@ -19,6 +19,28 @@ Package-wide audit (2026-06-29) of `docx-editor-react` for the dead-code / half-
 
 The engine (`components/DocxEditor/`: 11 files + `hooks/` 32 + `internals/` 13 + `overlays/` 4, plus the second top-level `hooks/` 8 + `types/` 4) was only ever *fast*-audited (dead-or-not), never read for quality. The first two files looked at — `commentFactories.ts` (4 of 5 exports are core re-export shims; only `EMPTY_ANCHOR_POSITIONS` is real) and `ContentControlWidgets.tsx` (real content-control checkbox/dropdown/date UI, but fit-for-Patrick + a date-picker bug unexamined) — show the engine needs a genuine read, not a relocation.
 
+### Running UNSUPERVISED (the live mode) — hard rules
+
+Phase 4 runs with no one watching. **Never stop to ask; never surface a question.** Keep moving through the file list.
+- **Branch model:** one long-lived `phase4` branch off `main`. Each file/group = a sub-branch off `phase4` → PR **targeting `phase4`** (CI runs on the PR) → `/code-review` → **I self-merge into `phase4`** once CI is green + review findings triaged. **NEVER merge to `main`** — the user does `phase4 → main` on return. Push `phase4` + sub-branches to origin.
+- **Behavioural / needs-smoke-test changes:** if they pass the automated gates (typecheck + tests + code-review), **merge into `phase4` anyway** and add them to the **"Needs smoke-test before `phase4 → main`"** list below. Only changes I *cannot make safe even on `phase4`* stay un-merged on their sub-branch + noted as **blocked**.
+- **Blockers** (need a user decision / unsure / unsafe) → write to the **Blocked / for-the-user** list below and move to the next file. Don't let one stuck item halt the run.
+- **Feature cuts:** I may delete features on judgment using the lean-patent-editor bar (Word/Docs-clone + no attorney value + not in our toolbar). **Log EVERY feature cut** in the **Features cut** list below (for completeness), even confident ones. `ContentControlWidgets` → cut (decided by the user: Word form-field UI, no patent value).
+- **Scope:** engine only. **Defer H/F** (`HiddenHeaderFooterPMs`, `useHeaderFooterEditing`, HF branches) + **plugins** — note, don't touch. Chrome untouched, but note any issue spotted.
+- **Progress log:** keep the per-file verdict + status in the **Progress** list below as I go (this is the durable state across compactions). When the run ends (all in-scope files done, blocker pile, or context limit), **write a clear summary at the top of this file**.
+
+#### Progress (per-file: verdict + status)
+_(none yet)_
+
+#### Needs smoke-test before `phase4 → main`
+_(none yet)_
+
+#### Features cut (log every one)
+_(none yet)_
+
+#### Blocked / for-the-user
+_(none yet)_
+
 **Per-file workflow (one touch per file):**
 1. Deep-read it. Answer: **used / reachable? · fit for purpose? · worth keeping? · elegant + maintainable, or rewrite? · right home?**
 2. Verdict → **keep-as-is / slim (e.g. repoint shims to core) / rewrite / delete**.
