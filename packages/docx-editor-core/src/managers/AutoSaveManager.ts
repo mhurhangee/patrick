@@ -2,7 +2,6 @@
  * AutoSaveManager
  *
  * Framework-agnostic class for auto-saving documents to localStorage.
- * Extracted from the React `useAutoSave` hook.
  *
  * Usage with React:
  * ```ts

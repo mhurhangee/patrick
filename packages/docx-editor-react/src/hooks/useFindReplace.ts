@@ -1,29 +1,19 @@
 /**
  * useFindReplace Hook
  *
- * React hook for managing find/replace dialog state.
- * Extracted from FindReplaceDialog.tsx.
+ * React hook for the find/replace bar's open/close + match-index state.
+ * The bar owns its own search text, replace text, and find options; the
+ * bridge owns the authoritative match list. This hook only tracks what the
+ * shell needs: whether the bar is open, the seed search text, replace mode,
+ * and the current match index.
  */
 
 import { useState, useCallback } from 'react';
-import type { FindMatch, FindOptions } from '@eigenpal/docx-editor-core/utils/findReplace';
-import { createDefaultFindOptions } from '@eigenpal/docx-editor-core/utils/findReplace';
+import type { FindMatch } from '@eigenpal/docx-editor-core/utils/findReplace';
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-/**
- * Options for the useFindReplace hook
- */
-export interface FindReplaceOptions {
-  /** Whether to show replace functionality initially */
-  initialReplaceMode?: boolean;
-  /** Callback when matches change */
-  onMatchesChange?: (matches: FindMatch[]) => void;
-  /** Callback when current match changes */
-  onCurrentMatchChange?: (match: FindMatch | null, index: number) => void;
-}
 
 /**
  * State for the find/replace hook
@@ -33,10 +23,6 @@ export interface FindReplaceState {
   isOpen: boolean;
   /** Current search text */
   searchText: string;
-  /** Current replace text */
-  replaceText: string;
-  /** Find options */
-  options: FindOptions;
   /** All matches found */
   matches: FindMatch[];
   /** Current match index */
@@ -57,26 +43,10 @@ export interface UseFindReplaceReturn {
   openReplace: (selectedText?: string) => void;
   /** Close the dialog */
   close: () => void;
-  /** Toggle dialog visibility */
-  toggle: () => void;
-  /** Update search text */
-  setSearchText: (text: string) => void;
-  /** Update replace text */
-  setReplaceText: (text: string) => void;
-  /** Update find options */
-  setOptions: (options: Partial<FindOptions>) => void;
   /** Set search results */
   setMatches: (matches: FindMatch[], currentIndex?: number) => void;
-  /** Go to next match */
-  goToNextMatch: () => number;
-  /** Go to previous match */
-  goToPreviousMatch: () => number;
   /** Go to a specific match by index */
   goToMatch: (index: number) => void;
-  /** Get current match */
-  getCurrentMatch: () => FindMatch | null;
-  /** Check if has matches */
-  hasMatches: () => boolean;
 }
 
 // ============================================================================
@@ -86,15 +56,13 @@ export interface UseFindReplaceReturn {
 /**
  * Hook for managing find/replace dialog state
  */
-export function useFindReplace(hookOptions?: FindReplaceOptions): UseFindReplaceReturn {
+export function useFindReplace(): UseFindReplaceReturn {
   const [state, setState] = useState<FindReplaceState>({
     isOpen: false,
     searchText: '',
-    replaceText: '',
-    options: createDefaultFindOptions(),
     matches: [],
     currentIndex: 0,
-    replaceMode: hookOptions?.initialReplaceMode ?? false,
+    replaceMode: false,
   });
 
   const openFind = useCallback((selectedText?: string) => {
@@ -126,70 +94,13 @@ export function useFindReplace(hookOptions?: FindReplaceOptions): UseFindReplace
     }));
   }, []);
 
-  const toggle = useCallback(() => {
+  const setMatches = useCallback((matches: FindMatch[], currentIndex: number = 0) => {
+    const newIndex = Math.max(0, Math.min(currentIndex, matches.length - 1));
     setState((prev) => ({
       ...prev,
-      isOpen: !prev.isOpen,
+      matches,
+      currentIndex: matches.length > 0 ? newIndex : 0,
     }));
-  }, []);
-
-  const setSearchText = useCallback((text: string) => {
-    setState((prev) => ({
-      ...prev,
-      searchText: text,
-    }));
-  }, []);
-
-  const setReplaceText = useCallback((text: string) => {
-    setState((prev) => ({
-      ...prev,
-      replaceText: text,
-    }));
-  }, []);
-
-  const setOptions = useCallback((options: Partial<FindOptions>) => {
-    setState((prev) => ({
-      ...prev,
-      options: { ...prev.options, ...options },
-    }));
-  }, []);
-
-  const setMatches = useCallback(
-    (matches: FindMatch[], currentIndex: number = 0) => {
-      const newIndex = Math.max(0, Math.min(currentIndex, matches.length - 1));
-      setState((prev) => ({
-        ...prev,
-        matches,
-        currentIndex: matches.length > 0 ? newIndex : 0,
-      }));
-      hookOptions?.onMatchesChange?.(matches);
-      if (matches.length > 0) {
-        hookOptions?.onCurrentMatchChange?.(matches[newIndex], newIndex);
-      } else {
-        hookOptions?.onCurrentMatchChange?.(null, -1);
-      }
-    },
-    [hookOptions]
-  );
-
-  const goToNextMatch = useCallback(() => {
-    let newIndex = 0;
-    setState((prev) => {
-      if (prev.matches.length === 0) return prev;
-      newIndex = (prev.currentIndex + 1) % prev.matches.length;
-      return { ...prev, currentIndex: newIndex };
-    });
-    return newIndex;
-  }, []);
-
-  const goToPreviousMatch = useCallback(() => {
-    let newIndex = 0;
-    setState((prev) => {
-      if (prev.matches.length === 0) return prev;
-      newIndex = prev.currentIndex === 0 ? prev.matches.length - 1 : prev.currentIndex - 1;
-      return { ...prev, currentIndex: newIndex };
-    });
-    return newIndex;
   }, []);
 
   const goToMatch = useCallback((index: number) => {
@@ -201,27 +112,12 @@ export function useFindReplace(hookOptions?: FindReplaceOptions): UseFindReplace
     });
   }, []);
 
-  const getCurrentMatch = useCallback((): FindMatch | null => {
-    if (state.matches.length === 0) return null;
-    return state.matches[state.currentIndex] || null;
-  }, [state.matches, state.currentIndex]);
-
-  const hasMatches = useCallback(() => state.matches.length > 0, [state.matches.length]);
-
   return {
     state,
     openFind,
     openReplace,
     close,
-    toggle,
-    setSearchText,
-    setReplaceText,
-    setOptions,
     setMatches,
-    goToNextMatch,
-    goToPreviousMatch,
     goToMatch,
-    getCurrentMatch,
-    hasMatches,
   };
 }

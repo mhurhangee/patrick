@@ -2,7 +2,6 @@
  * ClipboardManager
  *
  * Framework-agnostic class for clipboard operations in the editor.
- * Extracted from the React `useClipboard` hook.
  *
  * Handles:
  * - DOM selection traversal and run extraction
