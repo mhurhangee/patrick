@@ -87,10 +87,6 @@ function KeyboardHarness({
     } as never,
     openHyperlinkCreate: mock(() => {}),
     openHyperlinkEdit: mock(() => {}),
-    tableSelection: {
-      state: { tableIndex: null },
-      handleAction: mock(() => {}),
-    } as never,
   });
 
   return null;

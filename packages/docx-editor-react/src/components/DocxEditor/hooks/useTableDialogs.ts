@@ -36,7 +36,6 @@ import {
   createStyleResolver,
 } from '@eigenpal/docx-editor-core/prosemirror';
 import type { EditorView } from 'prosemirror-view';
-import type { useTableSelection } from '../../../hooks/useTableSelection';
 import type { TableAction } from '../../../types/table';
 import { getBuiltinTableStyle, type TableStylePreset } from '../internals/table-style-presets';
 
@@ -46,7 +45,6 @@ interface SplitCellDialogState {
   initialCols: number;
   minRows: number;
   minCols: number;
-  source: 'pm' | 'legacy' | null;
   capturedCellRow: number | null;
   capturedCellCol: number | null;
   /** Painted caret rect captured when opening, to anchor the popover at the cell. */
@@ -75,7 +73,6 @@ export function useTableDialogs({
   getActiveEditorView,
   getCaretRect,
   focusActiveEditor,
-  tableSelection,
   borderSpecRef,
   historyStateRef,
   getCachedStyleResolver,
@@ -83,7 +80,6 @@ export function useTableDialogs({
   getActiveEditorView: () => EditorView | null | undefined;
   getCaretRect: () => DOMRect | null;
   focusActiveEditor: () => void;
-  tableSelection: ReturnType<typeof useTableSelection>;
   borderSpecRef: React.RefObject<BorderSpec>;
   historyStateRef: React.RefObject<Document | null>;
   getCachedStyleResolver: (
@@ -98,7 +94,6 @@ export function useTableDialogs({
     initialCols: 2,
     minRows: 1,
     minCols: 1,
-    source: null,
     capturedCellRow: null,
     capturedCellCol: null,
     rect: null,
@@ -106,33 +101,23 @@ export function useTableDialogs({
 
   const openSplitCellDialog = useCallback(() => {
     const view = getActiveEditorView();
-    const pmConfig = view ? getSplitCellDialogConfig(view.state) : null;
-    const legacyConfig = pmConfig ? null : tableSelection.getSplitCellConfig();
-    const config = pmConfig ?? legacyConfig;
+    const config = view ? getSplitCellDialogConfig(view.state) : null;
     if (!config) return;
 
     setSplitCellDialogState({
       isOpen: true,
       ...config,
-      source: pmConfig ? 'pm' : 'legacy',
-      capturedCellRow: pmConfig?.capturedCellRow ?? null,
-      capturedCellCol: pmConfig?.capturedCellCol ?? null,
+      capturedCellRow: config.capturedCellRow ?? null,
+      capturedCellCol: config.capturedCellCol ?? null,
       // Capture the caret rect now (before the menu/focus shift) to anchor the popover.
       rect: getCaretRect(),
     });
-  }, [getActiveEditorView, getCaretRect, tableSelection]);
+  }, [getActiveEditorView, getCaretRect]);
 
   const handleTableAction = useCallback(
     (action: TableAction) => {
       const view = getActiveEditorView();
-      if (!view) {
-        if (action === 'splitCell') {
-          openSplitCellDialog();
-        } else if (typeof action !== 'object') {
-          tableSelection.handleAction(action);
-        }
-        return;
-      }
+      if (!view) return;
 
       switch (action) {
         case 'addRowAbove':
@@ -305,7 +290,6 @@ export function useTableDialogs({
       focusActiveEditor();
     },
     [
-      tableSelection,
       getActiveEditorView,
       focusActiveEditor,
       openSplitCellDialog,
@@ -319,7 +303,6 @@ export function useTableDialogs({
     setSplitCellDialogState((prev) => ({
       ...prev,
       isOpen: false,
-      source: null,
       capturedCellRow: null,
       capturedCellCol: null,
     }));
@@ -327,11 +310,6 @@ export function useTableDialogs({
 
   const handleSplitCellDialogApply = useCallback(
     (rows: number, cols: number) => {
-      if (splitCellDialogState.source === 'legacy') {
-        tableSelection.applySplitCell(rows, cols);
-        focusActiveEditor();
-        return;
-      }
       const view = getActiveEditorView();
       if (!view) return;
       splitActiveTableCell(
@@ -347,10 +325,8 @@ export function useTableDialogs({
     [
       focusActiveEditor,
       getActiveEditorView,
-      splitCellDialogState.source,
       splitCellDialogState.capturedCellRow,
       splitCellDialogState.capturedCellCol,
-      tableSelection,
     ]
   );
 
