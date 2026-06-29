@@ -53,7 +53,6 @@ import { type EditorState as PMEditorState } from 'prosemirror-state';
 import type { ReactSidebarItem } from '../plugin-api/types';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { Translations } from '@eigenpal/docx-editor-i18n';
-import { type PrintOptions } from './ui/PrintPreview';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../hooks/useFindReplace';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
@@ -228,12 +227,9 @@ export interface DocxEditorProps {
    * @example watermarkPresets={['INTERNAL', 'PROPRIETARY', 'COPY']}
    */
   watermarkPresets?: readonly string[];
-  /** Print options for print preview */
-  printOptions?: PrintOptions;
   /**
    * Callback when print is triggered. Pass it to enable the `File > Print`
-   * menu entry; omit to hide. The imperative `ref.current.print()` also
-   * invokes this callback.
+   * menu entry; omit to hide.
    */
   onPrint?: () => void;
   /** Callback when content is copied */
@@ -378,10 +374,6 @@ export interface DocxEditorRef {
    * @example ref.current?.highlightRange(10, 24)
    */
   highlightRange: (from: number, to: number) => void;
-  /** Open print preview */
-  openPrintPreview: () => void;
-  /** Print the document directly */
-  print: () => void;
   /** Load a pre-parsed document programmatically */
   loadDocument: (doc: Document) => void;
   /** Load a DOCX buffer programmatically (ArrayBuffer, Uint8Array, Blob, or File) */
@@ -585,7 +577,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     fontFamilies,
     fonts,
     watermarkPresets,
-    printOptions: _printOptions,
     onPrint,
     onCopy: _onCopy,
     onCut: _onCut,
@@ -1167,7 +1158,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     historyStateRef,
     pagedEditorRef,
     handleSave,
-    handleDirectPrint,
     zoom: state.zoom,
     setZoom: (zoom: number) => setState((prev) => ({ ...prev, zoom })),
     openFind: () => findReplace.openFind(),
