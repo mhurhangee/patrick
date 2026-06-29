@@ -1088,6 +1088,11 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     getCachedStyleResolver,
   });
 
+  const openTableProperties = useCallback(
+    () => handleTableAction({ type: 'openTableProperties' }),
+    [handleTableAction]
+  );
+
   const {
     handleFormat,
     handleInsertTable,
@@ -1135,7 +1140,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     getActiveEditorView,
     focusActiveEditor,
     openSplitCellDialog,
-    openTableProperties: () => handleTableAction({ type: 'openTableProperties' }),
+    openTableProperties,
     scrollContainerRef,
     editorContentRef,
     i18n,

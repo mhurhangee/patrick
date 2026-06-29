@@ -6,11 +6,7 @@ import {
   isImageLayoutOptionEnabled,
 } from '@eigenpal/docx-editor-core/layout-painter';
 import type { ImageLayoutTarget } from '@eigenpal/docx-editor-core/prosemirror/commands';
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-} from '@patrick/ui/components/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@patrick/ui/components/dropdown-menu';
 import {
   BringToFront,
   Check,
@@ -28,6 +24,7 @@ import type {
   ImageContextMenuTextAction,
   TextContextAction,
 } from '../../types/context-menu';
+import { ActionMenuItem } from './action-menu-item';
 import { PositionedMenu } from './positioned-menu';
 
 /** Core's icon-hint vocabulary → lucide icon components. */
@@ -88,47 +85,47 @@ export function ImageContextMenu({
       ariaLabel={t('imageWrap.menu.ariaLabel')}
       contentClassName="min-w-60"
     >
-      {onOpenProperties && (
+      {isOpen && (
         <>
-          <DropdownMenuItem onSelect={() => onOpenProperties()}>
-            <Settings2 className="size-4" />
-            <span className="flex-1">{t('imageWrap.menu.imageProperties')}</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-        </>
-      )}
-      {IMAGE_LAYOUT_OPTIONS.map((option) => {
-        const isCurrent = option.choice === currentChoice;
-        const HintIcon = ICON_BY_HINT[option.iconHint];
-        const enabled = isImageLayoutOptionEnabled(option, currentWrapType);
-        return (
-          <DropdownMenuItem
-            key={option.choice}
-            disabled={!enabled}
-            onSelect={() => onApplyLayout(option.choice as ImageLayoutTarget)}
-            title={t(`imageWrap.menuDesc.${option.i18nDescKey}` as never)}
-          >
-            <HintIcon className="size-4" />
-            <span className="flex-1">{t(`imageWrap.menu.${option.i18nLabelKey}` as never)}</span>
-            {isCurrent && <Check className="size-4 text-primary" />}
-          </DropdownMenuItem>
-        );
-      })}
-      {textActions && textActions.length > 0 && (
-        <>
-          <DropdownMenuSeparator />
-          {textActions.map((item, index) => (
-            <Fragment key={`${item.action}-${index}`}>
-              <DropdownMenuItem
-                disabled={item.disabled}
-                onSelect={() => onTextAction?.(item.action)}
-              >
-                <span className="flex-1">{item.label}</span>
-                {item.shortcut && <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>}
+          {onOpenProperties && (
+            <>
+              <DropdownMenuItem onSelect={() => onOpenProperties()}>
+                <Settings2 className="size-4" />
+                <span className="flex-1">{t('imageWrap.menu.imageProperties')}</span>
               </DropdownMenuItem>
-              {item.dividerAfter && <DropdownMenuSeparator />}
-            </Fragment>
-          ))}
+              <DropdownMenuSeparator />
+            </>
+          )}
+          {IMAGE_LAYOUT_OPTIONS.map((option) => {
+            const isCurrent = option.choice === currentChoice;
+            const HintIcon = ICON_BY_HINT[option.iconHint];
+            const enabled = isImageLayoutOptionEnabled(option, currentWrapType);
+            return (
+              <DropdownMenuItem
+                key={option.choice}
+                disabled={!enabled}
+                onSelect={() => onApplyLayout(option.choice as ImageLayoutTarget)}
+                title={t(`imageWrap.menuDesc.${option.i18nDescKey}` as never)}
+              >
+                <HintIcon className="size-4" />
+                <span className="flex-1">
+                  {t(`imageWrap.menu.${option.i18nLabelKey}` as never)}
+                </span>
+                {isCurrent && <Check className="size-4 text-primary" />}
+              </DropdownMenuItem>
+            );
+          })}
+          {textActions && textActions.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              {textActions.map((item, index) => (
+                <Fragment key={`${item.action}-${index}`}>
+                  <ActionMenuItem item={item} onSelect={() => onTextAction?.(item.action)} />
+                  {item.dividerAfter && <DropdownMenuSeparator />}
+                </Fragment>
+              ))}
+            </>
+          )}
         </>
       )}
     </PositionedMenu>

@@ -3,7 +3,9 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@patrick/ui/components/dropdown-menu';
+import { cn } from '@patrick/ui/lib/utils';
 import type { ReactNode } from 'react';
+import { Z_INDEX } from '../../styles/zIndex';
 
 /**
  * A DropdownMenu opened programmatically at viewport coordinates — the shared
@@ -12,6 +14,13 @@ import type { ReactNode } from 'react';
  * supplies collision-flip, keyboard nav, portal, and a11y. The trigger is a 0×0
  * fixed element at the click point that the content anchors to. `modal={false}`
  * keeps the page interactive and closes on outside pointer-down.
+ *
+ * - `onCloseAutoFocus` is suppressed: the trigger is a hidden 0×0 element, so
+ *   Radix's default focus-restore would blur the editor after every action;
+ *   the glue re-focuses the editor itself in its action handler.
+ * - `w-auto` lets the menu size to its content (the 0-width trigger would
+ *   otherwise pin it to the min-width floor and clip long items).
+ * - `Z_INDEX.contextMenu` keeps it above the toolbar/other editor chrome.
  */
 export function PositionedMenu({
   open,
@@ -43,7 +52,9 @@ export function PositionedMenu({
         side="bottom"
         sideOffset={2}
         aria-label={ariaLabel}
-        className={contentClassName}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        style={{ zIndex: Z_INDEX.contextMenu }}
+        className={cn('w-auto', contentClassName)}
       >
         {children}
       </DropdownMenuContent>
