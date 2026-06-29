@@ -153,4 +153,4 @@ pnpm test             # bun test — run from the repo root (editor fixtures res
 pnpm gen:docs         # regenerate the agent's bundled docs after editing them
 ```
 
-`BRAND.md` is the brand & positioning keystone (one-liner, the three pillars — Open · Transparent · Yours — voice, visual identity) — the source for the site, docs, and in-app copy; read it before touching `apps/site` or in-app copy. `IDEAS.md` is a scratch backlog (gitignored).
+`BRAND.md` is the brand & positioning keystone (one-liner, the three pillars — Open · Transparent · Yours — voice, visual identity) — the source for the site, docs, and in-app copy; read it before touching `apps/site` or in-app copy. `IDEAS.md` is the dev's personal product/feature backlog (gitignored — don't write to it). `SCRATCHPAD.md` is the **committed engineering backlog** — deferred bugs, parked refactors, and technical follow-ups surfaced during work; put durable engineering deferrals there (not in `IDEAS.md` or transient `living-docs/`).

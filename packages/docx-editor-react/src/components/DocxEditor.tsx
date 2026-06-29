@@ -44,7 +44,7 @@ import { DocxEditorPagedArea } from './DocxEditor/DocxEditorPagedArea';
 import { ContentControlWidgets } from './DocxEditor/ContentControlWidgets';
 import { useResetEditorState } from './DocxEditor/hooks/useResetEditorState';
 import { DocxEditorShell } from './DocxEditor/DocxEditorShell';
-import type { FontOption } from './ui/FontPicker';
+import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from './outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 import { useCommentSidebarItems, type CommentCallbacks } from '../hooks/useCommentSidebarItems';
@@ -525,12 +525,6 @@ interface EditorState {
   zoom: number;
   /** Current selection formatting for toolbar */
   selectionFormatting: SelectionFormatting;
-  /** Paragraph indent data for ruler */
-  paragraphIndentLeft: number;
-  paragraphIndentRight: number;
-  paragraphFirstLineIndent: number;
-  paragraphHangingIndent: boolean;
-  paragraphTabs: import('@eigenpal/docx-editor-core/types/document').TabStop[] | null;
   /** ProseMirror table context (for showing table toolbar) */
   pmTableContext: TableContextInfo | null;
   /** Image context when cursor is on an image node */
@@ -615,7 +609,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pluginSidebarItems,
     pluginRenderedDomContext,
     renderLogo: _renderLogo,
-    documentName,
+    documentName: _documentName,
     onDocumentNameChange,
     documentNameEditable: _documentNameEditable = true,
     renderTitleBarRight,
@@ -629,11 +623,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     parseError: null,
     zoom: initialZoom,
     selectionFormatting: {},
-    paragraphIndentLeft: 0,
-    paragraphIndentRight: 0,
-    paragraphFirstLineIndent: 0,
-    paragraphHangingIndent: false,
-    paragraphTabs: null,
     pmTableContext: null,
     pmImageContext: null,
   });
@@ -888,7 +877,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pagedEditorRef,
     containerRef,
     comments,
-    documentName,
     onSave,
     onOpen,
     onError,
@@ -1157,7 +1145,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     getBodyEditorView: () => pagedEditorRef.current?.getView(),
   });
 
-  const { scrollPageInfo, setScrollPageInfo } = useScrollPageInfo({
+  const scrollPageInfoRef = useScrollPageInfo({
     scrollContainerRef,
     pagedEditorRef,
   });
@@ -1195,7 +1183,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     zoom: state.zoom,
     setZoom: (zoom: number) => setState((prev) => ({ ...prev, zoom })),
     openFind: () => findReplace.openFind(),
-    scrollPageInfo,
+    scrollPageInfoRef,
     loadParsedDocument,
     loadBuffer,
     comments,
@@ -1669,7 +1657,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
         scrollLeft: editorScrollLeft,
       }}
       onToggleOutline={handleToggleOutline}
-      scrollPageInfo={scrollPageInfo}
       toolbar={
         showToolbar && !readOnlyProp ? (
           <DocxEditorToolbar
@@ -1775,9 +1762,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             resolvedIdsForRender={resolvedIdsForRender}
             setShowCommentsSidebar={setShowCommentsSidebar}
             onTotalPagesChange={(totalPages) => {
-              setScrollPageInfo((prev) =>
-                prev.totalPages === totalPages ? prev : { ...prev, totalPages }
-              );
+              scrollPageInfoRef.current.totalPages = totalPages;
             }}
             floatingCommentBtn={floatingCommentBtn}
             isAddingComment={isAddingComment}

@@ -29,7 +29,7 @@ import {
   getTableSplitCellDialogConfig,
   splitTableCell,
   getColumnCount,
-} from '../components/ui/TableToolbar';
+} from '../components/ui/TableToolbar/operations';
 
 // ============================================================================
 // RE-EXPORTS (backwards compat)

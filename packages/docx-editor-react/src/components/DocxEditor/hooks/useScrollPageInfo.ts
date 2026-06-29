@@ -1,19 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { PagedEditorRef } from '../PagedEditor';
 
-interface ScrollPageInfo {
+export interface ScrollPageInfo {
   currentPage: number;
   totalPages: number;
-  visible: boolean;
 }
 
 /**
- * Drives the floating page indicator (the "3 of 12" pill that fades in
- * on scroll). Computes the visible page from the scroll position +
- * layout's per-page heights, then hides itself after 600ms of no
- * scrolling. Re-attaches when the scroll container first mounts, which
- * is after loading completes (the loading state renders a different
- * subtree).
+ * Tracks the current/total page count in a ref, exposed via the editor ref's
+ * `getCurrentPage()` / `getTotalPages()`. Computes the current page from the
+ * scroll position + layout's per-page heights on scroll. A ref (not state)
+ * because nothing renders this value — consumers poll the imperative getters,
+ * so per-scroll updates must not re-render the editor. Re-attaches when the
+ * scroll container first mounts, which is after loading completes (the loading
+ * state renders a different subtree).
  */
 export function useScrollPageInfo({
   scrollContainerRef,
@@ -22,12 +22,7 @@ export function useScrollPageInfo({
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
 }) {
-  const [scrollPageInfo, setScrollPageInfo] = useState<ScrollPageInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    visible: false,
-  });
-  const scrollFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollPageInfoRef = useRef<ScrollPageInfo>({ currentPage: 1, totalPages: 1 });
 
   const scrollContainerEl = scrollContainerRef.current;
   useEffect(() => {
@@ -58,24 +53,14 @@ export function useScrollPageInfo({
       }
       currentPage = Math.min(currentPage, totalPages);
 
-      setScrollPageInfo({ currentPage, totalPages, visible: true });
-
-      if (scrollFadeTimerRef.current) {
-        clearTimeout(scrollFadeTimerRef.current);
-      }
-      scrollFadeTimerRef.current = setTimeout(() => {
-        setScrollPageInfo((prev) => ({ ...prev, visible: false }));
-      }, 600);
+      scrollPageInfoRef.current = { currentPage, totalPages };
     };
 
     scrollContainerEl.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       scrollContainerEl.removeEventListener('scroll', handleScroll);
-      if (scrollFadeTimerRef.current) {
-        clearTimeout(scrollFadeTimerRef.current);
-      }
     };
   }, [scrollContainerEl, pagedEditorRef]);
 
-  return { scrollPageInfo, setScrollPageInfo };
+  return scrollPageInfoRef;
 }

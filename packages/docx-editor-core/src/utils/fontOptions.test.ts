@@ -1,6 +1,5 @@
 import { describe, expect, test, mock, beforeEach, afterEach } from 'bun:test';
-import { normalizeFontFamilies } from './normalizeFontFamilies';
-import type { FontOption } from './FontPicker';
+import { normalizeFontFamilies, type FontOption } from './fontOptions';
 
 describe('normalizeFontFamilies', () => {
   test('returns undefined when prop is omitted (FontPicker uses defaults)', () => {

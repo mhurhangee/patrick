@@ -84,7 +84,6 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
   const resizeRowTablePmStartRef = useRef(0);
   const resizeRowOrigHeightRef = useRef(0);
   const resizeRowHandleRef = useRef<HTMLElement | null>(null);
-  const resizeRowIsEdgeRef = useRef(false);
 
   // Right-edge resize — grows last column only
   const isResizingRightEdgeRef = useRef(false);
@@ -129,7 +128,6 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
         isResizingRowRef.current = true;
         resizeStartYRef.current = e.clientY;
         resizeRowHandleRef.current = target;
-        resizeRowIsEdgeRef.current = target.dataset.isEdge === 'bottom';
         resizeTargetViewRef.current = view;
         target.classList.add('dragging');
         const rowIndex = parseInt(target.dataset.rowIndex ?? '0', 10);

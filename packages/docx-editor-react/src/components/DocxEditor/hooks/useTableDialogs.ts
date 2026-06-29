@@ -38,7 +38,7 @@ import {
 import type { EditorView } from 'prosemirror-view';
 import type { useTableSelection } from '../../../hooks/useTableSelection';
 import type { TableAction } from '../../../types/table';
-import { getBuiltinTableStyle, type TableStylePreset } from '../../ui/TableStyleGallery';
+import { getBuiltinTableStyle, type TableStylePreset } from '../internals/table-style-presets';
 
 interface SplitCellDialogState {
   isOpen: boolean;
@@ -299,9 +299,6 @@ export function useTableDialogs({
                 })(view.state, view.dispatch);
               }
             }
-          } else {
-            // Fallback to the legacy table-selection handler for anything not yet routed.
-            tableSelection.handleAction(action);
           }
       }
 

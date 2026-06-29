@@ -49,7 +49,6 @@ export function UnifiedSidebar({
   const cardHeightsRef = useRef<Map<string, number>>(new Map());
   const lastKnownRef = useRef<Map<string, number>>(new Map());
   const knownCardsRef = useRef<Set<string>>(new Set());
-  const sidebarRef = useRef<HTMLDivElement>(null);
   const cardElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   // Stable ref callbacks per item ID — avoids creating new closures on every render
   const measureRefsRef = useRef<Map<string, (el: HTMLDivElement | null) => void>>(new Map());
@@ -191,7 +190,6 @@ export function UnifiedSidebar({
 
   return (
     <aside
-      ref={sidebarRef}
       className="docx-unified-sidebar"
       role="complementary"
       aria-label={t('sidebar.ariaLabel')}

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { Theme, TabStop } from '@eigenpal/docx-editor-core/types/document';
+import type { Theme } from '@eigenpal/docx-editor-core/types/document';
 import {
   getTableContext,
   type SelectionState,
@@ -33,11 +33,6 @@ interface BorderSpec {
 /** Slice of EditorState that handleSelectionChange writes on every fire. */
 export interface SelectionStateDelta {
   selectionFormatting: SelectionFormatting;
-  paragraphIndentLeft?: number;
-  paragraphIndentRight?: number;
-  paragraphFirstLineIndent?: number;
-  paragraphHangingIndent?: boolean;
-  paragraphTabs?: TabStop[] | null;
   pmTableContext: TableContextInfo | null;
   pmImageContext: PmImageContext | null;
 }
@@ -197,11 +192,6 @@ export function useSelectionTracker({
 
       applySelectionDelta({
         selectionFormatting: formatting,
-        paragraphIndentLeft: paragraphFormatting.indentLeft ?? 0,
-        paragraphIndentRight: paragraphFormatting.indentRight ?? 0,
-        paragraphFirstLineIndent: paragraphFormatting.indentFirstLine ?? 0,
-        paragraphHangingIndent: paragraphFormatting.hangingIndent ?? false,
-        paragraphTabs: paragraphFormatting.tabs ?? null,
         pmTableContext: pmTableCtx,
         pmImageContext: pmImageCtx,
       });
