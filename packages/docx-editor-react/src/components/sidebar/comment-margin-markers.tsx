@@ -8,7 +8,7 @@
 
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import { MessageCircle, MessageCircleCheck } from 'lucide-react';
-import { useTranslation } from '../i18n';
+import { useTranslation } from '../../i18n';
 
 export interface CommentMarginMarkersProps {
   comments: Comment[];
@@ -63,34 +63,17 @@ export function CommentMarginMarkers({
       {markers.map(({ comment, isResolved, y }) => (
         <button
           key={comment.id}
+          type="button"
           onClick={() => onMarkerClick(comment.id)}
           title={isResolved ? t('commentMarkers.resolvedComment') : t('commentMarkers.comment')}
-          style={{
-            position: 'absolute',
-            top: y * zoom,
-            left: 0,
-            width: 24,
-            height: 24,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: 'none',
-            borderRadius: 4,
-            background: 'transparent',
-            cursor: 'pointer',
-            pointerEvents: 'auto',
-            color: 'var(--doc-text-muted)',
-            padding: 0,
-            fontFamily: 'inherit',
-          }}
-          onMouseOver={(e) => {
-            (e.currentTarget as HTMLElement).style.opacity = '0.7';
-          }}
-          onMouseOut={(e) => {
-            (e.currentTarget as HTMLElement).style.opacity = '1';
-          }}
+          className="absolute left-0 flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:opacity-70"
+          style={{ top: y * zoom, pointerEvents: 'auto' }}
         >
-          {isResolved ? <MessageCircleCheck size={18} /> : <MessageCircle size={18} />}
+          {isResolved ? (
+            <MessageCircleCheck className="size-[18px]" />
+          ) : (
+            <MessageCircle className="size-[18px]" />
+          )}
         </button>
       ))}
     </div>

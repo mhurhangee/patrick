@@ -650,11 +650,6 @@
   cursor: default;
 }
 
-/* Outline heading hover */
-.docx-outline-heading-btn:hover {
-  background-color: var(--doc-bg-hover);
-}
-
 /* React toolbar toggle buttons (bold/italic/comments/...). Owned here, not via
  * Tailwind utilities: `cn` is clsx-only (no tailwind-merge), so competing
  * hover:bg utilities don't dedupe and the active slab could lose its color on

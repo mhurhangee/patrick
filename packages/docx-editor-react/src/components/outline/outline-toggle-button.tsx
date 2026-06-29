@@ -1,6 +1,6 @@
 import { useTranslation } from '../../i18n';
 import { Z_INDEX } from '../../styles/zIndex';
-import { OUTLINE_BUTTON_LEFT_OFFSET } from '../DocumentOutline';
+import { OUTLINE_BUTTON_LEFT_OFFSET } from './document-outline';
 import { List } from 'lucide-react';
 
 /**

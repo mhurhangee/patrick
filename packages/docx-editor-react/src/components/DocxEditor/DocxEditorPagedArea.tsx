@@ -27,8 +27,8 @@ import {
   type InlineHeaderFooterEditorRef,
 } from '../InlineHeaderFooterEditor';
 import { UnifiedSidebar } from '../UnifiedSidebar';
-import { CommentMarginMarkers } from '../CommentMarginMarkers';
-import { Tooltip } from '../ui/Tooltip';
+import { CommentMarginMarkers } from '../sidebar/comment-margin-markers';
+import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';
 import { PENDING_COMMENT_ID } from './commentFactories';
 import type { HyperlinkPopupData } from '../ui/HyperlinkPopup';
@@ -423,64 +423,36 @@ export function DocxEditorPagedArea({
       />
 
       {floatingCommentBtn != null && !isAddingComment && !readOnly && (
-        <Tooltip content="Add comment" side="bottom" delayMs={300}>
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const view = pagedEditorRef.current?.getView();
-              if (view) {
-                const { from, to } = view.state.selection;
-                if (from !== to) {
-                  setCommentSelectionRange({ from, to });
-                  const pendingMark = view.state.schema.marks.comment.create({
-                    commentId: PENDING_COMMENT_ID,
-                  });
-                  const tr = view.state.tr.addMark(from, to, pendingMark);
-                  tr.setSelection(TextSelection.create(tr.doc, to));
-                  view.dispatch(tr);
-                }
+        <Button
+          size="icon-sm"
+          tooltip="Add comment"
+          tooltipSide="bottom"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const view = pagedEditorRef.current?.getView();
+            if (view) {
+              const { from, to } = view.state.selection;
+              if (from !== to) {
+                setCommentSelectionRange({ from, to });
+                const pendingMark = view.state.schema.marks.comment.create({
+                  commentId: PENDING_COMMENT_ID,
+                });
+                const tr = view.state.tr.addMark(from, to, pendingMark);
+                tr.setSelection(TextSelection.create(tr.doc, to));
+                view.dispatch(tr);
               }
-              setAddCommentYPosition(floatingCommentBtn.top);
-              setShowCommentsSidebar(true);
-              setIsAddingComment(true);
-              setFloatingCommentBtn(null);
-            }}
-            style={{
-              position: 'absolute',
-              top: floatingCommentBtn.top,
-              left: floatingCommentBtn.left,
-              transform: 'translate(-50%, -50%)',
-              zIndex: 50,
-              width: 28,
-              height: 28,
-              borderRadius: 6,
-              border: '1px solid var(--doc-focus-ring)',
-              backgroundColor: 'var(--doc-surface)',
-              color: 'var(--doc-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 1px 3px var(--doc-shadow)',
-              transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-            }}
-            onMouseOver={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                'var(--doc-primary-light)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                '0 1px 4px var(--doc-focus-ring)';
-            }}
-            onMouseOut={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--doc-surface)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                '0 1px 3px var(--doc-shadow)';
-            }}
-          >
-            <MessageSquarePlus size={16} />
-          </button>
-        </Tooltip>
+            }
+            setAddCommentYPosition(floatingCommentBtn.top);
+            setShowCommentsSidebar(true);
+            setIsAddingComment(true);
+            setFloatingCommentBtn(null);
+          }}
+          className="absolute z-50 size-7 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md bg-[var(--patrick-coral)]/80 hover:bg-[var(--patrick-coral)]"
+          style={{ top: floatingCommentBtn.top, left: floatingCommentBtn.left }}
+        >
+          <MessageSquarePlus />
+        </Button>
       )}
 
       {/* HF caret + selection rects portalled into the SIBLING parent of
