@@ -48,6 +48,8 @@ _(none yet — overlays group removed only dead props/fields/code, no features)_
 #### Blocked / for-the-user
 _(none yet)_
 
+**Execution model (refined during the live run, for unsupervised safety):** audit + fix happens **per-group, in place** (no physical moves during the audit pass) → the structural relocations are **batched into a few mechanical, typecheck-gated PRs near the end** (lift `internals/` to top-level, merge the two `hooks/` dirs, rename `DocxEditor/ → editor/`). This avoids repointing import paths 2–3× as each dependency dir moves under a half-migrated tree, and keeps each audit PR focused on code quality. The per-file **"right home?"** verdict is still captured during the audit; only the `git mv` is deferred. Overlays already follow this (audited in place; the move rides the rename).
+
 **Per-file workflow (one touch per file):**
 1. Deep-read it. Answer: **used / reachable? · fit for purpose? · worth keeping? · elegant + maintainable, or rewrite? · right home?**
 2. Verdict → **keep-as-is / slim (e.g. repoint shims to core) / rewrite / delete**.
