@@ -1,9 +1,8 @@
 /**
  * @eigenpal/docx-editor-react
  *
- * Curated root entry for the documented React editor API. Advanced surfaces
- * stay public through explicit subpaths:
- * - `@eigenpal/docx-editor-react/hooks`
+ * Curated root entry for the documented React editor API. The advanced
+ * plugin surface stays public through an explicit subpath:
  * - `@eigenpal/docx-editor-react/plugin-api`
  *
  * Framework-agnostic document utilities live in `@eigenpal/docx-editor-core`.
