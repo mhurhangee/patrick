@@ -14,7 +14,7 @@ import {
   redistributeColumnWidths,
   buildAnchorMaps,
 } from '@eigenpal/docx-editor-core/utils';
-import type { TableAction, TableContext, TableSelection, TableSplitConfig } from '../TableToolbar';
+import type { TableAction, TableContext, TableSelection, TableSplitConfig } from '../../../types/table';
 
 // ============================================================================
 // UTILITY FUNCTIONS
