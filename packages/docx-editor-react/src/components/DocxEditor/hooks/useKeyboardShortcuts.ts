@@ -5,7 +5,6 @@ import {
   getTableContext,
   deleteTable as pmDeleteTable,
 } from '@eigenpal/docx-editor-core/prosemirror';
-import type { useTableSelection } from '../../../hooks/useTableSelection';
 import type { useFindReplace } from '../../../hooks/useFindReplace';
 import type { PagedEditorRef } from '../PagedEditor';
 
@@ -15,7 +14,7 @@ import type { PagedEditorRef } from '../PagedEditor';
  *  - Cmd/Ctrl+F → open Find dialog (seeded with current selection)
  *  - Cmd/Ctrl+H → open Find/Replace dialog
  *  - Cmd/Ctrl+K → open Hyperlink dialog (edit if cursor sits on a link)
- *  - Delete/Backspace on a full-table layout selection → delete the table
+ *  - Delete/Backspace on a full-table cell selection → delete the table
  *
  * Listens on `document` so the shortcut works even when focus isn't in the
  * editor. `disableFindReplaceShortcuts` lets the host app reclaim Cmd+F /
@@ -29,7 +28,6 @@ export function useKeyboardShortcuts({
   findReplace,
   openHyperlinkCreate,
   openHyperlinkEdit,
-  tableSelection,
 }: {
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   disableFindReplaceShortcuts: boolean;
@@ -38,15 +36,13 @@ export function useKeyboardShortcuts({
   findReplace: ReturnType<typeof useFindReplace>;
   openHyperlinkCreate: (selectedText: string) => void;
   openHyperlinkEdit: (data: { href: string; displayText: string; tooltip?: string }) => void;
-  tableSelection: ReturnType<typeof useTableSelection>;
 }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
 
-      // Delete a layout-selected table (the non-ProseMirror selection in the
-      // pages overlay) or a full ProseMirror CellSelection covering all cells.
+      // Delete the table on a full ProseMirror CellSelection covering all cells.
       if (!cmdOrCtrl && !e.shiftKey && !e.altKey) {
         if (e.key === 'Delete' || e.key === 'Backspace') {
           const view = pagedEditorRef.current?.getView();
@@ -73,12 +69,6 @@ export function useKeyboardShortcuts({
                 }
               }
             }
-          }
-
-          if (tableSelection.state.tableIndex !== null) {
-            e.preventDefault();
-            tableSelection.handleAction('deleteTable');
-            return;
           }
         }
       }
@@ -132,6 +122,5 @@ export function useKeyboardShortcuts({
     findReplace,
     openHyperlinkCreate,
     openHyperlinkEdit,
-    tableSelection,
   ]);
 }

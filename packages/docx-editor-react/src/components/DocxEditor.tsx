@@ -62,7 +62,6 @@ import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './state
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
 import type { FontDefinition, ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
 import { useFontLifecycle } from '../hooks/useFontLifecycle';
-import { useTableSelection } from '../hooks/useTableSelection';
 import { useDocumentHistory } from '../hooks/useHistory';
 
 // Extension system
@@ -993,15 +992,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     selectionChangeSubscribersRef,
   });
 
-  // Table selection hook
-  const tableSelection = useTableSelection({
-    document: history.state,
-    onChange: handleDocumentChange,
-    onSelectionChange: (_context) => {
-      // Could notify parent of table selection changes
-    },
-  });
-
   useKeyboardShortcuts({
     pagedEditorRef,
     disableFindReplaceShortcuts,
@@ -1010,7 +1000,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     findReplace,
     openHyperlinkCreate: hyperlink.openCreate,
     openHyperlinkEdit: hyperlink.openEdit,
-    tableSelection,
   });
 
   // Handle table insert from toolbar
@@ -1067,7 +1056,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     getActiveEditorView,
     getCaretRect,
     focusActiveEditor,
-    tableSelection,
     borderSpecRef,
     historyStateRef,
     getCachedStyleResolver,

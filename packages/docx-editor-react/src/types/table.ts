@@ -1,10 +1,8 @@
 /**
- * Table contract — the actions the toolbar's table controls dispatch and the
- * shapes the table-editing glue (`useTableSelection`) operates on. React-package
- * types only.
+ * Table contract — the actions the toolbar's table controls dispatch, plus the
+ * editable table-level properties applied from the table-properties dialog.
+ * React-package types only.
  */
-
-import type { Table } from '@eigenpal/docx-editor-core/types/document';
 
 /**
  * Table editing action types
@@ -61,55 +59,6 @@ export type TableAction =
     }
   | { type: 'openTableProperties' }
   | { type: 'applyTableStyle'; styleId: string };
-
-/**
- * Border style preset
- */
-export type BorderPreset = 'all' | 'outside' | 'inside' | 'none' | 'top' | 'bottom' | 'left' | 'right';
-
-/**
- * Selection within a table
- */
-export interface TableSelection {
-  /** Index of the table in the document */
-  tableIndex: number;
-  /** Row index (0-indexed) */
-  rowIndex: number;
-  /** Column index (0-indexed) */
-  columnIndex: number;
-  /** Selected cell range for multi-cell selection */
-  selectedCells?: {
-    startRow: number;
-    startCol: number;
-    endRow: number;
-    endCol: number;
-  };
-}
-
-/**
- * Context for table operations
- */
-export interface TableContext {
-  /** The table being edited */
-  table: Table;
-  /** Current selection within the table */
-  selection: TableSelection;
-  /** Whether multiple cells are selected (for merge) */
-  hasMultiCellSelection: boolean;
-  /** Whether current cell can be split */
-  canSplitCell: boolean;
-  /** Total number of rows */
-  rowCount: number;
-  /** Total number of columns */
-  columnCount: number;
-}
-
-export interface TableSplitConfig {
-  minRows: number;
-  minCols: number;
-  initialRows: number;
-  initialCols: number;
-}
 
 /** Editable table-level properties (matches the core `setTableProperties` command). */
 export interface TablePropertiesValue {
