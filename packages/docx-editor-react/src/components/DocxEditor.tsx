@@ -525,12 +525,6 @@ interface EditorState {
   zoom: number;
   /** Current selection formatting for toolbar */
   selectionFormatting: SelectionFormatting;
-  /** Paragraph indent data for ruler */
-  paragraphIndentLeft: number;
-  paragraphIndentRight: number;
-  paragraphFirstLineIndent: number;
-  paragraphHangingIndent: boolean;
-  paragraphTabs: import('@eigenpal/docx-editor-core/types/document').TabStop[] | null;
   /** ProseMirror table context (for showing table toolbar) */
   pmTableContext: TableContextInfo | null;
   /** Image context when cursor is on an image node */
@@ -631,11 +625,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     parseError: null,
     zoom: initialZoom,
     selectionFormatting: {},
-    paragraphIndentLeft: 0,
-    paragraphIndentRight: 0,
-    paragraphFirstLineIndent: 0,
-    paragraphHangingIndent: false,
-    paragraphTabs: null,
     pmTableContext: null,
     pmImageContext: null,
   });
