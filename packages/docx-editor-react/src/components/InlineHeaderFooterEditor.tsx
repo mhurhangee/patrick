@@ -20,7 +20,6 @@ import React, {
   forwardRef,
 } from 'react';
 import type { CSSProperties } from 'react';
-import { useTranslation } from '../i18n';
 import { EditorView } from 'prosemirror-view';
 import { undo, redo } from 'prosemirror-history';
 
@@ -87,7 +86,7 @@ const separatorBarStyle: CSSProperties = {
   justifyContent: 'space-between',
   padding: '2px 0',
   fontSize: 11,
-  color: 'var(--doc-primary)',
+  color: 'var(--primary)',
   userSelect: 'none',
   // Container is `pointer-events: none`; restore on the chrome so the
   // label + options button stay clickable.
@@ -102,7 +101,7 @@ const labelStyle: CSSProperties = {
 const optionsButtonStyle: CSSProperties = {
   background: 'none',
   border: 'none',
-  color: 'var(--doc-primary)',
+  color: 'var(--primary)',
   cursor: 'pointer',
   fontSize: 11,
   padding: '2px 6px',
@@ -113,10 +112,10 @@ const dropdownStyle: CSSProperties = {
   position: 'absolute',
   right: 0,
   top: '100%',
-  background: 'var(--doc-surface)',
-  border: '1px solid var(--doc-border-light)',
+  background: 'var(--popover)',
+  border: '1px solid var(--border)',
   borderRadius: 4,
-  boxShadow: '0 2px 6px var(--doc-shadow)',
+  boxShadow: '0 2px 6px rgb(0 0 0 / 0.15)',
   zIndex: Z_INDEX.dropdown,
   minWidth: 160,
   padding: '4px 0',
@@ -131,7 +130,7 @@ const dropdownItemStyle: CSSProperties = {
   textAlign: 'left',
   cursor: 'pointer',
   fontSize: 12,
-  color: 'var(--doc-text)',
+  color: 'var(--popover-foreground)',
 };
 
 // ============================================================================
@@ -262,8 +261,7 @@ export const InlineHeaderFooterEditor = forwardRef<
     },
   }));
 
-  const { t } = useTranslation();
-  const label = position === 'header' ? t('headerFooter.header') : t('headerFooter.footer');
+  const label = position === 'header' ? 'Header' : 'Footer';
 
   if (!overlayPos) return null;
 
@@ -345,7 +343,6 @@ function OptionsMenu({
   onClose: () => void;
   viewRef: React.RefObject<EditorView | null>;
 }) {
-  const { t } = useTranslation();
   const insertField = (fieldType: 'PAGE' | 'NUMPAGES') => {
     const view = viewRef.current;
     if (!view) return;
@@ -382,7 +379,7 @@ function OptionsMenu({
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {t('headerFooter.options')} ▾
+        Options ▾
       </button>
       {showOptions && (
         <div style={dropdownStyle} onMouseDown={(e) => e.stopPropagation()}>
@@ -404,13 +401,13 @@ function OptionsMenu({
               insertField('PAGE');
             }}
             onMouseOver={(e) => {
-              (e.target as HTMLElement).style.backgroundColor = 'var(--doc-bg-hover)';
+              (e.target as HTMLElement).style.backgroundColor = 'var(--accent)';
             }}
             onMouseOut={(e) => {
               (e.target as HTMLElement).style.backgroundColor = 'transparent';
             }}
           >
-            {t('headerFooter.insertPageNumber')}
+            Insert current page number
           </button>
           <button
             type="button"
@@ -420,15 +417,15 @@ function OptionsMenu({
               insertField('NUMPAGES');
             }}
             onMouseOver={(e) => {
-              (e.target as HTMLElement).style.backgroundColor = 'var(--doc-bg-hover)';
+              (e.target as HTMLElement).style.backgroundColor = 'var(--accent)';
             }}
             onMouseOut={(e) => {
               (e.target as HTMLElement).style.backgroundColor = 'transparent';
             }}
           >
-            {t('headerFooter.insertTotalPages')}
+            Insert total page count
           </button>
-          <div style={{ borderTop: '1px solid var(--doc-border-light)', margin: '4px 0' }} />
+          <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }} />
           {onRemove && (
             <button
               type="button"
@@ -438,13 +435,13 @@ function OptionsMenu({
                 onRemove();
               }}
               onMouseOver={(e) => {
-                (e.target as HTMLElement).style.backgroundColor = 'var(--doc-bg-hover)';
+                (e.target as HTMLElement).style.backgroundColor = 'var(--accent)';
               }}
               onMouseOut={(e) => {
                 (e.target as HTMLElement).style.backgroundColor = 'transparent';
               }}
             >
-              {t('headerFooter.remove', { label: label.toLowerCase() })}
+              Remove {label.toLowerCase()}
             </button>
           )}
           <button
@@ -455,13 +452,13 @@ function OptionsMenu({
               onClose();
             }}
             onMouseOver={(e) => {
-              (e.target as HTMLElement).style.backgroundColor = 'var(--doc-bg-hover)';
+              (e.target as HTMLElement).style.backgroundColor = 'var(--accent)';
             }}
             onMouseOut={(e) => {
               (e.target as HTMLElement).style.backgroundColor = 'transparent';
             }}
           >
-            {t('headerFooter.closeEditing', { label: label.toLowerCase() })}
+            Close {label.toLowerCase()} editing
           </button>
         </div>
       )}
