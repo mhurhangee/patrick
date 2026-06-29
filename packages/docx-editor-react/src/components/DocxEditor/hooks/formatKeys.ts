@@ -4,7 +4,12 @@
  */
 
 function isMac(): boolean {
-  return typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  if (typeof navigator === 'undefined') return false;
+  // Prefer the modern UA-Client-Hints platform ("macOS"); fall back to the
+  // deprecated navigator.platform for browsers that don't expose it.
+  const uaPlatform = (navigator as Navigator & { userAgentData?: { platform?: string } })
+    .userAgentData?.platform;
+  return /Mac|iPod|iPhone|iPad/.test(uaPlatform ?? navigator.platform);
 }
 
 export function formatKeys(keys: string): string {

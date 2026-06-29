@@ -46,10 +46,24 @@ Phase 4 runs with no one watching. **Never stop to ask; never surface a question
 - `editing-modes.ts` — **deferred to the engine `.tsx` stage**: its i18n `labelKey`/`descKey` removal (English-only convention) must change together with the mode-dropdown consumer, and the unused `export` on `EditingModeDef` gets dropped then too.
 - Tests: `PagedEditor.tableMeasure.test.ts` keep; `LayoutSelectionGate.test.ts` keep (now imports core directly — candidate to move into the core package during the relocation phase, since it exercises a core class).
 
+**Group 3 — `hooks/` (31 in `DocxEditor/hooks/` + 8 top-level) — IN PROGRESS.** Too big for one PR; sub-split into thematic PRs into `phase4` (audit in place; merge of the two `hooks/` dirs into one top-level `hooks/` deferred to the relocation phase). Plan:
+- **3a util/small** — ✅ **done** (PR `p4/hooks-util`): all six *used · keep*. Fixes: `useScrollPageInfo` hardcoded `24`s → `DEFAULT_PAGE_GAP`/`VIEWPORT_PADDING_TOP` from `internals/styles`; `formatKeys.isMac` now prefers UA-Client-Hints `userAgentData.platform`, falling back to the deprecated `navigator.platform`. `useControllableBoolean`(+test), `useActiveEditor`, `useFontLifecycle`, `useAspectLockedSize` kept as-is (clean, well-documented).
+- **3b comment**: `useCommentManagement` (carried: orphaned-reply notify gap, controlled-ref staleness), `useCommentLifecycle`, `useFloatingCommentBtn`, `useCommentSidebarItems`, `useOutlineSidebar`.
+- **3c image**: `useImageActions` (carried: docstring advertises a non-existent position dialog), `useImageInteractions` (carried: last-page fallback), `use-image-context-menu`.
+- **3d table**: `useTableDialogs` (carried: `TableAction` `tableProperties` variant unhandled), `useTableResizeState` (carried: handle drift on clamp; stale orig-width when `readColumnWidths` null).
+- **3e selection/nav**: `useSelectionOverlay`, `useSelectionTracker` (carried: borderSpecRef color-only; PmImageContext redecl), `useVisualLineNavigation` (carried: near-dup of core util; sticky-X never resets), `useDragAutoScroll`.
+- **3f layout/scroll/pointer**: `useLayoutPipeline`, `useLayoutTriggers` (carried: `loadingdone` stale-closure re-layout), `usePagesPointer` (carried: read-only external-link branch maybe unreachable), `usePagedScrollApi` (carried: double flashPara).
+- **3g ref-api/lifecycle**: `useDocxEditorRefApi` (carried: dep-array omissions), `usePagedEditorRefApi`, `useResetEditorState`, `useDocumentLoader` (carried: sync path skips `loadGenerationRef`), `useFileIO`, `useHistory` (**never audited**).
+- **3h formatting/find/misc**: `useFormattingActions`, `useKeyboardShortcuts` (carried: unmemoized effect deps), `useFindReplace`, `useFindReplaceBridge`, `useHyperlink`, `useWatermarkControls` (carried: currentWatermark staleness), `usePageSetupControls`, `useContextMenus`.
+- **3i HF — DEFERRED** (out of scope): `useHeaderFooterEditing` — note only, do not touch.
+
 #### Needs smoke-test before `phase4 → main`
 - **Image drag at zoom ≠ 1** (`ImageSelectionOverlay`) — confirm the drag ghost matches the image size at e.g. 150% zoom.
 - **Right-click a selected image** — context menu opens; no drag/resize gets initiated by the right-click.
 - **Caret blink** (`SelectionOverlay`) — caret blinks when focused, is solid immediately after typing/arrow-key nav, hides on blur, steady (non-blinking) if `blinkInterval=0`.
+
+#### Review policy (decided during the live run — veto on return if you disagree)
+Per-sub-group: **gates (`pnpm check` + `bun test`) + inline grep-verify always**; the workflow **`/code-review` for sub-groups with real logic changes / bug-fixes / non-trivial deletions, skipped for purely mechanical ones** (constant swaps, comment/docstring fixes, dead-code removal already proven by grep+knip). Rationale: an 8-finder review is ~350–550k tokens — disproportionate for cosmetic diffs, and the cost lesson (grep-verify inline held up across PRs #90–#97 with zero bad claims) supports it. **Recommendation for `phase4 → main`:** run one comprehensive `/code-review` (or `ultra`) over the whole `phase4` diff before merging — that's the natural defense-in-depth point. Reviews run so far: #96 (overlays — caught a real regression, reverted), #97 (internals — clean).
 
 #### Deferred minor items (logged, not fixed — revisit if they ever bite)
 - `ImageSelectionOverlay` scroll/resize **snap-back during an active resize**: a scroll or window-resize landing mid-resize briefly reads the un-committed DOM image rect into `overlayRect`, flickering the live preview; self-corrects on the next `mousemove`. A guard was tried and reverted (review #96) because the cure (a persistent gesture flag) was worse than the disease. Only worth revisiting if the flicker is ever actually observed.
