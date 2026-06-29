@@ -16,7 +16,6 @@ interface ImageContext {
  * Image-related dialogs and toolbar actions:
  *  - wrap type (inline ↔ float-wrap variants) via setImageWrapType
  *  - 90° rotate + horizontal/vertical flip via transform attr
- *  - position dialog (horizontal/vertical anchor + distFrom* offsets)
  *  - properties dialog (alt text, border, width/height)
  *
  * Owns the open/closed state for each dialog; the JSX consumer reads the
