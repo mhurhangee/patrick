@@ -7,7 +7,6 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror';
 import type { useTableSelection } from '../../../hooks/useTableSelection';
 import type { useFindReplace } from '../../../hooks/useFindReplace';
-import type { useHyperlinkDialog } from '../../../hooks/use-hyperlink-dialog';
 import type { PagedEditorRef } from '../PagedEditor';
 
 /**
@@ -28,7 +27,8 @@ export function useKeyboardShortcuts({
   showFileOpen,
   onOpenDocument,
   findReplace,
-  hyperlinkDialog,
+  openHyperlinkCreate,
+  openHyperlinkEdit,
   tableSelection,
 }: {
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
@@ -36,7 +36,8 @@ export function useKeyboardShortcuts({
   showFileOpen: boolean;
   onOpenDocument?: () => void;
   findReplace: ReturnType<typeof useFindReplace>;
-  hyperlinkDialog: ReturnType<typeof useHyperlinkDialog>;
+  openHyperlinkCreate: (selectedText: string) => void;
+  openHyperlinkEdit: (data: { href: string; displayText: string; tooltip?: string }) => void;
   tableSelection: ReturnType<typeof useTableSelection>;
 }) {
   useEffect(() => {
@@ -106,13 +107,13 @@ export function useKeyboardShortcuts({
             const selectedText = getSelectedText(view.state);
             const existingLink = getHyperlinkAttrs(view.state);
             if (existingLink) {
-              hyperlinkDialog.openEdit({
-                url: existingLink.href,
+              openHyperlinkEdit({
+                href: existingLink.href,
                 displayText: selectedText,
                 tooltip: existingLink.tooltip,
               });
             } else {
-              hyperlinkDialog.openInsert(selectedText);
+              openHyperlinkCreate(selectedText);
             }
           }
         }
@@ -129,7 +130,8 @@ export function useKeyboardShortcuts({
     showFileOpen,
     onOpenDocument,
     findReplace,
-    hyperlinkDialog,
+    openHyperlinkCreate,
+    openHyperlinkEdit,
     tableSelection,
   ]);
 }

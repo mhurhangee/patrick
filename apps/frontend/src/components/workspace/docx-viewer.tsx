@@ -10,6 +10,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useRegisterEditor } from "@/lib/active-editor";
 import { useActiveTask } from "@/lib/active-task";
+import { openExternal } from "@/lib/desktop";
 import { recordDocSize } from "@/lib/doc-size";
 import { formatTokens } from "@/lib/format";
 import { ZoomPill } from "./zoom-pill";
@@ -97,6 +98,7 @@ export function DocxViewer({
 					author="Attorney"
 					colorMode={resolvedTheme}
 					onChange={() => setRev((r) => r + 1)}
+					onOpenLink={openExternal}
 					renderTitleBarRight={() => <SaveStatus status={status} />}
 					loadingIndicator={<DocxLoading />}
 				/>
@@ -143,6 +145,7 @@ function ReadOnlyDocx({
 					documentBuffer={buffer}
 					readOnly
 					colorMode={resolvedTheme}
+					onOpenLink={openExternal}
 					loadingIndicator={<DocxLoading />}
 				/>
 			</div>

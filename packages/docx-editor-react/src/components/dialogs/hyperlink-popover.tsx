@@ -1,94 +1,185 @@
+/**
+ * The single hyperlink popover — one component, two states:
+ *  - view: shown when a link is clicked (URL + open / copy / edit / unlink)
+ *  - edit: create or change a link (text + URL + apply, remove if it exists)
+ *
+ * Anchored by the host via CursorPopover (link rect on click, caret rect on
+ * Ctrl+K / toolbar). The apply path always honours the text field.
+ */
+
 import { Button } from '@patrick/ui/components/button';
 import { Input } from '@patrick/ui/components/input';
-import { Label } from '@patrick/ui/components/label';
-import { useState } from 'react';
-import { isValidUrl, normalizeUrl } from '../../lib/hyperlink';
-import type { HyperlinkData } from '../../types/hyperlink';
+import { Check, Copy, Link, Pencil, Type, Unlink } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../i18n';
 
-/** Insert/edit a hyperlink — a text + URL popover anchored at the selection. */
-export function HyperlinkForm({
-  initialData,
-  selectedText,
-  isEditing,
-  onSubmit,
-  onRemove,
-  onClose,
-}: {
-  initialData?: HyperlinkData | undefined;
-  selectedText?: string | undefined;
-  isEditing: boolean;
-  onSubmit: (data: HyperlinkData) => void;
+export type HyperlinkMode = 'view' | 'edit';
+
+export interface HyperlinkPopoverProps {
+  mode: HyperlinkMode;
+  href: string;
+  displayText: string;
+  isExisting: boolean;
+  readOnly?: boolean;
+  onApply: (text: string, url: string) => void;
   onRemove: () => void;
+  onNavigate: (href: string) => void;
+  onCopy: (href: string) => void;
+  onRequestEdit: () => void;
   onClose: () => void;
-}) {
-  const [text, setText] = useState(initialData?.displayText ?? selectedText ?? '');
-  const [url, setUrl] = useState(initialData?.url ?? '');
+}
 
-  const valid = isValidUrl(url);
-  const submit = () => {
-    if (!valid) return;
-    onSubmit({ url: normalizeUrl(url), displayText: text || undefined, tooltip: initialData?.tooltip });
-    onClose();
+export function HyperlinkPopover(props: HyperlinkPopoverProps) {
+  if (props.mode === 'view') return <HyperlinkView {...props} />;
+  return (
+    <HyperlinkEditForm
+      href={props.href}
+      displayText={props.displayText}
+      isExisting={props.isExisting}
+      onApply={props.onApply}
+      onRemove={props.onRemove}
+      onClose={props.onClose}
+    />
+  );
+}
+
+function HyperlinkView({
+  href,
+  readOnly,
+  onNavigate,
+  onCopy,
+  onRequestEdit,
+  onRemove,
+}: HyperlinkPopoverProps) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    onCopy(href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
   };
 
   return (
-    <div className="flex w-72 flex-col gap-3">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="link-text" className="text-xs text-muted-foreground">
-          Text
-        </Label>
+    <div className="flex max-w-[360px] items-center gap-1">
+      <a
+        href={href}
+        title={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => {
+          e.preventDefault();
+          onNavigate(href);
+        }}
+        className="mr-1 ml-1 max-w-[220px] truncate text-primary hover:underline"
+      >
+        {href}
+      </a>
+      <span className="mx-0.5 h-5 w-px shrink-0 bg-border" />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        tooltip={copied ? undefined : t('hyperlinkPopup.copyLink')}
+        onClick={handleCopy}
+      >
+        {copied ? <Check className="text-emerald-600 dark:text-emerald-400" /> : <Copy />}
+      </Button>
+      {!readOnly && (
+        <>
+          <Button variant="ghost" size="icon-sm" tooltip={t('hyperlinkPopup.editLink')} onClick={onRequestEdit}>
+            <Pencil />
+          </Button>
+          <Button variant="ghost" size="icon-sm" tooltip={t('hyperlinkPopup.removeLink')} onClick={onRemove}>
+            <Unlink />
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function HyperlinkEditForm({
+  href,
+  displayText,
+  isExisting,
+  onApply,
+  onRemove,
+  onClose,
+}: {
+  href: string;
+  displayText: string;
+  isExisting: boolean;
+  onApply: (text: string, url: string) => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const [text, setText] = useState(displayText);
+  const [url, setUrl] = useState(href);
+  const urlRef = useRef<HTMLInputElement>(null);
+
+  // Explicitly focus the URL field on open — autoFocus loses the race with the
+  // editor's own focus when opened via Ctrl+K (keyboard, editor still focused).
+  useEffect(() => {
+    const id = requestAnimationFrame(() => urlRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const valid = url.trim().length > 0;
+  const submit = () => {
+    if (valid) onApply(text, url);
+  };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      // Don't let Enter fall through to the editor as a newline.
+      e.preventDefault();
+      e.stopPropagation();
+      submit();
+    }
+  };
+
+  return (
+    <div className="flex w-80 flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <Type className="size-4 shrink-0 text-muted-foreground" />
         <Input
-          id="link-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Link text"
+          onKeyDown={onKeyDown}
+          placeholder={t('hyperlinkPopup.displayTextPlaceholder')}
           className="h-8 text-sm"
         />
       </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="link-url" className="text-xs text-muted-foreground">
-          URL
-        </Label>
+      <div className="flex items-center gap-2">
+        <Link className="size-4 shrink-0 text-muted-foreground" />
         <Input
-          id="link-url"
+          ref={urlRef}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              // Stop the Enter from falling through to the editor as a newline
-              // (which would replace the just-inserted link).
-              e.preventDefault();
-              e.stopPropagation();
-              submit();
-            }
-          }}
-          placeholder="https://…"
-          autoFocus
+          onKeyDown={onKeyDown}
+          placeholder={t('hyperlinkPopup.urlPlaceholder')}
           className="h-8 text-sm"
         />
       </div>
       <div className="flex items-center justify-between">
-        {isEditing ? (
+        {isExisting ? (
           <Button
             variant="ghost"
             size="sm"
             className="text-destructive hover:text-destructive"
-            onClick={() => {
-              onRemove();
-              onClose();
-            }}
+            onClick={onRemove}
           >
-            Remove
+            {t('hyperlinkPopup.removeLink')}
           </Button>
         ) : (
           <span />
         )}
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
-          <Button size="sm" onClick={submit} disabled={!valid}>
-            {isEditing ? 'Update' : 'Insert'}
+          <Button size="sm" disabled={!valid} onClick={submit}>
+            {isExisting ? 'Update' : 'Insert'}
           </Button>
         </div>
       </div>

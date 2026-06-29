@@ -73,7 +73,6 @@ import { usePagesPointer } from './hooks/usePagesPointer';
 import { usePagedEditorRefApi } from './hooks/usePagedEditorRefApi';
 import { useLayoutTriggers } from './hooks/useLayoutTriggers';
 import { TableInsertButton } from './overlays/TableInsertButton';
-import { HyperlinkPopup, type HyperlinkPopupData } from '../dialogs/hyperlink-popup';
 
 export { DEFAULT_PAGE_WIDTH };
 
@@ -144,25 +143,15 @@ export interface PagedEditorProps {
   sidebarOverlay?: React.ReactNode;
   /** Ref callback for the scroll container element. */
   scrollContainerRef?: React.Ref<HTMLDivElement>;
-  /** Callback when a hyperlink is clicked (for showing popup). */
+  /** Callback when a hyperlink is clicked — opens the hyperlink popover at its rect. */
   onHyperlinkClick?: (data: {
     href: string;
     displayText: string;
     tooltip?: string;
-    position: { top: number; left: number };
+    rect: DOMRect;
   }) => void;
-  /** Hyperlink popup state (null = hidden). */
-  hyperlinkPopupData?: HyperlinkPopupData | null;
-  /** Called when user wants to navigate to the link. */
-  onHyperlinkPopupNavigate?: (href: string) => void;
-  /** Called when user wants to copy the URL. */
-  onHyperlinkPopupCopy?: (href: string) => void;
-  /** Called when user saves hyperlink edits. */
-  onHyperlinkPopupEdit?: (displayText: string, href: string) => void;
-  /** Called when user removes the hyperlink. */
-  onHyperlinkPopupRemove?: () => void;
-  /** Called when the popup should close. */
-  onHyperlinkPopupClose?: () => void;
+  /** Open an external URL (read-only link clicks bypass the popover). */
+  onOpenLink?: (href: string) => void;
   /** Callback when user right-clicks on the pages (for context menu).
    *  When the right-click target resolves to an image node, `image` carries
    *  the image's PM doc position, current wrap type, current cssFloat (lets
@@ -321,16 +310,11 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
       sidebarOverlay,
       scrollContainerRef: scrollContainerRefProp,
       onHyperlinkClick,
+      onOpenLink,
       onContextMenu,
       onAnchorPositionsChange,
       onTotalPagesChange,
       resolvedCommentIds,
-      hyperlinkPopupData,
-      onHyperlinkPopupNavigate,
-      onHyperlinkPopupCopy,
-      onHyperlinkPopupEdit,
-      onHyperlinkPopupRemove,
-      onHyperlinkPopupClose,
       isSuggesting = false,
       author = 'User',
     } = props;
@@ -598,6 +582,7 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
       onBodyClick,
       onContextMenu,
       onHyperlinkClick,
+      onOpenLink,
       onHeaderFooterDoubleClick,
       setSelectedImageInfo,
       setSelectionRects,
@@ -976,26 +961,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
             <div style={{ pointerEvents: 'auto' }}>{sidebarOverlay}</div>
           </div>
         )}
-
-        {/* Hyperlink popup — rendered inside containerRef so it shares a
-            scroll context with the link. position: absolute + coords in
-            container space mean the browser repositions on scroll for free. */}
-        {hyperlinkPopupData &&
-          onHyperlinkPopupNavigate &&
-          onHyperlinkPopupCopy &&
-          onHyperlinkPopupEdit &&
-          onHyperlinkPopupRemove &&
-          onHyperlinkPopupClose && (
-            <HyperlinkPopup
-              data={hyperlinkPopupData}
-              onNavigate={onHyperlinkPopupNavigate}
-              onCopy={onHyperlinkPopupCopy}
-              onEdit={onHyperlinkPopupEdit}
-              onRemove={onHyperlinkPopupRemove}
-              onClose={onHyperlinkPopupClose}
-              readOnly={readOnly}
-            />
-          )}
       </div>
     );
   }

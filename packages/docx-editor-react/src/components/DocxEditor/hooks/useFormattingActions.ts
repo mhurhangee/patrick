@@ -39,7 +39,6 @@ import type { EditorView } from 'prosemirror-view';
 import type { FormattingAction } from '../../../types/formatting';
 import { pointsToHalfPoints } from '../../ui/FontSizePicker';
 import { mapHexToHighlightName } from '../../toolbarUtils';
-import type { useHyperlinkDialog } from '../../../hooks/use-hyperlink-dialog';
 import type { PagedEditorRef } from '../PagedEditor';
 
 /**
@@ -53,7 +52,8 @@ export function useFormattingActions({
   focusActiveEditor,
   pagedEditorRef,
   lastSelectionRef,
-  hyperlinkDialog,
+  openHyperlinkCreate,
+  openHyperlinkEdit,
   historyStateRef,
   getCachedStyleResolver,
 }: {
@@ -61,7 +61,8 @@ export function useFormattingActions({
   focusActiveEditor: () => void;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   lastSelectionRef: React.RefObject<{ from: number; to: number } | null>;
-  hyperlinkDialog: ReturnType<typeof useHyperlinkDialog>;
+  openHyperlinkCreate: (selectedText: string) => void;
+  openHyperlinkEdit: (data: { href: string; displayText: string; tooltip?: string }) => void;
   historyStateRef: React.RefObject<Document | null>;
   getCachedStyleResolver: (
     styles: Parameters<typeof createStyleResolver>[0]
@@ -125,13 +126,13 @@ export function useFormattingActions({
         const selectedText = getSelectedText(view.state);
         const existingLink = getHyperlinkAttrs(view.state);
         if (existingLink) {
-          hyperlinkDialog.openEdit({
-            url: existingLink.href,
+          openHyperlinkEdit({
+            href: existingLink.href,
             displayText: selectedText,
             tooltip: existingLink.tooltip,
           });
         } else {
-          hyperlinkDialog.openInsert(selectedText);
+          openHyperlinkCreate(selectedText);
         }
         return;
       }
@@ -196,7 +197,8 @@ export function useFormattingActions({
       getActiveEditorView,
       pagedEditorRef,
       lastSelectionRef,
-      hyperlinkDialog,
+      openHyperlinkCreate,
+      openHyperlinkEdit,
       historyStateRef,
       getCachedStyleResolver,
     ]

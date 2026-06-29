@@ -31,7 +31,6 @@ import { CommentMarginMarkers } from '../sidebar/comment-margin-markers';
 import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';
 import { PENDING_COMMENT_ID } from './commentFactories';
-import type { HyperlinkPopupData } from '../dialogs/hyperlink-popup';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import type { ReactSidebarItem } from '../../plugin-api/types';
 import type { RenderedDomContext } from '../../plugin-api/types';
@@ -83,12 +82,7 @@ export function DocxEditorPagedArea({
   onRenderedDomContextReady,
   pluginOverlays,
   onHyperlinkClick,
-  hyperlinkPopupData,
-  onHyperlinkPopupNavigate,
-  onHyperlinkPopupCopy,
-  onHyperlinkPopupEdit,
-  onHyperlinkPopupRemove,
-  onHyperlinkPopupClose,
+  onOpenLink,
   onContextMenu,
   // Sidebar
   sidebarOpen,
@@ -148,13 +142,13 @@ export function DocxEditorPagedArea({
   onEditorViewReady: ((view: EditorView) => void) | undefined;
   onRenderedDomContextReady: ((ctx: RenderedDomContext) => void) | undefined;
   pluginOverlays: ReactNode;
-  onHyperlinkClick: (data: HyperlinkPopupData) => void;
-  hyperlinkPopupData: HyperlinkPopupData | null;
-  onHyperlinkPopupNavigate: (href: string) => void;
-  onHyperlinkPopupCopy: (href: string) => void;
-  onHyperlinkPopupEdit: (displayText: string, href: string) => void;
-  onHyperlinkPopupRemove: () => void;
-  onHyperlinkPopupClose: () => void;
+  onHyperlinkClick: (data: {
+    href: string;
+    displayText: string;
+    tooltip?: string;
+    rect: DOMRect;
+  }) => void;
+  onOpenLink?: (href: string) => void;
   onContextMenu: (data: {
     x: number;
     y: number;
@@ -383,12 +377,7 @@ export function DocxEditorPagedArea({
         onRenderedDomContextReady={onRenderedDomContextReady}
         pluginOverlays={pluginOverlays}
         onHyperlinkClick={onHyperlinkClick}
-        hyperlinkPopupData={hyperlinkPopupData}
-        onHyperlinkPopupNavigate={onHyperlinkPopupNavigate}
-        onHyperlinkPopupCopy={onHyperlinkPopupCopy}
-        onHyperlinkPopupEdit={onHyperlinkPopupEdit}
-        onHyperlinkPopupRemove={onHyperlinkPopupRemove}
-        onHyperlinkPopupClose={onHyperlinkPopupClose}
+        onOpenLink={onOpenLink}
         onContextMenu={onContextMenu}
         commentsSidebarOpen={sidebarOpen}
         onAnchorPositionsChange={onAnchorPositionsChange}
