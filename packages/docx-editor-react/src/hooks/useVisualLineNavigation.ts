@@ -2,10 +2,10 @@
  * Visual-line-aware ArrowUp/ArrowDown navigation with sticky X.
  *
  * The algorithm (caret-X probing, visual-line lookup, sticky-X key handling)
- * lives in core's `prosemirror/utils/visualLineNavigation` so the React and Vue
- * adapters share one implementation. This hook is the thin React wrapper: it
- * holds the mutable `VisualLineState` in a ref and forwards the live pages
- * container into the shared key handler.
+ * is DOM-walk logic that lives in the framework-agnostic core
+ * (`prosemirror/utils/visualLineNavigation`). This hook is the thin React
+ * wrapper: it holds the mutable `VisualLineState` in a ref and forwards the
+ * live pages container into the shared key handler.
  */
 
 import { useCallback, useRef } from 'react';
