@@ -7,8 +7,8 @@ import {
   DocumentOutline,
   OUTLINE_LEFT_OFFSET,
   OUTLINE_BUTTON_LEFT_OFFSET,
-} from '../DocumentOutline';
-import { OutlineToggleButton } from './OutlineToggleButton';
+} from '../outline/document-outline';
+import { OutlineToggleButton } from '../outline/outline-toggle-button';
 import { PageIndicator } from './PageIndicator';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
 

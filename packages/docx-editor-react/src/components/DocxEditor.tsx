@@ -21,7 +21,7 @@ import { useKeyboardShortcuts } from './DocxEditor/hooks/useKeyboardShortcuts';
 import { useFileIO } from './DocxEditor/hooks/useFileIO';
 import { usePageSetupControls } from './DocxEditor/hooks/usePageSetupControls';
 import { useWatermarkControls } from './DocxEditor/hooks/useWatermarkControls';
-import { useHyperlinkActions } from './DocxEditor/hooks/useHyperlinkActions';
+import { useHyperlink } from './DocxEditor/hooks/useHyperlink';
 import { useFindReplaceBridge } from './DocxEditor/hooks/useFindReplaceBridge';
 import { useFormattingActions } from './DocxEditor/hooks/useFormattingActions';
 import { useImageActions } from './DocxEditor/hooks/useImageActions';
@@ -45,7 +45,7 @@ import { ContentControlWidgets } from './DocxEditor/ContentControlWidgets';
 import { useResetEditorState } from './DocxEditor/hooks/useResetEditorState';
 import { DocxEditorShell } from './DocxEditor/DocxEditorShell';
 import type { FontOption } from './ui/FontPicker';
-import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from './DocumentOutline';
+import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from './outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 import { useCommentSidebarItems, type CommentCallbacks } from '../hooks/useCommentSidebarItems';
 import { extractTrackedChanges } from '../hooks/useTrackedChanges';
@@ -56,10 +56,9 @@ import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { type PrintOptions } from './ui/PrintPreview';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../hooks/useFindReplace';
-import { useHyperlinkDialog } from '../hooks/use-hyperlink-dialog';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
-import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './DocxEditorHelpers';
+import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './states/editor-states';
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
 import type { FontDefinition, ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
 import { useFontLifecycle } from '../hooks/useFontLifecycle';
@@ -128,6 +127,9 @@ export interface DocxEditorProps {
   author?: string;
   /** Callback when document changes */
   onChange?: (document: Document) => void;
+  /** Open an external URL (the host opens it — Tauri shell on desktop,
+   *  window.open on web). Used by the hyperlink popover + read-only link clicks. */
+  onOpenLink?: (href: string) => void;
   /** Callback when selection changes */
   onSelectionChange?: (state: SelectionState | null) => void;
   /** Callback on error */
@@ -565,6 +567,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     onOpen,
     author = 'User',
     onChange,
+    onOpenLink,
     onSelectionChange,
     onError,
     onFontsLoaded: onFontsLoadedCallback,
@@ -822,8 +825,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // Find/Replace hook
   const findReplace = useFindReplace();
 
-  // Hyperlink dialog hook
-  const hyperlinkDialog = useHyperlinkDialog();
+  // Unified hyperlink popover session (click-a-link view + Ctrl+K/toolbar edit).
+  const hyperlink = useHyperlink({ getActiveEditorView, focusActiveEditor, onOpenLink });
 
   // Lifted out of useDocumentLoader / useCommentLifecycle so `resetForNewDocument`
   // (declared next) can clear both on every fresh load.
@@ -1017,7 +1020,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     showFileOpen,
     onOpenDocument: handleOpenDocument,
     findReplace,
-    hyperlinkDialog,
+    openHyperlinkCreate: hyperlink.openCreate,
+    openHyperlinkEdit: hyperlink.openEdit,
     tableSelection,
   });
 
@@ -1098,25 +1102,10 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     focusActiveEditor,
     pagedEditorRef,
     lastSelectionRef,
-    hyperlinkDialog,
+    openHyperlinkCreate: hyperlink.openCreate,
+    openHyperlinkEdit: hyperlink.openEdit,
     historyStateRef,
     getCachedStyleResolver,
-  });
-
-  const {
-    hyperlinkPopupData,
-    handleHyperlinkSubmit,
-    handleHyperlinkRemove,
-    handleHyperlinkClick,
-    handleHyperlinkPopupNavigate,
-    handleHyperlinkPopupCopy,
-    handleHyperlinkPopupEdit,
-    handleHyperlinkPopupRemove,
-    handleHyperlinkPopupClose,
-  } = useHyperlinkActions({
-    hyperlinkDialog,
-    getActiveEditorView,
-    focusActiveEditor,
   });
 
   const {
@@ -1764,13 +1753,14 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             onEditorViewReady={onEditorViewReady}
             onRenderedDomContextReady={onRenderedDomContextReady}
             pluginOverlays={pluginOverlays}
-            onHyperlinkClick={handleHyperlinkClick}
-            hyperlinkPopupData={hyperlinkPopupData}
-            onHyperlinkPopupNavigate={handleHyperlinkPopupNavigate}
-            onHyperlinkPopupCopy={handleHyperlinkPopupCopy}
-            onHyperlinkPopupEdit={handleHyperlinkPopupEdit}
-            onHyperlinkPopupRemove={handleHyperlinkPopupRemove}
-            onHyperlinkPopupClose={handleHyperlinkPopupClose}
+            onHyperlinkClick={(data) =>
+              hyperlink.openView(data.rect, {
+                href: data.href,
+                displayText: data.displayText,
+                tooltip: data.tooltip,
+              })
+            }
+            onOpenLink={onOpenLink}
             onContextMenu={handleContextMenu}
             sidebarOpen={sidebarOpen}
             sidebarItems={allSidebarItems}
@@ -1830,9 +1820,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           onFindPrevious={handleFindPrevious}
           onReplace={handleReplace}
           onReplaceAll={handleReplaceAll}
-          hyperlinkDialog={hyperlinkDialog}
-          onHyperlinkSubmit={handleHyperlinkSubmit}
-          onHyperlinkRemove={handleHyperlinkRemove}
+          hyperlink={hyperlink}
+          readOnly={readOnly}
           getCaretRect={getCaretRect}
           imagePropsOpen={imagePropsOpen}
           imagePropsRect={imagePropsRect}

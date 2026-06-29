@@ -10,7 +10,9 @@ import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 're
  * own outside-pointer layer and flashes shut. Closes on Esc / outside-mousedown
  * (attached after mount so the opening click isn't caught; clicks inside radix
  * portals — a Select dropdown rendered on document.body — don't count as
- * outside). Positions below the rect, flipping above / clamping to the viewport.
+ * outside) / scroll (position:fixed, so the rect would otherwise go stale and
+ * the popover float over unrelated content). Positions below the rect, flipping
+ * above / clamping to the viewport.
  */
 export function CursorPopover({
   open,
@@ -55,11 +57,15 @@ export function CursorPopover({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onOpenChangeRef.current(false);
     };
+    // Capture-phase: the editor scrolls an inner container, not window.
+    const onScroll = () => onOpenChangeRef.current(false);
     window.addEventListener('mousedown', onDown);
     window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
     return () => {
       window.removeEventListener('mousedown', onDown);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
     };
   }, [open]);
 

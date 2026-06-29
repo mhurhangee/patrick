@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
+import { Button } from '@patrick/ui/components/button';
+import { cn } from '@patrick/ui/lib/utils';
 import { ArrowLeft } from 'lucide-react';
-import { useTranslation } from '../i18n';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from '../../i18n';
 
 /** @deprecated Use HeadingInfo from utils/headingCollector instead */
 export type OutlineHeading = HeadingInfo;
@@ -66,7 +68,7 @@ export const DocumentOutline = React.memo(function DocumentOutline({
 
   return (
     <nav
-      className="docx-outline-nav"
+      className="flex flex-col overflow-hidden font-sans"
       role="navigation"
       aria-label={t('documentOutline.ariaLabel')}
       style={{
@@ -79,10 +81,6 @@ export const DocumentOutline = React.memo(function DocumentOutline({
         bottom: 0,
         width: OUTLINE_WIDTH,
         paddingTop: OUTLINE_TOP_PADDING,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        fontFamily: "'Google Sans', Roboto, Arial, sans-serif",
         zIndex: 40,
         // Slide-in animation — translate fully off-screen left of its anchor.
         // Only `transform` transitions; horizontal-scroll tracking via `left`
@@ -94,93 +92,54 @@ export const DocumentOutline = React.memo(function DocumentOutline({
     >
       {/* Header — back arrow + title. No left padding so the back arrow sits
           at the nav anchor (= the collapsed toggle's position). */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '16px 16px 12px 0',
-        }}
-      >
-        <button
+      <div className="flex items-center gap-2 pt-4 pr-4 pb-3">
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onClose}
           aria-label={t('documentOutline.closeAriaLabel')}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 4,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            color: 'var(--doc-text-muted)',
-          }}
-          title={t('documentOutline.closeTitle')}
+          tooltip={t('documentOutline.closeTitle')}
         >
-          <ArrowLeft size={20} />
-        </button>
-        <span
-          style={{
-            fontWeight: 400,
-            fontSize: 14,
-            color: 'var(--doc-text)',
-            letterSpacing: '0.01em',
-          }}
-        >
-          {t('documentOutline.title')}
-        </span>
+          <ArrowLeft />
+        </Button>
+        <span className="text-sm text-foreground">{t('documentOutline.title')}</span>
       </div>
 
       {/* Heading list. Small left padding so items sit close to the left
           gutter (under the back arrow), not in a wide indent band. Per-level
           indent (level is 0-based: Heading 1 = 0) nests sub-headings. */}
-      <div style={{ overflowY: 'auto', flex: 1, paddingLeft: 4 }}>
+      <div className="flex-1 overflow-y-auto pl-1">
         {headings.length === 0 ? (
-          <div
-            style={{
-              padding: '8px 16px',
-              color: 'var(--doc-text-subtle)',
-              fontSize: 13,
-              lineHeight: '20px',
-            }}
-          >
+          <div className="px-4 py-2 text-[13px] leading-5 text-muted-foreground">
             {t('documentOutline.noHeadings')}
           </div>
         ) : (
-          headings.map((heading, index) => (
-            <div
-              key={`${heading.pmPos}-${index}`}
-              style={{
-                marginLeft: (heading.level - minLevel) * 16,
-              }}
-            >
-              <button
-                className="docx-outline-heading-btn"
-                onClick={() => onHeadingClick(heading.pmPos)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '5px 8px',
-                  fontSize: 13,
-                  fontWeight: 400,
-                  color: 'var(--doc-text)',
-                  lineHeight: '18px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  borderRadius: 0,
-                  letterSpacing: '0.01em',
-                }}
-                title={heading.text}
-              >
-                {heading.text}
-              </button>
-            </div>
-          ))
+          headings.map((heading, index) => {
+            // Subtle depth hierarchy: top level reads a touch larger/heavier,
+            // deeper levels step down to muted — alongside the indent.
+            const depth = heading.level - minLevel;
+            const depthClass =
+              depth === 0
+                ? 'text-sm font-medium text-foreground'
+                : depth === 1
+                  ? 'text-[13px] font-normal text-foreground'
+                  : 'text-[13px] font-normal text-muted-foreground';
+            return (
+              <div key={`${heading.pmPos}-${index}`} style={{ marginLeft: depth * 16 }}>
+                <button
+                  type="button"
+                  onClick={() => onHeadingClick(heading.pmPos)}
+                  title={heading.text}
+                  className={cn(
+                    'block w-full truncate rounded-sm px-2 py-[5px] text-left leading-[18px] hover:bg-accent',
+                    depthClass
+                  )}
+                >
+                  {heading.text}
+                </button>
+              </div>
+            );
+          })
         )}
       </div>
     </nav>

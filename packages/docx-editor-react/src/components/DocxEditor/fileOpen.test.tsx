@@ -86,10 +86,8 @@ function KeyboardHarness({
       openFind: mock(() => {}),
       openReplace: mock(() => {}),
     } as never,
-    hyperlinkDialog: {
-      openInsert: mock(() => {}),
-      openEdit: mock(() => {}),
-    } as never,
+    openHyperlinkCreate: mock(() => {}),
+    openHyperlinkEdit: mock(() => {}),
     tableSelection: {
       state: { tableIndex: null },
       handleAction: mock(() => {}),

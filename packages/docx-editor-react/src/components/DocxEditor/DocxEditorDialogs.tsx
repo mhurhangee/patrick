@@ -3,13 +3,12 @@ import type { Document, SectionProperties } from '@eigenpal/docx-editor-core/typ
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../hooks/useFindReplace';
-import type { useHyperlinkDialog } from '../../hooks/use-hyperlink-dialog';
-import type { HyperlinkData } from '../../types/hyperlink';
 import type { FindMatch, FindOptions, FindResult } from '@eigenpal/docx-editor-core/utils/findReplace';
 import type { ImageContext, ImagePropertiesData } from '../../types/image';
 import { CursorPopover } from '../primitives/cursor-popover';
 import { FindReplaceBar } from '../dialogs/find-replace-bar';
-import { HyperlinkForm } from '../dialogs/hyperlink-popover';
+import { HyperlinkPopover } from '../dialogs/hyperlink-popover';
+import type { useHyperlink } from './hooks/useHyperlink';
 import { ImagePropertiesForm } from '../toolbar/groups/image-properties-popover';
 import { SplitCellForm } from '../dialogs/split-cell-popover';
 import { TablePropertiesForm } from '../dialogs/table-properties-popover';
@@ -44,9 +43,8 @@ export function DocxEditorDialogs({
   onFindPrevious,
   onReplace,
   onReplaceAll,
-  hyperlinkDialog,
-  onHyperlinkSubmit,
-  onHyperlinkRemove,
+  hyperlink,
+  readOnly,
   getCaretRect,
   tablePropsOpen,
   tablePropsRect,
@@ -75,9 +73,8 @@ export function DocxEditorDialogs({
   onReplace: (replaceText: string) => boolean;
   onReplaceAll: (searchText: string, replaceText: string, options: FindOptions) => number;
   // Hyperlink
-  hyperlinkDialog: ReturnType<typeof useHyperlinkDialog>;
-  onHyperlinkSubmit: (data: HyperlinkData) => void;
-  onHyperlinkRemove: () => void;
+  hyperlink: ReturnType<typeof useHyperlink>;
+  readOnly?: boolean;
   /** Painted caret rect for anchoring the cursor popovers (hyperlink). */
   getCaretRect: () => DOMRect | null;
   // Table properties
@@ -102,13 +99,14 @@ export function DocxEditorDialogs({
   onPageSetupApply: (props: Partial<SectionProperties>) => void;
   document: Document | null;
 }) {
-  // Capture the painted caret rect when the hyperlink popover opens (the editor
-  // still holds the selection at that point), to anchor it at the cursor.
-  const [hyperlinkRect, setHyperlinkRect] = useState<DOMRect | null>(null);
-  const hyperlinkOpen = hyperlinkDialog.state.isOpen;
+  // The hyperlink popover anchors at the clicked link's rect (view) or, for
+  // Ctrl+K / toolbar (no explicit rect), the painted caret captured on open.
+  const [caretRect, setCaretRect] = useState<DOMRect | null>(null);
+  const { session } = hyperlink;
+  const hyperlinkOpen = session.open;
   // biome-ignore lint/correctness/useExhaustiveDependencies: capture only on the open transition
   useEffect(() => {
-    if (hyperlinkOpen) setHyperlinkRect(getCaretRect());
+    if (hyperlinkOpen && !session.rect) setCaretRect(getCaretRect());
   }, [hyperlinkOpen]);
 
   return (
@@ -127,17 +125,22 @@ export function DocxEditorDialogs({
       />
       <CursorPopover
         open={hyperlinkOpen}
-        onOpenChange={(o) => !o && hyperlinkDialog.close()}
-        rect={hyperlinkRect}
+        onOpenChange={(o) => !o && hyperlink.close()}
+        rect={session.rect ?? caretRect}
       >
         {hyperlinkOpen && (
-          <HyperlinkForm
-            initialData={hyperlinkDialog.state.initialData}
-            selectedText={hyperlinkDialog.state.selectedText}
-            isEditing={hyperlinkDialog.state.isEditing}
-            onSubmit={onHyperlinkSubmit}
-            onRemove={onHyperlinkRemove}
-            onClose={hyperlinkDialog.close}
+          <HyperlinkPopover
+            mode={session.mode}
+            href={session.href}
+            displayText={session.displayText}
+            isExisting={session.isExisting}
+            readOnly={readOnly}
+            onApply={hyperlink.apply}
+            onRemove={hyperlink.remove}
+            onNavigate={hyperlink.navigate}
+            onCopy={hyperlink.copy}
+            onRequestEdit={hyperlink.requestEdit}
+            onClose={hyperlink.close}
           />
         )}
       </CursorPopover>

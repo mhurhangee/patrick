@@ -95,8 +95,11 @@ export interface UsePagesPointerOptions {
     href: string;
     displayText: string;
     tooltip?: string;
-    position: { top: number; left: number };
+    /** The clicked link's viewport rect — anchors the hyperlink popover. */
+    rect: DOMRect;
   }) => void;
+  /** Open an external URL (read-only link clicks bypass the popover). */
+  onOpenLink?: (href: string) => void;
   onHeaderFooterDoubleClick?: (position: 'header' | 'footer', pageNumber?: number) => void;
   setSelectedImageInfo: React.Dispatch<React.SetStateAction<ImageSelectionInfo | null>>;
   setSelectionRects: React.Dispatch<React.SetStateAction<SelectionRect[]>>;
@@ -186,6 +189,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
     onBodyClick,
     onContextMenu,
     onHyperlinkClick,
+    onOpenLink,
     onHeaderFooterDoubleClick,
     setSelectedImageInfo,
     setSelectionRects,
@@ -637,9 +641,20 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
 
       // Hyperlink: bookmark anchor (#name) or external href.
       const anchorEl = (e.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null;
-      if (anchorEl && surface) {
-        e.preventDefault();
+      if (anchorEl) {
         const href = anchorEl.getAttribute('href') || '';
+        const isExternal = href.length > 0 && !href.startsWith('#');
+        // Read-only (no editable surface): external links just open. Fall back
+        // to window.open when the host gives no opener (web), matching navigate.
+        if (!surface) {
+          if (isExternal) {
+            e.preventDefault();
+            if (onOpenLink) onOpenLink(href);
+            else window.open(href, '_blank', 'noopener,noreferrer');
+          }
+          return;
+        }
+        e.preventDefault();
         const view = surface.getView();
         if (href.startsWith('#')) {
           const bookmarkName = href.substring(1);
@@ -668,16 +683,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
           if (!hasRangeSelection) {
             const displayText = anchorEl.textContent || '';
             const tooltip = anchorEl.getAttribute('title') || undefined;
-            const root = anchorEl.closest('.ep-root.paged-editor') as HTMLElement | null;
-            if (root) {
-              const rootRect = root.getBoundingClientRect();
-              const linkRect = anchorEl.getBoundingClientRect();
-              const position = {
-                top: linkRect.bottom - rootRect.top + 4,
-                left: linkRect.left - rootRect.left,
-              };
-              onHyperlinkClick({ href, displayText, tooltip, position });
-            }
+            onHyperlinkClick({ href, displayText, tooltip, rect: anchorEl.getBoundingClientRect() });
           }
         }
         return;
@@ -745,6 +751,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
       getPositionFromMouse,
       onHeaderFooterDoubleClick,
       onHyperlinkClick,
+      onOpenLink,
       findCellPosFromPmPos,
       scrollToPositionImpl,
     ]
