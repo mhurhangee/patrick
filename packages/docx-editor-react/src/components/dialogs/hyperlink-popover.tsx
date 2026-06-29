@@ -53,7 +53,15 @@ export function HyperlinkForm({
           id="link-url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              // Stop the Enter from falling through to the editor as a newline
+              // (which would replace the just-inserted link).
+              e.preventDefault();
+              e.stopPropagation();
+              submit();
+            }
+          }}
           placeholder="https://…"
           autoFocus
           className="h-8 text-sm"

@@ -10,15 +10,19 @@ before its legacy is deleted.
 ## Status by area
 | Area | Status | Notes |
 |---|---|---|
-| Toolbar | ✅ done | new: `components/toolbar/*` + `src/types/*`. DocxToolbar is the only toolbar. Zoom → shared floating `ZoomPill` (`docx-viewer.tsx`). P5c deleted the legacy cluster (~1.9k LOC): `Toolbar`, `EditorToolbar`, `TitleBar`, `EditorToolbarContext`, `CommentsSidebarToggle`, `EditingModeDropdown`, `ui/MenuDropdown` + pruned `ui.ts`. P4 (floating selection) **dropped**. Residual: 5 legacy-only public DocxEditor props `_`-prefixed → prune holistically in A6 |
-| Dead-code cull (A0) | ✅ done | `EditableImage` (768 LOC) earlier; then the **dead-entry-point cull**: dropped the `/ui` + `/dialogs` package exports (0 external + 0 internal importers; `/hooks` + `/plugin-api` kept — `plugin-api` is used internally + is the extension surface) and deleted everything reachable only through them — **29 files, ~8.1k LOC**: `ui.ts`, `dialogs/index.ts`, the legacy `ui/*` controls (`ColorPicker`, `*Picker`s, `Align/List`-less leftovers, `ZoomControl`, `IconGridDropdown`, `TableGridInline`, `UnsavedIndicator`, `LoadingIndicator`, …), `ContextMenu`, `ResponsePreview`, 3 unwired dialogs (`InsertTable`/`InsertSymbol`/`PasteSpecial`), and orphaned glue helpers (`ClickPositionResolver`, `PointerEventHandler`, `reportIssue`, `tableSplit`). Found via knip in library mode. |
-| Dialogs (A2) | ✅ done | Triaged 11 live dialogs (need?·form?·design?). Cut 3 orphans (InsertImage/KeyboardShortcuts/ImagePosition). Popovers: ImageProperties (button) + SplitCell/TableProperties/Hyperlink (cursor-anchored via `CursorPopover`+`getCaretRect`). Watermark→Insert submenu (+core paint fix). Find/Replace→bottom bar + zoom-pill search button (`DocxEditorRef.openFind`). PageSetup rebuilt on @patrick/ui. Remaining in `dialogs/`: `FootnotePropertiesDialog` (kept as-is, low priority), `PageSetupDialog`, + `hyperlink.ts`/`findReplaceUtils.ts` (state/util). Footnote *insertion* unbuilt (deferred). |
-| Context menus (A3) | ⬜ | `TextContextMenu`/`ContextMenu`/`ImageContextMenu` → shadcn context-menu |
-| Sidebar / review cards (A4) | ⬜ | `CommentCard`/`TrackedChangeCard`/`ReplyThread`/`AddCommentCard` |
-| Remaining chrome (A5) | ⬜ | `TitleBar`, `DocumentOutline`, rulers, status indicators |
-| Final cleanup (A6) | ⬜ | delete orphaned `ui/*` + `useFixedDropdown`; optional `docx-editor-ui` split |
-| Shell responsiveness (B) | ⬜ | fit-width zoom + pane px-floors/auto-collapse (the "editor behind chat") |
-| Dark-mode highlights (B) | ⬜ | counter-invert highlighted runs (needs painter to tag them) |
+| Toolbar (A1) | ✅ done | `components/toolbar/*` + `src/types/*`. `DocxToolbar` is the only toolbar (`DocxEditorToolbar` is a thin wrapper around it). Zoom → floating `ZoomPill` (`docx-viewer.tsx`). Legacy cluster deleted (`Toolbar`/`EditorToolbar`/`TitleBar`/`EditorToolbarContext`/`CommentsSidebarToggle`/`EditingModeDropdown`/`ui/MenuDropdown`). |
+| Dead-code cull (A0) | ✅ done | `EditableImage` + the dead-entry-point cull (`/ui`+`/dialogs` exports dropped; ~29 files / ~8.1k LOC). |
+| Dialogs (A2) | ✅ done | Popovers (ImageProperties/SplitCell/TableProperties/Hyperlink via `CursorPopover`+`getCaretRect`), Watermark→Insert submenu, Find/Replace→bottom bar, PageSetup on @patrick/ui. Then the **chrome reorg** (PR #84): kebab-renamed, popovers→`dialogs/`, `cursor-popover`→`primitives/`, `hyperlink.ts` split (types/lib/hook), `findReplaceUtils`→`lib/`. Cut the **dead `FootnotePropertiesDialog`** (unreachable upstream scaffolding — footnote *authoring* deferred to IDEAS with editable H/F). |
+| Context menus (A3) | ✅ done | PR #85. Text + Image menus → `components/context-menus/*` on `@patrick/ui` DropdownMenu via a shared `PositionedMenu` (controlled, 0×0 anchor at {x,y}). Cut ~400 LOC dead code. Added "Table properties" item. Review caught a focus-loss regression (`onCloseAutoFocus` preventDefault) — fixed. |
+| Sidebar / review cards (A4) | ✅ done | PR #86. Comment + tracked-change cards → `components/sidebar/*` over a shared `ReviewCardShell`; content-first compact layout, Patrick-coral avatars, Hanken font fix, **adaptive collapsed density** (`resolveItemPositions` returns `availableBelow`; collapsed shows "💬 N" + full text when isolated). |
+| Shim cleanup | ✅ done | Deleted pure re-export shims `sidebar/constants.ts`, `sidebar/resolveItemPositions.ts`, `lib/find-replace-utils.ts` — importers reference `@eigenpal/docx-editor-core` directly. `sidebar/` + `lib/` are now real-files-only. |
+| **Surfacing chrome (A5)** | ⬜ **NEXT** | The un-migrated chrome that ACTUALLY RENDERS — surface-first: rulers (`Horizontal`/`VerticalRuler`, in `DocxEditorShell`), `DocumentOutline` (outline panel), `CommentMarginMarkers` (margin), `InlineHeaderFooterEditor` (H/F edit), `HyperlinkPopup` (in-doc link hover), `ui/Tooltip`, then `ErrorBoundary` (crash-only, 34 `--doc-*`). Tokenize/reskin onto `@patrick/ui` + global tokens. |
+| **Dead-component cleanup (A6)** | ⬜ | Invisible cleanup — every legacy "picker" is a grab-bag: dead component + one live helper/type. Lift the helpers to a util/types home, delete the dead components, then `ui/Button`+`ui/Select`+legacy `ui/Tooltip` fall out. Files: `FontPicker` (→`FontOption` type), `FontSizePicker` (→`pointsToHalfPoints`), `ListButtons` (→`createDefaultListState`), `TableStyleGallery` (→`getBuiltinTableStyle`/`TableStylePreset`), `PrintPreview` (→`PrintOptions` type), `TableToolbar` (→operations re-export), `useFixedDropdown`. Also prune the 5 `_`-prefixed dead public `DocxEditor` props. Then optional `docx-editor-ui` split. |
+| Shell responsiveness (B) | ⬜ | fit-width zoom + pane px-floors/auto-collapse (the "editor behind chat"). |
+| Dark-mode highlights (B) | ⬜ | counter-invert highlighted runs (needs painter to tag them). |
+
+## A5/A6 key insight (2026-06-29) — surface-first, not cull-first
+What's left splits cleanly: **(A5) chrome that renders** (rulers/outline/margin-markers/HF-editor/hyperlink-popup/tooltip — what the attorney sees) vs **(A6) dead components that don't render** (the `ui/*` "pickers" are grab-bags whose component is never JSX-rendered; only a small exported helper/type keeps them imported). Confirmed by `<Component` JSX-render greps: FontPicker/FontSizePicker/ListButtons/TableStyleGallery/PrintPreview are NOT rendered. So A5 = visible reskin (do first); A6 = extract-helper-then-delete (invisible, safe, no UI change). This reordering was the user's call — target what surfaces before culling.
 
 ## Code-review follow-ups (toolbar branch, deferred — minor)
 From the high-effort review; confirmed-real but low priority:
@@ -65,11 +69,9 @@ The popover cluster (ImageProperties, TableProperties, SplitCell, Hyperlink incl
 - **Footnote insertion: NOT a reform — unbuilt.** `insertFootnote` (core `makeInsertNote('footnote')` → `(id)=>Command`) is never invoked in the react package and needs footnote-id allocation. Surfacing it under Insert = building the feature, deferred (patent-irrelevant).
 - **Popover cluster ✅ DONE:** ImageProperties (button-anchored), SplitCell + TableProperties + Hyperlink (cursor-anchored via the `CursorPopover` + `getCaretRect` primitive). Left: **Find/Replace bar**.
 
-## Still-live `ui/*` + hooks — cull as their consumers migrate
-After the A0 entry-point cull, the `ui/*` that REMAIN are the ones still reached from the `.`
-entry via surviving chrome: `Button`, `Tooltip`, `Select`, `FontPicker`, `FontSizePicker`,
-`ListButtons`, `normalizeFontFamilies`, `HyperlinkPopup`, `HorizontalRuler`, `PrintPreview`,
-`TableToolbar` (its **operations** are live glue; its component is dead-in-file), plus
-`hooks/useFixedDropdown.ts`. These die when the dialogs (A2), context menus (A3), and remaining
-chrome (A5) that consume them are rebuilt — re-run knip after each area. Also still pending:
-the 5 `_`-prefixed dead public `DocxEditor` props (prune once the API is settled).
+## Remaining `ui/*` — accurate breakdown (2026-06-29)
+Re-audited by JSX-render reachability from `DocxEditor`. Two buckets:
+
+**Renders (A5 — reskin/tokenize):** `HorizontalRuler` + `VerticalRuler` (`DocxEditorShell`), `HyperlinkPopup` (`PagedEditor`), `Tooltip` (`DocxEditorPagedArea`). (Top-level chrome that renders: `DocumentOutline`, `CommentMarginMarkers`, `InlineHeaderFooterEditor`, `ErrorBoundary`.)
+
+**Dead component + live helper (A6 — extract helper, delete component):** `FontPicker` (`FontOption` type), `FontSizePicker` (`pointsToHalfPoints`), `ListButtons` (`createDefaultListState`), `TableStyleGallery` (`getBuiltinTableStyle`/`TableStylePreset`), `PrintPreview` (`PrintOptions` type), `TableToolbar` (operations re-export). Deleting these frees the legacy primitives `Button` + `Select` (only intra-`ui/` deps: `FontPicker`→`Select`, `FontSizePicker`→`Button`) and lets `Tooltip` be swapped for `@patrick/ui`. Plus `hooks/useFixedDropdown.ts`, `normalizeFontFamilies` (keep — real util), and the 5 `_`-prefixed dead public `DocxEditor` props. Re-run knip after each step.

@@ -6,8 +6,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { FindMatch, FindOptions } from '../lib/find-replace-utils';
-import { createDefaultFindOptions } from '../lib/find-replace-utils';
+import type { FindMatch, FindOptions } from '@eigenpal/docx-editor-core/utils/findReplace';
+import { createDefaultFindOptions } from '@eigenpal/docx-editor-core/utils/findReplace';
 
 // ============================================================================
 // TYPES

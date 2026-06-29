@@ -1,11 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
-import type { SectionProperties, TabStop } from '@eigenpal/docx-editor-core/types/document';
 import type { TrackedChangesResult } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { LocaleProvider } from '../../i18n';
 import { cn } from '../../lib/utils';
 import { ErrorBoundary, ErrorProvider } from '../ErrorBoundary';
-import { HorizontalRuler } from '../ui/HorizontalRuler';
-import { VerticalRuler, RULER_WIDTH } from '../ui/VerticalRuler';
 import {
   DocumentOutline,
   OUTLINE_LEFT_OFFSET,
@@ -13,41 +10,12 @@ import {
 } from '../DocumentOutline';
 import { OutlineToggleButton } from './OutlineToggleButton';
 import { PageIndicator } from './PageIndicator';
-import { SIDEBAR_DOCUMENT_SHIFT } from '../sidebar/constants';
-import { Z_INDEX } from '../../styles/zIndex';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
 
 interface ScrollPageInfo {
   currentPage: number;
   totalPages: number;
   visible: boolean;
-}
-
-interface HorizontalRulerProps {
-  sectionProps: SectionProperties | undefined;
-  zoom: number;
-  unit: 'inch' | 'cm';
-  editable: boolean;
-  onLeftMarginChange: (marginTwips: number) => void;
-  onRightMarginChange: (marginTwips: number) => void;
-  indentLeft: number;
-  indentRight: number;
-  onIndentLeftChange: (twips: number) => void;
-  onIndentRightChange: (twips: number) => void;
-  firstLineIndent: number;
-  hangingIndent: boolean;
-  onFirstLineIndentChange: (twips: number) => void;
-  tabStops: TabStop[] | null;
-  onTabStopRemove: (positionTwips: number) => void;
-}
-
-interface VerticalRulerProps {
-  sectionProps: SectionProperties | undefined;
-  zoom: number;
-  unit: 'inch' | 'cm';
-  editable: boolean;
-  onTopMarginChange: (marginTwips: number) => void;
-  onBottomMarginChange: (marginTwips: number) => void;
 }
 
 interface OutlineProps {
@@ -80,11 +48,8 @@ export function DocxEditorShell({
   containerStyle,
   mainContentStyle,
   editorContainerStyle,
-  showRuler,
-  readOnlyProp,
   showOutline,
   showOutlineButton,
-  sidebarOpen,
   minLayoutWidth,
   toolbarHeight,
   editorScrollLeft,
@@ -93,8 +58,6 @@ export function DocxEditorShell({
   onScrollContainerMouseDown,
   onEditorBgMouseDown,
   onEditorContextMenu,
-  horizontalRulerProps,
-  verticalRulerProps,
   outlineProps,
   onToggleOutline,
   scrollPageInfo,
@@ -114,11 +77,8 @@ export function DocxEditorShell({
   containerStyle: CSSProperties;
   mainContentStyle: CSSProperties;
   editorContainerStyle: CSSProperties;
-  showRuler: boolean;
-  readOnlyProp: boolean | undefined;
   showOutline: boolean;
   showOutlineButton: boolean;
-  sidebarOpen: boolean;
   minLayoutWidth: number;
   toolbarHeight: number;
   editorScrollLeft: number;
@@ -127,8 +87,6 @@ export function DocxEditorShell({
   onScrollContainerMouseDown: (e: React.MouseEvent) => void;
   onEditorBgMouseDown: (e: React.MouseEvent) => void;
   onEditorContextMenu: (e: React.MouseEvent) => void;
-  horizontalRulerProps: HorizontalRulerProps;
-  verticalRulerProps: VerticalRulerProps;
   outlineProps: OutlineProps;
   onToggleOutline: () => void;
   scrollPageInfo: ScrollPageInfo;
@@ -167,28 +125,6 @@ export function DocxEditorShell({
                   style={editorContainerStyle}
                   onMouseDown={onScrollContainerMouseDown}
                 >
-                  {/* Horizontal ruler — sticky-top, scrolls horizontally with
-                      the doc. paddingRight biases the centered ruler so it
-                      tracks the page when the comments sidebar shifts the
-                      page left. Outline doesn't bias; the page stays centered
-                      until minLayoutWidth forces horizontal scroll. */}
-                  {showRuler && (
-                    <div
-                      className="flex justify-center py-1 flex-shrink-0 bg-doc-bg"
-                      style={{
-                        position: 'sticky',
-                        top: 0,
-                        // Must sit above the inline HF editor so the ruler stays readable.
-                        zIndex: Z_INDEX.ruler,
-                        paddingLeft: 20,
-                        paddingRight: 20 + (sidebarOpen ? SIDEBAR_DOCUMENT_SHIFT * 2 : 0),
-                        minWidth: minLayoutWidth,
-                        transition: 'padding 0.2s ease',
-                      }}
-                    >
-                      <HorizontalRuler {...horizontalRulerProps} />
-                    </div>
-                  )}
                   <div
                     style={{
                       display: 'flex',
@@ -208,24 +144,6 @@ export function DocxEditorShell({
                       onMouseDown={onEditorBgMouseDown}
                       onContextMenu={onEditorContextMenu}
                     >
-                      {/* Vertical ruler — sits at the editor content's left
-                          edge so it scrolls horizontally with the page. */}
-                      {showRuler && !readOnlyProp && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            // Above the inline HF editor so it stays readable on horizontal scroll.
-                            zIndex: Z_INDEX.ruler,
-                            // Must match `.paged-editor__pages` padding-top
-                            // (24 viewport + 24 pages container) in editor.css.
-                            paddingTop: 48,
-                          }}
-                        >
-                          <VerticalRuler {...verticalRulerProps} />
-                        </div>
-                      )}
                       {/* Brightened highlight for the focused/expanded sidebar item. */}
                       {expandedSidebarItem && expandedSidebarItem.startsWith('comment-') && (
                         <style>{`.paged-editor__pages [data-comment-id="${expandedSidebarItem.replace('comment-', '')}"] { background-color: rgba(255, 212, 0, 0.35) !important; border-bottom: 2px solid rgba(255, 212, 0, 0.7) !important; }`}</style>
@@ -255,25 +173,18 @@ export function DocxEditorShell({
                   />
                 )}
 
-                {/* When the vertical ruler is shown it overlays the editor's
-                    left edge (left:0, width RULER_WIDTH); inset the outline
-                    toggle/panel past it so they don't render on top. */}
                 {showOutline && (
-                  <DocumentOutline
-                    {...outlineProps}
-                    leftOffset={OUTLINE_LEFT_OFFSET + (showRuler ? RULER_WIDTH : 0)}
-                  />
+                  <DocumentOutline {...outlineProps} leftOffset={OUTLINE_LEFT_OFFSET} />
                 )}
 
                 {showOutlineButton && !showOutline && (
                   <OutlineToggleButton
                     onClick={onToggleOutline}
-                    // Aligns with the page top: toolbar + horizontal ruler row
-                    // (22 ruler + 8 py-1 padding) + PagedEditor viewport
+                    // Aligns with the page top: toolbar + PagedEditor viewport
                     // padding-top (24) + pages container padding (24).
-                    topPx={toolbarHeight + (showRuler ? 30 : 0) + 48}
+                    topPx={toolbarHeight + 48}
                     scrollLeft={editorScrollLeft}
-                    leftOffset={OUTLINE_BUTTON_LEFT_OFFSET + (showRuler ? RULER_WIDTH : 0)}
+                    leftOffset={OUTLINE_BUTTON_LEFT_OFFSET}
                   />
                 )}
               </div>

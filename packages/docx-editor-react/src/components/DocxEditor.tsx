@@ -46,8 +46,7 @@ import { useResetEditorState } from './DocxEditor/hooks/useResetEditorState';
 import { DocxEditorShell } from './DocxEditor/DocxEditorShell';
 import type { FontOption } from './ui/FontPicker';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from './DocumentOutline';
-import { RULER_WIDTH } from './ui/VerticalRuler';
-import { SIDEBAR_DOCUMENT_SHIFT } from './sidebar/constants';
+import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 import { useCommentSidebarItems, type CommentCallbacks } from '../hooks/useCommentSidebarItems';
 import { extractTrackedChanges } from '../hooks/useTrackedChanges';
 import { type EditorState as PMEditorState } from 'prosemirror-state';
@@ -168,10 +167,6 @@ export interface DocxEditorProps {
   showMarginGuides?: boolean;
   /** Color for margin guides (default: '#c0c0c0') */
   marginGuideColor?: string;
-  /** Whether to show horizontal ruler (default: false) */
-  showRuler?: boolean;
-  /** Unit for ruler display (default: 'inch') */
-  rulerUnit?: 'inch' | 'cm';
   /** Initial zoom level (default: 1.0) */
   initialZoom?: number;
   /** Whether the editor is read-only. When true, hides toolbar and rulers */
@@ -581,8 +576,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     showZoomControl: _showZoomControl = true,
     showMarginGuides: _showMarginGuides = false,
     marginGuideColor: _marginGuideColor,
-    showRuler = false,
-    rulerUnit = 'inch',
     initialZoom = 1.0,
     readOnly: readOnlyProp = false,
     disableFindReplaceShortcuts = false,
@@ -1156,25 +1149,15 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     ),
   });
 
-  // Handle margin changes from rulers
   const {
     showPageSetup,
     setShowPageSetup,
     handleOpenPageSetup,
-    handleLeftMarginChange,
-    handleRightMarginChange,
-    handleTopMarginChange,
-    handleBottomMarginChange,
     handlePageSetupApply,
-    handleIndentLeftChange,
-    handleIndentRightChange,
-    handleFirstLineIndentChange,
-    handleTabStopRemove,
   } = usePageSetupControls({
     document: history.state,
     readOnly,
     handleDocumentChange,
-    getActiveEditorView,
   });
 
   const {
@@ -1481,10 +1464,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       ? OUTLINE_RESERVED_SPACE
       : showOutlineButton
         ? OUTLINE_BUTTON_RESERVED_SPACE
-        : 20) +
-    // The outline toggle/panel inset past the vertical ruler when it's shown,
-    // so the page must clear that extra width too.
-    (showRuler && (showOutline || showOutlineButton) ? RULER_WIDTH : 0);
+        : 20);
   // Reserve against the WIDEST page in the doc, not the portrait default: pages
   // center via `alignItems:center`, so a landscape section (wider than
   // DEFAULT_PAGE_WIDTH) gets a smaller side margin and, with the old default,
@@ -1682,11 +1662,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       containerStyle={containerStyle}
       mainContentStyle={mainContentStyle}
       editorContainerStyle={editorContainerStyle}
-      showRuler={showRuler}
-      readOnlyProp={readOnlyProp}
       showOutline={showOutline}
       showOutlineButton={showOutlineButton}
-      sidebarOpen={sidebarOpen}
       minLayoutWidth={minLayoutWidth}
       toolbarHeight={toolbarHeight}
       editorScrollLeft={editorScrollLeft}
@@ -1695,31 +1672,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       onScrollContainerMouseDown={handleScrollContainerMouseDown}
       onEditorBgMouseDown={handleEditorBgMouseDown}
       onEditorContextMenu={handleEditorContextMenu}
-      horizontalRulerProps={{
-        sectionProps: history.state?.package.document?.finalSectionProperties,
-        zoom: state.zoom,
-        unit: rulerUnit,
-        editable: !readOnly,
-        onLeftMarginChange: handleLeftMarginChange,
-        onRightMarginChange: handleRightMarginChange,
-        indentLeft: state.paragraphIndentLeft,
-        indentRight: state.paragraphIndentRight,
-        onIndentLeftChange: handleIndentLeftChange,
-        onIndentRightChange: handleIndentRightChange,
-        firstLineIndent: state.paragraphFirstLineIndent,
-        hangingIndent: state.paragraphHangingIndent,
-        onFirstLineIndentChange: handleFirstLineIndentChange,
-        tabStops: state.paragraphTabs,
-        onTabStopRemove: handleTabStopRemove,
-      }}
-      verticalRulerProps={{
-        sectionProps: initialSectionProperties,
-        zoom: state.zoom,
-        unit: rulerUnit,
-        editable: !readOnly,
-        onTopMarginChange: handleTopMarginChange,
-        onBottomMarginChange: handleBottomMarginChange,
-      }}
       outlineProps={{
         headings: outlineHeadings,
         onHeadingClick: handleHeadingInfoClick,
