@@ -53,7 +53,6 @@ export function useDocxEditorRefApi({
   historyStateRef,
   pagedEditorRef,
   handleSave,
-  handleDirectPrint,
   zoom,
   setZoom,
   openFind,
@@ -74,7 +73,6 @@ export function useDocxEditorRefApi({
   historyStateRef: React.RefObject<Document | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   handleSave: (options?: { selective?: boolean }) => Promise<ArrayBuffer | null>;
-  handleDirectPrint: () => void;
   zoom: number;
   setZoom: (zoom: number) => void;
   openFind: () => void;
@@ -112,8 +110,6 @@ export function useDocxEditorRefApi({
       scrollToPosition: (pmPos: number) => {
         pagedEditorRef.current?.scrollToPosition(pmPos);
       },
-      openPrintPreview: handleDirectPrint,
-      print: handleDirectPrint,
       loadDocument: loadParsedDocument,
       loadDocumentBuffer: loadBuffer,
 
@@ -281,7 +277,6 @@ export function useDocxEditorRefApi({
       document,
       zoom,
       handleSave,
-      handleDirectPrint,
       loadParsedDocument,
       loadBuffer,
       comments,
