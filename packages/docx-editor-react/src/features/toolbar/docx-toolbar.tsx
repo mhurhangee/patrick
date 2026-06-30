@@ -22,7 +22,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { EDITING_MODES, type EditorMode } from '../../editor/internals/editing-modes';
+import { EDITING_MODES, type EditorMode } from './editing-modes';
 import type { FormattingAction, SelectionFormatting } from './types';
 import type { ImageContext } from '../images/types';
 import type { TableAction } from '../tables/types';
