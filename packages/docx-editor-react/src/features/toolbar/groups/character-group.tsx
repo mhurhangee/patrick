@@ -36,7 +36,7 @@ import {
   Underline,
 } from 'lucide-react';
 import { useMemo } from 'react';
-import type { FormattingAction, SelectionFormatting } from '../../../types/formatting';
+import type { FormattingAction, SelectionFormatting } from '../types';
 import { ColorControl } from '../color-control';
 import { HIGHLIGHT_SWATCHES, STANDARD_SWATCHES, TOGGLE_ACTIVE, keepFocus } from '../shared';
 import { StyleMenu } from './style-menu';

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { keepFocus } from '../shared';
-import { TableGrid } from '../../../features/tables/table-grid';
+import { TableGrid } from '../../tables/table-grid';
 
 const WATERMARK_PRESETS = ['DRAFT', 'CONFIDENTIAL'] as const;
 

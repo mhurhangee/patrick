@@ -34,7 +34,7 @@ import {
 import { createStyleResolver } from '@eigenpal/docx-editor-core/prosemirror';
 import { getCachedNumberingMap } from '@eigenpal/docx-editor-core/docx';
 import type { EditorView } from 'prosemirror-view';
-import type { FormattingAction } from '../types/formatting';
+import type { FormattingAction } from './types';
 import { pointsToHalfPoints } from '@eigenpal/docx-editor-core/utils/units';
 import { mapHexToHighlightName } from '@eigenpal/docx-editor-core/utils/highlightColors';
 
