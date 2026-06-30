@@ -9,33 +9,19 @@ interface FloatingCommentBtn {
 }
 
 /**
- * Owns the comment-management surface: controlled / uncontrolled routing
- * of the `comments` array, the new-comment workflow state (range,
- * Y-position anchor, `isAddingComment` flag), the floating add-comment
- * button position, the synchronous `commentsRef` mirror, and the
- * orphaned-comments debouncer.
- *
- * Controlled mode: when consumer passes `comments` as a prop, the editor
- * reads it directly and routes every mutation through `onCommentsChange`
- * instead of touching internal state.
- *
- * Uncontrolled mode: internal state owns the array; `onCommentsChange`
- * still fires for parity but is optional.
+ * Owns the comment-management surface: the `comments` array, the new-comment
+ * workflow state (range, Y-position anchor, `isAddingComment` flag), the
+ * floating add-comment button position, the synchronous `commentsRef` mirror,
+ * and the orphaned-comments debouncer.
  */
 export function useCommentManagement({
-  commentsProp,
   onCommentDelete,
-  onCommentsChange,
   pagedEditorRef,
 }: {
-  commentsProp: Comment[] | undefined;
   onCommentDelete: ((comment: Comment) => void) | undefined;
-  onCommentsChange: ((comments: Comment[]) => void) | undefined;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
 }) {
-  const [internalComments, setInternalComments] = useState<Comment[]>([]);
-  const isControlledComments = commentsProp !== undefined;
-  const comments = isControlledComments ? commentsProp : internalComments;
+  const [comments, setInternalComments] = useState<Comment[]>([]);
 
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [commentSelectionRange, setCommentSelectionRange] = useState<{
@@ -54,28 +40,19 @@ export function useCommentManagement({
   isAddingCommentRef.current = isAddingComment;
   const onCommentDeleteRef = useRef(onCommentDelete);
   onCommentDeleteRef.current = onCommentDelete;
-  const onCommentsChangeRef = useRef(onCommentsChange);
-  onCommentsChangeRef.current = onCommentsChange;
 
-  // Unified setter that resolves the new value, mutates internal state when
-  // uncontrolled, and always notifies via `onCommentsChange`. Reads through
-  // `commentsRef.current` for the functional-update branch so the callback
-  // stays stable across renders.
-  const setComments = useCallback(
-    (next: React.SetStateAction<Comment[]>) => {
-      const resolved =
-        typeof next === 'function'
-          ? (next as (prev: Comment[]) => Comment[])(commentsRef.current)
-          : next;
-      if (resolved === commentsRef.current) return;
-      if (!isControlledComments) {
-        commentsRef.current = resolved;
-        setInternalComments(resolved);
-      }
-      onCommentsChangeRef.current?.(resolved);
-    },
-    [isControlledComments]
-  );
+  // Unified setter that resolves the new value and mutates internal state.
+  // Reads through `commentsRef.current` for the functional-update branch so the
+  // callback stays stable across renders.
+  const setComments = useCallback((next: React.SetStateAction<Comment[]>) => {
+    const resolved =
+      typeof next === 'function'
+        ? (next as (prev: Comment[]) => Comment[])(commentsRef.current)
+        : next;
+    if (resolved === commentsRef.current) return;
+    commentsRef.current = resolved;
+    setInternalComments(resolved);
+  }, []);
 
   // Remove comments whose marks no longer exist in the document. Called
   // debounced from the document-change handler so the user doesn't see

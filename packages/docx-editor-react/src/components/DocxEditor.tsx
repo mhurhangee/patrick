@@ -26,7 +26,6 @@ import { useFindReplaceBridge } from './DocxEditor/hooks/useFindReplaceBridge';
 import { useFormattingActions } from './DocxEditor/hooks/useFormattingActions';
 import { useImageActions } from './DocxEditor/hooks/useImageActions';
 import { useDocxEditorRefApi } from './DocxEditor/hooks/useDocxEditorRefApi';
-import { useControllableBoolean } from './DocxEditor/hooks/useControllableBoolean';
 import { useTableDialogs } from './DocxEditor/hooks/useTableDialogs';
 import { useHeaderFooterEditing } from './DocxEditor/hooks/useHeaderFooterEditing';
 import { useDocumentLoader } from './DocxEditor/hooks/useDocumentLoader';
@@ -230,27 +229,6 @@ export interface DocxEditorProps {
   onCommentDelete?: (comment: Comment) => void;
   /** Callback when a reply is added to a comment via the UI */
   onCommentReply?: (reply: Comment, parent: Comment) => void;
-  /**
-   * Controlled comments array. When provided, the editor reads comment thread
-   * metadata (text, author, replies, resolved status) from this prop instead
-   * of internal state, and emits every change through `onCommentsChange`.
-   *
-   * Use this with collaboration backends (Yjs, Liveblocks, Automerge, …) so
-   * comment threads sync across peers — the PM document only carries the
-   * range markers; thread metadata lives outside the doc and needs its own
-   * sync channel.
-   *
-   * If omitted, the editor falls back to internal state (current behavior).
-   * The granular `onCommentAdd`/`onCommentResolve`/`onCommentDelete`/
-   * `onCommentReply` callbacks fire in both modes.
-   */
-  comments?: Comment[];
-  /** Fires whenever the comments array changes (controlled mode). */
-  onCommentsChange?: (comments: Comment[]) => void;
-  /** Controlled comments-sidebar visibility; source of truth when set. Pair with `onCommentsSidebarOpenChange`; omit for the default self-managed behavior. */
-  commentsSidebarOpen?: boolean;
-  /** Fires with the next open state whenever the editor wants to show or hide the comments sidebar. Fires in both controlled and uncontrolled modes. */
-  onCommentsSidebarOpenChange?: (open: boolean) => void;
   /**
    * Callback when rendered DOM context is ready (for plugin overlays).
    * Used by PluginHost to get access to the rendered page DOM for positioning.
@@ -504,10 +482,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     onCommentResolve,
     onCommentDelete,
     onCommentReply,
-    comments: commentsProp,
-    onCommentsChange,
-    commentsSidebarOpen,
-    onCommentsSidebarOpenChange,
     externalPlugins,
     externalContent = false,
     onEditorViewReady,
@@ -545,12 +519,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const [hfEditPosition, setHfEditPosition] = useState<'header' | 'footer' | null>(null);
   const [hfEditIsFirstPage, setHfEditIsFirstPage] = useState(false);
 
-  // Controlled by `commentsSidebarOpen` when provided, else editor-owned; the
-  // setter routes through `onCommentsSidebarOpenChange`. See useControllableBoolean.
-  const [showCommentsSidebar, setShowCommentsSidebar] = useControllableBoolean(
-    commentsSidebarOpen,
-    onCommentsSidebarOpenChange
-  );
+  const [showCommentsSidebar, setShowCommentsSidebar] = useState(false);
   // Auto-open the sidebar the first time a comment / tracked change
   // appears so users see the card without manually toggling. Latches so
   // a subsequent close stays closed; reset on doc reload.
@@ -578,9 +547,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     cleanOrphanedCommentsTimerRef,
     cleanOrphanedComments,
   } = useCommentManagement({
-    commentsProp,
     onCommentDelete,
-    onCommentsChange,
     pagedEditorRef,
   });
 
