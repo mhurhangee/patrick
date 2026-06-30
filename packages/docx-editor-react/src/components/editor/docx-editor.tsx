@@ -44,10 +44,9 @@ import { DocxEditorShell } from './docx-editor-shell';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from '../../features/outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
-import { useCommentSidebarItems, type CommentCallbacks } from '../../features/review/use-comment-sidebar-items';
+import { useCommentWorkflow } from '../../features/review/use-comment-workflow';
 import { extractTrackedChanges } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { type EditorState as PMEditorState } from 'prosemirror-state';
-import type { ReactSidebarItem } from '../../features/review/types';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../../features/find-replace/use-find-replace';
@@ -68,16 +67,9 @@ import {
 // ProseMirror editor
 import {
   type SelectionState,
-  extractSelectionState,
   createStyleResolver,
   type TableContextInfo,
 } from '@eigenpal/docx-editor-core/prosemirror';
-import {
-  acceptChange,
-  rejectChange,
-  acceptChangeById,
-  rejectChangeById,
-} from '@eigenpal/docx-editor-core/prosemirror/commands';
 import { collectHeadings } from '@eigenpal/docx-editor-core/utils';
 import {
   prefersColorSchemeDark,
@@ -313,10 +305,8 @@ import type { EditorMode } from './internals/editing-modes';
 
 import { getInitialSectionProperties } from './internals/pmAnchors';
 import {
-  PENDING_COMMENT_ID,
   createCommentIdAllocator,
 } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
-import { createComment } from '@eigenpal/docx-editor-core/prosemirror/commentOps';
 import { EMPTY_ANCHOR_POSITIONS } from '../../features/review/constants';
 
 /**
@@ -359,11 +349,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const isDark = resolveIsDark(colorMode, systemDark);
 
   const [showCommentsSidebar, setShowCommentsSidebar] = useState(false);
-  // Auto-open the sidebar the first time a comment / tracked change
-  // appears so users see the card without manually toggling. Latches so
-  // a subsequent close stays closed; reset on doc reload.
-  const sidebarAutoOpenedRef = useRef(false);
-  const [expandedSidebarItem, setExpandedSidebarItem] = useState<string | null>(null);
   // PagedEditor ref declared early so useCommentManagement (which reads
   // pagedEditorRef.current.getView() for orphan cleanup) can be wired before
   // the trackedChanges effect that drives `setComments`.
@@ -845,142 +830,33 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     flexDirection: 'row',
   };
 
-  // --- Unified sidebar items ---
-  const commentCallbacksRef = useRef<CommentCallbacks>({});
-  commentCallbacksRef.current = {
-    onCommentReply: (id, text) => {
-      const reply = createComment(commentIdAllocatorRef.current, text, author, id);
-      setComments((prev) => [...prev, reply]);
-    },
-    onCommentResolve: (id) => {
-      setComments((prev) => prev.map((c) => (c.id === id ? { ...c, done: true } : c)));
-      // Collapse the card to its checkmark marker immediately. Resolving
-      // doesn't go through a PM transaction, so the cursor-based collapse
-      // path wouldn't fire; do it explicitly. Cascades into the highlight
-      // hide via resolvedIdsForRender.
-      if (expandedSidebarItem === `comment-${id}`) {
-        setExpandedSidebarItem(null);
-      }
-    },
-    onCommentUnresolve: (id) => {
-      setComments((prev) => prev.map((c) => (c.id === id ? { ...c, done: undefined } : c)));
-    },
-    onCommentDelete: (id) => {
-      setComments((prev) => prev.filter((c) => c.id !== id && c.parentId !== id));
-      // Remove the comment mark from PM to clear the yellow highlight
-      const view = pagedEditorRef.current?.getView();
-      if (view) {
-        const mark = view.state.schema.marks.comment?.create({ commentId: id });
-        if (mark) {
-          const tr = view.state.tr.removeMark(0, view.state.doc.content.size, mark);
-          if (tr.docChanged) view.dispatch(tr);
-        }
-      }
-    },
-    onAddComment: (addText) => {
-      const comment = createComment(commentIdAllocatorRef.current, addText, author);
-      const view = pagedEditorRef.current?.getView();
-      if (view && commentSelectionRange) {
-        const { from, to } = commentSelectionRange;
-        const pendingMark = view.state.schema.marks.comment.create({
-          commentId: PENDING_COMMENT_ID,
-        });
-        const realMark = view.state.schema.marks.comment.create({
-          commentId: comment.id,
-        });
-        const tr = view.state.tr.removeMark(from, to, pendingMark).addMark(from, to, realMark);
-        view.dispatch(tr);
-      }
-      setComments((prev) => [...prev, comment]);
-      setIsAddingComment(false);
-      setCommentSelectionRange(null);
-      setAddCommentYPosition(null);
-    },
-    onCancelAddComment: () => {
-      const view = pagedEditorRef.current?.getView();
-      if (view && commentSelectionRange) {
-        const { from, to } = commentSelectionRange;
-        const pendingMark = view.state.schema.marks.comment.create({
-          commentId: PENDING_COMMENT_ID,
-        });
-        view.dispatch(view.state.tr.removeMark(from, to, pendingMark));
-      }
-      setIsAddingComment(false);
-      setCommentSelectionRange(null);
-      setAddCommentYPosition(null);
-    },
-    onAcceptChange: (from, to) => {
-      const view = pagedEditorRef.current?.getView();
-      if (view) acceptChange(from, to)(view.state, view.dispatch);
-      // No explicit re-extract: the dispatch fires `handleDocumentChange`,
-      // which mirrors the new PM state into `pmState` and the tracked-changes
-      // memo re-derives.
-    },
-    onRejectChange: (from, to) => {
-      const view = pagedEditorRef.current?.getView();
-      if (view) rejectChange(from, to)(view.state, view.dispatch);
-    },
-    onAcceptChangeById: (revisionId) => {
-      const view = pagedEditorRef.current?.getView();
-      if (view) acceptChangeById(revisionId)(view.state, view.dispatch);
-    },
-    onRejectChangeById: (revisionId) => {
-      const view = pagedEditorRef.current?.getView();
-      if (view) rejectChangeById(revisionId)(view.state, view.dispatch);
-    },
-    onTrackedChangeReply: (revisionId, text) => {
-      setComments((prev) => [
-        ...prev,
-        createComment(commentIdAllocatorRef.current, text, author, revisionId),
-      ]);
-    },
-  };
-
-  // Stable callbacks wrapper that delegates to ref (avoids recreating items on every render)
-  const stableCallbacks = useMemo<CommentCallbacks>(
-    () => ({
-      onCommentReply: (...args) => commentCallbacksRef.current.onCommentReply?.(...args),
-      onCommentResolve: (...args) => commentCallbacksRef.current.onCommentResolve?.(...args),
-      onCommentUnresolve: (...args) => commentCallbacksRef.current.onCommentUnresolve?.(...args),
-      onCommentDelete: (...args) => commentCallbacksRef.current.onCommentDelete?.(...args),
-      onAddComment: (...args) => commentCallbacksRef.current.onAddComment?.(...args),
-      onCancelAddComment: (...args) => commentCallbacksRef.current.onCancelAddComment?.(...args),
-      onAcceptChange: (...args) => commentCallbacksRef.current.onAcceptChange?.(...args),
-      onRejectChange: (...args) => commentCallbacksRef.current.onRejectChange?.(...args),
-      onAcceptChangeById: (...args) => commentCallbacksRef.current.onAcceptChangeById?.(...args),
-      onRejectChangeById: (...args) => commentCallbacksRef.current.onRejectChangeById?.(...args),
-      onTrackedChangeReply: (...args) =>
-        commentCallbacksRef.current.onTrackedChangeReply?.(...args),
-    }),
-    []
-  );
-
-  const commentSidebarItems = useCommentSidebarItems({
+  // Comment + tracked-change orchestration (sidebar callbacks, cursor→card
+  // walker, resolved-id masks). The sidebar cards and accept/reject paths live
+  // in features/review; this is the glue that drives them.
+  const {
+    allSidebarItems,
+    expandedSidebarItem,
+    setExpandedSidebarItem,
+    resolvedCommentIds,
+    resolvedIdsForRender,
+    handlePagedSelectionChange,
+  } = useCommentWorkflow({
+    pagedEditorRef,
+    author,
+    commentIdAllocatorRef,
     comments,
-    trackedChanges,
-    callbacks: stableCallbacks,
-    showResolved: showCommentsSidebar,
-    isAddingComment: showCommentsSidebar ? isAddingComment : false,
+    setComments,
+    isAddingComment,
+    commentSelectionRange,
+    setCommentSelectionRange,
     addCommentYPosition,
+    setAddCommentYPosition,
+    setIsAddingComment,
+    trackedChanges,
+    showCommentsSidebar,
+    setShowCommentsSidebar,
+    handleSelectionChange,
   });
-
-  const allSidebarItems = useMemo(() => {
-    const items: ReactSidebarItem[] = [];
-    if (showCommentsSidebar) items.push(...commentSidebarItems);
-    return items;
-  }, [showCommentsSidebar, commentSidebarItems]);
-
-  // Build a map from insertion revisionIds to sidebar item IDs for replacement tracked changes.
-  // This allows clicking the insertion part of a replacement to activate the same sidebar card.
-  const revisionIdAliases = useMemo(() => {
-    const map = new Map<string, string>();
-    trackedChanges.forEach((change, idx) => {
-      if (change.type === 'replacement' && change.insertionRevisionId != null) {
-        map.set(String(change.insertionRevisionId), `tc-${change.revisionId}-${idx}`);
-      }
-    });
-    return map;
-  }, [trackedChanges]);
 
   const sidebarOpen = allSidebarItems.length > 0;
   // Reserve 2× the left-edge allowance so the centered page clears whatever
@@ -1010,94 +886,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     ? Math.round(sectionPropsPageWidth / 15)
     : DEFAULT_PAGE_WIDTH;
 
-  const resolvedCommentIds = useMemo(() => {
-    const ids = new Set<number>();
-    for (const c of comments) {
-      if (c.done && c.parentId == null) ids.add(c.id);
-    }
-    return ids;
-  }, [comments]);
-
-  // PagedEditor onSelectionChange — runs on every selection movement.
-  // Extracts the full selection state for the host callback, then walks the
-  // marks at the cursor to detect comment / tracked-change marks so the
-  // matching sidebar card opens. Comment marks are reported by either
-  // $from.marks() or by storedMarks/nodeBefore/nodeAfter at boundaries; the
-  // four sources get unioned. Resolved comments stay collapsed unless the
-  // user explicitly clicks them, so the sidebar doesn't fill with old
-  // threads as the cursor sweeps through commented text.
-  const handlePagedSelectionChange = useCallback(() => {
-    const view = pagedEditorRef.current?.getView();
-    if (!view) {
-      handleSelectionChange(null);
-      return;
-    }
-    const selectionState = extractSelectionState(view.state);
-    handleSelectionChange(selectionState);
-
-    const $from = view.state.selection.$from;
-    const marks = [
-      ...(view.state.storedMarks ?? []),
-      ...($from.nodeAfter?.marks ?? []),
-      ...($from.nodeBefore?.marks ?? []),
-      ...$from.marks(),
-    ];
-    let cursorSidebarItem: string | null = null;
-    for (const mark of marks) {
-      if (mark.type.name === 'comment' && mark.attrs.commentId != null) {
-        const commentId = mark.attrs.commentId as number;
-        if (resolvedCommentIds.has(commentId)) continue;
-        cursorSidebarItem = `comment-${commentId}`;
-        break;
-      }
-      if (
-        (mark.type.name === 'insertion' || mark.type.name === 'deletion') &&
-        mark.attrs.revisionId != null
-      ) {
-        const revId = String(mark.attrs.revisionId);
-        const prefix = `tc-${revId}-`;
-        let match = commentSidebarItems.find((i) => i.id.startsWith(prefix));
-        // The insertion side of a replacement has a different revisionId;
-        // check the alias map to find the correct sidebar card.
-        if (!match && revisionIdAliases) {
-          const aliasedId = revisionIdAliases.get(revId);
-          if (aliasedId) {
-            match = commentSidebarItems.find((i) => i.id === aliasedId);
-          }
-        }
-        if (match) {
-          cursorSidebarItem = match.id;
-          break;
-        }
-      }
-    }
-    if (cursorSidebarItem) {
-      setShowCommentsSidebar(true);
-    }
-    setExpandedSidebarItem(cursorSidebarItem);
-  }, [handleSelectionChange, resolvedCommentIds, commentSidebarItems, revisionIdAliases]);
-
-  // Auto-open the sidebar the first time a comment or tracked-change card
-  // is produced — covers the case where the user inserts an empty tracked
-  // table: no cursor anchor exists yet (no inline marks at cursor), so the
-  // cursor-driven open above doesn't fire. Latches via a ref so a later
-  // manual close stays closed.
-  useEffect(() => {
-    if (sidebarAutoOpenedRef.current) return;
-    if (commentSidebarItems.length === 0) return;
-    sidebarAutoOpenedRef.current = true;
-    setShowCommentsSidebar(true);
-  }, [commentSidebarItems]);
-
-  // Exclude expanded resolved comment from hide-set so its text gets highlighted
-  const resolvedIdsForRender = useMemo(() => {
-    if (!expandedSidebarItem?.startsWith('comment-')) return resolvedCommentIds;
-    const expandedId = parseInt(expandedSidebarItem.slice(8), 10);
-    if (isNaN(expandedId) || !resolvedCommentIds.has(expandedId)) return resolvedCommentIds;
-    const ids = new Set(resolvedCommentIds);
-    ids.delete(expandedId);
-    return ids;
-  }, [resolvedCommentIds, expandedSidebarItem]);
 
   const editorContainerStyle: CSSProperties = {
     flex: 1,
