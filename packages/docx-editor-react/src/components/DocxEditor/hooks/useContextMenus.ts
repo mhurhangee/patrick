@@ -25,7 +25,7 @@ import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { useImageContextMenu } from '../../../hooks/use-image-context-menu';
 import type { TextContextAction, TextContextMenuItem } from '../../../types/context-menu';
 import { findSelectionYPosition } from '../internals/pmAnchors';
-import { PENDING_COMMENT_ID } from '../commentFactories';
+import { PENDING_COMMENT_ID } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 import { formatKeys } from './formatKeys';
 
 interface ContextMenuState {
