@@ -82,9 +82,7 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
 
   const tryStartFromMouseDown = useCallback(
     (target: HTMLElement, e: React.MouseEvent): boolean => {
-      // Pick the EditorView that owns the table this handle lives in.
-      // Header/footer handles must dispatch on the HF view; body handles on
-      // the body PM.
+      // The body PM owns every resizable table (headers/footers are read-only).
       const view = pickViewForHandle();
       if (!view) return false;
 
@@ -161,14 +159,18 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
       e.preventDefault();
       const delta = e.clientX - resizeStartXRef.current;
       if (resizeHandleRef.current) {
-        const origLeft = parseFloat(resizeHandleRef.current.style.left);
-        resizeHandleRef.current.style.left = `${origLeft + delta}px`;
-        resizeStartXRef.current = e.clientX;
         const deltaTwips = Math.round(delta * TWIPS_PER_PIXEL);
         const newLeft = resizeOrigWidthsRef.current.left + deltaTwips;
         const newRight = resizeOrigWidthsRef.current.right - deltaTwips;
+        // Move the visual handle ONLY when the width actually changes — past
+        // the min, the model clamps, so moving the handle would drift it off
+        // the column edge. Leaving startX unreset lets a reverse drag respond
+        // the moment it comes back within bounds.
         if (newLeft >= MIN_CELL_WIDTH_TWIPS && newRight >= MIN_CELL_WIDTH_TWIPS) {
           resizeOrigWidthsRef.current = { left: newLeft, right: newRight };
+          const origLeft = parseFloat(resizeHandleRef.current.style.left);
+          resizeHandleRef.current.style.left = `${origLeft + delta}px`;
+          resizeStartXRef.current = e.clientX;
         }
       }
       return true;
@@ -178,13 +180,15 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
       e.preventDefault();
       const delta = e.clientY - resizeStartYRef.current;
       if (resizeRowHandleRef.current) {
-        const origTop = parseFloat(resizeRowHandleRef.current.style.top);
-        resizeRowHandleRef.current.style.top = `${origTop + delta}px`;
-        resizeStartYRef.current = e.clientY;
         const deltaTwips = Math.round(delta * TWIPS_PER_PIXEL);
         const newHeight = resizeRowOrigHeightRef.current + deltaTwips;
+        // Move the visual handle only when the height actually changes (see
+        // the column case above).
         if (newHeight >= MIN_ROW_HEIGHT_TWIPS) {
           resizeRowOrigHeightRef.current = newHeight;
+          const origTop = parseFloat(resizeRowHandleRef.current.style.top);
+          resizeRowHandleRef.current.style.top = `${origTop + delta}px`;
+          resizeStartYRef.current = e.clientY;
         }
       }
       return true;
@@ -194,13 +198,15 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
       e.preventDefault();
       const delta = e.clientX - resizeRightEdgeStartXRef.current;
       if (resizeRightEdgeHandleRef.current) {
-        const origLeft = parseFloat(resizeRightEdgeHandleRef.current.style.left);
-        resizeRightEdgeHandleRef.current.style.left = `${origLeft + delta}px`;
-        resizeRightEdgeStartXRef.current = e.clientX;
         const deltaTwips = Math.round(delta * TWIPS_PER_PIXEL);
         const newWidth = resizeRightEdgeOrigWidthRef.current + deltaTwips;
+        // Move the visual handle only when the width actually changes (see
+        // the column case above).
         if (newWidth >= MIN_CELL_WIDTH_TWIPS) {
           resizeRightEdgeOrigWidthRef.current = newWidth;
+          const origLeft = parseFloat(resizeRightEdgeHandleRef.current.style.left);
+          resizeRightEdgeHandleRef.current.style.left = `${origLeft + delta}px`;
+          resizeRightEdgeStartXRef.current = e.clientX;
         }
       }
       return true;
@@ -210,8 +216,8 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
   }, []);
 
   const tryCommit = useCallback((): boolean => {
-    // Use the view captured at drag-start, NOT a fresh body PM lookup —
-    // for header tables this is the HF view, for body tables it's body.
+    // Use the view captured at drag-start so a focus change mid-drag can't
+    // redirect the commit to the wrong view.
     const view = resizeTargetViewRef.current;
 
     if (isResizingColumnRef.current) {
