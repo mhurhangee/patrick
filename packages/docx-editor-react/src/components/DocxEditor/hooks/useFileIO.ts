@@ -23,8 +23,8 @@ import type { PagedEditorRef } from '../PagedEditor';
  * live here too because they're hidden inputs whose `click()` is wrapped
  * by the trigger callbacks.
  *
- * `getActiveEditorView` and `focusActiveEditor` come from the parent
- * because they switch targets when the header/footer editor is active.
+ * `getActiveEditorView` and `focusActiveEditor` come from the parent so
+ * every hook shares the one editor-view accessor.
  */
 export function useFileIO({
   agentRef,

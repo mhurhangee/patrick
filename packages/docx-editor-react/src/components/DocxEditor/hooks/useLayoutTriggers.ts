@@ -68,7 +68,7 @@ export function useLayoutTriggers(opts: UseLayoutTriggersOptions): void {
     };
   }, [hiddenPMRef]);
 
-  // Re-layout when H/F content changes (HF editor save, etc.).
+  // Re-layout when the resolved H/F content changes (e.g. a load swaps it).
   const headerFooterEpochRef = useRef(0);
   useEffect(() => {
     // Skip the initial render — handleEditorViewReady already did the first layout.
