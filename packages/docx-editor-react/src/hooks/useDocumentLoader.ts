@@ -70,7 +70,7 @@ export function useDocumentLoader({
   const loadParsedDocument = useCallback(
     (doc: Document) => {
       resetForNewDocument();
-      docState.reset(doc);
+      docState.set(doc);
       setLoadingState({ isLoading: false, parseError: null });
       loadDocumentFonts(doc).catch((err) => {
         console.warn('Failed to load document fonts:', err);
