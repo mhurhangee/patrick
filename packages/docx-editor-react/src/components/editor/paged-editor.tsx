@@ -22,7 +22,6 @@ import type { EditorView } from 'prosemirror-view';
 import { HiddenProseMirror, type HiddenProseMirrorRef } from './hidden-prose-mirror';
 import { SelectionOverlay } from './overlays/SelectionOverlay';
 import { ImageSelectionOverlay } from './overlays/ImageSelectionOverlay';
-import { DecorationLayer } from './overlays/DecorationLayer';
 
 // Layout engine
 import type { Layout } from '@eigenpal/docx-editor-core/layout-engine';
@@ -49,7 +48,6 @@ import type {
   HeaderFooter,
 } from '@eigenpal/docx-editor-core/types/document';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
-import type { RenderedDomContext } from '../../plugin-api/types';
 import {
   DEFAULT_PAGE_WIDTH,
   DEFAULT_PAGE_GAP,
@@ -59,7 +57,6 @@ import {
   containerStyles,
   viewportStyles,
   pagesContainerStyles,
-  pluginOverlaysStyles,
 } from './internals/styles';
 import { viewportMinHeightPx } from './internals/scrollUtils';
 import { useLayoutPipeline } from '../../hooks/useLayoutPipeline';
@@ -112,10 +109,6 @@ export interface PagedEditorProps {
   extensionManager?: import('@eigenpal/docx-editor-core/prosemirror/extensions').ExtensionManager;
   /** Callback when editor is ready. */
   onReady?: (ref: PagedEditorRef) => void;
-  /** Callback when rendered DOM context is ready. */
-  onRenderedDomContextReady?: (context: RenderedDomContext) => void;
-  /** Plugin overlays to render inside the viewport. */
-  pluginOverlays?: React.ReactNode;
   /** Whether comments sidebar is open (shifts document left). */
   commentsSidebarOpen?: boolean;
   /** Sidebar overlay rendered inside the scroll container (scrolls with document). */
@@ -260,8 +253,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
       externalPlugins = EMPTY_PLUGINS,
       extensionManager,
       onReady,
-      onRenderedDomContextReady,
-      pluginOverlays,
       commentsSidebarOpen = false,
       sidebarOverlay,
       scrollContainerRef: scrollContainerRefProp,
@@ -314,14 +305,11 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
 
     // Layout pipeline — owns layout/blocks/measures state, the rAF-coalesced
     // scheduler, scroll-restore plumbing, the painter, and the page-count
-    // notifier. Returns `notifyDecorationLayer` for the DecorationLayer
-    // resync that handleTransaction triggers on every PM transaction.
+    // notifier.
     const {
       layout,
       blocks,
       measures,
-      decorationSyncToken,
-      notifyDecorationLayer,
       contentWidth,
       runLayoutPipeline,
       scheduleLayout,
@@ -345,7 +333,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
       getScrollContainer,
       onTotalPagesChange,
       onAnchorPositionsChange,
-      onRenderedDomContextReady,
     });
 
     // Selection overlay — caret, range rects, image overlay info, plus the
@@ -382,11 +369,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
      */
     const handleTransaction = useCallback(
       (transaction: Transaction, newState: EditorState) => {
-        // Bump on every transaction (including selection-only and meta-only
-        // ones) so DecorationLayer re-syncs — yCursorPlugin awareness updates
-        // arrive as meta transactions with no doc change.
-        notifyDecorationLayer();
-
         if (transaction.docChanged) {
           // Increment state sequence to signal document changed
           syncCoordinator.incrementStateSeq();
@@ -412,7 +394,7 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
           updateSelectionOverlay(newState);
         }
       },
-      [scheduleLayout, updateSelectionOverlay, syncCoordinator, notifyDecorationLayer]
+      [scheduleLayout, updateSelectionOverlay, syncCoordinator]
       // NOTE: onDocumentChange removed from dependencies - accessed via ref to prevent infinite loops
     );
 
@@ -748,24 +730,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
               onMouseLeave={hideTableInsertButton}
             />
           )}
-
-          {/* Plugin overlays (highlights, annotations) */}
-          {pluginOverlays && (
-            <div className="paged-editor__plugin-overlays" style={pluginOverlaysStyles}>
-              {pluginOverlays}
-            </div>
-          )}
-
-          {/* Generic PM decoration forwarder — surfaces yCursorPlugin remote
-              cursors, search-highlight plugins, etc. on the visible pages.
-              No-op when no plugin emits decorations. */}
-          <DecorationLayer
-            getView={() => hiddenPMRef.current?.getView() ?? null}
-            getPagesContainer={() => pagesContainerRef.current}
-            zoom={zoom}
-            decorationSyncToken={decorationSyncToken}
-            syncCoordinator={syncCoordinator}
-          />
         </div>
 
         {/* Sidebar overlay — positioned to match visual document height, visible overflow for sidebar items */}
