@@ -133,7 +133,24 @@ with `/code-review`.
    + useFormattingActions + types). `color-control`/`shared` stay there as the cross-feature controls
    tables/images reuse. DEFERRED (optional): extract the watermark submenu from insert-menu → page-setup;
    move `formatKeys` → `lib/`. (Slice numbers below shifted +1 by the tracked-changes/comments split.)
-9. **Paged-editor internal restructure** — the `PmSurface` context; `paged-editor/*` subfolders.
+### The `editor/` folder split (slices 9 + 12) — engine vs shell
+`components/editor/` (5.2k lines) is two unrelated things mashed together: the **ENGINE** (the PM
+rendering machinery) and the **SHELL** (the god file + its 5 render-slot files, each imported ONLY
+by `docx-editor.tsx`). The 5 `docx-editor-*` slot files are NOT the problem — they're already a fine
+decomposition; the work is grouping the folder + slimming the god file. Target:
+```
+editor/
+  docx-editor.tsx          # orchestrator, slimmed
+  shell/                   # the docx-editor-{shell,toolbar,dialogs,overlays,paged-area} slot files
+  lifecycle/               # useDocumentLoader, useFileIO, useResetEditorState, useActiveEditor, useDocumentState
+  ref-api/                 # useDocxEditorRefApi + the DocxEditorRef type (lifted out of the god file)
+  paged-editor/            # THE ENGINE (slice 9): paged-editor + hidden-prose-mirror + hooks/ + internals/ + overlays/
+  states/                  # editor-states, error-boundary
+```
+Mixed-concern internals resolved here: `editing-modes` → toolbar; `pmAnchors` → split (comments-geometry vs lifecycle).
+
+9. **Paged-editor ENGINE cluster** — move paged-editor + hidden-prose-mirror + the 11 scattered paged
+   hooks + geometry internals + overlays into `editor/paged-editor/`. Optionally the `PmSurface` context.
 10–11. **Tracked-changes + comments** ✅✅ **DONE (VITAL domain complete).** Handled as: safety-net
     tests (PR #142) → relocate to `features/review/` (#143) → extract `useCommentWorkflow` (#144, TWO
     adversarial reviews, zero correctness bugs) → disambiguate `onAddComment`→`onBeginAddComment` +
@@ -154,8 +171,11 @@ with `/code-review`.
     double-defined `onAddComment` (open vs commit), the dead deprecated accept/reject props, and the
     contradictory margin-marker docstring (§A6 — possible real bug: resolved markers maybe never show).
     (Renumbers the later slices: toolbar / paged-editor / god-file shift down accordingly.)
-11. **God-file decomposition** — `EditorContext`, lift the `DocxEditorRef` type to `types/ref.ts`,
-    lifecycle facade; the orchestrator drops to ~300–400 lines.
+12. **Editor SHELL + god-file decomposition** — group the 5 `docx-editor-*` slot files under
+    `editor/shell/`; lift the `DocxEditorRef` type + `useDocxEditorRefApi` to `editor/ref-api/`; pull
+    lifecycle hooks into `editor/lifecycle/`; extract a lifecycle facade + layout-geometry from the
+    god file (and optionally the `EditorContext` to kill the ~40-prop paged-area drill). Orchestrator
+    drops toward ~300–400 lines. (This is the whole `editor/` shell layer, not just docx-editor.tsx.)
 
 ## Stream B — bug / smell ledger
 
