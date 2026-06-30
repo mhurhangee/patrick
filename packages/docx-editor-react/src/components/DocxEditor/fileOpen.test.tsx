@@ -29,12 +29,10 @@ function FileIOHarness({
   onOpen,
   loadBuffer,
   onError,
-  onDocumentNameChange,
 }: {
   onOpen?: (file: File) => void | Promise<void>;
   loadBuffer: (buffer: DocxInput) => Promise<void>;
   onError?: (error: Error) => void;
-  onDocumentNameChange?: (name: string) => void;
 }) {
   const agentRef = useRef<DocumentAgent | null>(null);
   const pagedEditorRef = useRef<PagedEditorRef | null>(null);
@@ -44,11 +42,9 @@ function FileIOHarness({
     pagedEditorRef,
     containerRef,
     comments: [],
-    onSave: undefined,
     onOpen,
     onError,
     onPrint: undefined,
-    onDocumentNameChange,
     loadBuffer,
     getActiveEditorView: () => null,
     focusActiveEditor: () => {},
@@ -121,17 +117,13 @@ describe('File > Open customization', () => {
   test('keeps the built-in load path when onOpen is omitted', async () => {
     const file = makeDocxFile('built-in.docx');
     const loadBuffer = mock(async (_buffer: DocxInput) => {});
-    const onDocumentNameChange = mock((_name: string) => {});
 
-    const { getByLabelText } = render(
-      <FileIOHarness loadBuffer={loadBuffer} onDocumentNameChange={onDocumentNameChange} />
-    );
+    const { getByLabelText } = render(<FileIOHarness loadBuffer={loadBuffer} />);
     fireEvent.change(getByLabelText('docx input'), { target: { files: [file] } });
 
     await waitFor(() => expect(loadBuffer).toHaveBeenCalledTimes(1));
     const buffer = loadBuffer.mock.calls[0][0] as ArrayBuffer;
     expect(Array.from(new Uint8Array(buffer))).toEqual([1, 2, 3]);
-    expect(onDocumentNameChange).toHaveBeenCalledWith('built-in');
   });
 
   test('routes async onOpen failures through onError', async () => {

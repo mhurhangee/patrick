@@ -108,8 +108,6 @@ export interface DocxEditorProps {
   documentBuffer?: DocxInput | null;
   /** Pre-parsed document (alternative to documentBuffer) */
   document?: Document | null;
-  /** Callback when document is saved */
-  onSave?: (buffer: ArrayBuffer) => void;
   /**
    * Callback when a DOCX file is selected through `File > Open` or Cmd/Ctrl+O.
    * Pass it to route the picked file through your own import pipeline. Omit it
@@ -127,8 +125,6 @@ export interface DocxEditorProps {
   onSelectionChange?: (state: SelectionState | null) => void;
   /** Callback on error */
   onError?: (error: Error) => void;
-  /** Callback when fonts are loaded */
-  onFontsLoaded?: () => void;
   /** External ProseMirror plugins (from PluginHost) */
   externalPlugins?: import('prosemirror-state').Plugin[];
   /**
@@ -235,8 +231,6 @@ export interface DocxEditorProps {
   pluginSidebarItems?: ReactSidebarItem[];
   /** Rendered DOM context from PluginHost (for sidebar position resolution). */
   pluginRenderedDomContext?: RenderedDomContext | null;
-  /** Callback when document name changes */
-  onDocumentNameChange?: (name: string) => void;
   /** Custom right-side actions for the title bar */
   renderTitleBarRight?: () => ReactNode;
 }
@@ -443,14 +437,12 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   {
     documentBuffer,
     document: initialDocument,
-    onSave,
     onOpen,
     author = 'User',
     onChange,
     onOpenLink,
     onSelectionChange,
     onError,
-    onFontsLoaded: onFontsLoadedCallback,
     colorMode = 'light',
     theme,
     showToolbar = true,
@@ -477,7 +469,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pluginOverlays,
     pluginSidebarItems,
     pluginRenderedDomContext,
-    onDocumentNameChange,
     renderTitleBarRight,
   },
   ref
@@ -734,11 +725,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pagedEditorRef,
     containerRef,
     comments,
-    onSave,
     onOpen,
     onError,
     onPrint,
-    onDocumentNameChange,
     loadBuffer,
     getActiveEditorView,
     focusActiveEditor,
@@ -767,7 +756,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     trackedChangesLoadedRef,
   });
 
-  useFontLifecycle(fonts, onFontsLoadedCallback, onError);
+  useFontLifecycle(fonts, onError);
 
   // Sync editing mode to ProseMirror suggestion mode plugin
   useEffect(() => {
