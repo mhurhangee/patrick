@@ -781,7 +781,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   } = useFormattingActions({
     getActiveEditorView,
     focusActiveEditor,
-    pagedEditorRef,
     lastSelectionRef,
     openHyperlinkCreate: hyperlink.openCreate,
     openHyperlinkEdit: hyperlink.openEdit,
