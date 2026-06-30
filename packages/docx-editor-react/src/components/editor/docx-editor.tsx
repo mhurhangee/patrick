@@ -39,7 +39,7 @@ import { useScrollPageInfo } from '../DocxEditor/hooks/useScrollPageInfo';
 import { DocxEditorOverlays } from './docx-editor-overlays';
 import { DocxEditorDialogs } from './docx-editor-dialogs';
 import { DocxEditorToolbar } from './docx-editor-toolbar';
-import { DocxEditorPagedArea } from '../DocxEditor/DocxEditorPagedArea';
+import { DocxEditorPagedArea } from './docx-editor-paged-area';
 import { useResetEditorState } from '../DocxEditor/hooks/useResetEditorState';
 import { DocxEditorShell } from './docx-editor-shell';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
@@ -1300,63 +1300,61 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
         ) : null
       }
       pagedArea={
-        <>
-          <DocxEditorPagedArea
-            pagedEditorRef={pagedEditorRef}
-            scrollContainerRef={scrollContainerRef}
-            document={history.state}
-            theme={theme}
-            initialSectionProperties={initialSectionProperties}
-            finalSectionProperties={finalSectionProperties}
-            headerContent={headerContent}
-            footerContent={footerContent}
-            firstPageHeaderContent={firstPageHeaderContent}
-            firstPageFooterContent={firstPageFooterContent}
-            zoom={state.zoom}
-            readOnly={readOnly}
-            extensionManager={extensionManager}
-            externalPlugins={allExternalPlugins}
-            onDocumentChange={handleDocumentChange}
-            onPagedSelectionChange={handlePagedSelectionChange}
-            onReady={(ref) => {
-              const view = ref.getView();
-              if (view) setPmState(view.state);
-            }}
-            onEditorViewReady={onEditorViewReady}
-            onRenderedDomContextReady={onRenderedDomContextReady}
-            pluginOverlays={pluginOverlays}
-            onHyperlinkClick={(data) =>
-              hyperlink.openView(data.rect, {
-                href: data.href,
-                displayText: data.displayText,
-                tooltip: data.tooltip,
-              })
-            }
-            onOpenLink={onOpenLink}
-            onContextMenu={handleContextMenu}
-            sidebarOpen={sidebarOpen}
-            sidebarItems={allSidebarItems}
-            anchorPositions={anchorPositions}
-            onAnchorPositionsChange={setAnchorPositions}
-            pluginRenderedDomContext={pluginRenderedDomContext}
-            pageWidthPx={pageWidthPx}
-            expandedSidebarItem={expandedSidebarItem}
-            setExpandedSidebarItem={setExpandedSidebarItem}
-            comments={comments}
-            resolvedCommentIds={resolvedCommentIds}
-            resolvedIdsForRender={resolvedIdsForRender}
-            setShowCommentsSidebar={setShowCommentsSidebar}
-            onTotalPagesChange={(totalPages) => {
-              scrollPageInfoRef.current.totalPages = totalPages;
-            }}
-            floatingCommentBtn={floatingCommentBtn}
-            isAddingComment={isAddingComment}
-            setCommentSelectionRange={setCommentSelectionRange}
-            setAddCommentYPosition={setAddCommentYPosition}
-            setIsAddingComment={setIsAddingComment}
-            setFloatingCommentBtn={setFloatingCommentBtn}
-          />
-        </>
+        <DocxEditorPagedArea
+          pagedEditorRef={pagedEditorRef}
+          scrollContainerRef={scrollContainerRef}
+          document={history.state}
+          theme={theme}
+          initialSectionProperties={initialSectionProperties}
+          finalSectionProperties={finalSectionProperties}
+          headerContent={headerContent}
+          footerContent={footerContent}
+          firstPageHeaderContent={firstPageHeaderContent}
+          firstPageFooterContent={firstPageFooterContent}
+          zoom={state.zoom}
+          readOnly={readOnly}
+          extensionManager={extensionManager}
+          externalPlugins={allExternalPlugins}
+          onDocumentChange={handleDocumentChange}
+          onPagedSelectionChange={handlePagedSelectionChange}
+          onReady={(ref) => {
+            const view = ref.getView();
+            if (view) setPmState(view.state);
+          }}
+          onEditorViewReady={onEditorViewReady}
+          onRenderedDomContextReady={onRenderedDomContextReady}
+          pluginOverlays={pluginOverlays}
+          onHyperlinkClick={(data) =>
+            hyperlink.openView(data.rect, {
+              href: data.href,
+              displayText: data.displayText,
+              tooltip: data.tooltip,
+            })
+          }
+          onOpenLink={onOpenLink}
+          onContextMenu={handleContextMenu}
+          sidebarOpen={sidebarOpen}
+          sidebarItems={allSidebarItems}
+          anchorPositions={anchorPositions}
+          onAnchorPositionsChange={setAnchorPositions}
+          pluginRenderedDomContext={pluginRenderedDomContext}
+          pageWidthPx={pageWidthPx}
+          expandedSidebarItem={expandedSidebarItem}
+          setExpandedSidebarItem={setExpandedSidebarItem}
+          comments={comments}
+          resolvedCommentIds={resolvedCommentIds}
+          resolvedIdsForRender={resolvedIdsForRender}
+          setShowCommentsSidebar={setShowCommentsSidebar}
+          onTotalPagesChange={(totalPages) => {
+            scrollPageInfoRef.current.totalPages = totalPages;
+          }}
+          floatingCommentBtn={floatingCommentBtn}
+          isAddingComment={isAddingComment}
+          setCommentSelectionRange={setCommentSelectionRange}
+          setAddCommentYPosition={setAddCommentYPosition}
+          setIsAddingComment={setIsAddingComment}
+          setFloatingCommentBtn={setFloatingCommentBtn}
+        />
       }
       overlays={
         <DocxEditorOverlays

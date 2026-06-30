@@ -10,12 +10,12 @@ import type {
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { Plugin } from 'prosemirror-state';
 import type { ExtensionManager } from '@eigenpal/docx-editor-core/prosemirror/extensions';
-import { PagedEditor, type PagedEditorRef } from './PagedEditor';
+import { PagedEditor, type PagedEditorRef } from '../DocxEditor/PagedEditor';
 import { UnifiedSidebar } from '../UnifiedSidebar';
 import { CommentMarginMarkers } from '../sidebar/comment-margin-markers';
 import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';
-import { PENDING_COMMENT_ID } from './commentFactories';
+import { PENDING_COMMENT_ID } from '../DocxEditor/commentFactories';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import type { ReactSidebarItem } from '../../plugin-api/types';
 import type { RenderedDomContext } from '../../plugin-api/types';
