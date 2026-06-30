@@ -35,11 +35,9 @@ export function useFileIO({
   pagedEditorRef,
   containerRef,
   comments,
-  onSave,
   onOpen,
   onError,
   onPrint,
-  onDocumentNameChange,
   loadBuffer,
   getActiveEditorView,
   focusActiveEditor,
@@ -48,11 +46,9 @@ export function useFileIO({
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   comments: Comment[];
-  onSave: ((buffer: ArrayBuffer) => void) | undefined;
   onOpen: ((file: File) => void | Promise<void>) | undefined;
   onError: ((error: Error) => void) | undefined;
   onPrint: (() => void) | undefined;
-  onDocumentNameChange: ((name: string) => void) | undefined;
   loadBuffer: (buffer: DocxInput) => Promise<void>;
   getActiveEditorView: () => EditorView | null | undefined;
   focusActiveEditor: () => void;
@@ -113,14 +109,13 @@ export function useFileIO({
           view.dispatch(clearTrackedChanges(view.state));
         }
 
-        onSave?.(buffer);
         return buffer;
       } catch (error) {
         onError?.(toFileIOError(error, 'Failed to save document'));
         return null;
       }
     },
-    [agentRef, pagedEditorRef, comments, onSave, onError]
+    [agentRef, pagedEditorRef, comments, onError]
   );
 
   const handleDirectPrint = useCallback(() => {
@@ -225,12 +220,11 @@ body { background: white; }
         const result = await readDocxFileFromInput(event.nativeEvent);
         if (!result) return;
         await loadBuffer(result.buffer);
-        onDocumentNameChange?.(result.name);
       } catch (error) {
         onError?.(toFileIOError(error, 'Failed to open document'));
       }
     },
-    [loadBuffer, onDocumentNameChange, onError, onOpen]
+    [loadBuffer, onError, onOpen]
   );
 
   const handleInsertImageClick = useCallback(() => {
