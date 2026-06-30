@@ -1,5 +1,4 @@
 import type { CSSProperties, ReactNode } from 'react';
-import type { TrackedChangesResult } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { cn } from '../lib/utils';
 import { ErrorBoundary } from '../components/states/error-boundary';
 import {
@@ -40,14 +39,13 @@ export function DocxEditorShell({
   minLayoutWidth,
   toolbarHeight,
   editorScrollLeft,
-  expandedSidebarItem,
-  trackedChanges,
   onScrollContainerMouseDown,
   onEditorBgMouseDown,
   onEditorContextMenu,
   outlineProps,
   onToggleOutline,
   toolbar,
+  highlightStyles,
   pagedArea,
   overlays,
   dialogs,
@@ -64,14 +62,13 @@ export function DocxEditorShell({
   minLayoutWidth: number;
   toolbarHeight: number;
   editorScrollLeft: number;
-  expandedSidebarItem: string | null;
-  trackedChanges: TrackedChangesResult['entries'];
   onScrollContainerMouseDown: (e: React.MouseEvent) => void;
   onEditorBgMouseDown: (e: React.MouseEvent) => void;
   onEditorContextMenu: (e: React.MouseEvent) => void;
   outlineProps: OutlineProps;
   onToggleOutline: () => void;
   toolbar: ReactNode;
+  highlightStyles: ReactNode;
   pagedArea: ReactNode;
   overlays: ReactNode;
   dialogs: ReactNode;
@@ -123,22 +120,7 @@ export function DocxEditorShell({
                   onMouseDown={onEditorBgMouseDown}
                   onContextMenu={onEditorContextMenu}
                 >
-                  {/* Brightened highlight for the focused/expanded sidebar item. */}
-                  {expandedSidebarItem && expandedSidebarItem.startsWith('comment-') && (
-                    <style>{`.paged-editor__pages [data-comment-id="${expandedSidebarItem.replace('comment-', '')}"] { background-color: rgba(255, 212, 0, 0.35) !important; border-bottom: 2px solid rgba(255, 212, 0, 0.7) !important; }`}</style>
-                  )}
-                  {expandedSidebarItem?.startsWith('tc-') &&
-                    (() => {
-                      const revId = expandedSidebarItem.split('-')[1];
-                      const tc = trackedChanges.find((c) => String(c.revisionId) === revId);
-                      const insRevId = tc?.insertionRevisionId;
-                      return (
-                        <style>{`
-                            .paged-editor__pages .docx-insertion[data-revision-id="${insRevId ?? revId}"] { background-color: rgba(52, 168, 83, 0.2) !important; border-bottom: 2px solid #2e7d32 !important; }
-                            .paged-editor__pages .docx-deletion[data-revision-id="${revId}"] { background-color: rgba(211, 47, 47, 0.2) !important; text-decoration-thickness: 2px !important; }
-                          `}</style>
-                      );
-                    })()}
+                  {highlightStyles}
                   {pagedArea}
                 </div>
               </div>
