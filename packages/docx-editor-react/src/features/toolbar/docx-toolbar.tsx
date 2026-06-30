@@ -22,10 +22,10 @@ import {
   Undo2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { EDITING_MODES, type EditorMode } from '../editor/internals/editing-modes';
-import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
-import type { ImageContext } from '../../features/images/types';
-import type { TableAction } from '../../features/tables/types';
+import { EDITING_MODES, type EditorMode } from '../../components/editor/internals/editing-modes';
+import type { FormattingAction, SelectionFormatting } from './types';
+import type { ImageContext } from '../images/types';
+import type { TableAction } from '../tables/types';
 import { FormatRow } from './format-row';
 import { TOGGLE_ACTIVE, keepFocus } from './shared';
 

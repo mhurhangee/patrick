@@ -26,7 +26,7 @@ import {
   ListOrdered,
   Pilcrow,
 } from 'lucide-react';
-import type { FormattingAction, SelectionFormatting } from '../../../types/formatting';
+import type { FormattingAction, SelectionFormatting } from '../types';
 import { keepFocus } from '../shared';
 
 const ALIGN_OPTIONS: { value: ParagraphAlignment; label: string; icon: typeof AlignLeft }[] = [

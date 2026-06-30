@@ -14,7 +14,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Document, Theme } from '@eigenpal/docx-editor-core/types/document';
 
 import { cn } from '../../lib/utils';
-import type { SelectionFormatting } from '../../types/formatting';
+import type { SelectionFormatting } from '../../features/toolbar/types';
 import type { ImageContext } from '../../features/images/types';
 import { useOutlineSidebar } from '../../features/outline/use-outline-sidebar';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
@@ -22,7 +22,7 @@ import { useFileIO } from '../../hooks/useFileIO';
 import { usePageSetupControls } from '../../features/page-setup/use-page-setup-controls';
 import { useWatermarkControls } from '../../features/page-setup/use-watermark-controls';
 import { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
-import { useFormattingActions } from '../../hooks/useFormattingActions';
+import { useFormattingActions } from '../../features/toolbar/use-formatting-actions';
 import { useImageActions } from '../../features/images/use-image-actions';
 import { useDocxEditorRefApi } from '../../hooks/useDocxEditorRefApi';
 import { useTableDialogs } from '../../features/tables/use-table-dialogs';

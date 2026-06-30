@@ -129,7 +129,10 @@ with `/code-review`.
    Kept `use-image-context-menu` as its own file (return type is the overlays' prop contract). The
    builder-by-concern split was deferred (the action switch touches comment dispatch — revisit with
    the comments slice; logged below if pursued).
-8. **Toolbar / formatting** — promote shared `color-control`/`shared.ts`; extract watermark submenu.
+8. **Toolbar / formatting** ✅ — relocated to `features/toolbar/` (shell + groups + color-control/shared
+   + useFormattingActions + types). `color-control`/`shared` stay there as the cross-feature controls
+   tables/images reuse. DEFERRED (optional): extract the watermark submenu from insert-menu → page-setup;
+   move `formatKeys` → `lib/`. (Slice numbers below shifted +1 by the tracked-changes/comments split.)
 9. **Paged-editor internal restructure** — the `PmSurface` context; `paged-editor/*` subfolders.
 10. **Tracked-changes**, then **11. Comments** — ⚠️ **VITAL / HIGHEST-CARE SLICES** (native Word
     redlines + accept/reject are Patrick's core value to attorneys — Michael flagged these for

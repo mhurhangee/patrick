@@ -4,11 +4,11 @@ import { undoDepth, redoDepth } from 'prosemirror-history';
 import type { Document, Watermark } from '@eigenpal/docx-editor-core/types/document';
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
-import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
+import type { SelectionFormatting, FormattingAction } from '../../features/toolbar/types';
 import type { TableAction } from '../../features/tables/types';
 import type { ImageContext } from '../../features/images/types';
 import type { EditorMode } from './internals/editing-modes';
-import { DocxToolbar } from '../toolbar/docx-toolbar';
+import { DocxToolbar } from '../../features/toolbar/docx-toolbar';
 
 /**
  * Top-of-editor toolbar — the `DocxToolbar` chrome wired up with the document

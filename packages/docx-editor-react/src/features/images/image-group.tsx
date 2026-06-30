@@ -22,7 +22,7 @@ import {
   WrapText,
 } from 'lucide-react';
 import type { ImageContext } from './types';
-import { keepFocus } from '../../components/toolbar/shared';
+import { keepFocus } from '../toolbar/shared';
 
 const WRAP_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'inline', label: 'In line with text', icon: WrapText },
