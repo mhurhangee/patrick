@@ -1,7 +1,9 @@
 # Refactoring `packages/docx-editor-react` — methodology & ledger
 
-**Status:** in progress (audit phase). **Owner:** Michael + Claude.
-**This doc is the source of truth for the refactor — read it first, update it as we go.**
+**Status:** feature extraction + the VITAL tracked-changes/comments domain DONE (slices 0–8 + PRs
+#142–#146). **All that remains is finishing the `editor/` folder** — see **## COMPLETION PLAN** below
+(the authoritative forward plan; supersedes the brief slice 9/12 lines in the running order).
+**Owner:** Michael + Claude. **Source of truth — read it first, update it as we go.**
 
 ## Why this exists
 
@@ -17,6 +19,85 @@ but not *coherent*, and we're not confident every surviving symbol is correct.
 
 Founding observation: **there is no rhyme or reason to the current structure to preserve.**
 We are imposing an architecture for the first time, not recovering one.
+
+---
+
+# COMPLETION PLAN — finishing the `editor/` folder
+
+Backed by a 3-way deep-read (2026-07-01). **Features are done** (9 domains in `features/`; the only
+"feature" bits left — `ImageSelectionOverlay`, `TableInsertButton` — are geometry-coupled engine
+painters by evidence, so they stay in the engine). What remains is `components/editor/` (~5.2k lines),
+which is **two unrelated things mashed together**:
+- **ENGINE** — the PM rendering machinery (`paged-editor`, `hidden-prose-mirror`, 11 hooks scattered
+  in flat `hooks/`, geometry `internals/`, `overlays/`). Coherent, just scattered + over-threaded.
+- **SHELL** — the god file (`docx-editor.tsx`, ~1146 lines) + its 5 `docx-editor-*` slot files. The
+  god file is a **manual switchboard** that owns ~30 state atoms and prop-drills each concern's state
+  into each slot. **Redesign, don't relocate** (Michael's call). The ~40-prop `docx-editor-paged-area`
+  is the worst — 3 fused concerns + 5 setters drilled only to wire one floating-button `onMouseDown`.
+
+## Key design decisions (made from the deep-read)
+- **`components/editor/` → top-level `src/editor/`** (sibling to `features/`).
+- **3 scoped contexts** to kill prop-drilling (this package currently has ZERO `createContext` — new
+  but justified pattern): `EditorRefsContext` (all-stable refs → zero re-render cost),
+  `ReviewContext` (backed by a new `useReview()` composing the existing `features/review/` hooks),
+  `EditingModeContext`. Plus an engine-internal `PmSurfaceContext` (stable plumbing: `hiddenPMRef` +
+  `pagesContainerRef` + `getScrollContainer` + the `LayoutSelectionGate`; geometry stays explicit).
+- **Overlays stay in the engine** (`ImageSelectionOverlay`, `TableInsertButton`, `SelectionOverlay`) —
+  they're geometry-coupled painters; the reusable logic (resize math, table mutations) already lives
+  in core. No feature-split.
+- **Mixed internals split out of the engine:** `editing-modes` → `features/toolbar/`; `pmAnchors`
+  splits (`findSelectionYPosition` → a shared painted-anchor util for review/context-menu;
+  `getInitialSectionProperties` → host lifecycle); `useScrollPageInfo` stays host-level.
+- **Lift the 156-line `DocxEditorRef` interface + props JSDoc** out of the god file → `editor/ref-api/`
+  (only 3 importers; the agents package is decoupled — comment-only reference).
+
+## Sequenced phases (promote-first is the consensus; each step ≈ 1 PR, gates always; cloud review on logic-touching steps)
+
+**Phase A — Foundation (mechanical, low-risk, do first):**
+- A1. Promote `components/editor/` → `src/editor/` (pure path-prefix across ~23 files; freezes the
+  `paged-editor`/`hidden-prose-mirror` type seam so B and C can build on a stable path). `git mv`.
+- A2. Lift `DocxEditorRef` + `DocxEditorProps` types → `editor/ref-api/` (≈200 non-logic lines out of
+  the god file; 3 importers; keep `index.ts` re-export identical — guarded by exports-map + ref-conformance).
+- A3. Stray utils: `formatKeys` → `lib/`, `zIndex` → `lib/`, dedupe the local `cn` onto `@patrick/ui`.
+
+**Phase B — Engine (`editor/paged-editor/`):**
+- B1. Relocate the engine cluster into `editor/paged-editor/{core,hooks,overlays,internals}` (8
+  top-level hooks + the 2 nested under `usePagesPointer` + components + internals + overlays). Split
+  out `editing-modes`/`pmAnchors`/`useScrollPageInfo` per the decisions above. Mostly mechanical.
+- B2. `PmSurfaceContext` — bundle the 4 stable plumbing members; de-threads ~20 prop passes. Logic-
+  touching → cloud review. **Keep the gate calls EXPLICIT** (don't hide ordering behind context).
+
+**Phase C — Shell redesign (the de-drill; Michael's main concern):**
+- C1 (quick wins). Extract `<FloatingCommentButton>` (zero-prop, absorbs the 5-setter drill) +
+  `<ReviewHighlightStyles>`; introduce `EditorRefsContext` (deletes ref-drilling from all 5 slots).
+- C2. `useReview()` + `ReviewContext`; **split `docx-editor-paged-area` into three** — slim
+  `PagedEditor` wiring + self-serving `ReviewSidebarOverlay` + `FloatingCommentButton`. Kills drilling
+  chains 1–4 (~13 props off paged-area).
+- C3. `EditingModeContext`; toolbar takes one `actions` bundle (not 22 `on*` props); dialogs stop
+  drilling (whole-hook-result bundles, like `findReplace`/`hyperlink` already do) — keep the `lazy()`
+  code-split boundary co-located.
+- C4. `useEditorChrome()` (outline + the derived `*Style` geometry); split the `state` mega-blob
+  (`isLoading`/`parseError` → loader; `selectionFormatting`/`pm*Context` → selection tracker; keep
+  `zoom`). God file becomes a ~300–400-line composition root: instantiate concerns, provide 3
+  contexts, lay out slots.
+
+**Order rec:** A → B → C. A is shared groundwork; B is more mechanical (build momentum, settle the
+engine); C (the shell redesign) is the crown jewel, done last on a clean base. C *can* come right
+after A if the prop-drilling pain wants addressing sooner — A is the only hard prerequisite.
+
+## ⚠️ Load-bearing invariants the redesign must preserve (verified in the deep-read)
+**Engine:** the `LayoutSelectionGate` call ORDER (incrementStateSeq → onLayoutStart → … →
+onLayoutComplete; caret paints on stale DOM if reordered) · the rAF scheduler's `runRef`/`schedulerRef`
+stable-identity trick (else per-keystroke layout thrash) · the scroll-restore `useLayoutEffect` +
+AbortController paint-settle (two scroll owners, both must work; the parent-or-self scroll container is
+ambiguous-by-design) · the shared mutable-ref handshakes (`isImageInteractingRef`, the callback refs) ·
+the painted-DOM contract (`.paged-editor__pages` class + `data-pm-start/end` anchors).
+**Shell:** the `lazy()` dialog code-split boundary (must stay co-located with its JSX) · `ErrorBoundary`
+wraps the whole tree (providers inside it) · `pagedEditorRef` declared BEFORE `useReview()`/comment
+hooks (orphan-cleanup reads `.getView()`) · the `setPmState` 3-path mirroring incl. the child-first
+effect-order assumption · the suggestion-plugin built once with `editingMode` captured (don't recreate)
+· slot render-ORDER in the shell (hyperlink popup inside PagedEditor's scroll container; context menus
+as end-siblings) · `readOnly` stays DERIVED (`readOnlyProp || editingMode==='viewing'`), never duplicated.
 
 ## The non-negotiable method
 
