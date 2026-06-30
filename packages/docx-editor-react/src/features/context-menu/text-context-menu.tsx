@@ -1,6 +1,6 @@
 import { DropdownMenuSeparator } from '@patrick/ui/components/dropdown-menu';
 import { Fragment } from 'react';
-import type { TextContextAction, TextContextMenuItem } from '../../types/context-menu';
+import type { TextContextAction, TextContextMenuItem } from './types';
 import { ActionMenuItem } from './action-menu-item';
 import { PositionedMenu } from './positioned-menu';
 

@@ -20,10 +20,10 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import { useImageContextMenu } from './use-image-context-menu';
-import type { TextContextAction, TextContextMenuItem } from '../types/context-menu';
-import { findSelectionYPosition } from '../components/editor/internals/pmAnchors';
+import type { TextContextAction, TextContextMenuItem } from './types';
+import { findSelectionYPosition } from '../../components/editor/internals/pmAnchors';
 import { PENDING_COMMENT_ID } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
-import { formatKeys } from './formatKeys';
+import { formatKeys } from '../../hooks/formatKeys';
 
 interface ContextMenuState {
   isOpen: boolean;

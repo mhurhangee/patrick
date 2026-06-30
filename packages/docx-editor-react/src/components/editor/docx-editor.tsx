@@ -28,7 +28,7 @@ import { useDocxEditorRefApi } from '../../hooks/useDocxEditorRefApi';
 import { useTableDialogs } from '../../features/tables/use-table-dialogs';
 import { resolveHeaderFooter } from '@eigenpal/docx-editor-core/layout-bridge';
 import { useDocumentLoader } from '../../hooks/useDocumentLoader';
-import { useContextMenus } from '../../hooks/useContextMenus';
+import { useContextMenus } from '../../features/context-menu/use-context-menus';
 import { useCommentManagement } from '../../hooks/useCommentManagement';
 import { useCommentLifecycle } from '../../hooks/useCommentLifecycle';
 import { useSelectionTracker } from '../../hooks/useSelectionTracker';
