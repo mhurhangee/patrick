@@ -41,7 +41,7 @@ import { DocxEditorDialogs } from '../DocxEditor/DocxEditorDialogs';
 import { DocxEditorToolbar } from '../DocxEditor/DocxEditorToolbar';
 import { DocxEditorPagedArea } from '../DocxEditor/DocxEditorPagedArea';
 import { useResetEditorState } from '../DocxEditor/hooks/useResetEditorState';
-import { DocxEditorShell } from '../DocxEditor/DocxEditorShell';
+import { DocxEditorShell } from './docx-editor-shell';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from '../outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
@@ -1339,7 +1339,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       mainContentStyle={mainContentStyle}
       editorContainerStyle={editorContainerStyle}
       showOutline={showOutline}
-      showOutlineButton={true}
       minLayoutWidth={minLayoutWidth}
       toolbarHeight={toolbarHeight}
       editorScrollLeft={editorScrollLeft}
