@@ -38,14 +38,6 @@ import {
 
 export interface UseTableResizeStateOptions {
   hiddenPMRef: React.RefObject<HiddenProseMirrorRef | null>;
-  /**
-   * Resolve the HF EditorView the user is currently editing, if any.
-   * When the resize handle the user grabbed lives inside `.layout-page-header`
-   * or `.layout-page-footer`, the table cells belong to the HF doc and the
-   * commit transaction MUST dispatch on this view — not on the body PM, or
-   * the body doc gets a stray colWidth change at an out-of-range position.
-   */
-  getActiveHfView?: () => EditorView | null;
 }
 
 export interface UseTableResizeStateReturn {
@@ -56,18 +48,13 @@ export interface UseTableResizeStateReturn {
 }
 
 export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableResizeStateReturn {
-  const { hiddenPMRef, getActiveHfView } = opts;
+  const { hiddenPMRef } = opts;
 
-  // Captured at tryStart and consulted by mouseup commit — guarantees the
-  // resize transaction lands on the view that owns the table even if the
-  // user toggles HF mode mid-drag (or focus moves around).
+  // Captured at tryStart and consulted by mouseup commit so the resize
+  // transaction lands on the right view even if focus moves mid-drag. The
+  // body PM owns every resizable table (headers/footers are read-only).
   const resizeTargetViewRef = useRef<EditorView | null>(null);
-  function pickViewForHandle(target: HTMLElement): EditorView | null {
-    if (target.closest('.layout-page-header') || target.closest('.layout-page-footer')) {
-      return getActiveHfView?.() ?? hiddenPMRef.current?.getView() ?? null;
-    }
-    return hiddenPMRef.current?.getView() ?? null;
-  }
+  const pickViewForHandle = (): EditorView | null => hiddenPMRef.current?.getView() ?? null;
 
   // Column-between resize
   const isResizingColumnRef = useRef(false);
@@ -98,7 +85,7 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
       // Pick the EditorView that owns the table this handle lives in.
       // Header/footer handles must dispatch on the HF view; body handles on
       // the body PM.
-      const view = pickViewForHandle(target);
+      const view = pickViewForHandle();
       if (!view) return false;
 
       // Column-between resize
@@ -166,7 +153,7 @@ export function useTableResizeState(opts: UseTableResizeStateOptions): UseTableR
       return false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pickViewForHandle closes over refs.
-    [hiddenPMRef, getActiveHfView]
+    [hiddenPMRef]
   );
 
   const handleMouseMoveUpdate = useCallback((e: MouseEvent): boolean => {

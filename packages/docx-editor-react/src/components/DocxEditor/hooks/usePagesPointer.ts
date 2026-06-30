@@ -21,7 +21,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NodeSelection, TextSelection } from 'prosemirror-state';
-import { CellSelection } from 'prosemirror-tables';
 import type { EditorView } from 'prosemirror-view';
 
 import type { CaretPosition, SelectionRect } from '@eigenpal/docx-editor-core/layout-bridge';
@@ -71,20 +70,11 @@ interface ImageInfo {
 export interface UsePagesPointerOptions {
   pagesContainerRef: React.RefObject<HTMLDivElement | null>;
   hiddenPMRef: React.RefObject<HiddenProseMirrorRef | null>;
-  /**
-   * Active HF EditorView lookup — when `hfEditMode` is truthy, every
-   * gesture (single-click, drag, multi-click, image-select, hyperlink) is
-   * routed through this view instead of the body PM. Without it the hook
-   * stays single-surface and only the body PM receives input.
-   */
-  getHfView?: () => EditorView | null;
   layout: Layout | null;
   blocks: FlowBlock[];
   measures: Measure[];
   zoom: number;
   readOnly: boolean;
-  hfEditMode?: 'header' | 'footer' | null;
-  onBodyClick?: () => void;
   onContextMenu?: (data: {
     x: number;
     y: number;
@@ -100,7 +90,6 @@ export interface UsePagesPointerOptions {
   }) => void;
   /** Open an external URL (read-only link clicks bypass the popover). */
   onOpenLink?: (href: string) => void;
-  onHeaderFooterDoubleClick?: (position: 'header' | 'footer', pageNumber?: number) => void;
   setSelectedImageInfo: React.Dispatch<React.SetStateAction<ImageSelectionInfo | null>>;
   setSelectionRects: React.Dispatch<React.SetStateAction<SelectionRect[]>>;
   setCaretPosition: React.Dispatch<React.SetStateAction<CaretPosition | null>>;
@@ -124,12 +113,10 @@ export interface UsePagesPointerReturn {
 }
 
 /**
- * Minimal surface every pointer gesture needs from "the PM the user is
- * editing." Body PM (`HiddenProseMirrorRef`) and HF PM (raw `EditorView`)
- * both project into this shape. Routing through `activeSurface()` keeps
- * the handler body single-pipeline: drag, multi-click, image-select,
- * hyperlink, table-cell selection all flow through whichever PM is
- * active without the handler caring which one.
+ * Minimal surface every pointer gesture needs from the body PM
+ * (`HiddenProseMirrorRef`). Routing through `activeSurface()` keeps the
+ * handler body single-pipeline: drag, multi-click, image-select,
+ * hyperlink, table-cell selection all flow through one accessor.
  */
 interface ActivePmSurface {
   getView(): EditorView | null;
@@ -139,58 +126,18 @@ interface ActivePmSurface {
   focus(): void;
 }
 
-function wrapEditorViewAsSurface(view: EditorView): ActivePmSurface {
-  return {
-    getView: () => view,
-    setSelection(anchor, head) {
-      const headPos = head ?? anchor;
-      try {
-        const $a = view.state.doc.resolve(anchor);
-        const $h = view.state.doc.resolve(headPos);
-        view.dispatch(view.state.tr.setSelection(TextSelection.between($a, $h)));
-      } catch {
-        // Out-of-range — fall back to start of doc.
-        view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 0)));
-      }
-    },
-    setNodeSelection(pos) {
-      try {
-        view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)));
-      } catch {
-        // Position may not be a valid node anchor.
-      }
-    },
-    setCellSelection(anchorCellPos, headCellPos) {
-      try {
-        const $a = view.state.doc.resolve(anchorCellPos);
-        const $h = view.state.doc.resolve(headCellPos);
-        view.dispatch(view.state.tr.setSelection(new CellSelection($a, $h)));
-      } catch {
-        // Not inside a table — ignore.
-      }
-    },
-    focus() {
-      view.focus();
-    },
-  };
-}
-
 export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerReturn {
   const {
     pagesContainerRef,
     hiddenPMRef,
-    getHfView,
     layout,
     blocks,
     measures,
     zoom,
     readOnly,
-    hfEditMode,
-    onBodyClick,
     onContextMenu,
     onHyperlinkClick,
     onOpenLink,
-    onHeaderFooterDoubleClick,
     setSelectedImageInfo,
     setSelectionRects,
     setCaretPosition,
@@ -204,11 +151,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
   const dragAnchorRef = useRef<number | null>(null);
 
   // Table resize state machine (column-between, row, right-edge handles).
-  // `getActiveHfView` lets the hook dispatch column/row commits on the HF
-  // EditorView when the handle lives inside `.layout-page-header/footer`,
-  // not on the body PM (which would corrupt the body doc with stray
-  // colWidth changes at out-of-range positions).
-  const tableResize = useTableResizeState({ hiddenPMRef, getActiveHfView: getHfView });
+  const tableResize = useTableResizeState({ hiddenPMRef });
 
   // Cell-drag selection state machine (shared with Vue via core).
   const cellDragRef = useRef(createCellDragTracker());
@@ -255,52 +198,6 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
       const domPos = clickToPositionDom(pagesContainerRef.current, clientX, clientY, zoom);
       if (domPos !== null) return domPos;
 
-      // In HF edit mode, the geometry-based fallback below uses BODY blocks/
-      // measures — wrong coord space for HF clicks. If clickToPositionDom
-      // couldn't pin a span, find the nearest HF data-pm-start span at the
-      // same y so drag-select doesn't ping-pong between HF and body coords
-      // mid-drag. Returning null is safer than returning a body pos.
-      if (hfEditMode) {
-        const els = window.document.elementsFromPoint(clientX, clientY);
-        const hfHost = els.find(
-          (el) =>
-            (el as HTMLElement).closest('.layout-page-header') ||
-            (el as HTMLElement).closest('.layout-page-footer')
-        ) as HTMLElement | undefined;
-        if (!hfHost) return null;
-        // Walk every painted span in the HF host; pick the closest by horizontal
-        // distance on the same line (within span vertical bounds).
-        const host = hfHost.closest('.layout-page-header') ?? hfHost.closest('.layout-page-footer');
-        if (!host) return null;
-        const spans = Array.from(
-          host.querySelectorAll<HTMLElement>('span[data-pm-start][data-pm-end]')
-        );
-        let best: { pos: number; dist: number } | null = null;
-        for (const span of spans) {
-          const r = span.getBoundingClientRect();
-          if (clientY < r.top - 4 || clientY > r.bottom + 4) continue;
-          const pmStart = Number(span.dataset.pmStart);
-          const pmEnd = Number(span.dataset.pmEnd);
-          if (!Number.isFinite(pmStart) || !Number.isFinite(pmEnd)) continue;
-          // Snap to span edge nearest the cursor.
-          let pos: number;
-          let dist: number;
-          if (clientX < r.left) {
-            pos = pmStart;
-            dist = r.left - clientX;
-          } else if (clientX > r.right) {
-            pos = pmEnd;
-            dist = clientX - r.right;
-          } else {
-            const ratio = (clientX - r.left) / Math.max(1, r.width);
-            pos = pmStart + Math.round(ratio * (pmEnd - pmStart));
-            dist = 0;
-          }
-          if (!best || dist < best.dist) best = { pos, dist };
-        }
-        return best?.pos ?? null;
-      }
-
       const pageElements = pagesContainerRef.current.querySelectorAll('.layout-page');
       let clickedPageIndex = -1;
       let pageRect: DOMRect | null = null;
@@ -340,7 +237,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
       }
       return clickToPosition(fragmentHit);
     },
-    [layout, blocks, measures, zoom, hfEditMode, pagesContainerRef]
+    [layout, blocks, measures, zoom, pagesContainerRef]
   );
 
   /**
@@ -348,17 +245,12 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
    * Returns the cell's `before(d)` so CellSelection.create can resolve via
    * cellAround() internally.
    */
-  // Build the active surface for whichever PM the user is editing — HF view
-  // when `hfEditMode` is set AND `getHfView` resolves, body PM otherwise.
-  // Holding it as a function (not a value) lets the closure see the latest
-  // `hfEditMode` on each gesture without rebuilding handler callbacks.
-  const activeSurface = useCallback((): ActivePmSurface | null => {
-    if (hfEditMode && getHfView) {
-      const hfView = getHfView();
-      if (hfView) return wrapEditorViewAsSurface(hfView);
-    }
-    return hiddenPMRef.current;
-  }, [hfEditMode, getHfView, hiddenPMRef]);
+  // The body PM is the only editable surface. Held as a function (not a
+  // value) so call sites read `.current` lazily on each gesture.
+  const activeSurface = useCallback(
+    (): ActivePmSurface | null => hiddenPMRef.current,
+    [hiddenPMRef]
+  );
 
   const findCellPosFromPmPos = useCallback(
     (pmPos: number): number | null => {
@@ -394,32 +286,13 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
 
       const target = e.target as HTMLElement;
 
-      // HF edit mode: clicks outside the painted header/footer exit the HF
-      // editor — that's the only HF-specific carve-out. Everything else
-      // (table resize, image select, drag, multi-click) flows through the
-      // unified pipeline below via `surface`, which auto-routes to the HF
-      // EditorView when `hfEditMode` is set.
-      if (hfEditMode) {
-        const isInHfArea =
-          target.closest('.layout-page-header') ||
-          target.closest('.layout-page-footer') ||
-          target.closest('.hf-inline-editor');
-        if (!isInHfArea && onBodyClick) {
-          e.preventDefault();
-          e.stopPropagation();
-          onBodyClick();
-          return;
-        }
-      } else {
-        // Normal mode: single-click on H/F area is a no-op (matches Word —
-        // don't yank the body caret to position 0). Double-click (`e.detail === 2`)
-        // falls through to the dblclick branch below where HF edit mode engages.
-        const isInHfArea =
-          target.closest('.layout-page-header') || target.closest('.layout-page-footer');
-        if (isInHfArea && e.detail !== 2) {
-          e.preventDefault();
-          return;
-        }
+      // Header/footer is render-only — a click on the painted H/F area is a
+      // no-op (matches Word: don't yank the body caret to position 0).
+      const isInHfArea =
+        target.closest('.layout-page-header') || target.closest('.layout-page-footer');
+      if (isInHfArea) {
+        e.preventDefault();
+        return;
       }
 
       // Table resize handles (column-between, row, right-edge). Body OR
@@ -442,7 +315,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
           setCaretPosition(null);
         }
         surface.focus();
-        if (!hfEditMode) setIsFocused(true);
+        setIsFocused(true);
         return;
       }
 
@@ -470,13 +343,11 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
       }
 
       surface.focus();
-      if (!hfEditMode) setIsFocused(true);
+      setIsFocused(true);
     },
     [
       activeSurface,
       readOnly,
-      hfEditMode,
-      onBodyClick,
       getPositionFromMouse,
       findCellPosFromPmPos,
       tableResize,
@@ -575,7 +446,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
         mouseY: e.clientY,
         pagesContainer: pagesEl,
         target: e.target as HTMLElement,
-        hfEditMode: hfEditMode ?? null,
+        hfEditMode: null,
       });
 
       if (!hit) {
@@ -607,7 +478,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
       });
       clearTableInsertTimer();
     },
-    [readOnly, clearTableInsertTimer, hfEditMode, pagesContainerRef, zoom]
+    [readOnly, clearTableInsertTimer, pagesContainerRef, zoom]
   );
 
   const handleTableInsertClick = useCallback(
@@ -689,26 +560,18 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
         return;
       }
 
-      // Double-click on header/footer area → enter HF editing mode. Only
-      // fires when NOT already in HF mode — once engaged, the dblclick falls
-      // through to the word-select / cell-select branches below.
-      if (e.detail === 2 && !hfEditMode && onHeaderFooterDoubleClick) {
-        const target = e.target as HTMLElement;
-        const headerEl = target.closest('.layout-page-header');
-        const footerEl = target.closest('.layout-page-footer');
-        if (headerEl || footerEl) {
-          const pageEl = target.closest('[data-page-number]') as HTMLElement | null;
-          const pageNum = pageEl ? Number(pageEl.dataset.pageNumber) : 1;
-          e.preventDefault();
-          e.stopPropagation();
-          onHeaderFooterDoubleClick(headerEl ? 'header' : 'footer', pageNum);
-          return;
-        }
-      }
-
       if (!surface) return;
       const view = surface.getView();
       if (!view) return;
+
+      // Header/footer is render-only — multi-click word/paragraph selection
+      // would resolve H/F-local PM positions (the painted H/F spans carry
+      // data-pm-start/end) against the BODY doc, mis-selecting or throwing.
+      // Bail before any selection logic (hyperlink handling above already ran).
+      const clickTarget = e.target as HTMLElement;
+      if (clickTarget.closest('.layout-page-header') || clickTarget.closest('.layout-page-footer')) {
+        return;
+      }
 
       // Double-click: cell selection if inside a table, otherwise word selection.
       if (e.detail === 2) {
@@ -747,9 +610,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
     },
     [
       activeSurface,
-      hfEditMode,
       getPositionFromMouse,
-      onHeaderFooterDoubleClick,
       onHyperlinkClick,
       onOpenLink,
       findCellPosFromPmPos,
@@ -813,13 +674,13 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
         // a plain cursor move would leave that context empty.
         surface.setNodeSelection(imageInfo.pos);
         surface.focus();
-        if (!hfEditMode) setIsFocused(true);
+        setIsFocused(true);
       } else if (pmPos !== null && (from === to || pmPos < from || pmPos > to)) {
         // Right-click inside an existing range keeps the selection; otherwise
         // move cursor to the right-click position.
         surface.setSelection(pmPos);
         surface.focus();
-        if (!hfEditMode) setIsFocused(true);
+        setIsFocused(true);
       }
 
       const hasSelection = view.state.selection.from !== view.state.selection.to;
@@ -830,7 +691,6 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
     // transform px deltas back to authored space.
     [
       activeSurface,
-      hfEditMode,
       onContextMenu,
       getPositionFromMouse,
       zoom,

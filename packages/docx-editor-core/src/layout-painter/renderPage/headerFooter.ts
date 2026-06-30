@@ -224,6 +224,10 @@ export function renderHeaderFooterContent(
   const containerEl = doc.createElement('div');
   containerEl.style.position = 'relative';
 
+  // Headers/footers are render-only — paint any tracked changes as plain text
+  // (no green/red redline chrome), since they can't be accepted/rejected here.
+  const hfContext: RenderContext = { ...context, suppressTrackedChangeStyling: true };
+
   // Use content width from context if available, otherwise default to reasonable width
   const contentWidth = context.contentWidth ?? 600;
 
@@ -312,10 +316,8 @@ export function renderHeaderFooterContent(
       };
 
       // Create a synthetic fragment for the paragraph. `pmStart` / `pmEnd`
-      // are essential for HF caret resolution — without them the painter
-      // emits no `data-pm-*` markers on this paragraph wrapper, and empty
-      // paragraphs (or cursors at line boundaries) lose any anchor at all.
-      // `computeHfCaretRectFromView`'s fallback chain depends on these.
+      // carry the PM offsets onto the painted `data-pm-*` markers, keeping the
+      // H/F paragraph wrapper consistent with the body paint output.
       const syntheticFragment: ParagraphFragment = {
         kind: 'paragraph',
         blockId: paragraphBlock.id,
@@ -339,7 +341,7 @@ export function renderHeaderFooterContent(
         syntheticFragment,
         inlineBlock,
         paragraphMeasure,
-        { ...context, positioning: 'absolute' },
+        { ...hfContext, positioning: 'absolute' },
         { document: doc }
       );
 
@@ -368,7 +370,7 @@ export function renderHeaderFooterContent(
         syntheticFragment,
         block,
         measure,
-        { ...context, positioning: 'absolute' },
+        { ...hfContext, positioning: 'absolute' },
         { document: doc }
       );
 
@@ -408,7 +410,7 @@ export function renderHeaderFooterContent(
         syntheticFragment,
         block,
         measure,
-        { ...context, positioning: 'absolute' },
+        { ...hfContext, positioning: 'absolute' },
         { document: doc }
       );
       fragEl.style.top = `${cursorY}px`;
@@ -434,7 +436,7 @@ export function renderHeaderFooterContent(
         syntheticFragment,
         block,
         measure,
-        { ...context, positioning: 'absolute' },
+        { ...hfContext, positioning: 'absolute' },
         { document: doc }
       );
       // Vertical position stays on the HF flow cursor (the anchor's positionV

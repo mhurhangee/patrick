@@ -27,7 +27,7 @@ import { useFormattingActions } from '../DocxEditor/hooks/useFormattingActions';
 import { useImageActions } from '../DocxEditor/hooks/useImageActions';
 import { useDocxEditorRefApi } from '../DocxEditor/hooks/useDocxEditorRefApi';
 import { useTableDialogs } from '../DocxEditor/hooks/useTableDialogs';
-import { useHeaderFooterEditing } from '../DocxEditor/hooks/useHeaderFooterEditing';
+import { resolveHeaderFooter } from '@eigenpal/docx-editor-core/layout-bridge';
 import { useDocumentLoader } from '../DocxEditor/hooks/useDocumentLoader';
 import { useContextMenus } from '../DocxEditor/hooks/useContextMenus';
 import { useCommentManagement } from '../DocxEditor/hooks/useCommentManagement';
@@ -52,7 +52,6 @@ import type { ReactSidebarItem } from '../../plugin-api/types';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../../hooks/useFindReplace';
-import { type InlineHeaderFooterEditorRef } from '../InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from '../states/editor-states';
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
@@ -66,8 +65,6 @@ import {
   createSuggestionModePlugin,
   setSuggestionMode,
 } from '@eigenpal/docx-editor-core/prosemirror/plugins';
-
-// Conversion (for HF inline editor save)
 
 // ProseMirror editor
 import {
@@ -400,11 +397,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
 
   const isDark = resolveIsDark(colorMode, systemDark);
 
-  // Header/footer editing state (lifted into the parent so getActiveEditorView
-  // can read hfEditPosition before useHeaderFooterEditing is called).
-  const [hfEditPosition, setHfEditPosition] = useState<'header' | 'footer' | null>(null);
-  const [hfEditIsFirstPage, setHfEditIsFirstPage] = useState(false);
-
   const [showCommentsSidebar, setShowCommentsSidebar] = useState(false);
   // Auto-open the sidebar the first time a comment / tracked change
   // appears so users see the card without manually toggling. Latches so
@@ -441,32 +433,11 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // from PM (the source of truth, including remote ySync updates) rather than a debounced
   // copy in React state.
   const [pmState, setPmState] = useState<PMEditorState | null>(null);
-  const [hfVersion, setHfVersion] = useState(0);
 
-  const { entries: trackedChanges, commentToRevision } = useMemo(() => {
-    const bodyResult = extractTrackedChanges(pmState);
-    const mergedEntries = [...bodyResult.entries];
-    const mergedCommentToRevision = new Map(bodyResult.commentToRevision);
-
-    const hfViews = pagedEditorRef.current?.getHfPmViews?.();
-    if (hfViews) {
-      for (const [rId, view] of hfViews.entries()) {
-        const hfResult = extractTrackedChanges(view.state);
-        for (const entry of hfResult.entries) {
-          (entry as any).hfRid = rId;
-          mergedEntries.push(entry);
-        }
-        for (const [commentId, revisionId] of hfResult.commentToRevision.entries()) {
-          mergedCommentToRevision.set(commentId, revisionId);
-        }
-      }
-    }
-
-    return {
-      entries: mergedEntries,
-      commentToRevision: mergedCommentToRevision,
-    };
-  }, [pmState, hfVersion]);
+  const { entries: trackedChanges, commentToRevision } = useMemo(
+    () => extractTrackedChanges(pmState),
+    [pmState]
+  );
 
   const [anchorPositions, setAnchorPositions] =
     useState<Map<string, number>>(EMPTY_ANCHOR_POSITIONS);
@@ -508,7 +479,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   );
 
   // Refs (pagedEditorRef is declared earlier — useCommentManagement needs it)
-  const hfEditorRef = useRef<InlineHeaderFooterEditorRef>(null);
   const agentRef = useRef<DocumentAgent | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // Save the last known selection for restoring after toolbar interactions
@@ -555,11 +525,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   );
 
   const { getActiveEditorView, focusActiveEditor, undoActiveEditor, redoActiveEditor } =
-    useActiveEditor({
-      hfEditPosition,
-      hfEditorRef,
-      pagedEditorRef,
-    });
+    useActiveEditor({ pagedEditorRef });
 
   // Find/Replace hook
   const findReplace = useFindReplace();
@@ -587,8 +553,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     setCommentSelectionRange,
     setAddCommentYPosition,
     setFloatingCommentBtn,
-    setHfEditPosition,
-    setHfEditIsFirstPage,
     setAnchorPositions,
     clearFindReplaceMatches: useCallback(() => findReplace.setMatches([], 0), [findReplace]),
     cleanOrphanedCommentsTimerRef,
@@ -916,28 +880,17 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   );
   const finalSectionProperties = history.state?.package.document?.finalSectionProperties;
 
+  // Header/footer content for the painter. Render-only: the painter reads it
+  // straight from the document model; the content round-trips untouched on save.
   const {
-    headerContent,
-    footerContent,
-    firstPageHeaderContent,
-    firstPageFooterContent,
-    handleHeaderFooterDoubleClick,
-    handleHeaderFooterSave,
-    handleBodyClick,
-    handleRemoveHeaderFooter,
-    getHfTargetElement,
-  } = useHeaderFooterEditing({
-    document: history.state,
-    pushDocument,
-    hfEditorRef,
-    containerRef,
-    initialSectionProperties,
-    finalSectionProperties,
-    hfEditPosition,
-    setHfEditPosition,
-    hfEditIsFirstPage,
-    setHfEditIsFirstPage,
-  });
+    header: headerContent,
+    footer: footerContent,
+    firstHeader: firstPageHeaderContent,
+    firstFooter: firstPageFooterContent,
+  } = useMemo(
+    () => resolveHeaderFooter(history.state ?? null, finalSectionProperties ?? initialSectionProperties),
+    [history.state, initialSectionProperties, finalSectionProperties]
+  );
 
   // Container styles - using overflow: auto so sticky toolbar works
   const containerStyle: CSSProperties = {
@@ -1032,58 +985,12 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       if (view) rejectChange(from, to)(view.state, view.dispatch);
     },
     onAcceptChangeById: (revisionId) => {
-      const hfViews = pagedEditorRef.current?.getHfPmViews?.();
-      let targetView = null;
-      if (hfViews) {
-        for (const view of hfViews.values()) {
-          const { entries } = extractTrackedChanges(view.state);
-          if (
-            entries.some(
-              (e) =>
-                e.revisionId === revisionId ||
-                e.insertionRevisionId === revisionId ||
-                e.coalescedRevisionIds?.includes(revisionId)
-            )
-          ) {
-            targetView = view;
-            break;
-          }
-        }
-      }
-      const view = targetView || pagedEditorRef.current?.getView();
-      if (view) {
-        acceptChangeById(revisionId)(view.state, view.dispatch);
-        if (targetView) {
-          setHfVersion((prev) => prev + 1);
-        }
-      }
+      const view = pagedEditorRef.current?.getView();
+      if (view) acceptChangeById(revisionId)(view.state, view.dispatch);
     },
     onRejectChangeById: (revisionId) => {
-      const hfViews = pagedEditorRef.current?.getHfPmViews?.();
-      let targetView = null;
-      if (hfViews) {
-        for (const view of hfViews.values()) {
-          const { entries } = extractTrackedChanges(view.state);
-          if (
-            entries.some(
-              (e) =>
-                e.revisionId === revisionId ||
-                e.insertionRevisionId === revisionId ||
-                e.coalescedRevisionIds?.includes(revisionId)
-            )
-          ) {
-            targetView = view;
-            break;
-          }
-        }
-      }
-      const view = targetView || pagedEditorRef.current?.getView();
-      if (view) {
-        rejectChangeById(revisionId)(view.state, view.dispatch);
-        if (targetView) {
-          setHfVersion((prev) => prev + 1);
-        }
-      }
+      const view = pagedEditorRef.current?.getView();
+      if (view) rejectChangeById(revisionId)(view.state, view.dispatch);
     },
     onTrackedChangeReply: (revisionId, text) => {
       setComments((prev) => [
@@ -1396,9 +1303,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
         <>
           <DocxEditorPagedArea
             pagedEditorRef={pagedEditorRef}
-            hfEditorRef={hfEditorRef}
             scrollContainerRef={scrollContainerRef}
-            editorContentRef={editorContentRef}
             document={history.state}
             theme={theme}
             initialSectionProperties={initialSectionProperties}
@@ -1407,27 +1312,11 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             footerContent={footerContent}
             firstPageHeaderContent={firstPageHeaderContent}
             firstPageFooterContent={firstPageFooterContent}
-            hfEditPosition={hfEditPosition}
-            setHfEditPosition={setHfEditPosition}
-            hfEditIsFirstPage={hfEditIsFirstPage}
-            onHeaderFooterDoubleClick={handleHeaderFooterDoubleClick}
-            onHeaderFooterSave={handleHeaderFooterSave}
-            onRemoveHeaderFooter={handleRemoveHeaderFooter}
-            onBodyClick={handleBodyClick}
-            getHfTargetElement={getHfTargetElement}
             zoom={state.zoom}
             readOnly={readOnly}
-            isSuggesting={editingMode === 'suggesting'}
-            author={author}
-            onHfTransaction={(_rId, _view, docChanged) => {
-              if (docChanged) {
-                setHfVersion((prev) => prev + 1);
-              }
-            }}
             extensionManager={extensionManager}
             externalPlugins={allExternalPlugins}
             onDocumentChange={handleDocumentChange}
-            onSelectionChange={handleSelectionChange}
             onPagedSelectionChange={handlePagedSelectionChange}
             onReady={(ref) => {
               const view = ref.getView();
