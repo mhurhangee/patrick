@@ -203,3 +203,8 @@ with `/code-review`.
 - 2026-06-30 — **slice 1 (history/undo) — in progress.** Deleted `useHistory.ts`; added
   `useDocumentState`; rewired docx-editor.tsx + useDocumentLoader.tsx; renamed `historyStateRef`
   → `docStateRef` across 4 hooks. Fixes A1 + A2. All gates green.
+- 2026-06-30 — slice 1 code review (high, ×2): caught (a) page-setup no longer Ctrl+Z-undoable —
+  **accepted by design** (page setup is a doc attribute, not content; Michael's call), documented +
+  SCRATCHPAD-logged; (b) per-keystroke document `JSON.stringify` (pre-existing) — **fixed** (guard
+  dropped, `set`/`reset` collapsed); (c) unstable `useDocumentState` return identity — **fixed**
+  (memoized). Watermark undo confirmed working (it's a PM doc attribute).
