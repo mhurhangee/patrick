@@ -43,8 +43,6 @@ import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mir
 import type { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 import { computeAnchorPositions } from '../components/editor/internals/sidebarAnchorPositions';
 import { measureBlocks } from '../components/editor/internals/measureBlock';
-import { createRenderedDomContext } from '../plugin-api/RenderedDomContext';
-import type { RenderedDomContext } from '../plugin-api/types';
 import { viewportMinHeightPx } from '../components/editor/internals/scrollUtils';
 import {
   applyScrollRestore,
@@ -74,15 +72,12 @@ export interface UseLayoutPipelineOptions {
   getScrollContainer: () => HTMLDivElement | null;
   onTotalPagesChange?: (totalPages: number) => void;
   onAnchorPositionsChange?: (positions: Map<string, number>) => void;
-  onRenderedDomContextReady?: (context: RenderedDomContext) => void;
 }
 
 export interface UseLayoutPipelineReturn {
   layout: Layout | null;
   blocks: FlowBlock[];
   measures: Measure[];
-  decorationSyncToken: number;
-  notifyDecorationLayer: () => void;
   contentWidth: number;
   runLayoutPipeline: (state: EditorState) => void;
   scheduleLayout: (state: EditorState) => void;
@@ -109,28 +104,19 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
     getScrollContainer,
     onTotalPagesChange,
     onAnchorPositionsChange,
-    onRenderedDomContextReady,
   } = opts;
 
   const [layout, setLayout] = useState<Layout | null>(null);
   const [blocks, setBlocks] = useState<FlowBlock[]>([]);
   const [measures, setMeasures] = useState<Measure[]>([]);
-  // Monotonic token bumped on every PM transaction (doc, selection,
-  // meta-only). Drives the DecorationLayer's resync so plugins like
-  // yCursorPlugin (which update decorations on awareness pings — non-doc
-  // transactions) propagate. Only `notifyDecorationLayer` writes to it.
-  const [decorationSyncToken, setDecorationSyncToken] = useState(0);
-  const notifyDecorationLayer = useCallback(() => setDecorationSyncToken((v) => v + 1), []);
 
   // Callback refs — parent may hand in a fresh closure every render. Mirroring
   // these in refs keeps `runLayoutPipeline`'s dep array stable; otherwise
   // every parent re-render would invalidate the rAF-coalesced scheduler.
   const onTotalPagesChangeRef = useRef(onTotalPagesChange);
   const onAnchorPositionsChangeRef = useRef(onAnchorPositionsChange);
-  const onRenderedDomContextReadyRef = useRef(onRenderedDomContextReady);
   onTotalPagesChangeRef.current = onTotalPagesChange;
   onAnchorPositionsChangeRef.current = onAnchorPositionsChange;
-  onRenderedDomContextReadyRef.current = onRenderedDomContextReady;
 
   // Total-pages notifier — fires only when count changes (including N → 0).
   const lastTotalPagesRef = useRef<number>(0);
@@ -297,11 +283,6 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
               pendingIncrementalScrollSnapshotWrittenAtRef.current = performance.now();
             }
           }
-
-          if (onRenderedDomContextReadyRef.current) {
-            const domContext = createRenderedDomContext(pagesContainerRef.current, zoom);
-            onRenderedDomContextReadyRef.current(domContext);
-          }
         } else {
           pendingScrollRestoreRef.current = null;
           pendingIncrementalScrollSnapshotWrittenAtRef.current = 0;
@@ -446,8 +427,6 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
     layout,
     blocks,
     measures,
-    decorationSyncToken,
-    notifyDecorationLayer,
     contentWidth,
     runLayoutPipeline,
     scheduleLayout,

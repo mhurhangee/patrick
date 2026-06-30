@@ -1,6 +1,4 @@
 import { TextSelection } from 'prosemirror-state';
-import type { EditorView } from 'prosemirror-view';
-import type { ReactNode } from 'react';
 import type {
   Document,
   Theme,
@@ -17,8 +15,7 @@ import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';
 import { PENDING_COMMENT_ID } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
-import type { ReactSidebarItem } from '../../plugin-api/types';
-import type { RenderedDomContext } from '../../plugin-api/types';
+import type { ReactSidebarItem } from '../../types/sidebar';
 
 /**
  * Body of the editor: the paged ProseMirror host, its sidebar overlay
@@ -52,9 +49,6 @@ export function DocxEditorPagedArea({
   onDocumentChange,
   onPagedSelectionChange,
   onReady,
-  onEditorViewReady,
-  onRenderedDomContextReady,
-  pluginOverlays,
   onHyperlinkClick,
   onOpenLink,
   onContextMenu,
@@ -63,7 +57,6 @@ export function DocxEditorPagedArea({
   sidebarItems,
   anchorPositions,
   onAnchorPositionsChange,
-  pluginRenderedDomContext,
   pageWidthPx,
   expandedSidebarItem,
   setExpandedSidebarItem,
@@ -98,9 +91,6 @@ export function DocxEditorPagedArea({
   onDocumentChange: (doc: Document) => void;
   onPagedSelectionChange: () => void;
   onReady: (ref: PagedEditorRef) => void;
-  onEditorViewReady: ((view: EditorView) => void) | undefined;
-  onRenderedDomContextReady: ((ctx: RenderedDomContext) => void) | undefined;
-  pluginOverlays: ReactNode;
   onHyperlinkClick: (data: {
     href: string;
     displayText: string;
@@ -123,7 +113,6 @@ export function DocxEditorPagedArea({
   sidebarItems: ReactSidebarItem[];
   anchorPositions: Map<string, number>;
   onAnchorPositionsChange: (positions: Map<string, number>) => void;
-  pluginRenderedDomContext: RenderedDomContext | null | undefined;
   pageWidthPx: number;
   expandedSidebarItem: string | null;
   setExpandedSidebarItem: React.Dispatch<React.SetStateAction<string | null>>;
@@ -161,13 +150,7 @@ export function DocxEditorPagedArea({
         onDocumentChange={onDocumentChange}
         onSelectionChange={onPagedSelectionChange}
         externalPlugins={externalPlugins}
-        onReady={(ref) => {
-          onReady(ref);
-          const view = ref.getView();
-          if (view) onEditorViewReady?.(view);
-        }}
-        onRenderedDomContextReady={onRenderedDomContextReady}
-        pluginOverlays={pluginOverlays}
+        onReady={onReady}
         onHyperlinkClick={onHyperlinkClick}
         onOpenLink={onOpenLink}
         onContextMenu={onContextMenu}
@@ -182,7 +165,7 @@ export function DocxEditorPagedArea({
               <UnifiedSidebar
                 items={sidebarItems}
                 anchorPositions={anchorPositions}
-                renderedDomContext={pluginRenderedDomContext ?? null}
+                renderedDomContext={null}
                 pageWidth={pageWidthPx}
                 zoom={zoom}
                 editorContainerRef={scrollContainerRef}

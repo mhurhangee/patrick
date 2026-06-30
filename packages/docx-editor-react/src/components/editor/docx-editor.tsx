@@ -48,7 +48,7 @@ import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebar
 import { useCommentSidebarItems, type CommentCallbacks } from '../../hooks/useCommentSidebarItems';
 import { extractTrackedChanges } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { type EditorState as PMEditorState } from 'prosemirror-state';
-import type { ReactSidebarItem } from '../../plugin-api/types';
+import type { ReactSidebarItem } from '../../types/sidebar';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../../hooks/useFindReplace';
@@ -89,8 +89,6 @@ import {
 // Paginated editor
 import { type PagedEditorRef, DEFAULT_PAGE_WIDTH } from './paged-editor';
 
-// Plugin API types
-import type { RenderedDomContext } from '../../plugin-api/types';
 
 // ============================================================================
 // TYPES
@@ -111,20 +109,6 @@ export interface DocxEditorProps {
   /** Open an external URL (the host opens it — Tauri shell on desktop,
    *  window.open on web). Used by the hyperlink popover + read-only link clicks. */
   onOpenLink?: (href: string) => void;
-  /** External ProseMirror plugins (from PluginHost) */
-  externalPlugins?: import('prosemirror-state').Plugin[];
-  /**
-   * When true, the editor treats the `document` prop as a schema seed only and
-   * does not load it into ProseMirror on mount. Content is expected to come from
-   * external sources — typically `externalPlugins` such as `ySyncPlugin` from
-   * `y-prosemirror`, but also any code that dispatches transactions directly.
-   *
-   * You must still pass a `document` prop (e.g., `createEmptyDocument()`) so the
-   * editor can build its schema and render the shell.
-   */
-  externalContent?: boolean;
-  /** Callback when editor view is ready (for PluginHost) */
-  onEditorViewReady?: (view: import('prosemirror-view').EditorView) => void;
   /** Color theme mode for UI styling. `'system'` follows the OS preference. */
   colorMode?: 'light' | 'dark' | 'system';
   /** Document theme schema object */
@@ -138,20 +122,6 @@ export interface DocxEditorProps {
    * menu entry; omit to hide.
    */
   onPrint?: () => void;
-  /**
-   * Callback when rendered DOM context is ready (for plugin overlays).
-   * Used by PluginHost to get access to the rendered page DOM for positioning.
-   */
-  onRenderedDomContextReady?: (context: RenderedDomContext) => void;
-  /**
-   * Plugin overlays to render inside the editor viewport.
-   * Passed from PluginHost to render plugin-specific overlays.
-   */
-  pluginOverlays?: ReactNode;
-  /** Sidebar items from plugins (passed from PluginHost). */
-  pluginSidebarItems?: ReactSidebarItem[];
-  /** Rendered DOM context from PluginHost (for sidebar position resolution). */
-  pluginRenderedDomContext?: RenderedDomContext | null;
   /** Custom right-side actions for the title bar */
   renderTitleBarRight?: () => ReactNode;
 }
@@ -366,20 +336,13 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     readOnly: readOnlyProp = false,
     loadingIndicator,
     onPrint,
-    externalPlugins,
-    externalContent = false,
-    onEditorViewReady,
-    onRenderedDomContextReady,
-    pluginOverlays,
-    pluginSidebarItems,
-    pluginRenderedDomContext,
     renderTitleBarRight,
   },
   ref
 ) {
   // State
   const [state, setState] = useState<EditorState>({
-    isLoading: !!documentBuffer && !externalContent,
+    isLoading: !!documentBuffer,
     parseError: null,
     zoom: 1.0,
     selectionFormatting: {},
@@ -441,7 +404,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
 
   const [anchorPositions, setAnchorPositions] =
     useState<Map<string, number>>(EMPTY_ANCHOR_POSITIONS);
-  // No separate state needed — pluginRenderedDomContext comes from PluginHost
 
   const [editingMode, setEditingMode] = useState<EditorMode>('editing');
   // 'viewing' mode acts as read-only
@@ -473,10 +435,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     () => createSuggestionModePlugin(editingMode === 'suggesting', author),
     [] // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const allExternalPlugins = useMemo(
-    () => [suggestionPlugin, ...(externalPlugins ?? [])],
-    [suggestionPlugin, externalPlugins]
-  );
+  const editorPlugins = useMemo(() => [suggestionPlugin], [suggestionPlugin]);
 
   // Refs (pagedEditorRef is declared earlier — useCommentManagement needs it)
   const agentRef = useRef<DocumentAgent | null>(null);
@@ -561,7 +520,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const { loadBuffer } = useDocumentLoader({
     documentBuffer,
     initialDocument,
-    externalContent,
     history,
     agentRef,
     pagedEditorRef,
@@ -1030,9 +988,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const allSidebarItems = useMemo(() => {
     const items: ReactSidebarItem[] = [];
     if (showCommentsSidebar) items.push(...commentSidebarItems);
-    if (pluginSidebarItems) items.push(...pluginSidebarItems);
     return items;
-  }, [showCommentsSidebar, commentSidebarItems, pluginSidebarItems]);
+  }, [showCommentsSidebar, commentSidebarItems]);
 
   // Build a map from insertion revisionIds to sidebar item IDs for replacement tracked changes.
   // This allows clicking the insertion part of a replacement to activate the same sidebar card.
@@ -1313,16 +1270,13 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           zoom={state.zoom}
           readOnly={readOnly}
           extensionManager={extensionManager}
-          externalPlugins={allExternalPlugins}
+          externalPlugins={editorPlugins}
           onDocumentChange={handleDocumentChange}
           onPagedSelectionChange={handlePagedSelectionChange}
           onReady={(ref) => {
             const view = ref.getView();
             if (view) setPmState(view.state);
           }}
-          onEditorViewReady={onEditorViewReady}
-          onRenderedDomContextReady={onRenderedDomContextReady}
-          pluginOverlays={pluginOverlays}
           onHyperlinkClick={(data) =>
             hyperlink.openView(data.rect, {
               href: data.href,
@@ -1336,7 +1290,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           sidebarItems={allSidebarItems}
           anchorPositions={anchorPositions}
           onAnchorPositionsChange={setAnchorPositions}
-          pluginRenderedDomContext={pluginRenderedDomContext}
           pageWidthPx={pageWidthPx}
           expandedSidebarItem={expandedSidebarItem}
           setExpandedSidebarItem={setExpandedSidebarItem}

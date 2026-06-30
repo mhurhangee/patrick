@@ -30,7 +30,6 @@ import {
 export function useDocumentLoader({
   documentBuffer,
   initialDocument,
-  externalContent,
   history,
   agentRef,
   pagedEditorRef,
@@ -44,7 +43,6 @@ export function useDocumentLoader({
 }: {
   documentBuffer: DocxInput | null | undefined;
   initialDocument: Document | null | undefined;
-  externalContent: boolean | undefined;
   history: UseHistoryReturn<Document | null>;
   agentRef: React.RefObject<DocumentAgent | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
@@ -108,10 +106,6 @@ export function useDocumentLoader({
 
   // React to documentBuffer / document prop changes.
   useEffect(() => {
-    // External-content mode: the caller (e.g. ySyncPlugin) populates PM
-    // directly — skip the load.
-    if (externalContent) return;
-
     if (!documentBuffer) {
       if (initialDocument) {
         loadParsedDocument(initialDocument);
@@ -121,7 +115,7 @@ export function useDocumentLoader({
 
     loadBuffer(documentBuffer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentBuffer, initialDocument, externalContent]);
+  }, [documentBuffer, initialDocument]);
 
   // Keep the DocumentAgent in sync with the latest history state.
   useEffect(() => {
