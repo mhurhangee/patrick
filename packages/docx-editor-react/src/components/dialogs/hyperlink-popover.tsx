@@ -12,7 +12,6 @@ import { Input } from '@patrick/ui/components/input';
 import { Check, Copy, Link, Pencil, Type, Unlink } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { isValidUrl } from '../../lib/hyperlink';
-import { useTranslation } from '../../i18n';
 
 export type HyperlinkMode = 'view' | 'edit';
 
@@ -52,7 +51,6 @@ function HyperlinkView({
   onRequestEdit,
   onRemove,
 }: HyperlinkPopoverProps) {
-  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -82,17 +80,17 @@ function HyperlinkView({
       <Button
         variant="ghost"
         size="icon-sm"
-        tooltip={copied ? undefined : t('hyperlinkPopup.copyLink')}
+        tooltip={copied ? undefined : 'Copy link'}
         onClick={handleCopy}
       >
         {copied ? <Check className="text-emerald-600 dark:text-emerald-400" /> : <Copy />}
       </Button>
       {!readOnly && (
         <>
-          <Button variant="ghost" size="icon-sm" tooltip={t('hyperlinkPopup.editLink')} onClick={onRequestEdit}>
+          <Button variant="ghost" size="icon-sm" tooltip={'Edit link'} onClick={onRequestEdit}>
             <Pencil />
           </Button>
-          <Button variant="ghost" size="icon-sm" tooltip={t('hyperlinkPopup.removeLink')} onClick={onRemove}>
+          <Button variant="ghost" size="icon-sm" tooltip={'Remove link'} onClick={onRemove}>
             <Unlink />
           </Button>
         </>
@@ -116,7 +114,6 @@ function HyperlinkEditForm({
   onRemove: () => void;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
   const [text, setText] = useState(displayText);
   const [url, setUrl] = useState(href);
   const urlRef = useRef<HTMLInputElement>(null);
@@ -149,7 +146,7 @@ function HyperlinkEditForm({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={t('hyperlinkPopup.displayTextPlaceholder')}
+          placeholder={'Display text'}
           className="h-8 text-sm"
         />
       </div>
@@ -160,7 +157,7 @@ function HyperlinkEditForm({
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={t('hyperlinkPopup.urlPlaceholder')}
+          placeholder={'https://example.com'}
           className="h-8 text-sm"
         />
       </div>
@@ -172,14 +169,14 @@ function HyperlinkEditForm({
             className="text-destructive hover:text-destructive"
             onClick={onRemove}
           >
-            {t('hyperlinkPopup.removeLink')}
+            {'Remove link'}
           </Button>
         ) : (
           <span />
         )}
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={onClose}>
-            {t('common.cancel')}
+            {'Cancel'}
           </Button>
           <Button size="sm" disabled={!valid} onClick={submit}>
             {isExisting ? 'Update' : 'Insert'}

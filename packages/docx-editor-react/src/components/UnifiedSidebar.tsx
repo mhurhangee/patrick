@@ -13,7 +13,6 @@ import {
   SIDEBAR_PAGE_GAP,
   SIDEBAR_WIDTH,
 } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
-import { useTranslation } from '../i18n';
 
 
 export interface UnifiedSidebarProps {
@@ -38,7 +37,6 @@ export function UnifiedSidebar({
   onExpandedItemChange,
   activeItemId,
 }: UnifiedSidebarProps) {
-  const { t } = useTranslation();
   // Fully controlled: parent owns expansion state via activeItemId
   const expandedItem = activeItemId ?? null;
   // Ref keeps toggleExpand stable so card children don't re-render on every cursor move
@@ -192,7 +190,7 @@ export function UnifiedSidebar({
     <aside
       className="docx-unified-sidebar"
       role="complementary"
-      aria-label={t('sidebar.ariaLabel')}
+      aria-label={'Annotations sidebar'}
       style={{
         position: 'absolute',
         top: 0,

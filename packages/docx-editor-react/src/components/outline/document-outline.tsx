@@ -3,7 +3,6 @@ import { Button } from '@patrick/ui/components/button';
 import { cn } from '@patrick/ui/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from '../../i18n';
 
 /** @deprecated Use HeadingInfo from utils/headingCollector instead */
 export type OutlineHeading = HeadingInfo;
@@ -52,7 +51,6 @@ export const DocumentOutline = React.memo(function DocumentOutline({
   scrollLeft = 0,
   leftOffset = OUTLINE_LEFT_OFFSET,
 }: DocumentOutlineProps) {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   // Indent relative to the shallowest heading present, not the absolute level.
@@ -70,7 +68,7 @@ export const DocumentOutline = React.memo(function DocumentOutline({
     <nav
       className="flex flex-col overflow-hidden font-sans"
       role="navigation"
-      aria-label={t('documentOutline.ariaLabel')}
+      aria-label={'Document outline'}
       style={{
         position: 'absolute',
         top: topOffset,
@@ -97,12 +95,12 @@ export const DocumentOutline = React.memo(function DocumentOutline({
           variant="ghost"
           size="icon-sm"
           onClick={onClose}
-          aria-label={t('documentOutline.closeAriaLabel')}
-          tooltip={t('documentOutline.closeTitle')}
+          aria-label={'Close outline'}
+          tooltip={'Close outline'}
         >
           <ArrowLeft />
         </Button>
-        <span className="text-sm text-foreground">{t('documentOutline.title')}</span>
+        <span className="text-sm text-foreground">{'Outline'}</span>
       </div>
 
       {/* Heading list. Small left padding so items sit close to the left
@@ -111,7 +109,7 @@ export const DocumentOutline = React.memo(function DocumentOutline({
       <div className="flex-1 overflow-y-auto pl-1">
         {headings.length === 0 ? (
           <div className="px-4 py-2 text-[13px] leading-5 text-muted-foreground">
-            {t('documentOutline.noHeadings')}
+            {'No headings found. Add headings to your document to see them here.'}
           </div>
         ) : (
           headings.map((heading, index) => {

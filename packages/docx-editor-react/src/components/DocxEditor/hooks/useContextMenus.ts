@@ -19,9 +19,6 @@ import {
   type ImageLayoutTarget,
 } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
-import { en as defaultLocale } from '@eigenpal/docx-editor-i18n';
-import { useTranslation } from '../../../i18n';
-import type { Translations } from '@eigenpal/docx-editor-i18n';
 import { useImageContextMenu } from '../../../hooks/use-image-context-menu';
 import type { TextContextAction, TextContextMenuItem } from '../../../types/context-menu';
 import { findSelectionYPosition } from '../internals/pmAnchors';
@@ -42,10 +39,9 @@ interface ContextMenuState {
  *    + add-comment when there's a selection + table ops when in a cell)
  *  - image context menu (wrap-type swatches + reused text actions)
  *
- * Shortcut strings come from i18n (`contextMenu.*Shortcut`) and are
- * passed through `formatKeys` so Mac users see `⌘⇧V` instead of the
- * literal `Ctrl+Shift+V` — handles the full Ctrl/Alt/Shift swap set,
- * not just Ctrl.
+ * Shortcut strings are passed through `formatKeys` so Mac users see
+ * `⌘⇧V` instead of the literal `Ctrl+Shift+V` — handles the full
+ * Ctrl/Alt/Shift swap set, not just Ctrl.
  *
  * The text menu's `addComment` branch needs to mutate comment-management
  * state (selection range, Y position, sidebar visibility, isAddingComment,
@@ -60,7 +56,6 @@ export function useContextMenus({
   openTableProperties,
   scrollContainerRef,
   editorContentRef,
-  i18n,
   onAddComment,
 }: {
   getActiveEditorView: () => EditorView | null | undefined;
@@ -69,10 +64,8 @@ export function useContextMenus({
   openTableProperties: () => void;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   editorContentRef: React.RefObject<HTMLDivElement | null>;
-  i18n: Translations | undefined;
   onAddComment: (range: { from: number; to: number; yPos: number | null }) => void;
 }) {
-  const { t } = useTranslation();
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
     position: { x: 0, y: 0 },
@@ -169,27 +162,27 @@ export function useContextMenus({
     () => [
       {
         action: 'cut' as TextContextAction,
-        label: t('contextMenu.cut'),
-        shortcut: formatKeys(t('contextMenu.cutShortcut')),
+        label: 'Cut',
+        shortcut: formatKeys('Ctrl+X'),
       },
       {
         action: 'copy' as TextContextAction,
-        label: t('contextMenu.copy'),
-        shortcut: formatKeys(t('contextMenu.copyShortcut')),
+        label: 'Copy',
+        shortcut: formatKeys('Ctrl+C'),
       },
       {
         action: 'paste' as TextContextAction,
-        label: t('contextMenu.paste'),
-        shortcut: formatKeys(t('contextMenu.pasteShortcut')),
+        label: 'Paste',
+        shortcut: formatKeys('Ctrl+V'),
         dividerAfter: true,
       },
       {
         action: 'delete' as TextContextAction,
-        label: t('contextMenu.delete'),
-        shortcut: formatKeys(t('contextMenu.deleteShortcut')),
+        label: 'Delete',
+        shortcut: formatKeys('Del'),
       },
     ],
-    [t]
+    []
   );
 
   const handleContextMenuClose = useCallback(() => {
@@ -209,29 +202,29 @@ export function useContextMenus({
     const items: TextContextMenuItem[] = [
       {
         action: 'cut',
-        label: t('contextMenu.cut'),
-        shortcut: formatKeys(t('contextMenu.cutShortcut')),
+        label: 'Cut',
+        shortcut: formatKeys('Ctrl+X'),
       },
       {
         action: 'copy',
-        label: t('contextMenu.copy'),
-        shortcut: formatKeys(t('contextMenu.copyShortcut')),
+        label: 'Copy',
+        shortcut: formatKeys('Ctrl+C'),
       },
       {
         action: 'paste',
-        label: t('contextMenu.paste'),
-        shortcut: formatKeys(t('contextMenu.pasteShortcut')),
+        label: 'Paste',
+        shortcut: formatKeys('Ctrl+V'),
       },
       {
         action: 'pasteAsPlainText',
-        label: t('contextMenu.pastePlainText'),
-        shortcut: formatKeys(t('contextMenu.pastePlainTextShortcut')),
+        label: 'Paste as Plain Text',
+        shortcut: formatKeys('Ctrl+Shift+V'),
         dividerAfter: true,
       },
       {
         action: 'delete',
-        label: t('contextMenu.delete'),
-        shortcut: formatKeys(t('contextMenu.deleteShortcut')),
+        label: 'Delete',
+        shortcut: formatKeys('Del'),
         dividerAfter: !contextMenu.hasSelection && !contextMenu.cursorInTable,
       },
     ];
@@ -252,34 +245,34 @@ export function useContextMenus({
         { action: 'deleteColumn', label: 'Delete column' },
         {
           action: 'mergeCells',
-          label: i18n?.table?.mergeCells ?? defaultLocale.table.mergeCells,
+          label: 'Merge cells',
           disabled: !contextMenu.tableContext?.hasMultiCellSelection,
         },
         {
           action: 'splitCell',
-          label: i18n?.table?.splitCell ?? defaultLocale.table.splitCell,
+          label: 'Split cell',
           disabled: !contextMenu.tableContext?.canSplitCell,
           dividerAfter: true,
         },
         {
           action: 'selectTable',
-          label: i18n?.table?.selectTable ?? defaultLocale.table.selectTable,
+          label: 'Select entire table',
         },
         { action: 'tableProperties', label: 'Table properties' },
         {
           action: 'deleteTable',
-          label: i18n?.table?.deleteTable ?? defaultLocale.table.deleteTable,
+          label: 'Delete table',
           dividerAfter: true,
         }
       );
     }
     items.push({
       action: 'selectAll',
-      label: t('contextMenu.selectAll'),
-      shortcut: formatKeys(t('contextMenu.selectAllShortcut')),
+      label: 'Select All',
+      shortcut: formatKeys('Ctrl+A'),
     });
     return items;
-  }, [contextMenu.hasSelection, contextMenu.cursorInTable, contextMenu.tableContext, i18n, t]);
+  }, [contextMenu.hasSelection, contextMenu.cursorInTable, contextMenu.tableContext]);
 
   const handleContextMenuAction = useCallback(
     async (action: TextContextAction) => {

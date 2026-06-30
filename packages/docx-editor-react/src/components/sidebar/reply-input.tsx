@@ -1,7 +1,6 @@
 import { Button } from '@patrick/ui/components/button';
 import { Input } from '@patrick/ui/components/input';
 import { useState } from 'react';
-import { useTranslation } from '../../i18n';
 
 export interface ReplyInputProps {
   onSubmit: (text: string) => void;
@@ -11,7 +10,6 @@ export interface ReplyInputProps {
 export function ReplyInput({ onSubmit }: ReplyInputProps) {
   const [active, setActive] = useState(false);
   const [text, setText] = useState('');
-  const { t } = useTranslation();
 
   if (!active) {
     return (
@@ -24,7 +22,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
             e.stopPropagation();
             setActive(true);
           }}
-          placeholder={t('comments.replyPlaceholder')}
+          placeholder={'Reply or add others with @'}
           className="h-8 cursor-text rounded-full text-muted-foreground"
         />
       </div>
@@ -57,7 +55,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
             setText('');
           }
         }}
-        placeholder={t('comments.replyPlaceholder')}
+        placeholder={'Reply or add others with @'}
         className="h-8 rounded-full"
       />
       <div className="mt-2 flex justify-end gap-1">
@@ -70,7 +68,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
             setText('');
           }}
         >
-          {t('common.cancel')}
+          {'Cancel'}
         </Button>
         <Button
           size="sm"
@@ -80,7 +78,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
             submit();
           }}
         >
-          {t('common.reply')}
+          {'Reply'}
         </Button>
       </div>
     </div>

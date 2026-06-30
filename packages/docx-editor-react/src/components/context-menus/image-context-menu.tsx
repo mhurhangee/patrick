@@ -18,7 +18,6 @@ import {
   WrapText,
 } from 'lucide-react';
 import { Fragment, useMemo } from 'react';
-import { useTranslation } from '../../i18n';
 import type {
   ImageAttrsCssFloat,
   ImageContextMenuTextAction,
@@ -34,6 +33,24 @@ const ICON_BY_HINT: Record<ImageLayoutIconHint, LucideIcon> = {
   squareRight: PanelRight,
   behind: SendToBack,
   inFront: BringToFront,
+};
+
+// Labels + descriptions for the IMAGE_LAYOUT_OPTIONS, keyed by their stable
+// option key (matches each option's i18nLabelKey / i18nDescKey).
+const WRAP_LABEL: Record<string, string> = {
+  inLineWithText: 'In Line with Text',
+  squareLeft: 'Square Left',
+  squareRight: 'Square Right',
+  behindText: 'Behind Text',
+  inFrontOfText: 'In Front of Text',
+};
+
+const WRAP_DESC: Record<string, string> = {
+  inLineWithText: 'Image flows in the line as a glyph',
+  squareLeft: 'Image floats left, text wraps on the right',
+  squareRight: 'Image floats right, text wraps on the left',
+  behindText: 'Image paints behind body text',
+  inFrontOfText: 'Image paints over body text',
 };
 
 export interface ImageContextMenuProps {
@@ -70,7 +87,6 @@ export function ImageContextMenu({
   onOpenProperties,
   onClose,
 }: ImageContextMenuProps) {
-  const { t } = useTranslation();
   const currentChoice = useMemo(
     () => deriveLayoutChoice(currentWrapType, currentCssFloat ?? null),
     [currentWrapType, currentCssFloat]
@@ -82,7 +98,7 @@ export function ImageContextMenu({
       x={position.x}
       y={position.y}
       onClose={onClose}
-      ariaLabel={t('imageWrap.menu.ariaLabel')}
+      ariaLabel={'Image layout options'}
       contentClassName="min-w-60"
     >
       {isOpen && (
@@ -91,7 +107,7 @@ export function ImageContextMenu({
             <>
               <DropdownMenuItem onSelect={() => onOpenProperties()}>
                 <Settings2 className="size-4" />
-                <span className="flex-1">{t('imageWrap.menu.imageProperties')}</span>
+                <span className="flex-1">{'Image properties…'}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
@@ -105,12 +121,10 @@ export function ImageContextMenu({
                 key={option.choice}
                 disabled={!enabled}
                 onSelect={() => onApplyLayout(option.choice as ImageLayoutTarget)}
-                title={t(`imageWrap.menuDesc.${option.i18nDescKey}` as never)}
+                title={WRAP_DESC[option.i18nDescKey]}
               >
                 <HintIcon className="size-4" />
-                <span className="flex-1">
-                  {t(`imageWrap.menu.${option.i18nLabelKey}` as never)}
-                </span>
+                <span className="flex-1">{WRAP_LABEL[option.i18nLabelKey]}</span>
                 {isCurrent && <Check className="size-4 text-primary" />}
               </DropdownMenuItem>
             );

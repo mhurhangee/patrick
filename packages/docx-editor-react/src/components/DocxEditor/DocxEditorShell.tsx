@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { TrackedChangesResult } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
-import { LocaleProvider } from '../../i18n';
 import { cn } from '../../lib/utils';
 import { ErrorBoundary } from '../states/error-boundary';
 import {
@@ -30,7 +29,6 @@ interface OutlineProps {
  * inside the editor-content `<div>` for proper scoping.
  */
 export function DocxEditorShell({
-  i18n,
   isDark,
   onEditorError,
   containerRef,
@@ -58,7 +56,6 @@ export function DocxEditorShell({
   dialogs,
   fileInputs,
 }: {
-  i18n: React.ComponentProps<typeof LocaleProvider>['i18n'];
   isDark?: boolean;
   onEditorError: (error: Error) => void;
   containerRef: React.Ref<HTMLDivElement>;
@@ -87,8 +84,7 @@ export function DocxEditorShell({
   fileInputs: ReactNode;
 }) {
   return (
-    <LocaleProvider i18n={i18n}>
-      <ErrorBoundary onError={onEditorError}>
+    <ErrorBoundary onError={onEditorError}>
           <div
             ref={containerRef}
             className={cn('ep-root docx-editor', isDark && 'dark', className)}
@@ -176,6 +172,5 @@ export function DocxEditorShell({
             {fileInputs}
           </div>
       </ErrorBoundary>
-    </LocaleProvider>
   );
 }

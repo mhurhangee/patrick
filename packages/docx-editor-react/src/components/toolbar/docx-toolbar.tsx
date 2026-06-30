@@ -22,7 +22,6 @@ import {
   Undo2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useTranslation } from '../../i18n';
 import { EDITING_MODES, type EditorMode } from '../DocxEditor/internals/editing-modes';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
 import type { ImageContext } from '../../types/image';
@@ -111,7 +110,6 @@ export function DocxToolbar(props: DocxToolbarProps) {
     onImageTransform,
     onOpenImageProperties,
   } = props;
-  const { t } = useTranslation();
 
   const currentMode = EDITING_MODES.find((m) => m.value === editingMode) ?? EDITING_MODES[0];
   const ModeIcon = currentMode.icon;
@@ -187,7 +185,7 @@ export function DocxToolbar(props: DocxToolbarProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" tooltip="Editing mode" tooltipSide="bottom" onMouseDown={keepFocus}>
               <ModeIcon />
-              <span>{t(currentMode.labelKey)}</span>
+              <span>{currentMode.label}</span>
               <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
@@ -197,8 +195,8 @@ export function DocxToolbar(props: DocxToolbarProps) {
                 <DropdownMenuRadioItem key={m.value} value={m.value}>
                   <m.icon className="size-4" />
                   <span className="flex flex-col">
-                    <span>{t(m.labelKey)}</span>
-                    <span className="text-xs text-muted-foreground">{t(m.descKey)}</span>
+                    <span>{m.label}</span>
+                    <span className="text-xs text-muted-foreground">{m.desc}</span>
                   </span>
                 </DropdownMenuRadioItem>
               ))}
