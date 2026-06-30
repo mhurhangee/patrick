@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { PagedEditorRef } from '../components/editor/paged-editor';
 import { PENDING_COMMENT_ID } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 
 interface FloatingCommentBtn {

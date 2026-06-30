@@ -20,7 +20,7 @@ import { clearAllCaches, resetCanvasContext } from '@eigenpal/docx-editor-core/l
 import type { HeaderFooter } from '@eigenpal/docx-editor-core/types/document';
 import type { EditorState } from 'prosemirror-state';
 
-import type { HiddenProseMirrorRef } from '../HiddenProseMirror';
+import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
 
 export interface UseLayoutTriggersOptions {
   hiddenPMRef: React.RefObject<HiddenProseMirrorRef | null>;

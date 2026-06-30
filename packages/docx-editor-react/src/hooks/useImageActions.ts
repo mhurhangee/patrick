@@ -5,7 +5,7 @@ import {
   toolbarValueToLayoutTarget,
 } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
-import type { ImagePropertiesData } from '../../../types/image';
+import type { ImagePropertiesData } from '../types/image';
 
 /** Minimal shape the hook needs from the parent's selection-tracker state. */
 interface ImageContext {

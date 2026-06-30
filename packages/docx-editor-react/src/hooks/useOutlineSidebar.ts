@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { collectHeadings, type HeadingInfo } from '@eigenpal/docx-editor-core/utils';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { PagedEditorRef } from '../components/editor/paged-editor';
 
 /**
  * Owns the document outline panel: visibility, headings, and chrome

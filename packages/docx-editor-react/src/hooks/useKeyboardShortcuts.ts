@@ -5,8 +5,8 @@ import {
   getTableContext,
   deleteTable as pmDeleteTable,
 } from '@eigenpal/docx-editor-core/prosemirror';
-import type { useFindReplace } from '../../../hooks/useFindReplace';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { useFindReplace } from './useFindReplace';
+import type { PagedEditorRef } from '../components/editor/paged-editor';
 
 /**
  * Top-level keyboard shortcuts:
