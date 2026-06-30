@@ -4,9 +4,9 @@
  * Owns every mouse path that lands on the visible pages: cursor placement,
  * drag-to-select (with cell-selection promotion when the drag crosses a
  * table boundary), table column / row / right-edge resize handles, the
- * floating "+" row/column insert button, image clicks, hyperlink and
- * header/footer double-clicks, word and paragraph multi-click selection,
- * and the right-click → host context-menu callback.
+ * floating "+" row/column insert button, image clicks, hyperlink clicks,
+ * word and paragraph multi-click selection, and the right-click → host
+ * context-menu callback.
  *
  * Lots of state. Most lives in refs because the handlers run from window
  * listeners (handleMouseMove, handleMouseUp) where stale-closure traps
