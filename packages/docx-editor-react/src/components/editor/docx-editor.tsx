@@ -13,51 +13,51 @@ import { useRef, useCallback, useState, useEffect, useMemo, forwardRef } from 'r
 import type { CSSProperties, ReactNode } from 'react';
 import type { Document, Theme } from '@eigenpal/docx-editor-core/types/document';
 
-import { cn } from '../lib/utils';
-import type { SelectionFormatting } from '../types/formatting';
-import type { ImageContext } from '../types/image';
-import { useOutlineSidebar } from './DocxEditor/hooks/useOutlineSidebar';
-import { useKeyboardShortcuts } from './DocxEditor/hooks/useKeyboardShortcuts';
-import { useFileIO } from './DocxEditor/hooks/useFileIO';
-import { usePageSetupControls } from './DocxEditor/hooks/usePageSetupControls';
-import { useWatermarkControls } from './DocxEditor/hooks/useWatermarkControls';
-import { useHyperlink } from './DocxEditor/hooks/useHyperlink';
-import { useFindReplaceBridge } from './DocxEditor/hooks/useFindReplaceBridge';
-import { useFormattingActions } from './DocxEditor/hooks/useFormattingActions';
-import { useImageActions } from './DocxEditor/hooks/useImageActions';
-import { useDocxEditorRefApi } from './DocxEditor/hooks/useDocxEditorRefApi';
-import { useTableDialogs } from './DocxEditor/hooks/useTableDialogs';
-import { useHeaderFooterEditing } from './DocxEditor/hooks/useHeaderFooterEditing';
-import { useDocumentLoader } from './DocxEditor/hooks/useDocumentLoader';
-import { useContextMenus } from './DocxEditor/hooks/useContextMenus';
-import { useCommentManagement } from './DocxEditor/hooks/useCommentManagement';
-import { useCommentLifecycle } from './DocxEditor/hooks/useCommentLifecycle';
-import { useSelectionTracker } from './DocxEditor/hooks/useSelectionTracker';
-import { useFloatingCommentBtn } from './DocxEditor/hooks/useFloatingCommentBtn';
-import { useActiveEditor } from './DocxEditor/hooks/useActiveEditor';
-import { useScrollPageInfo } from './DocxEditor/hooks/useScrollPageInfo';
-import { DocxEditorOverlays } from './DocxEditor/DocxEditorOverlays';
-import { DocxEditorDialogs } from './DocxEditor/DocxEditorDialogs';
-import { DocxEditorToolbar } from './DocxEditor/DocxEditorToolbar';
-import { DocxEditorPagedArea } from './DocxEditor/DocxEditorPagedArea';
-import { useResetEditorState } from './DocxEditor/hooks/useResetEditorState';
-import { DocxEditorShell } from './DocxEditor/DocxEditorShell';
+import { cn } from '../../lib/utils';
+import type { SelectionFormatting } from '../../types/formatting';
+import type { ImageContext } from '../../types/image';
+import { useOutlineSidebar } from '../DocxEditor/hooks/useOutlineSidebar';
+import { useKeyboardShortcuts } from '../DocxEditor/hooks/useKeyboardShortcuts';
+import { useFileIO } from '../DocxEditor/hooks/useFileIO';
+import { usePageSetupControls } from '../DocxEditor/hooks/usePageSetupControls';
+import { useWatermarkControls } from '../DocxEditor/hooks/useWatermarkControls';
+import { useHyperlink } from '../DocxEditor/hooks/useHyperlink';
+import { useFindReplaceBridge } from '../DocxEditor/hooks/useFindReplaceBridge';
+import { useFormattingActions } from '../DocxEditor/hooks/useFormattingActions';
+import { useImageActions } from '../DocxEditor/hooks/useImageActions';
+import { useDocxEditorRefApi } from '../DocxEditor/hooks/useDocxEditorRefApi';
+import { useTableDialogs } from '../DocxEditor/hooks/useTableDialogs';
+import { useHeaderFooterEditing } from '../DocxEditor/hooks/useHeaderFooterEditing';
+import { useDocumentLoader } from '../DocxEditor/hooks/useDocumentLoader';
+import { useContextMenus } from '../DocxEditor/hooks/useContextMenus';
+import { useCommentManagement } from '../DocxEditor/hooks/useCommentManagement';
+import { useCommentLifecycle } from '../DocxEditor/hooks/useCommentLifecycle';
+import { useSelectionTracker } from '../DocxEditor/hooks/useSelectionTracker';
+import { useFloatingCommentBtn } from '../DocxEditor/hooks/useFloatingCommentBtn';
+import { useActiveEditor } from '../DocxEditor/hooks/useActiveEditor';
+import { useScrollPageInfo } from '../DocxEditor/hooks/useScrollPageInfo';
+import { DocxEditorOverlays } from '../DocxEditor/DocxEditorOverlays';
+import { DocxEditorDialogs } from '../DocxEditor/DocxEditorDialogs';
+import { DocxEditorToolbar } from '../DocxEditor/DocxEditorToolbar';
+import { DocxEditorPagedArea } from '../DocxEditor/DocxEditorPagedArea';
+import { useResetEditorState } from '../DocxEditor/hooks/useResetEditorState';
+import { DocxEditorShell } from '../DocxEditor/DocxEditorShell';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
-import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from './outline/document-outline';
+import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from '../outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
-import { useCommentSidebarItems, type CommentCallbacks } from '../hooks/useCommentSidebarItems';
+import { useCommentSidebarItems, type CommentCallbacks } from '../../hooks/useCommentSidebarItems';
 import { extractTrackedChanges } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { type EditorState as PMEditorState } from 'prosemirror-state';
-import type { ReactSidebarItem } from '../plugin-api/types';
+import type { ReactSidebarItem } from '../../plugin-api/types';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
-import { useFindReplace } from '../hooks/useFindReplace';
-import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
+import { useFindReplace } from '../../hooks/useFindReplace';
+import { type InlineHeaderFooterEditorRef } from '../InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
-import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './states/editor-states';
+import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from '../states/editor-states';
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
 import type { ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
-import { useDocumentHistory } from '../hooks/useHistory';
+import { useDocumentHistory } from '../../hooks/useHistory';
 
 // Extension system
 import { createStarterKit } from '@eigenpal/docx-editor-core/prosemirror/extensions';
@@ -90,10 +90,10 @@ import {
 } from '@eigenpal/docx-editor-core/utils';
 
 // Paginated editor
-import { type PagedEditorRef, DEFAULT_PAGE_WIDTH } from './DocxEditor/PagedEditor';
+import { type PagedEditorRef, DEFAULT_PAGE_WIDTH } from '../DocxEditor/PagedEditor';
 
 // Plugin API types
-import type { RenderedDomContext } from '../plugin-api/types';
+import type { RenderedDomContext } from '../../plugin-api/types';
 
 // ============================================================================
 // TYPES
@@ -335,8 +335,8 @@ interface EditorState {
   pmImageContext: ImageContext | null;
 }
 
-export type { EditorMode } from './DocxEditor/internals/editing-modes';
-import type { EditorMode } from './DocxEditor/internals/editing-modes';
+export type { EditorMode } from '../DocxEditor/internals/editing-modes';
+import type { EditorMode } from '../DocxEditor/internals/editing-modes';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -346,13 +346,13 @@ import type { EditorMode } from './DocxEditor/internals/editing-modes';
 // `@eigenpal/docx-editor-core/docx` so React + Vue share the same
 // pre-serialization range-marker injection.
 
-import { getInitialSectionProperties } from './DocxEditor/internals/pmAnchors';
+import { getInitialSectionProperties } from '../DocxEditor/internals/pmAnchors';
 import {
   PENDING_COMMENT_ID,
   EMPTY_ANCHOR_POSITIONS,
   createComment,
   createCommentIdAllocator,
-} from './DocxEditor/commentFactories';
+} from '../DocxEditor/commentFactories';
 
 /**
  * DocxEditor - Complete DOCX editor component

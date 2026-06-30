@@ -14,4 +14,4 @@
  * @public
  */
 
-export { DocxEditor, type DocxEditorRef } from './components/DocxEditor';
+export { DocxEditor, type DocxEditorRef } from './components/editor/docx-editor';

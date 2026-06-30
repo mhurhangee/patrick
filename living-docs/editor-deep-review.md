@@ -33,6 +33,12 @@ Reachability is decided top-down, so review in dependency order, not folder orde
 3. **The hooks** each surviving action lands in (`components/DocxEditor/hooks/` 32 + top-level `hooks/` 8).
 4. **Overlays** (4) + **leaf `internals/`** (11) last — by then reachability is known, so dead chains (e.g. table-style) get cut with their roots, not piecemeal.
 
+## Phase 2 — relocate + per-file deep-read into `components/editor/`
+
+The file-level dead-code well is dry (units 1–8 cleared the reachable dead surface; an orphan scan of the engine found nothing). New method (user, 2026-06-30): **walk the engine's dependency tree from `DocxEditor.tsx` outward, one file per unit — relocate each into `components/editor/` with a kebab-case filename (exported symbol names UNCHANGED), deep-read + clean it, repoint imports.** The old `components/DocxEditor.tsx` + `components/DocxEditor/` folder dissolve into `components/editor/` as files are touched. `components/toolbar/` is Patrick's own UI — NOT touched. Fast cadence: `pnpm check` + `bun test`, no heavy `/code-review` for mechanical relocates (smoke only where behaviour could shift). Relative-import depth shifts by one `../` per file moved a level deeper.
+
+- **SHIPPED · Unit 9:** relocated `components/DocxEditor.tsx` → `components/editor/docx-editor.tsx` (kebab; pure mechanical move — it was already trimmed by units 1–8). Repointed its 42 relative imports (+1 `../` each) + the 3 external importers (`index.ts`, `ref-conformance.test-d.ts`, `useDocxEditorRefApi.ts`). Green (1726 pass). **NEXT:** walk its dependencies — start with `DocxEditor/DocxEditorShell.tsx` (deep-read + clean + relocate to `editor/docx-editor-shell.tsx`), then the next file.
+
 ## Discovery log
 
 - **2026-06-30 · contract** — Mapped Patrick's contract (above) from the 5 `apps/` import sites. Confirmed the live `DocxEditor` prop set (9) + the UI `DocxEditorRef` method set (6).
