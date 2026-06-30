@@ -43,11 +43,10 @@ export function useLayoutTriggers(opts: UseLayoutTriggersOptions): void {
     firstPageFooterContent,
   } = opts;
 
-  // Re-layout on web-font load. FontFaceSet.onloadingdone catches new
-  // fonts as they finish loading. The listener mounts once, but reads the
-  // pipeline callbacks through refs so a late font load re-lays-out with the
-  // CURRENT callbacks (they change identity as layout deps change) rather than
-  // the stale mount-time closures.
+  // Re-layout on web-font load. FontFaceSet 'loadingdone' fires as fonts finish
+  // loading. The listener mounts once and reads the pipeline callbacks through
+  // refs so a late font load re-lays-out with the current callbacks (they change
+  // identity as layout deps change).
   const runLayoutPipelineRef = useRef(runLayoutPipeline);
   const updateSelectionOverlayRef = useRef(updateSelectionOverlay);
   runLayoutPipelineRef.current = runLayoutPipeline;
