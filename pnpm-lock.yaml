@@ -390,15 +390,6 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  packages/docx-editor-i18n:
-    devDependencies:
-      '@types/bun':
-        specifier: ^1.0.0
-        version: 1.3.14
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
   packages/docx-editor-react:
     dependencies:
       '@eigenpal/docx-editor-agents':
@@ -407,9 +398,6 @@ importers:
       '@eigenpal/docx-editor-core':
         specifier: workspace:*
         version: link:../docx-editor-core
-      '@eigenpal/docx-editor-i18n':
-        specifier: workspace:*
-        version: link:../docx-editor-i18n
       '@patrick/ui':
         specifier: workspace:*
         version: link:../ui

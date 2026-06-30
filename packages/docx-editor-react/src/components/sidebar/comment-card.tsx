@@ -3,7 +3,6 @@ import { getCommentText } from '@eigenpal/docx-editor-core/utils/comments';
 import { Button } from '@patrick/ui/components/button';
 import { Check, Trash2, Undo2 } from 'lucide-react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
-import { useTranslation } from '../../i18n';
 import { ReplyInput } from './reply-input';
 import { ReviewCardShell } from './review-card-shell';
 
@@ -28,11 +27,9 @@ export function CommentCard({
   onUnresolve,
   onDelete,
 }: CommentCardProps) {
-  const { t } = useTranslation();
-
   return (
     <ReviewCardShell
-      author={comment.author || t('comments.unknown')}
+      author={comment.author || 'Unknown'}
       date={comment.date}
       isExpanded={isExpanded}
       onToggleExpand={onToggleExpand}
@@ -45,7 +42,7 @@ export function CommentCard({
           <Button
             variant="ghost"
             size="icon-sm"
-            tooltip={comment.done ? t('comments.reopen') : t('comments.resolve')}
+            tooltip={comment.done ? 'Reopen' : 'Resolve'}
             onClick={() => (comment.done ? onUnresolve?.(comment.id) : onResolve?.(comment.id))}
           >
             {comment.done ? <Undo2 /> : <Check />}
@@ -53,7 +50,7 @@ export function CommentCard({
           <Button
             variant="ghost"
             size="icon-sm"
-            tooltip={t('common.delete')}
+            tooltip={'Delete'}
             onClick={() => onDelete?.(comment.id)}
           >
             <Trash2 />
@@ -64,7 +61,7 @@ export function CommentCard({
         comment.done ? (
           <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
             <Check className="size-3" />
-            {t('comments.resolved')}
+            {'Resolved'}
           </span>
         ) : undefined
       }

@@ -1,7 +1,6 @@
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import { formatDate, getCommentText } from '@eigenpal/docx-editor-core/utils/comments';
 import { MessageSquare } from 'lucide-react';
-import { useTranslation } from '../../i18n';
 import { AuthorAvatar } from './author-avatar';
 
 export interface ReplyThreadProps {
@@ -14,7 +13,6 @@ export interface ReplyThreadProps {
  * threaded card stays within its anchor slot); expanded shows the full thread.
  */
 export function ReplyThread({ replies, isExpanded }: ReplyThreadProps) {
-  const { t } = useTranslation();
   if (replies.length === 0) return null;
 
   if (!isExpanded) {
@@ -34,7 +32,7 @@ export function ReplyThread({ replies, isExpanded }: ReplyThreadProps) {
             <AuthorAvatar name={reply.author || 'U'} className="size-6" />
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold text-foreground">
-                {reply.author || t('comments.unknown')}
+                {reply.author || 'Unknown'}
               </div>
               <div className="text-[11px] text-muted-foreground">{formatDate(reply.date)}</div>
             </div>

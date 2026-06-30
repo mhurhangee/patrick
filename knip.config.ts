@@ -13,7 +13,6 @@ const config: KnipConfig = {
 		"packages/docx-editor-core",
 		"packages/docx-editor-agents",
 		"packages/docx-editor-react",
-		"packages/docx-editor-i18n",
 	],
 	workspaces: {
 		"apps/frontend": {

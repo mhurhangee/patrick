@@ -1,6 +1,5 @@
 import { DropdownMenuSeparator } from '@patrick/ui/components/dropdown-menu';
 import { Fragment } from 'react';
-import { useTranslation } from '../../i18n';
 import type { TextContextAction, TextContextMenuItem } from '../../types/context-menu';
 import { ActionMenuItem } from './action-menu-item';
 import { PositionedMenu } from './positioned-menu';
@@ -32,15 +31,13 @@ export function TextContextMenu({
   onAction,
   onClose,
 }: TextContextMenuProps) {
-  const { t } = useTranslation();
-
   return (
     <PositionedMenu
       open={isOpen}
       x={position.x}
       y={position.y}
       onClose={onClose}
-      ariaLabel={t('contextMenu.textMenuAriaLabel')}
+      ariaLabel={'Text editing menu'}
       contentClassName="min-w-56"
     >
       {isOpen &&

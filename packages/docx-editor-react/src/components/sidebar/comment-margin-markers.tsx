@@ -8,7 +8,6 @@
 
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import { MessageCircle, MessageCircleCheck } from 'lucide-react';
-import { useTranslation } from '../../i18n';
 
 export interface CommentMarginMarkersProps {
   comments: Comment[];
@@ -29,7 +28,6 @@ export function CommentMarginMarkers({
   resolvedCommentIds,
   onMarkerClick,
 }: CommentMarginMarkersProps) {
-  const { t } = useTranslation();
   const rootComments = comments.filter((c) => c.parentId == null);
 
   const markers = rootComments
@@ -65,7 +63,7 @@ export function CommentMarginMarkers({
           key={comment.id}
           type="button"
           onClick={() => onMarkerClick(comment.id)}
-          title={isResolved ? t('commentMarkers.resolvedComment') : t('commentMarkers.comment')}
+          title={isResolved ? 'Resolved comment' : 'Comment'}
           className="absolute left-0 flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:opacity-70"
           style={{ top: y * zoom, pointerEvents: 'auto' }}
         >

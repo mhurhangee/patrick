@@ -52,7 +52,6 @@ import { extractTrackedChanges } from '@eigenpal/docx-editor-core/prosemirror/ut
 import { type EditorState as PMEditorState } from 'prosemirror-state';
 import type { ReactSidebarItem } from '../plugin-api/types';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import type { Translations } from '@eigenpal/docx-editor-i18n';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../hooks/useFindReplace';
 import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
@@ -271,8 +270,6 @@ export interface DocxEditorProps {
   onDocumentNameChange?: (name: string) => void;
   /** Custom right-side actions for the title bar */
   renderTitleBarRight?: () => ReactNode;
-  /** Translation overrides. Import a locale JSON file and pass it directly. */
-  i18n?: Translations;
 }
 
 /**
@@ -521,7 +518,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pluginRenderedDomContext,
     onDocumentNameChange,
     renderTitleBarRight,
-    i18n,
   },
   ref
 ) {
@@ -1008,7 +1004,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     openTableProperties,
     scrollContainerRef,
     editorContentRef,
-    i18n,
     onAddComment: useCallback(
       ({ from, to, yPos }: { from: number; to: number; yPos: number | null }) => {
         setCommentSelectionRange({ from, to });
@@ -1520,7 +1515,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
 
   return (
     <DocxEditorShell
-      i18n={i18n}
       isDark={isDark}
       onEditorError={handleEditorError}
       containerRef={containerRef}

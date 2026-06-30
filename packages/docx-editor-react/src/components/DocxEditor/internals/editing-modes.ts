@@ -4,35 +4,34 @@
  * forwardRef body share one source of truth.
  */
 
-import type { TranslationKey } from '@eigenpal/docx-editor-i18n';
 import { Eye, MessageSquareText, SquarePen, type LucideIcon } from 'lucide-react';
 
 export type EditorMode = 'editing' | 'suggesting' | 'viewing';
 
 export type EditingModeDef = {
   value: EditorMode;
-  labelKey: TranslationKey;
+  label: string;
   icon: LucideIcon;
-  descKey: TranslationKey;
+  desc: string;
 };
 
 export const EDITING_MODES: readonly EditingModeDef[] = [
   {
     value: 'editing',
-    labelKey: 'editor.editing',
+    label: 'Editing',
     icon: SquarePen,
-    descKey: 'editor.editingDescription',
+    desc: 'Edit document directly',
   },
   {
     value: 'suggesting',
-    labelKey: 'editor.suggesting',
+    label: 'Suggesting',
     icon: MessageSquareText,
-    descKey: 'editor.suggestingDescription',
+    desc: 'Edits become suggestions',
   },
   {
     value: 'viewing',
-    labelKey: 'editor.viewing',
+    label: 'Viewing',
     icon: Eye,
-    descKey: 'editor.viewingDescription',
+    desc: 'Read-only, no edits',
   },
 ];

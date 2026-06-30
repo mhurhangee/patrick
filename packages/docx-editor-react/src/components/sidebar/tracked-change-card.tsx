@@ -4,7 +4,6 @@ import { truncateText } from '@eigenpal/docx-editor-core/utils/comments';
 import { Button } from '@patrick/ui/components/button';
 import { Check, X } from 'lucide-react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
-import { useTranslation } from '../../i18n';
 import { ReplyInput } from './reply-input';
 import { ReviewCardShell } from './review-card-shell';
 
@@ -52,8 +51,7 @@ export function TrackedChangeCard({
   onRejectById,
   onReply,
 }: TrackedChangeCardProps) {
-  const { t } = useTranslation();
-  const authorName = change.author || t('trackedChanges.unknown');
+  const authorName = change.author || 'Unknown';
 
   // Dispatch by `revisionId` whenever the host wired the by-id handlers.
   // A single coalesced edit can scatter sites across paragraphs (inline
@@ -101,14 +99,14 @@ export function TrackedChangeCard({
       body={
         change.type === 'replacement' ? (
           <>
-            {t('trackedChanges.replaced')}{' '}
+            {'Replaced'}{' '}
             <span className={DELETE}>&quot;{truncateText(change.deletedText || '')}&quot;</span>{' '}
-            {t('trackedChanges.with')}{' '}
+            {'with'}{' '}
             <span className={INSERT}>&quot;{truncateText(change.text)}&quot;</span>
           </>
         ) : change.type === 'paragraphMarkInsertion' ? (
           <>
-            {t('revisions.paragraphMarkInserted')}
+            {'Inserted paragraph break'}
             {change.text ? (
               <>
                 {': '}
@@ -118,7 +116,7 @@ export function TrackedChangeCard({
           </>
         ) : change.type === 'paragraphMarkDeletion' ? (
           <>
-            {t('revisions.paragraphMarkDeleted')}
+            {'Deleted paragraph break'}
             {change.text ? (
               <>
                 {': '}
@@ -128,7 +126,7 @@ export function TrackedChangeCard({
           </>
         ) : change.type === 'paragraphPropertiesChanged' ? (
           <>
-            {t('revisions.paragraphPropertiesChanged')}
+            {'Changed paragraph properties'}
             {change.text ? (
               <>
                 {': '}
@@ -137,30 +135,28 @@ export function TrackedChangeCard({
             ) : null}
           </>
         ) : change.type === 'rowInserted' ? (
-          <span className={INSERT}>{t('revisions.rowInserted')}</span>
+          <span className={INSERT}>{'Inserted row'}</span>
         ) : change.type === 'rowDeleted' ? (
-          <span className={DELETE}>{t('revisions.rowDeleted')}</span>
+          <span className={DELETE}>{'Deleted row'}</span>
         ) : change.type === 'cellInserted' ? (
-          <span className={INSERT}>{t('revisions.cellInserted')}</span>
+          <span className={INSERT}>{'Inserted cell'}</span>
         ) : change.type === 'cellDeleted' ? (
-          <span className={DELETE}>{t('revisions.cellDeleted')}</span>
+          <span className={DELETE}>{'Deleted cell'}</span>
         ) : change.type === 'cellMerged' ? (
-          <span className={NEUTRAL}>{t('revisions.cellMerged')}</span>
+          <span className={NEUTRAL}>{'Merged cells'}</span>
         ) : change.type === 'rowPropertiesChanged' ? (
-          <span className="text-muted-foreground">{t('revisions.rowPropertiesChanged')}</span>
+          <span className="text-muted-foreground">{'Changed row properties'}</span>
         ) : change.type === 'cellPropertiesChanged' ? (
-          <span className="text-muted-foreground">{t('revisions.cellPropertiesChanged')}</span>
+          <span className="text-muted-foreground">{'Changed cell properties'}</span>
         ) : change.type === 'tablePropertiesChanged' ? (
-          <span className="text-muted-foreground">{t('revisions.tablePropertiesChanged')}</span>
+          <span className="text-muted-foreground">{'Changed table properties'}</span>
         ) : change.type === 'tableInserted' ? (
-          <span className={INSERT}>{t('revisions.tableInserted')}</span>
+          <span className={INSERT}>{'Inserted table'}</span>
         ) : change.type === 'tableDeleted' ? (
-          <span className={DELETE}>{t('revisions.tableDeleted')}</span>
+          <span className={DELETE}>{'Deleted table'}</span>
         ) : (
           <>
-            {change.type === 'insertion'
-              ? t('trackedChanges.added')
-              : t('trackedChanges.deleted')}{' '}
+            {change.type === 'insertion' ? 'Added' : 'Deleted'}{' '}
             <span className={change.type === 'insertion' ? INSERT : DELETE}>
               &quot;{truncateText(change.text)}&quot;
             </span>
@@ -169,10 +165,10 @@ export function TrackedChangeCard({
       }
       actions={
         <>
-          <Button variant="ghost" size="icon-sm" tooltip={t('common.accept')} onClick={handleAccept}>
+          <Button variant="ghost" size="icon-sm" tooltip={'Accept'} onClick={handleAccept}>
             <Check />
           </Button>
-          <Button variant="ghost" size="icon-sm" tooltip={t('common.reject')} onClick={handleReject}>
+          <Button variant="ghost" size="icon-sm" tooltip={'Reject'} onClick={handleReject}>
             <X />
           </Button>
         </>

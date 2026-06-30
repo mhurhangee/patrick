@@ -2,7 +2,6 @@ import { Button } from '@patrick/ui/components/button';
 import { Textarea } from '@patrick/ui/components/textarea';
 import { useState } from 'react';
 import type { SidebarItemRenderProps } from '../../plugin-api/types';
-import { useTranslation } from '../../i18n';
 
 export interface AddCommentCardProps extends SidebarItemRenderProps {
   onSubmit?: (text: string) => void;
@@ -12,7 +11,6 @@ export interface AddCommentCardProps extends SidebarItemRenderProps {
 /** The compose card shown while adding a comment to the current selection. */
 export function AddCommentCard({ measureRef, onSubmit, onCancel }: AddCommentCardProps) {
   const [text, setText] = useState('');
-  const { t } = useTranslation();
 
   const handleSubmit = () => {
     if (text.trim()) {
@@ -43,7 +41,7 @@ export function AddCommentCard({ measureRef, onSubmit, onCancel }: AddCommentCar
             setText('');
           }
         }}
-        placeholder={t('comments.addComment')}
+        placeholder={'Add a comment...'}
         className="min-h-10 resize-none text-sm"
       />
       <div className="mt-2 flex justify-end gap-1">
@@ -55,10 +53,10 @@ export function AddCommentCard({ measureRef, onSubmit, onCancel }: AddCommentCar
             setText('');
           }}
         >
-          {t('common.cancel')}
+          {'Cancel'}
         </Button>
         <Button size="sm" disabled={!text.trim()} onClick={handleSubmit}>
-          {t('common.comment')}
+          {'Comment'}
         </Button>
       </div>
     </div>

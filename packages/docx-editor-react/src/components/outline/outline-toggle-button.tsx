@@ -1,12 +1,7 @@
-import { useTranslation } from '../../i18n';
 import { Z_INDEX } from '../../styles/zIndex';
 import { OUTLINE_BUTTON_LEFT_OFFSET } from './document-outline';
 import { List } from 'lucide-react';
 
-/**
- * Outline toggle — same reason as `CommentsSidebarToggle`: needs to render
- * inside `<LocaleProvider>` to see the user's `i18n` prop.
- */
 export function OutlineToggleButton({
   onClick,
   topPx,
@@ -24,14 +19,13 @@ export function OutlineToggleButton({
    */
   leftOffset?: number;
 }) {
-  const { t } = useTranslation();
   return (
     <button
       className="docx-outline-toggle"
       onClick={onClick}
       onMouseDown={(e) => e.stopPropagation()}
-      title={t('editor.showDocumentOutline')}
-      aria-label={t('editor.showDocumentOutline')}
+      title={'Show document outline'}
+      aria-label={'Show document outline'}
       style={{
         position: 'absolute',
         // Anchor in the left gutter and track horizontal scroll so the
