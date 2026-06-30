@@ -22,7 +22,7 @@ import type {
   ImageAttrsCssFloat,
   ImageContextMenuTextAction,
   TextContextAction,
-} from '../../types/context-menu';
+} from './types';
 import { ActionMenuItem } from './action-menu-item';
 import { PositionedMenu } from './positioned-menu';
 

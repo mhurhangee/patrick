@@ -16,7 +16,7 @@ import {
   TextSelect,
   Trash2,
 } from 'lucide-react';
-import type { TextContextAction, TextContextMenuItem } from '../../types/context-menu';
+import type { TextContextAction, TextContextMenuItem } from './types';
 
 /** Action → lucide icon. Table ops mirror the toolbar's table group for a
  *  consistent vocabulary (Rows3 / Columns3 / Merge / Split / Trash2). */

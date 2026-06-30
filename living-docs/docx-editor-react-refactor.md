@@ -125,10 +125,25 @@ with `/code-review`.
    actions were cut in slice 0). `useTableResizeState` + `TableInsertButton` deferred to slice 9.
 6. **Images** ✅ — relocated to `features/images` + unified the 3 image-context shapes onto one
    `ImageContext` (PmImageContext + the local `{pos}` shadow removed). Overlay/menu bits → slices 7/9.
-7. **Context menu** — depends on tables/images/comments being settled; split builder by concern.
+7. **Context menu** ✅ — relocated to `features/context-menu` (incl. the image-menu bits from slice 6).
+   Kept `use-image-context-menu` as its own file (return type is the overlays' prop contract). The
+   builder-by-concern split was deferred (the action switch touches comment dispatch — revisit with
+   the comments slice; logged below if pursued).
 8. **Toolbar / formatting** — promote shared `color-control`/`shared.ts`; extract watermark submenu.
 9. **Paged-editor internal restructure** — the `PmSurface` context; `paged-editor/*` subfolders.
-10. **Comments + tracked-changes** — extract the ~250 god-file lines into `useCommentWorkflow`.
+10. **Tracked-changes**, then **11. Comments** — ⚠️ **VITAL / HIGHEST-CARE SLICES** (native Word
+    redlines + accept/reject are Patrick's core value to attorneys — Michael flagged these for
+    "double extra attention"). SPLIT into two slices, not one. Protocol: (a) fresh deep re-read of
+    the domain before touching anything (the audit is stale by package-time); (b) extract the ~250
+    inline god-file lines + the 80-line `commentCallbacksRef` + `handlePagedSelectionChange` into a
+    `useCommentWorkflow`, behavior-preserving; (c) verify EVERY accept/reject + add/resolve/reply
+    path against live behavior, leaning on the `agents` accept/reject round-trip suite as a hard
+    guardrail; (d) MULTIPLE adversarial cloud-review passes asking "does any redline/comment path
+    change behavior", not just "does it compile". Handle with care (verify, don't blind-delete): the
+    two competing sidebar auto-open paths, the pending-comment-mark dispatch duplicated 4×, the
+    double-defined `onAddComment` (open vs commit), the dead deprecated accept/reject props, and the
+    contradictory margin-marker docstring (§A6 — possible real bug: resolved markers maybe never show).
+    (Renumbers the later slices: toolbar / paged-editor / god-file shift down accordingly.)
 11. **God-file decomposition** — `EditorContext`, lift the `DocxEditorRef` type to `types/ref.ts`,
     lifecycle facade; the orchestrator drops to ~300–400 lines.
 

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
-import type { ImageAttrsCssFloat } from '../types/context-menu';
+import type { ImageAttrsCssFloat } from './types';
 
 export interface UseImageContextMenuReturn {
   isOpen: boolean;
