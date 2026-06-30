@@ -36,7 +36,7 @@ import { useSelectionTracker } from '../DocxEditor/hooks/useSelectionTracker';
 import { useFloatingCommentBtn } from '../DocxEditor/hooks/useFloatingCommentBtn';
 import { useActiveEditor } from '../DocxEditor/hooks/useActiveEditor';
 import { useScrollPageInfo } from '../DocxEditor/hooks/useScrollPageInfo';
-import { DocxEditorOverlays } from '../DocxEditor/DocxEditorOverlays';
+import { DocxEditorOverlays } from './docx-editor-overlays';
 import { DocxEditorDialogs } from '../DocxEditor/DocxEditorDialogs';
 import { DocxEditorToolbar } from '../DocxEditor/DocxEditorToolbar';
 import { DocxEditorPagedArea } from '../DocxEditor/DocxEditorPagedArea';

@@ -1,4 +1,3 @@
-import { Toaster } from 'sonner';
 import { ImageContextMenu } from '../context-menus/image-context-menu';
 import { TextContextMenu } from '../context-menus/text-context-menu';
 import type { useImageContextMenu } from '../../hooks/use-image-context-menu';
@@ -12,9 +11,8 @@ interface ContextMenuState {
 
 /**
  * Floating overlays painted on top of the editor: the right-click text
- * menu, the image right-click menu, and the toast container. Pulled out
- * as a single component because they always render as a sibling block at
- * the end of the editor tree.
+ * menu and the image right-click menu. Pulled out as a single component
+ * because they always render as a sibling block at the end of the editor tree.
  *
  * The hyperlink popup lives inside PagedEditor's root container — it
  * needs to share a scroll context with the link so CSS handles the
@@ -66,7 +64,6 @@ export function DocxEditorOverlays({
         onOpenProperties={onOpenImageProperties}
         onClose={imageContextMenu.closeMenu}
       />
-      <Toaster position="bottom-right" />
     </>
   );
 }
