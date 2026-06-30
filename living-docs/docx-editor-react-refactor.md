@@ -49,7 +49,14 @@ created this mess. So we split every output into **two streams** and never mix t
 - One naming convention, applied mechanically: **kebab-case files throughout** (matches the
   repo; hooks currently camelCase `useFoo.ts` are the outlier).
 
-## Target architecture (hypothesis — refine after audit)
+## Target architecture — folder convention (DECIDED, slice 2)
+
+`src/features/<domain>/` — each feature owns its components + hooks + helpers + types in ONE folder,
+**kebab-case filenames** (applied per-slice on the move, since a move is already a rename — no
+separate global rename pass). Genuinely shared bits stay put: `primitives/` (e.g. `cursor-popover`,
+shared by hyperlinks/tables/images), `lib/`, `styles/`. The editor core/shell folders
+(`components/editor/*`) migrate to `editor/{shell,lifecycle,ref-api}` in the late slices.
+First example landed: `features/hyperlinks/` (`use-hyperlink` · `hyperlink-popover` · `hyperlink`).
 
 Group by **feature domain**, each a self-contained folder owning its components + hooks + types.
 Candidate slices (running order set by the audit):
@@ -109,7 +116,7 @@ with `/code-review`.
 1. **History / undo** (own branch — fixes a real bug, §A1+§A2). Self-contained; de-risks the
    later lifecycle facade. Replace `useDocumentHistory` with minimal `{state,set,reset}`
    (PM owns real undo/redo); kill the competing Ctrl+Z listener.
-2. **Hyperlinks** — smallest, cleanest leaf. Proves the read→move→ledger loop end to end.
+2. **Hyperlinks** ✅ — smallest, cleanest leaf; established the `features/` pattern (pure move).
 3. **Find/replace** — collapse the two hooks into one, resolve the dual result writers.
 4. **Outline** + **page-setup/watermark** — self-contained; resolve `showOutlineProp` + RTL gate.
 5. **Tables** — needs the orphaned-action decision (§C) made first.
