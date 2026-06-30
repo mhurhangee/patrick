@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { commitPendingComment, cancelPendingComment } from './pending-comment-mark';
 import {
   acceptChange,
   rejectChange,
@@ -26,7 +27,6 @@ import {
 import { extractSelectionState, type SelectionState } from '@eigenpal/docx-editor-core/prosemirror';
 import { createComment } from '@eigenpal/docx-editor-core/prosemirror/commentOps';
 import {
-  PENDING_COMMENT_ID,
   type CommentIdAllocator,
 } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 import type { TrackedChangeEntry } from '@eigenpal/docx-editor-core/utils/comments';
@@ -109,15 +109,7 @@ export function useCommentWorkflow({
       const comment = createComment(commentIdAllocatorRef.current, addText, author);
       const view = pagedEditorRef.current?.getView();
       if (view && commentSelectionRange) {
-        const { from, to } = commentSelectionRange;
-        const pendingMark = view.state.schema.marks.comment.create({
-          commentId: PENDING_COMMENT_ID,
-        });
-        const realMark = view.state.schema.marks.comment.create({
-          commentId: comment.id,
-        });
-        const tr = view.state.tr.removeMark(from, to, pendingMark).addMark(from, to, realMark);
-        view.dispatch(tr);
+        commitPendingComment(view, commentSelectionRange.from, commentSelectionRange.to, comment.id);
       }
       setComments((prev) => [...prev, comment]);
       setIsAddingComment(false);
@@ -127,11 +119,7 @@ export function useCommentWorkflow({
     onCancelAddComment: () => {
       const view = pagedEditorRef.current?.getView();
       if (view && commentSelectionRange) {
-        const { from, to } = commentSelectionRange;
-        const pendingMark = view.state.schema.marks.comment.create({
-          commentId: PENDING_COMMENT_ID,
-        });
-        view.dispatch(view.state.tr.removeMark(from, to, pendingMark));
+        cancelPendingComment(view, commentSelectionRange.from, commentSelectionRange.to);
       }
       setIsAddingComment(false);
       setCommentSelectionRange(null);
