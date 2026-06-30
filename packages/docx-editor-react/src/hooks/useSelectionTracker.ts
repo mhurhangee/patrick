@@ -9,20 +9,7 @@ import {
 import { resolveColorToHex } from '@eigenpal/docx-editor-core/utils';
 import type { EditorView } from 'prosemirror-view';
 import type { SelectionFormatting } from '../types/formatting';
-
-interface PmImageContext {
-  pos: number;
-  wrapType: string;
-  displayMode: string;
-  cssFloat: string | null;
-  transform: string | null;
-  alt: string | null;
-  borderWidth: number | null;
-  borderColor: string | null;
-  borderStyle: string | null;
-  width: number | null;
-  height: number | null;
-}
+import type { ImageContext } from '../features/images/types';
 
 interface BorderSpec {
   style: string;
@@ -34,7 +21,7 @@ interface BorderSpec {
 export interface SelectionStateDelta {
   selectionFormatting: SelectionFormatting;
   pmTableContext: TableContextInfo | null;
-  pmImageContext: PmImageContext | null;
+  pmImageContext: ImageContext | null;
 }
 
 /**
@@ -98,7 +85,7 @@ export function useSelectionTracker({
       }
 
       // Detect a NodeSelection on an image (right-click + click-to-select).
-      let pmImageCtx: PmImageContext | null = null;
+      let pmImageCtx: ImageContext | null = null;
       if (view) {
         const sel = view.state.selection;
         const selectedNode = (

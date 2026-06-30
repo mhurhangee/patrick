@@ -15,7 +15,7 @@ import type { Document, Theme } from '@eigenpal/docx-editor-core/types/document'
 
 import { cn } from '../../lib/utils';
 import type { SelectionFormatting } from '../../types/formatting';
-import type { ImageContext } from '../../types/image';
+import type { ImageContext } from '../../features/images/types';
 import { useOutlineSidebar } from '../../features/outline/use-outline-sidebar';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useFileIO } from '../../hooks/useFileIO';
@@ -23,7 +23,7 @@ import { usePageSetupControls } from '../../features/page-setup/use-page-setup-c
 import { useWatermarkControls } from '../../features/page-setup/use-watermark-controls';
 import { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
 import { useFormattingActions } from '../../hooks/useFormattingActions';
-import { useImageActions } from '../../hooks/useImageActions';
+import { useImageActions } from '../../features/images/use-image-actions';
 import { useDocxEditorRefApi } from '../../hooks/useDocxEditorRefApi';
 import { useTableDialogs } from '../../features/tables/use-table-dialogs';
 import { resolveHeaderFooter } from '@eigenpal/docx-editor-core/layout-bridge';
