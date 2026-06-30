@@ -11,7 +11,7 @@ import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { Plugin } from 'prosemirror-state';
 import type { ExtensionManager } from '@eigenpal/docx-editor-core/prosemirror/extensions';
 import { PagedEditor, type PagedEditorRef } from '../DocxEditor/PagedEditor';
-import { UnifiedSidebar } from '../UnifiedSidebar';
+import { UnifiedSidebar } from '../sidebar/unified-sidebar';
 import { CommentMarginMarkers } from '../sidebar/comment-margin-markers';
 import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';

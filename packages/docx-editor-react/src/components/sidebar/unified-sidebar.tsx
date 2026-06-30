@@ -6,14 +6,13 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { ReactSidebarItem, RenderedDomContext } from '../plugin-api/types';
+import type { ReactSidebarItem, RenderedDomContext } from '../../plugin-api/types';
 import { resolveItemPositions } from '@eigenpal/docx-editor-core/plugin-api/resolveItemPositions';
 import {
   SIDEBAR_DOCUMENT_SHIFT,
   SIDEBAR_PAGE_GAP,
   SIDEBAR_WIDTH,
 } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
-
 
 export interface UnifiedSidebarProps {
   items: ReactSidebarItem[];
