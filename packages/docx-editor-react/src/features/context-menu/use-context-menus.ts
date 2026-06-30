@@ -22,7 +22,7 @@ import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import { useImageContextMenu } from './use-image-context-menu';
 import type { TextContextAction, TextContextMenuItem } from './types';
 import { findSelectionYPosition } from '../../components/editor/internals/pmAnchors';
-import { PENDING_COMMENT_ID } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
+import { beginPendingComment } from '../review/pending-comment-mark';
 import { formatKeys } from '../../hooks/formatKeys';
 
 interface ContextMenuState {
@@ -387,12 +387,7 @@ export function useContextMenus({
             editorContentRef.current,
             from
           );
-          const pendingMark = view.state.schema.marks.comment.create({
-            commentId: PENDING_COMMENT_ID,
-          });
-          const tr = view.state.tr.addMark(from, to, pendingMark);
-          tr.setSelection(TextSelection.create(tr.doc, to));
-          view.dispatch(tr);
+          beginPendingComment(view, from, to);
           onBeginAddComment({ from, to, yPos });
           break;
         }

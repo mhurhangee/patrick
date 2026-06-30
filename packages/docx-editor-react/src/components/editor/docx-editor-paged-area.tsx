@@ -1,4 +1,3 @@
-import { TextSelection } from 'prosemirror-state';
 import type {
   Document,
   Theme,
@@ -13,7 +12,7 @@ import { UnifiedSidebar } from '../../features/review/unified-sidebar';
 import { CommentMarginMarkers } from '../../features/review/comment-margin-markers';
 import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';
-import { PENDING_COMMENT_ID } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
+import { beginPendingComment } from '../../features/review/pending-comment-mark';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import type { ReactSidebarItem } from '../../features/review/types';
 
@@ -199,12 +198,7 @@ export function DocxEditorPagedArea({
               const { from, to } = view.state.selection;
               if (from !== to) {
                 setCommentSelectionRange({ from, to });
-                const pendingMark = view.state.schema.marks.comment.create({
-                  commentId: PENDING_COMMENT_ID,
-                });
-                const tr = view.state.tr.addMark(from, to, pendingMark);
-                tr.setSelection(TextSelection.create(tr.doc, to));
-                view.dispatch(tr);
+                beginPendingComment(view, from, to);
               }
             }
             setAddCommentYPosition(floatingCommentBtn.top);
