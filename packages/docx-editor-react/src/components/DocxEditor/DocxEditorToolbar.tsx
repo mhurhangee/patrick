@@ -35,7 +35,6 @@ export function DocxEditorToolbar({
   showCommentsSidebar,
   // Customisation slots
   renderTitleBarRight,
-  fontFamilies,
   documentFonts,
   // Handlers
   onFormat,
@@ -54,7 +53,6 @@ export function DocxEditorToolbar({
   onPageSetup,
   onApplyWatermark,
   currentWatermark,
-  watermarkPresets,
   onTableAction,
 }: {
   toolbarRefCallback: (el: HTMLDivElement | null) => void;
@@ -70,7 +68,6 @@ export function DocxEditorToolbar({
   setExpandedSidebarItem: Dispatch<SetStateAction<string | null>>;
   showCommentsSidebar: boolean;
   renderTitleBarRight: (() => ReactNode) | undefined;
-  fontFamilies: ReadonlyArray<string | FontOption> | undefined;
   documentFonts?: readonly FontOption[];
   onFormat: (action: FormattingAction) => void;
   onUndo: () => void;
@@ -88,7 +85,6 @@ export function DocxEditorToolbar({
   onPageSetup: () => void;
   onApplyWatermark: (watermark: Watermark | null) => void;
   currentWatermark: Watermark | undefined;
-  watermarkPresets: readonly string[] | undefined;
   onTableAction: (action: TableAction) => void;
 }) {
   const canUndo = pmState ? undoDepth(pmState) > 0 : false;
@@ -119,12 +115,10 @@ export function DocxEditorToolbar({
         onPageSetup={onPageSetup}
         onApplyWatermark={onApplyWatermark}
         currentWatermark={currentWatermark}
-        watermarkPresets={watermarkPresets}
         readOnly={readOnly}
         currentFormatting={selectionFormatting}
         onFormat={onFormat}
         documentFonts={documentFonts}
-        fontFamilies={fontFamilies}
         documentStyles={document?.package.styles?.styles}
         onInsertTable={onInsertTable}
         onInsertImage={onInsertImage}

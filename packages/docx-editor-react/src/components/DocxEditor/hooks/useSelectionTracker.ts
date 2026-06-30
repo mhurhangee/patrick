@@ -59,7 +59,6 @@ export function useSelectionTracker({
   setFloatingCommentBtn,
   applySelectionDelta,
   recomputeFloatingCommentBtn,
-  onSelectionChange,
   selectionChangeSubscribersRef,
 }: {
   getActiveEditorView: () => EditorView | null | undefined;
@@ -73,7 +72,6 @@ export function useSelectionTracker({
   setFloatingCommentBtn: React.Dispatch<React.SetStateAction<{ top: number; left: number } | null>>;
   applySelectionDelta: (delta: SelectionStateDelta) => void;
   recomputeFloatingCommentBtn: () => void;
-  onSelectionChange: ((state: SelectionState | null) => void) | undefined;
   selectionChangeSubscribersRef: React.RefObject<Set<(s: SelectionState | null) => void>>;
 }) {
   const handleSelectionChange = useCallback(
@@ -198,7 +196,6 @@ export function useSelectionTracker({
 
       recomputeFloatingCommentBtn();
 
-      onSelectionChange?.(selectionState);
       // Fan out to bridge subscribers.
       for (const cb of selectionChangeSubscribersRef.current) {
         try {
@@ -218,7 +215,6 @@ export function useSelectionTracker({
       setFloatingCommentBtn,
       applySelectionDelta,
       recomputeFloatingCommentBtn,
-      onSelectionChange,
       selectionChangeSubscribersRef,
     ]
   );

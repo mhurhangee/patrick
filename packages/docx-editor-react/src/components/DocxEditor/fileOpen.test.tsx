@@ -26,13 +26,9 @@ function makeDocxFile(name = 'sample.docx') {
 }
 
 function FileIOHarness({
-  onOpen,
   loadBuffer,
-  onError,
 }: {
-  onOpen?: (file: File) => void | Promise<void>;
   loadBuffer: (buffer: DocxInput) => Promise<void>;
-  onError?: (error: Error) => void;
 }) {
   const agentRef = useRef<DocumentAgent | null>(null);
   const pagedEditorRef = useRef<PagedEditorRef | null>(null);
@@ -42,8 +38,6 @@ function FileIOHarness({
     pagedEditorRef,
     containerRef,
     comments: [],
-    onOpen,
-    onError,
     onPrint: undefined,
     loadBuffer,
     getActiveEditorView: () => null,
@@ -100,21 +94,8 @@ function dispatchCtrlO() {
   return event;
 }
 
-describe('File > Open customization', () => {
-  test('passes the picked File to onOpen instead of loading locally', async () => {
-    const file = makeDocxFile('custom.docx');
-    const onOpen = mock(async (_file: File) => {});
-    const loadBuffer = mock(async (_buffer: DocxInput) => {});
-
-    const { getByLabelText } = render(<FileIOHarness onOpen={onOpen} loadBuffer={loadBuffer} />);
-    fireEvent.change(getByLabelText('docx input'), { target: { files: [file] } });
-
-    await waitFor(() => expect(onOpen).toHaveBeenCalledTimes(1));
-    expect(onOpen).toHaveBeenCalledWith(file);
-    expect(loadBuffer).not.toHaveBeenCalled();
-  });
-
-  test('keeps the built-in load path when onOpen is omitted', async () => {
+describe('File > Open', () => {
+  test('loads the picked file through the built-in path', async () => {
     const file = makeDocxFile('built-in.docx');
     const loadBuffer = mock(async (_buffer: DocxInput) => {});
 
@@ -124,28 +105,6 @@ describe('File > Open customization', () => {
     await waitFor(() => expect(loadBuffer).toHaveBeenCalledTimes(1));
     const buffer = loadBuffer.mock.calls[0][0] as ArrayBuffer;
     expect(Array.from(new Uint8Array(buffer))).toEqual([1, 2, 3]);
-  });
-
-  test('routes async onOpen failures through onError', async () => {
-    const error = new Error('backend import failed');
-    const onOpen = mock(async () => {
-      throw error;
-    });
-    const onError = mock((_error: Error) => {});
-
-    const { getByLabelText } = render(
-      <FileIOHarness
-        onOpen={onOpen}
-        onError={onError}
-        loadBuffer={mock(async (_buffer: DocxInput) => {})}
-      />
-    );
-    fireEvent.change(getByLabelText('docx input'), {
-      target: { files: [makeDocxFile()] },
-    });
-
-    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
-    expect(onError).toHaveBeenCalledWith(error);
   });
 
   test('showFileOpen=false leaves Ctrl+O unhandled', () => {

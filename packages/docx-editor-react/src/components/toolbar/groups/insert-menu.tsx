@@ -41,7 +41,6 @@ export interface InsertMenuProps {
   onInsertTOC: () => void;
   onApplyWatermark: (watermark: Watermark | null) => void;
   currentWatermark?: Watermark | undefined;
-  watermarkPresets?: readonly string[] | undefined;
 }
 
 /** Insert ▾ — table (grid picker), image, breaks, and table of contents. */
@@ -54,12 +53,11 @@ export function InsertMenu({
   onInsertTOC,
   onApplyWatermark,
   currentWatermark,
-  watermarkPresets,
 }: InsertMenuProps) {
   // Controlled so the custom table grid (not a menu item) can close the menu.
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
-  const presets = watermarkPresets ?? WATERMARK_PRESETS;
+  const presets = WATERMARK_PRESETS;
   const watermarkValue = currentWatermark?.kind === 'text' ? currentWatermark.text : 'none';
 
   return (

@@ -1,7 +1,4 @@
-import {
-  type FontOption,
-  normalizeFontFamilies,
-} from '@eigenpal/docx-editor-core/utils/fontOptions';
+import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { Style } from '@eigenpal/docx-editor-core/types/document';
 import { mapHighlightNameToHex } from '@eigenpal/docx-editor-core/utils/highlightColors';
 import { halfPointsToPoints } from '@eigenpal/docx-editor-core/utils/units';
@@ -70,7 +67,6 @@ export interface CharacterGroupProps {
   currentFormatting: SelectionFormatting;
   onFormat: (action: FormattingAction) => void;
   documentFonts?: readonly FontOption[] | undefined;
-  fontFamilies?: ReadonlyArray<string | FontOption> | undefined;
   documentStyles?: Style[] | undefined;
 }
 
@@ -86,7 +82,6 @@ export function CharacterGroup({
   currentFormatting,
   onFormat,
   documentFonts,
-  fontFamilies,
   documentStyles,
 }: CharacterGroupProps) {
   const currentFont = currentFormatting.fontFamily || 'Arial';
@@ -94,10 +89,9 @@ export function CharacterGroup({
     currentFormatting.fontSize !== undefined ? halfPointsToPoints(currentFormatting.fontSize) : 11;
 
   const groups = useMemo(() => {
-    const propFonts = normalizeFontFamilies(fontFamilies) ?? [];
     const seen = new Set<string>();
     const document: FontOption[] = [];
-    for (const f of [...(documentFonts ?? []), ...propFonts]) {
+    for (const f of documentFonts ?? []) {
       if (seen.has(f.fontFamily)) continue;
       seen.add(f.fontFamily);
       document.push(f);
@@ -120,7 +114,7 @@ export function CharacterGroup({
       if (fonts?.length) result.push({ label: CATEGORY_LABEL[cat], fonts });
     }
     return result;
-  }, [documentFonts, fontFamilies, currentFont]);
+  }, [documentFonts, currentFont]);
 
   const fmtToggle = (label: string, Icon: LucideIcon, on: boolean, action: FormattingAction) => (
     <Toggle

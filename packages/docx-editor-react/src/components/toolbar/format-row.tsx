@@ -15,7 +15,6 @@ export interface FormatRowProps {
   currentFormatting: SelectionFormatting;
   onFormat: (action: FormattingAction) => void;
   documentFonts?: readonly FontOption[] | undefined;
-  fontFamilies?: ReadonlyArray<string | FontOption> | undefined;
   documentStyles?: Style[] | undefined;
   onInsertTable: (rows: number, columns: number) => void;
   onInsertImage: () => void;
@@ -25,7 +24,6 @@ export interface FormatRowProps {
   onInsertTOC: () => void;
   onApplyWatermark: (watermark: Watermark | null) => void;
   currentWatermark?: Watermark | undefined;
-  watermarkPresets?: readonly string[] | undefined;
   // Contextual groups (appear by cursor, orthogonal to width)
   tableContext?: TableContextInfo | null;
   onTableAction: (action: TableAction) => void;
@@ -45,7 +43,6 @@ export function FormatRow({
   currentFormatting,
   onFormat,
   documentFonts,
-  fontFamilies,
   documentStyles,
   onInsertTable,
   onInsertImage,
@@ -55,7 +52,6 @@ export function FormatRow({
   onInsertTOC,
   onApplyWatermark,
   currentWatermark,
-  watermarkPresets,
   tableContext,
   onTableAction,
   imageContext,
@@ -69,7 +65,6 @@ export function FormatRow({
         currentFormatting={currentFormatting}
         onFormat={onFormat}
         documentFonts={documentFonts}
-        fontFamilies={fontFamilies}
         documentStyles={documentStyles}
       />
       <Separator orientation="vertical" className="mx-1 h-5" />
@@ -84,7 +79,6 @@ export function FormatRow({
         onInsertTOC={onInsertTOC}
         onApplyWatermark={onApplyWatermark}
         currentWatermark={currentWatermark}
-        watermarkPresets={watermarkPresets}
       />
 
       {tableContext?.isInTable && (

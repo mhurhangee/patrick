@@ -30,11 +30,9 @@ interface OutlineProps {
  */
 export function DocxEditorShell({
   isDark,
-  onEditorError,
   containerRef,
   scrollContainerRef,
   editorContentRef,
-  className,
   containerStyle,
   mainContentStyle,
   editorContainerStyle,
@@ -57,11 +55,9 @@ export function DocxEditorShell({
   fileInputs,
 }: {
   isDark?: boolean;
-  onEditorError: (error: Error) => void;
   containerRef: React.Ref<HTMLDivElement>;
   scrollContainerRef: React.Ref<HTMLDivElement>;
   editorContentRef: React.Ref<HTMLDivElement>;
-  className: string | undefined;
   containerStyle: CSSProperties;
   mainContentStyle: CSSProperties;
   editorContainerStyle: CSSProperties;
@@ -84,10 +80,10 @@ export function DocxEditorShell({
   fileInputs: ReactNode;
 }) {
   return (
-    <ErrorBoundary onError={onEditorError}>
+    <ErrorBoundary>
           <div
             ref={containerRef}
-            className={cn('ep-root docx-editor', isDark && 'dark', className)}
+            className={cn('ep-root docx-editor', isDark && 'dark')}
             style={containerStyle}
             data-testid="docx-editor"
           >

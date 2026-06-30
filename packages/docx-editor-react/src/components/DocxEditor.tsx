@@ -56,8 +56,7 @@ import { type InlineHeaderFooterEditorRef } from './InlineHeaderFooterEditor';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './states/editor-states';
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
-import type { FontDefinition, ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
-import { useFontLifecycle } from '../hooks/useFontLifecycle';
+import type { ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
 import { useDocumentHistory } from '../hooks/useHistory';
 
 // Extension system
@@ -108,12 +107,6 @@ export interface DocxEditorProps {
   documentBuffer?: DocxInput | null;
   /** Pre-parsed document (alternative to documentBuffer) */
   document?: Document | null;
-  /**
-   * Callback when a DOCX file is selected through `File > Open` or Cmd/Ctrl+O.
-   * Pass it to route the picked file through your own import pipeline. Omit it
-   * to keep the built-in local document load behavior.
-   */
-  onOpen?: (file: File) => void | Promise<void>;
   /** Author name used for comments and track changes */
   author?: string;
   /** Callback when document changes */
@@ -121,10 +114,6 @@ export interface DocxEditorProps {
   /** Open an external URL (the host opens it — Tauri shell on desktop,
    *  window.open on web). Used by the hyperlink popover + read-only link clicks. */
   onOpenLink?: (href: string) => void;
-  /** Callback when selection changes */
-  onSelectionChange?: (state: SelectionState | null) => void;
-  /** Callback on error */
-  onError?: (error: Error) => void;
   /** External ProseMirror plugins (from PluginHost) */
   externalPlugins?: import('prosemirror-state').Plugin[];
   /**
@@ -143,80 +132,15 @@ export interface DocxEditorProps {
   colorMode?: 'light' | 'dark' | 'system';
   /** Document theme schema object */
   theme?: Theme | null;
-  /** Whether to show toolbar (default: true) */
-  showToolbar?: boolean;
-  /**
-   * Whether to show `File > Open` and enable Cmd/Ctrl+O (default: true).
-   * Set false when you provide your own open action elsewhere.
-   */
-  showFileOpen?: boolean;
-  /** Initial zoom level (default: 1.0) */
-  initialZoom?: number;
   /** Whether the editor is read-only. When true, hides toolbar and rulers */
   readOnly?: boolean;
-  /**
-   * When true, the editor does not intercept Cmd/Ctrl+F or Cmd/Ctrl+H.
-   * This lets the browser or host app handle native find/history shortcuts.
-   */
-  disableFindReplaceShortcuts?: boolean;
-  /** Additional CSS class name */
-  className?: string;
-  /** Additional inline styles */
-  style?: CSSProperties;
-  /** Placeholder when no document */
-  placeholder?: ReactNode;
   /** Loading indicator */
   loadingIndicator?: ReactNode;
-  /** Whether to show the document outline sidebar (default: false) */
-  showOutline?: boolean;
-  /** Whether to show the floating outline toggle button (default: true) */
-  showOutlineButton?: boolean;
-  /**
-   * Custom list of fonts shown in the toolbar's font-family dropdown.
-   * Strings render in the "Other" group; pass `FontOption[]` for category
-   * grouping and CSS fallback chains. Omit to use the built-in 12-font
-   * default. An empty array renders an empty (but enabled) dropdown.
-   *
-   * Pass a stable reference (memoized or module-level) — inline arrays
-   * create a new identity per render and invalidate the picker's memo.
-   *
-   * @example fontFamilies={['Arial', 'Roboto']}
-   * @example fontFamilies={[{ name: 'Roboto', fontFamily: 'Roboto, sans-serif', category: 'sans-serif' }]}
-   */
-  fontFamilies?: ReadonlyArray<string | FontOption>;
-  /**
-   * Custom font faces to register with the browser before the editor measures
-   * text. Each entry injects an `@font-face` rule. Pass a URL (woff2/woff/
-   * ttf/otf), an ArrayBuffer, or omit `src` to load by name from Google Fonts.
-   * Multiple entries can share `family` to register different weights/styles.
-   *
-   * Pass a stable reference — inline arrays re-register faces on each render
-   * (the loader dedupes by `family|weight|style`, so it's harmless but wastes
-   * work).
-   *
-   * @example
-   * fonts={[
-   *   { family: 'Custom Sans', src: '/fonts/CustomSans-Regular.woff2' },
-   *   { family: 'Custom Sans', src: '/fonts/CustomSans-Bold.woff2', weight: 700 },
-   * ]}
-   */
-  fonts?: ReadonlyArray<FontDefinition>;
-  /**
-   * Text-watermark presets shown in the Insert ▸ Watermark menu. Omit to use the
-   * built-in defaults (DRAFT, CONFIDENTIAL).
-   *
-   * @example watermarkPresets={['INTERNAL', 'PROPRIETARY', 'COPY']}
-   */
-  watermarkPresets?: readonly string[];
   /**
    * Callback when print is triggered. Pass it to enable the `File > Print`
    * menu entry; omit to hide.
    */
   onPrint?: () => void;
-  /** Editor mode: 'editing' (direct edits), 'suggesting' (track changes), or 'viewing' (read-only). Default: 'editing' */
-  mode?: EditorMode;
-  /** Callback when the editing mode changes */
-  onModeChange?: (mode: EditorMode) => void;
   /**
    * Callback when rendered DOM context is ready (for plugin overlays).
    * Used by PluginHost to get access to the rendered page DOM for positioning.
@@ -437,31 +361,14 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   {
     documentBuffer,
     document: initialDocument,
-    onOpen,
     author = 'User',
     onChange,
     onOpenLink,
-    onSelectionChange,
-    onError,
     colorMode = 'light',
     theme,
-    showToolbar = true,
-    showFileOpen = true,
-    initialZoom = 1.0,
     readOnly: readOnlyProp = false,
-    disableFindReplaceShortcuts = false,
-    className = '',
-    style,
-    placeholder,
     loadingIndicator,
-    showOutline: showOutlineProp = false,
-    showOutlineButton = true,
-    fontFamilies,
-    fonts,
-    watermarkPresets,
     onPrint,
-    mode: modeProp,
-    onModeChange,
     externalPlugins,
     externalContent = false,
     onEditorViewReady,
@@ -477,7 +384,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const [state, setState] = useState<EditorState>({
     isLoading: !!documentBuffer && !externalContent,
     parseError: null,
-    zoom: initialZoom,
+    zoom: 1.0,
     selectionFormatting: {},
     pmTableContext: null,
     pmImageContext: null,
@@ -565,12 +472,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     useState<Map<string, number>>(EMPTY_ANCHOR_POSITIONS);
   // No separate state needed — pluginRenderedDomContext comes from PluginHost
 
-  const [editingModeInternal, setEditingModeInternal] = useState<EditorMode>(modeProp ?? 'editing');
-  const editingMode = modeProp ?? editingModeInternal;
-  const setEditingMode = (mode: EditorMode) => {
-    if (!modeProp) setEditingModeInternal(mode);
-    onModeChange?.(mode);
-  };
+  const [editingMode, setEditingMode] = useState<EditorMode>('editing');
   // 'viewing' mode acts as read-only
   const readOnly = readOnlyProp || editingMode === 'viewing';
 
@@ -624,7 +526,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     toolbarRefCallback,
     editorScrollLeft,
   } = useOutlineSidebar({
-    showOutlineProp,
+    showOutlineProp: false,
     pagedEditorRef,
     scrollContainerRef,
     isLoading: state.isLoading,
@@ -704,7 +606,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     }, []),
     setComments,
     setShowCommentsSidebar,
-    onError,
     resetForNewDocument,
     commentsLoadedRef,
     commentIdAllocator: commentIdAllocatorRef.current,
@@ -725,8 +626,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pagedEditorRef,
     containerRef,
     comments,
-    onOpen,
-    onError,
     onPrint,
     loadBuffer,
     getActiveEditorView,
@@ -755,8 +654,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     setShowCommentsSidebar,
     trackedChangesLoadedRef,
   });
-
-  useFontLifecycle(fonts, onError);
 
   // Sync editing mode to ProseMirror suggestion mode plugin
   useEffect(() => {
@@ -835,14 +732,13 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     setFloatingCommentBtn,
     applySelectionDelta: useCallback((delta) => setState((prev) => ({ ...prev, ...delta })), []),
     recomputeFloatingCommentBtn,
-    onSelectionChange,
     selectionChangeSubscribersRef,
   });
 
   useKeyboardShortcuts({
     pagedEditorRef,
-    disableFindReplaceShortcuts,
-    showFileOpen,
+    disableFindReplaceShortcuts: false,
+    showFileOpen: true,
     onOpenDocument: handleOpenDocument,
     findReplace,
     openHyperlinkCreate: hyperlink.openCreate,
@@ -982,15 +878,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     pagedEditorRef,
   });
 
-  // Handle save
-  // Handle error from editor
-  const handleEditorError = useCallback(
-    (error: Error) => {
-      onError?.(error);
-    },
-    [onError]
-  );
-
   const {
     findResultRef,
     handleFind,
@@ -1059,7 +946,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     height: '100%',
     width: '100%',
     backgroundColor: 'var(--doc-bg)',
-    ...style,
   };
 
   const mainContentStyle: CSSProperties = {
@@ -1257,12 +1143,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const sidebarOpen = allSidebarItems.length > 0;
   // Reserve 2× the left-edge allowance so the centered page clears whatever
   // outline UI is showing, without forcing a shift on wide viewports.
-  const outlineLeftAllowance =
-    (showOutline
-      ? OUTLINE_RESERVED_SPACE
-      : showOutlineButton
-        ? OUTLINE_BUTTON_RESERVED_SPACE
-        : 20);
+  const outlineLeftAllowance = showOutline ? OUTLINE_RESERVED_SPACE : OUTLINE_BUTTON_RESERVED_SPACE;
   // Reserve against the WIDEST page in the doc, not the portrait default: pages
   // center via `alignItems:center`, so a landscape section (wider than
   // DEFAULT_PAGE_WIDTH) gets a smaller side margin and, with the old default,
@@ -1389,7 +1270,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   if (state.isLoading) {
     return (
       <div
-        className={cn('ep-root docx-editor docx-editor-loading', isDark && 'dark', className)}
+        className={cn('ep-root docx-editor docx-editor-loading', isDark && 'dark')}
         style={containerStyle}
         data-testid="docx-editor"
       >
@@ -1402,7 +1283,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   if (state.parseError) {
     return (
       <div
-        className={cn('ep-root docx-editor docx-editor-error', isDark && 'dark', className)}
+        className={cn('ep-root docx-editor docx-editor-error', isDark && 'dark')}
         style={containerStyle}
         data-testid="docx-editor"
       >
@@ -1415,11 +1296,11 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   if (!history.state) {
     return (
       <div
-        className={cn('ep-root docx-editor docx-editor-empty', isDark && 'dark', className)}
+        className={cn('ep-root docx-editor docx-editor-empty', isDark && 'dark')}
         style={containerStyle}
         data-testid="docx-editor"
       >
-        {placeholder || <DefaultPlaceholder />}
+        <DefaultPlaceholder />
       </div>
     );
   }
@@ -1451,16 +1332,14 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   return (
     <DocxEditorShell
       isDark={isDark}
-      onEditorError={handleEditorError}
       containerRef={containerRef}
       scrollContainerRef={scrollContainerRef}
       editorContentRef={editorContentRef}
-      className={className}
       containerStyle={containerStyle}
       mainContentStyle={mainContentStyle}
       editorContainerStyle={editorContainerStyle}
       showOutline={showOutline}
-      showOutlineButton={showOutlineButton}
+      showOutlineButton={true}
       minLayoutWidth={minLayoutWidth}
       toolbarHeight={toolbarHeight}
       editorScrollLeft={editorScrollLeft}
@@ -1478,7 +1357,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       }}
       onToggleOutline={handleToggleOutline}
       toolbar={
-        showToolbar && !readOnlyProp ? (
+        !readOnlyProp ? (
           <DocxEditorToolbar
             toolbarRefCallback={toolbarRefCallback}
             document={history.state}
@@ -1493,7 +1372,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             setExpandedSidebarItem={setExpandedSidebarItem}
             showCommentsSidebar={showCommentsSidebar}
             renderTitleBarRight={renderTitleBarRight}
-            fontFamilies={fontFamilies}
             documentFonts={documentFonts}
             onFormat={handleFormat}
             onUndo={undoActiveEditor}
@@ -1511,7 +1389,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             onPageSetup={handleOpenPageSetup}
             onApplyWatermark={handleWatermarkApply}
             currentWatermark={currentWatermark}
-            watermarkPresets={watermarkPresets}
             onTableAction={handleTableAction}
           />
         ) : null
