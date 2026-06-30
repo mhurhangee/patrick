@@ -7,7 +7,7 @@ import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
 import type { TableAction } from '../../types/table';
 import type { ImageContext } from '../../types/image';
-import type { EditorMode } from './internals/editing-modes';
+import type { EditorMode } from '../DocxEditor/internals/editing-modes';
 import { DocxToolbar } from '../toolbar/docx-toolbar';
 
 /**

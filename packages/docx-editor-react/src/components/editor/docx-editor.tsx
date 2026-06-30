@@ -37,8 +37,8 @@ import { useFloatingCommentBtn } from '../DocxEditor/hooks/useFloatingCommentBtn
 import { useActiveEditor } from '../DocxEditor/hooks/useActiveEditor';
 import { useScrollPageInfo } from '../DocxEditor/hooks/useScrollPageInfo';
 import { DocxEditorOverlays } from './docx-editor-overlays';
-import { DocxEditorDialogs } from '../DocxEditor/DocxEditorDialogs';
-import { DocxEditorToolbar } from '../DocxEditor/DocxEditorToolbar';
+import { DocxEditorDialogs } from './docx-editor-dialogs';
+import { DocxEditorToolbar } from './docx-editor-toolbar';
 import { DocxEditorPagedArea } from '../DocxEditor/DocxEditorPagedArea';
 import { useResetEditorState } from '../DocxEditor/hooks/useResetEditorState';
 import { DocxEditorShell } from './docx-editor-shell';
