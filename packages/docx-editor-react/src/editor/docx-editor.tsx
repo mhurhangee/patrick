@@ -41,6 +41,7 @@ import { DocxEditorToolbar } from './docx-editor-toolbar';
 import { DocxEditorPagedArea } from './docx-editor-paged-area';
 import { useResetEditorState } from '../hooks/useResetEditorState';
 import { DocxEditorShell } from './docx-editor-shell';
+import { ReviewHighlightStyles } from './review-highlight-styles';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from '../features/outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
@@ -779,8 +780,12 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       minLayoutWidth={minLayoutWidth}
       toolbarHeight={toolbarHeight}
       editorScrollLeft={editorScrollLeft}
-      expandedSidebarItem={expandedSidebarItem}
-      trackedChanges={trackedChanges}
+      highlightStyles={
+        <ReviewHighlightStyles
+          expandedSidebarItem={expandedSidebarItem}
+          trackedChanges={trackedChanges}
+        />
+      }
       onScrollContainerMouseDown={handleScrollContainerMouseDown}
       onEditorBgMouseDown={handleEditorBgMouseDown}
       onEditorContextMenu={handleEditorContextMenu}
