@@ -23,7 +23,6 @@ import {
   Transaction,
   TextSelection,
   NodeSelection,
-  type Command,
   type Plugin,
 } from 'prosemirror-state';
 import { CellSelection } from 'prosemirror-tables';
@@ -89,24 +88,16 @@ export interface HiddenProseMirrorRef {
   isFocused(): boolean;
   /** Dispatch a transaction */
   dispatch(tr: Transaction): void;
-  /** Execute a ProseMirror command */
-  executeCommand(command: Command): boolean;
   /** Undo */
   undo(): boolean;
   /** Redo */
   redo(): boolean;
-  /** Check if undo is available */
-  canUndo(): boolean;
-  /** Check if redo is available */
-  canRedo(): boolean;
   /** Set selection by PM position */
   setSelection(anchor: number, head?: number): void;
   /** Set node selection at a PM position (for images, etc.) */
   setNodeSelection(pos: number): void;
   /** Set cell selection between two positions inside table cells */
   setCellSelection(anchorCellPos: number, headCellPos: number): void;
-  /** Scroll the PM view to selection (no-op since hidden) */
-  scrollToSelection(): void;
 }
 
 // ============================================================================
@@ -439,11 +430,6 @@ const HiddenProseMirrorComponent = forwardRef<HiddenProseMirrorRef, HiddenProseM
           }
         },
 
-        executeCommand(command: Command) {
-          if (!viewRef.current) return false;
-          return command(viewRef.current.state, viewRef.current.dispatch, viewRef.current);
-        },
-
         undo() {
           if (!viewRef.current) return false;
           return undo(viewRef.current.state, viewRef.current.dispatch);
@@ -452,16 +438,6 @@ const HiddenProseMirrorComponent = forwardRef<HiddenProseMirrorRef, HiddenProseM
         redo() {
           if (!viewRef.current) return false;
           return redo(viewRef.current.state, viewRef.current.dispatch);
-        },
-
-        canUndo() {
-          if (!viewRef.current) return false;
-          return undo(viewRef.current.state);
-        },
-
-        canRedo() {
-          if (!viewRef.current) return false;
-          return redo(viewRef.current.state);
         },
 
         setSelection(anchor: number, head?: number) {
@@ -495,10 +471,6 @@ const HiddenProseMirrorComponent = forwardRef<HiddenProseMirrorRef, HiddenProseM
             // Fallback to text selection if positions aren't valid for CellSelection
             this.setSelection(anchorCellPos, headCellPos);
           }
-        },
-
-        scrollToSelection() {
-          // No-op for hidden editor - visual scrolling handled by PagedEditor
         },
       }),
       []
