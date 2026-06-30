@@ -2,21 +2,21 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import type { Document, SectionProperties } from '@eigenpal/docx-editor-core/types/document';
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
-import type { useFindReplace } from '../../features/find-replace/use-find-replace';
-import type { ImageContext, ImagePropertiesData } from '../../features/images/types';
-import { CursorPopover } from '../primitives/cursor-popover';
-import { FindReplaceBar } from '../../features/find-replace/find-replace-bar';
-import { HyperlinkPopover } from '../../features/hyperlinks/hyperlink-popover';
-import type { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
-import { ImagePropertiesForm } from '../../features/images/image-properties-popover';
-import { SplitCellForm } from '../../features/tables/split-cell-popover';
-import { TablePropertiesForm } from '../../features/tables/table-properties-popover';
+import type { useFindReplace } from '../features/find-replace/use-find-replace';
+import type { ImageContext, ImagePropertiesData } from '../features/images/types';
+import { CursorPopover } from '../components/primitives/cursor-popover';
+import { FindReplaceBar } from '../features/find-replace/find-replace-bar';
+import { HyperlinkPopover } from '../features/hyperlinks/hyperlink-popover';
+import type { useHyperlink } from '../features/hyperlinks/use-hyperlink';
+import { ImagePropertiesForm } from '../features/images/image-properties-popover';
+import { SplitCellForm } from '../features/tables/split-cell-popover';
+import { TablePropertiesForm } from '../features/tables/table-properties-popover';
 
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
 // module load, so co-locating with the JSX keeps the code-split boundary.
 const PageSetupDialog = lazy(() =>
-  import('../../features/page-setup/page-setup-dialog').then((m) => ({ default: m.PageSetupDialog }))
+  import('../features/page-setup/page-setup-dialog').then((m) => ({ default: m.PageSetupDialog }))
 );
 
 interface SplitCellDialogState {

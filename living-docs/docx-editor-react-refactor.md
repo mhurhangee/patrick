@@ -54,8 +54,7 @@ which is **two unrelated things mashed together**:
 ## Sequenced phases (promote-first is the consensus; each step ≈ 1 PR, gates always; cloud review on logic-touching steps)
 
 **Phase A — Foundation (mechanical, low-risk, do first):**
-- A1. Promote `components/editor/` → `src/editor/` (pure path-prefix across ~23 files; freezes the
-  `paged-editor`/`hidden-prose-mirror` type seam so B and C can build on a stable path). `git mv`.
+- A1. ✅ Promote `components/editor/` → `src/editor/` (done; depth shift handled, gates green).
 - A2. Lift `DocxEditorRef` + `DocxEditorProps` types → `editor/ref-api/` (≈200 non-logic lines out of
   the god file; 3 importers; keep `index.ts` re-export identical — guarded by exports-map + ref-conformance).
 - A3. Stray utils: `formatKeys` → `lib/`, `zIndex` → `lib/`, dedupe the local `cn` onto `@patrick/ui`.

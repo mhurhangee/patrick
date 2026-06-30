@@ -16,7 +16,7 @@ import {
   type FindOptions,
   type FindResult,
 } from '@eigenpal/docx-editor-core/utils/findReplace';
-import type { PagedEditorRef } from '../../components/editor/paged-editor';
+import type { PagedEditorRef } from '../../editor/paged-editor';
 
 export interface FindReplaceState {
   /** Whether the bar is open. */

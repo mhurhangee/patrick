@@ -31,7 +31,7 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 import type { TrackedChangeEntry } from '@eigenpal/docx-editor-core/utils/comments';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import type { PagedEditorRef } from '../../components/editor/paged-editor';
+import type { PagedEditorRef } from '../../editor/paged-editor';
 import { useCommentSidebarItems, type CommentCallbacks } from './use-comment-sidebar-items';
 import type { ReactSidebarItem } from './types';
 

@@ -8,13 +8,13 @@ import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { Plugin } from 'prosemirror-state';
 import type { ExtensionManager } from '@eigenpal/docx-editor-core/prosemirror/extensions';
 import { PagedEditor, type PagedEditorRef } from './paged-editor';
-import { UnifiedSidebar } from '../../features/review/unified-sidebar';
-import { CommentMarginMarkers } from '../../features/review/comment-margin-markers';
+import { UnifiedSidebar } from '../features/review/unified-sidebar';
+import { CommentMarginMarkers } from '../features/review/comment-margin-markers';
 import { Button } from '@patrick/ui/components/button';
 import { MessageSquarePlus } from 'lucide-react';
-import { beginPendingComment } from '../../features/review/pending-comment-mark';
+import { beginPendingComment } from '../features/review/pending-comment-mark';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
-import type { ReactSidebarItem } from '../../features/review/types';
+import type { ReactSidebarItem } from '../features/review/types';
 
 /**
  * Body of the editor: the paged ProseMirror host, its sidebar overlay

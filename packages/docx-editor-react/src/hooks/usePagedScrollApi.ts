@@ -27,8 +27,8 @@ import {
 } from '@eigenpal/docx-editor-core/utils';
 import { findVerticalScrollParentOrRoot } from '@eigenpal/docx-editor-core/utils/findVerticalScrollParent';
 
-import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
-import { runAfterPaint, scrollElementCenterIntoContainer } from '../components/editor/internals/scrollUtils';
+import type { HiddenProseMirrorRef } from '../editor/hidden-prose-mirror';
+import { runAfterPaint, scrollElementCenterIntoContainer } from '../editor/internals/scrollUtils';
 
 export interface UsePagedScrollApiOptions {
   layout: Layout | null;

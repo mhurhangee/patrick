@@ -11,7 +11,7 @@ import {
 } from '@eigenpal/docx-editor-core/utils';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { DocumentStateApi } from './useDocumentState';
-import type { PagedEditorRef } from '../components/editor/paged-editor';
+import type { PagedEditorRef } from '../editor/paged-editor';
 import {
   type CommentIdAllocator,
   seedCommentAllocator,
