@@ -239,6 +239,14 @@ with `/code-review`.
   bar); two follow-up findings (one-frame count flash; reset-on-buffer-identity) assessed as
   cosmetic/mooted, not actioned. Slice 4 (outline + page-setup → features/, pure moves). Pure-move
   slices verified by gates only; logic slices get the cloud review.
+- 2026-06-30 — **VITAL domain (tracked-changes + comments) underway, with care.** 3-agent deep
+  re-read done → exact ground truth (live accept/reject = by-id→resolveById; §A6 margin-marker is
+  NOT a bug = intended; the two auto-opens are NOT redundant; 8 danger zones logged). Michael signed
+  off: tests-first + safe-clarity cleanups. **Step 1 ✅** safety net — `comments.accept-reject.test.ts`
+  (9 round-trip tests for the previously-untested redline engine, PR #142). **Step 2 ✅** relocate the
+  review sidebar (cards + comment hooks + types/constants) → `features/review/` (pure move). **Step 3
+  next:** extract `useCommentWorkflow` from the god file + safe-clarity cleanups (disambiguate double
+  `onAddComment`, centralize the 4-site pending-mark, fix §A6 docstring) — multiple adversarial reviews.
 - 2026-06-30 — slice 1 code review (high, ×2): caught (a) page-setup no longer Ctrl+Z-undoable —
   **accepted by design** (page setup is a doc attribute, not content; Michael's call), documented +
   SCRATCHPAD-logged; (b) per-keystroke document `JSON.stringify` (pre-existing) — **fixed** (guard

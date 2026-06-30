@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import type { ReactSidebarItem, RenderedDomContext } from '../../types/sidebar';
+import type { ReactSidebarItem, RenderedDomContext } from './types';
 import { resolveItemPositions } from '@eigenpal/docx-editor-core/plugin-api/resolveItemPositions';
 import {
   SIDEBAR_DOCUMENT_SHIFT,

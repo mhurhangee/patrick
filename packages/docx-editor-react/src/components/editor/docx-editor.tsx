@@ -29,10 +29,10 @@ import { useTableDialogs } from '../../features/tables/use-table-dialogs';
 import { resolveHeaderFooter } from '@eigenpal/docx-editor-core/layout-bridge';
 import { useDocumentLoader } from '../../hooks/useDocumentLoader';
 import { useContextMenus } from '../../features/context-menu/use-context-menus';
-import { useCommentManagement } from '../../hooks/useCommentManagement';
-import { useCommentLifecycle } from '../../hooks/useCommentLifecycle';
+import { useCommentManagement } from '../../features/review/use-comment-management';
+import { useCommentLifecycle } from '../../features/review/use-comment-lifecycle';
 import { useSelectionTracker } from '../../hooks/useSelectionTracker';
-import { useFloatingCommentBtn } from '../../hooks/useFloatingCommentBtn';
+import { useFloatingCommentBtn } from '../../features/review/use-floating-comment-btn';
 import { useActiveEditor } from '../../hooks/useActiveEditor';
 import { useScrollPageInfo } from '../../hooks/useScrollPageInfo';
 import { DocxEditorOverlays } from './docx-editor-overlays';
@@ -44,10 +44,10 @@ import { DocxEditorShell } from './docx-editor-shell';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from '../../features/outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
-import { useCommentSidebarItems, type CommentCallbacks } from '../../hooks/useCommentSidebarItems';
+import { useCommentSidebarItems, type CommentCallbacks } from '../../features/review/use-comment-sidebar-items';
 import { extractTrackedChanges } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { type EditorState as PMEditorState } from 'prosemirror-state';
-import type { ReactSidebarItem } from '../../types/sidebar';
+import type { ReactSidebarItem } from '../../features/review/types';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../../features/find-replace/use-find-replace';
@@ -317,7 +317,7 @@ import {
   createCommentIdAllocator,
 } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 import { createComment } from '@eigenpal/docx-editor-core/prosemirror/commentOps';
-import { EMPTY_ANCHOR_POSITIONS } from '../../constants/comments';
+import { EMPTY_ANCHOR_POSITIONS } from '../../features/review/constants';
 
 /**
  * DocxEditor - Complete DOCX editor component

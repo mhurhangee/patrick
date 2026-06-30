@@ -1,6 +1,6 @@
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import { MessageCircleCheck } from 'lucide-react';
-import type { SidebarItemRenderProps } from '../../types/sidebar';
+import type { SidebarItemRenderProps } from './types';
 
 export interface ResolvedCommentMarkerProps extends SidebarItemRenderProps {
   comment: Comment;
