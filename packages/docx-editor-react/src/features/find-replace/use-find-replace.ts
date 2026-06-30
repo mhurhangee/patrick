@@ -1,4 +1,13 @@
-import { useCallback, useRef } from 'react';
+/**
+ * Find/replace for the paged editor: the bar's open/close + seed state, plus the
+ * ProseMirror bridge that searches the live document, selects/scrolls the active
+ * match, and applies replace / replace-all.
+ *
+ * `findResultRef` is the authoritative match list; the bar tracks its own display
+ * result from these handlers' return values.
+ */
+
+import { useCallback, useRef, useState } from 'react';
 import { TextSelection } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 import {
@@ -7,8 +16,16 @@ import {
   type FindOptions,
   type FindResult,
 } from '@eigenpal/docx-editor-core/utils/findReplace';
-import type { useFindReplace } from './useFindReplace';
-import type { PagedEditorRef } from '../components/editor/paged-editor';
+import type { PagedEditorRef } from '../../components/editor/paged-editor';
+
+export interface FindReplaceState {
+  /** Whether the bar is open. */
+  isOpen: boolean;
+  /** Seed search text (e.g. from the current selection when opening). */
+  searchText: string;
+  /** Whether the replace row starts expanded. */
+  replaceMode: boolean;
+}
 
 type PmFindMatch = FindMatch & {
   pmFrom: number;
@@ -92,20 +109,45 @@ function findMatchesInView(view: EditorView, searchText: string, options: FindOp
   return matches;
 }
 
-/**
- * Bridges the find/replace dialog hook to the paged editor: searches the
- * live ProseMirror document, selects the active PM range, and scrolls the
- * visible pages through PagedEditor's scroll API. The dialog UI state itself
- * (open/closed, current term) lives in `findReplace`.
- */
-export function useFindReplaceBridge({
-  pagedEditorRef,
-  findReplace,
-}: {
-  pagedEditorRef: React.RefObject<PagedEditorRef | null>;
-  findReplace: ReturnType<typeof useFindReplace>;
-}) {
+export function useFindReplace(pagedEditorRef: React.RefObject<PagedEditorRef | null>) {
+  const [state, setState] = useState<FindReplaceState>({
+    isOpen: false,
+    searchText: '',
+    replaceMode: false,
+  });
   const findResultRef = useRef<FindResult | null>(null);
+
+  const openFind = useCallback((selectedText?: string) => {
+    setState((prev) => ({
+      ...prev,
+      isOpen: true,
+      replaceMode: false,
+      searchText: selectedText || prev.searchText,
+    }));
+  }, []);
+
+  const openReplace = useCallback((selectedText?: string) => {
+    setState((prev) => ({
+      ...prev,
+      isOpen: true,
+      replaceMode: true,
+      searchText: selectedText || prev.searchText,
+    }));
+  }, []);
+
+  const close = useCallback(() => {
+    setState((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
+  /**
+   * Reset on a fresh document load: drop the (now stale) match list and close
+   * the bar. Closing lets the bar's open-transition effect reset its displayed
+   * result, so a swapped-in document never shows doc A's stale "N of M" count.
+   */
+  const reset = useCallback(() => {
+    findResultRef.current = null;
+    setState((prev) => ({ ...prev, isOpen: false }));
+  }, []);
 
   const getView = useCallback(() => pagedEditorRef.current?.getView() ?? null, [pagedEditorRef]);
 
@@ -127,10 +169,9 @@ export function useFindReplaceBridge({
       if (currentResult) {
         currentResult.currentIndex = index;
       }
-      findReplace.goToMatch(index);
       return match;
     },
-    [findReplace, getView, pagedEditorRef]
+    [getView, pagedEditorRef]
   );
 
   const handleFind = useCallback(
@@ -138,7 +179,6 @@ export function useFindReplaceBridge({
       const view = getView();
       if (!view || !searchText.trim()) {
         findResultRef.current = null;
-        findReplace.setMatches([], 0);
         return null;
       }
 
@@ -150,7 +190,6 @@ export function useFindReplaceBridge({
       };
 
       findResultRef.current = result;
-      findReplace.setMatches(matches, 0);
 
       if (matches.length > 0) {
         goToMatch(matches[0], 0);
@@ -158,7 +197,7 @@ export function useFindReplaceBridge({
 
       return result;
     },
-    [findReplace, getView, goToMatch]
+    [getView, goToMatch]
   );
 
   const handleFindNext = useCallback((): FindMatch | null => {
@@ -233,15 +272,18 @@ export function useFindReplaceBridge({
 
       view.dispatch(tr);
       findResultRef.current = null;
-      findReplace.setMatches([], 0);
 
       return matches.length;
     },
-    [findReplace, getView]
+    [getView]
   );
 
   return {
-    findResultRef,
+    state,
+    openFind,
+    openReplace,
+    close,
+    reset,
     handleFind,
     handleFindNext,
     handleFindPrevious,

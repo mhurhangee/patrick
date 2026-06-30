@@ -117,7 +117,8 @@ with `/code-review`.
    later lifecycle facade. Replace `useDocumentHistory` with minimal `{state,set,reset}`
    (PM owns real undo/redo); kill the competing Ctrl+Z listener.
 2. **Hyperlinks** ✅ — smallest, cleanest leaf; established the `features/` pattern (pure move).
-3. **Find/replace** — collapse the two hooks into one, resolve the dual result writers.
+3. **Find/replace** ✅ — merged the two hooks into `features/find-replace/use-find-replace`, dropped
+   the dead match-list, fixed A5 (removed redundant `currentResult` writer), collapsed dialog props.
 4. **Outline** + **page-setup/watermark** — self-contained; resolve `showOutlineProp` + RTL gate.
 5. **Tables** — needs the orphaned-action decision (§C) made first.
 6. **Images** — span two trees; unify the 3 context shapes.
@@ -146,8 +147,9 @@ with `/code-review`.
   (docx-editor.tsx:1050). Works by accident; refactor trap. → slice 9.
 - **A4 — `useScrollPageInfo` ref-as-dep.** Reads `scrollContainerRef.current` during render and
   uses it as an effect dep (useScrollPageInfo.ts:28,62) — non-reactive, fragile. → slice 9.
-- **A5 — Find-bar dual result writers.** `currentResult` prop and the debounced `onFind` both set
-  `result` (find-replace-bar.tsx:113,114-126). → slice 3.
+- **A5 — Find-bar dual result writers.** ✅ FIXED (slice 3). Removed the `currentResult` prop +
+  effect; the bar derives `result` solely from `onFind`'s return value (the only writers of
+  `findResultRef` are bar-driven, so the prop carried nothing new).
 - **A6 — Margin-marker contradiction.** Both branches return null when `sidebarOpen`
   (comment-margin-markers.tsx:37-39), contradicting the "resolved always visible" docstring
   (lines 4-5) — resolved markers may never show. Confirm intent. → slice 10.

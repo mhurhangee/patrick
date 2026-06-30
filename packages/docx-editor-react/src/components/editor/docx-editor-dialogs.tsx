@@ -2,11 +2,10 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import type { Document, SectionProperties } from '@eigenpal/docx-editor-core/types/document';
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
-import type { useFindReplace } from '../../hooks/useFindReplace';
-import type { FindMatch, FindOptions, FindResult } from '@eigenpal/docx-editor-core/utils/findReplace';
+import type { useFindReplace } from '../../features/find-replace/use-find-replace';
 import type { ImageContext, ImagePropertiesData } from '../../types/image';
 import { CursorPopover } from '../primitives/cursor-popover';
-import { FindReplaceBar } from '../dialogs/find-replace-bar';
+import { FindReplaceBar } from '../../features/find-replace/find-replace-bar';
 import { HyperlinkPopover } from '../../features/hyperlinks/hyperlink-popover';
 import type { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
 import { ImagePropertiesForm } from '../toolbar/groups/image-properties-popover';
@@ -37,12 +36,6 @@ interface SplitCellDialogState {
  */
 export function DocxEditorDialogs({
   findReplace,
-  findResultRef,
-  onFind,
-  onFindNext,
-  onFindPrevious,
-  onReplace,
-  onReplaceAll,
   hyperlink,
   readOnly,
   getCaretRect,
@@ -66,12 +59,6 @@ export function DocxEditorDialogs({
 }: {
   // Find/Replace
   findReplace: ReturnType<typeof useFindReplace>;
-  findResultRef: React.RefObject<FindResult | null>;
-  onFind: (searchText: string, options: FindOptions) => FindResult | null;
-  onFindNext: () => FindMatch | null;
-  onFindPrevious: () => FindMatch | null;
-  onReplace: (replaceText: string) => boolean;
-  onReplaceAll: (searchText: string, replaceText: string, options: FindOptions) => number;
   // Hyperlink
   hyperlink: ReturnType<typeof useHyperlink>;
   readOnly?: boolean;
@@ -114,14 +101,13 @@ export function DocxEditorDialogs({
       <FindReplaceBar
         isOpen={findReplace.state.isOpen}
         onClose={findReplace.close}
-        onFind={onFind}
-        onFindNext={onFindNext}
-        onFindPrevious={onFindPrevious}
-        onReplace={onReplace}
-        onReplaceAll={onReplaceAll}
+        onFind={findReplace.handleFind}
+        onFindNext={findReplace.handleFindNext}
+        onFindPrevious={findReplace.handleFindPrevious}
+        onReplace={findReplace.handleReplace}
+        onReplaceAll={findReplace.handleReplaceAll}
         initialSearchText={findReplace.state.searchText}
         replaceMode={findReplace.state.replaceMode}
-        currentResult={findResultRef.current}
       />
       <CursorPopover
         open={hyperlinkOpen}
