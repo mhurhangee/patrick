@@ -139,9 +139,14 @@ export function useFindReplace(pagedEditorRef: React.RefObject<PagedEditorRef | 
     setState((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
-  /** Drop the current match list (e.g. on a fresh document load). */
-  const clearMatches = useCallback(() => {
+  /**
+   * Reset on a fresh document load: drop the (now stale) match list and close
+   * the bar. Closing lets the bar's open-transition effect reset its displayed
+   * result, so a swapped-in document never shows doc A's stale "N of M" count.
+   */
+  const reset = useCallback(() => {
     findResultRef.current = null;
+    setState((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   const getView = useCallback(() => pagedEditorRef.current?.getView() ?? null, [pagedEditorRef]);
@@ -278,8 +283,7 @@ export function useFindReplace(pagedEditorRef: React.RefObject<PagedEditorRef | 
     openFind,
     openReplace,
     close,
-    clearMatches,
-    findResultRef,
+    reset,
     handleFind,
     handleFindNext,
     handleFindPrevious,

@@ -506,7 +506,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     setAddCommentYPosition,
     setFloatingCommentBtn,
     setAnchorPositions,
-    clearFindReplaceMatches: useCallback(() => findReplace.clearMatches(), [findReplace]),
+    clearFindReplaceMatches: useCallback(() => findReplace.reset(), [findReplace]),
     cleanOrphanedCommentsTimerRef,
   });
 
