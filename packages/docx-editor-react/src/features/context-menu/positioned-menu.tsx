@@ -5,7 +5,7 @@ import {
 } from '@patrick/ui/components/dropdown-menu';
 import { cn } from '@patrick/ui/lib/utils';
 import type { ReactNode } from 'react';
-import { Z_INDEX } from '../../styles/zIndex';
+import { Z_INDEX } from '../../lib/z-index';
 
 /**
  * A DropdownMenu opened programmatically at viewport coordinates — the shared
