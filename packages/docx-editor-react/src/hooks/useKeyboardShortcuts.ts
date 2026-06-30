@@ -5,7 +5,7 @@ import {
   getTableContext,
   deleteTable as pmDeleteTable,
 } from '@eigenpal/docx-editor-core/prosemirror';
-import type { useFindReplace } from './useFindReplace';
+import type { useFindReplace } from '../features/find-replace/use-find-replace';
 import type { PagedEditorRef } from '../components/editor/paged-editor';
 
 /**

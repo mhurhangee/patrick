@@ -22,7 +22,6 @@ import { useFileIO } from '../../hooks/useFileIO';
 import { usePageSetupControls } from '../../hooks/usePageSetupControls';
 import { useWatermarkControls } from '../../hooks/useWatermarkControls';
 import { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
-import { useFindReplaceBridge } from '../../hooks/useFindReplaceBridge';
 import { useFormattingActions } from '../../hooks/useFormattingActions';
 import { useImageActions } from '../../hooks/useImageActions';
 import { useDocxEditorRefApi } from '../../hooks/useDocxEditorRefApi';
@@ -51,7 +50,7 @@ import { type EditorState as PMEditorState } from 'prosemirror-state';
 import type { ReactSidebarItem } from '../../types/sidebar';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
-import { useFindReplace } from '../../hooks/useFindReplace';
+import { useFindReplace } from '../../features/find-replace/use-find-replace';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from '../states/editor-states';
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
@@ -481,7 +480,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     useActiveEditor({ pagedEditorRef });
 
   // Find/Replace hook
-  const findReplace = useFindReplace();
+  const findReplace = useFindReplace(pagedEditorRef);
 
   // Unified hyperlink popover session (click-a-link view + Ctrl+K/toolbar edit).
   const hyperlink = useHyperlink({ getActiveEditorView, focusActiveEditor, onOpenLink });
@@ -507,7 +506,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     setAddCommentYPosition,
     setFloatingCommentBtn,
     setAnchorPositions,
-    clearFindReplaceMatches: useCallback(() => findReplace.setMatches([], 0), [findReplace]),
+    clearFindReplaceMatches: useCallback(() => findReplace.clearMatches(), [findReplace]),
     cleanOrphanedCommentsTimerRef,
   });
 
@@ -789,18 +788,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const scrollPageInfoRef = useScrollPageInfo({
     scrollContainerRef,
     pagedEditorRef,
-  });
-
-  const {
-    findResultRef,
-    handleFind,
-    handleFindNext,
-    handleFindPrevious,
-    handleReplace,
-    handleReplaceAll,
-  } = useFindReplaceBridge({
-    pagedEditorRef,
-    findReplace,
   });
 
   // Expose ref methods
@@ -1320,12 +1307,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       dialogs={
         <DocxEditorDialogs
           findReplace={findReplace}
-          findResultRef={findResultRef}
-          onFind={handleFind}
-          onFindNext={handleFindNext}
-          onFindPrevious={handleFindPrevious}
-          onReplace={handleReplace}
-          onReplaceAll={handleReplaceAll}
           hyperlink={hyperlink}
           readOnly={readOnly}
           getCaretRect={getCaretRect}
