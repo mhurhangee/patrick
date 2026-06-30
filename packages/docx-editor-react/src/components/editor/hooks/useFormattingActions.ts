@@ -39,7 +39,7 @@ import type { EditorView } from 'prosemirror-view';
 import type { FormattingAction } from '../../../types/formatting';
 import { pointsToHalfPoints } from '@eigenpal/docx-editor-core/utils/units';
 import { mapHexToHighlightName } from '@eigenpal/docx-editor-core/utils/highlightColors';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { PagedEditorRef } from '../../DocxEditor/PagedEditor';
 
 /**
  * Toolbar action handlers: the big `handleFormat` switch that routes

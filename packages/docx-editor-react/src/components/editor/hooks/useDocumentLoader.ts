@@ -11,7 +11,7 @@ import {
 } from '@eigenpal/docx-editor-core/utils';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { UseHistoryReturn } from '../../../hooks/useHistory';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { PagedEditorRef } from '../../DocxEditor/PagedEditor';
 import {
   type CommentIdAllocator,
   seedCommentAllocator,
