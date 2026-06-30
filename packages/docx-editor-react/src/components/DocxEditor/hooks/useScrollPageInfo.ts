@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { PagedEditorRef } from '../PagedEditor';
+import { DEFAULT_PAGE_GAP, VIEWPORT_PADDING_TOP } from '../internals/styles';
 
 export interface ScrollPageInfo {
   currentPage: number;
@@ -34,11 +35,9 @@ export function useScrollPageInfo({
 
       const scrollTop = scrollContainerEl.scrollTop;
       const totalPages = layout.pages.length;
-      const pageGap = 24; // DEFAULT_PAGE_GAP from PagedEditor
-      const paddingTop = 24; // top padding in paged-editor__pages
 
       const viewportCenter = scrollTop + scrollContainerEl.clientHeight / 2;
-      let accumulatedY = paddingTop;
+      let accumulatedY = VIEWPORT_PADDING_TOP;
       let currentPage = 1;
 
       for (let i = 0; i < layout.pages.length; i++) {
@@ -48,7 +47,7 @@ export function useScrollPageInfo({
           currentPage = i + 1;
           break;
         }
-        accumulatedY = pageEnd + pageGap;
+        accumulatedY = pageEnd + DEFAULT_PAGE_GAP;
         currentPage = i + 2;
       }
       currentPage = Math.min(currentPage, totalPages);
