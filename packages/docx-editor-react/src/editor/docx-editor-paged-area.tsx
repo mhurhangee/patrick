@@ -4,30 +4,21 @@ import type {
   SectionProperties,
   HeaderFooter,
 } from '@eigenpal/docx-editor-core/types/document';
-import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { Plugin } from 'prosemirror-state';
 import type { ExtensionManager } from '@eigenpal/docx-editor-core/prosemirror/extensions';
 import { PagedEditor, type PagedEditorRef } from './paged-editor';
-import { UnifiedSidebar } from '../features/review/unified-sidebar';
-import { CommentMarginMarkers } from '../features/review/comment-margin-markers';
-import { Button } from '@patrick/ui/components/button';
-import { MessageSquarePlus } from 'lucide-react';
-import { beginPendingComment } from '../features/review/pending-comment-mark';
+import { ReviewSidebarOverlay } from '../features/review/review-sidebar-overlay';
+import { FloatingCommentButton } from '../features/review/floating-comment-button';
+import { useReview } from '../features/review/review-context';
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
-import type { ReactSidebarItem } from '../features/review/types';
 
 /**
- * Body of the editor: the paged ProseMirror host, its sidebar overlay
- * (UnifiedSidebar + comment margin markers), and the floating "Add comment"
- * button anchored to a non-empty selection. Headers/footers are painted
- * read-only by the layout engine — there is no inline H/F editor.
- *
- * The floating button dispatches a pending comment mark inline, then begins
- * the compose workflow — the same shape as the right-click menu's addComment
- * branch (which calls `onBeginAddComment`).
+ * Body of the editor: the paged ProseMirror host plus its two review children —
+ * the sidebar overlay and the floating "Add comment" button — both of which
+ * self-serve review state from `ReviewContext`. Headers/footers are painted
+ * read-only by the layout engine; there is no inline H/F editor.
  */
 export function DocxEditorPagedArea({
-  // PagedEditor refs + state
   pagedEditorRef,
   scrollContainerRef,
   // Document + section
@@ -51,27 +42,9 @@ export function DocxEditorPagedArea({
   onHyperlinkClick,
   onOpenLink,
   onContextMenu,
-  // Sidebar
-  sidebarOpen,
-  sidebarItems,
-  anchorPositions,
   onAnchorPositionsChange,
   pageWidthPx,
-  expandedSidebarItem,
-  setExpandedSidebarItem,
-  comments,
-  resolvedCommentIds,
-  resolvedIdsForRender,
-  setShowCommentsSidebar,
-  // Scroll page indicator
   onTotalPagesChange,
-  // Floating comment button
-  floatingCommentBtn,
-  isAddingComment,
-  setCommentSelectionRange,
-  setAddCommentYPosition,
-  setIsAddingComment,
-  setFloatingCommentBtn,
 }: {
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -108,27 +81,12 @@ export function DocxEditorPagedArea({
       inlinePositionEmu?: { horizontalEmu: number; verticalEmu: number };
     } | null;
   }) => void;
-  sidebarOpen: boolean;
-  sidebarItems: ReactSidebarItem[];
-  anchorPositions: Map<string, number>;
   onAnchorPositionsChange: (positions: Map<string, number>) => void;
   pageWidthPx: number;
-  expandedSidebarItem: string | null;
-  setExpandedSidebarItem: React.Dispatch<React.SetStateAction<string | null>>;
-  comments: Comment[];
-  resolvedCommentIds: Set<number>;
-  resolvedIdsForRender: Set<number>;
-  setShowCommentsSidebar: React.Dispatch<React.SetStateAction<boolean>>;
   onTotalPagesChange: (totalPages: number) => void;
-  floatingCommentBtn: { top: number; left: number } | null;
-  isAddingComment: boolean;
-  setCommentSelectionRange: React.Dispatch<
-    React.SetStateAction<{ from: number; to: number } | null>
-  >;
-  setAddCommentYPosition: React.Dispatch<React.SetStateAction<number | null>>;
-  setIsAddingComment: React.Dispatch<React.SetStateAction<boolean>>;
-  setFloatingCommentBtn: React.Dispatch<React.SetStateAction<{ top: number; left: number } | null>>;
 }) {
+  // The engine needs the review-derived sidebar-open flag + the render mask.
+  const { sidebarOpen, resolvedIdsForRender } = useReview();
 
   return (
     <>
@@ -159,59 +117,15 @@ export function DocxEditorPagedArea({
         resolvedCommentIds={resolvedIdsForRender}
         scrollContainerRef={scrollContainerRef}
         sidebarOverlay={
-          <>
-            {sidebarItems.length > 0 && (
-              <UnifiedSidebar
-                items={sidebarItems}
-                anchorPositions={anchorPositions}
-                renderedDomContext={null}
-                pageWidth={pageWidthPx}
-                zoom={zoom}
-                editorContainerRef={scrollContainerRef}
-                onExpandedItemChange={setExpandedSidebarItem}
-                activeItemId={expandedSidebarItem}
-              />
-            )}
-            <CommentMarginMarkers
-              comments={comments}
-              anchorPositions={anchorPositions}
-              zoom={zoom}
-              pageWidth={pageWidthPx}
-              sidebarOpen={sidebarOpen}
-              resolvedCommentIds={resolvedCommentIds}
-              onMarkerClick={() => setShowCommentsSidebar(true)}
-            />
-          </>
+          <ReviewSidebarOverlay
+            pageWidthPx={pageWidthPx}
+            zoom={zoom}
+            scrollContainerRef={scrollContainerRef}
+          />
         }
       />
 
-      {floatingCommentBtn != null && !isAddingComment && !readOnly && (
-        <Button
-          size="icon-sm"
-          tooltip="Add comment"
-          tooltipSide="bottom"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const view = pagedEditorRef.current?.getView();
-            if (view) {
-              const { from, to } = view.state.selection;
-              if (from !== to) {
-                setCommentSelectionRange({ from, to });
-                beginPendingComment(view, from, to);
-              }
-            }
-            setAddCommentYPosition(floatingCommentBtn.top);
-            setShowCommentsSidebar(true);
-            setIsAddingComment(true);
-            setFloatingCommentBtn(null);
-          }}
-          className="absolute z-50 size-7 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md bg-[var(--patrick-coral)]/80 hover:bg-[var(--patrick-coral)]"
-          style={{ top: floatingCommentBtn.top, left: floatingCommentBtn.left }}
-        >
-          <MessageSquarePlus />
-        </Button>
-      )}
+      <FloatingCommentButton pagedEditorRef={pagedEditorRef} readOnly={readOnly} />
     </>
   );
 }

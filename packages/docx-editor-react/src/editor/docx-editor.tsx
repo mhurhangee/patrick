@@ -42,6 +42,7 @@ import { DocxEditorPagedArea } from './docx-editor-paged-area';
 import { useResetEditorState } from '../hooks/useResetEditorState';
 import { DocxEditorShell } from './docx-editor-shell';
 import { ReviewHighlightStyles } from './review-highlight-styles';
+import { ReviewProvider } from '../features/review/review-context';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from '../features/outline/document-outline';
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
@@ -667,6 +668,46 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   });
 
   const sidebarOpen = allSidebarItems.length > 0;
+
+  // Bundled for ReviewContext — the review state the paged-area's sidebar overlay
+  // + floating button consume, so it no longer drills through the paged area.
+  const reviewContextValue = useMemo(
+    () => ({
+      sidebarOpen,
+      sidebarItems: allSidebarItems,
+      anchorPositions,
+      expandedSidebarItem,
+      setExpandedSidebarItem,
+      comments,
+      resolvedCommentIds,
+      resolvedIdsForRender,
+      setShowCommentsSidebar,
+      floatingCommentBtn,
+      isAddingComment,
+      setCommentSelectionRange,
+      setAddCommentYPosition,
+      setIsAddingComment,
+      setFloatingCommentBtn,
+    }),
+    [
+      sidebarOpen,
+      allSidebarItems,
+      anchorPositions,
+      expandedSidebarItem,
+      setExpandedSidebarItem,
+      comments,
+      resolvedCommentIds,
+      resolvedIdsForRender,
+      setShowCommentsSidebar,
+      floatingCommentBtn,
+      isAddingComment,
+      setCommentSelectionRange,
+      setAddCommentYPosition,
+      setIsAddingComment,
+      setFloatingCommentBtn,
+    ]
+  );
+
   // Reserve 2× the left-edge allowance so the centered page clears whatever
   // outline UI is showing, without forcing a shift on wide viewports.
   const outlineLeftAllowance = showOutline ? OUTLINE_RESERVED_SPACE : OUTLINE_BUTTON_RESERVED_SPACE;
@@ -835,57 +876,44 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
         ) : null
       }
       pagedArea={
-        <DocxEditorPagedArea
-          pagedEditorRef={pagedEditorRef}
-          scrollContainerRef={scrollContainerRef}
-          document={docState.state}
-          theme={theme}
-          initialSectionProperties={initialSectionProperties}
-          finalSectionProperties={finalSectionProperties}
-          headerContent={headerContent}
-          footerContent={footerContent}
-          firstPageHeaderContent={firstPageHeaderContent}
-          firstPageFooterContent={firstPageFooterContent}
-          zoom={state.zoom}
-          readOnly={readOnly}
-          extensionManager={extensionManager}
-          externalPlugins={editorPlugins}
-          onDocumentChange={handleDocumentChange}
-          onPagedSelectionChange={handlePagedSelectionChange}
-          onReady={(ref) => {
-            const view = ref.getView();
-            if (view) setPmState(view.state);
-          }}
-          onHyperlinkClick={(data) =>
-            hyperlink.openView(data.rect, {
-              href: data.href,
-              displayText: data.displayText,
-              tooltip: data.tooltip,
-            })
-          }
-          onOpenLink={onOpenLink}
-          onContextMenu={handleContextMenu}
-          sidebarOpen={sidebarOpen}
-          sidebarItems={allSidebarItems}
-          anchorPositions={anchorPositions}
-          onAnchorPositionsChange={setAnchorPositions}
-          pageWidthPx={pageWidthPx}
-          expandedSidebarItem={expandedSidebarItem}
-          setExpandedSidebarItem={setExpandedSidebarItem}
-          comments={comments}
-          resolvedCommentIds={resolvedCommentIds}
-          resolvedIdsForRender={resolvedIdsForRender}
-          setShowCommentsSidebar={setShowCommentsSidebar}
-          onTotalPagesChange={(totalPages) => {
-            scrollPageInfoRef.current.totalPages = totalPages;
-          }}
-          floatingCommentBtn={floatingCommentBtn}
-          isAddingComment={isAddingComment}
-          setCommentSelectionRange={setCommentSelectionRange}
-          setAddCommentYPosition={setAddCommentYPosition}
-          setIsAddingComment={setIsAddingComment}
-          setFloatingCommentBtn={setFloatingCommentBtn}
-        />
+        <ReviewProvider value={reviewContextValue}>
+          <DocxEditorPagedArea
+            pagedEditorRef={pagedEditorRef}
+            scrollContainerRef={scrollContainerRef}
+            document={docState.state}
+            theme={theme}
+            initialSectionProperties={initialSectionProperties}
+            finalSectionProperties={finalSectionProperties}
+            headerContent={headerContent}
+            footerContent={footerContent}
+            firstPageHeaderContent={firstPageHeaderContent}
+            firstPageFooterContent={firstPageFooterContent}
+            zoom={state.zoom}
+            readOnly={readOnly}
+            extensionManager={extensionManager}
+            externalPlugins={editorPlugins}
+            onDocumentChange={handleDocumentChange}
+            onPagedSelectionChange={handlePagedSelectionChange}
+            onReady={(ref) => {
+              const view = ref.getView();
+              if (view) setPmState(view.state);
+            }}
+            onHyperlinkClick={(data) =>
+              hyperlink.openView(data.rect, {
+                href: data.href,
+                displayText: data.displayText,
+                tooltip: data.tooltip,
+              })
+            }
+            onOpenLink={onOpenLink}
+            onContextMenu={handleContextMenu}
+            onAnchorPositionsChange={setAnchorPositions}
+            pageWidthPx={pageWidthPx}
+            onTotalPagesChange={(totalPages) => {
+              scrollPageInfoRef.current.totalPages = totalPages;
+            }}
+          />
+        </ReviewProvider>
       }
       overlays={
         <DocxEditorOverlays
