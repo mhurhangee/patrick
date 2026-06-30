@@ -45,12 +45,10 @@ export interface DocxToolbarProps {
   onPageSetup?: (() => void) | undefined;
   onApplyWatermark: (watermark: Watermark | null) => void;
   currentWatermark?: Watermark | undefined;
-  watermarkPresets?: readonly string[] | undefined;
   readOnly?: boolean;
   currentFormatting: SelectionFormatting;
   onFormat: (action: FormattingAction) => void;
   documentFonts?: readonly FontOption[] | undefined;
-  fontFamilies?: ReadonlyArray<string | FontOption> | undefined;
   documentStyles?: Style[] | undefined;
   onInsertTable: (rows: number, columns: number) => void;
   onInsertImage: () => void;
@@ -90,12 +88,10 @@ export function DocxToolbar(props: DocxToolbarProps) {
     onPageSetup,
     onApplyWatermark,
     currentWatermark,
-    watermarkPresets,
     readOnly,
     currentFormatting,
     onFormat,
     documentFonts,
-    fontFamilies,
     documentStyles,
     onInsertTable,
     onInsertImage,
@@ -133,7 +129,6 @@ export function DocxToolbar(props: DocxToolbarProps) {
               currentFormatting={currentFormatting}
               onFormat={onFormat}
               documentFonts={documentFonts}
-              fontFamilies={fontFamilies}
               documentStyles={documentStyles}
               onInsertTable={onInsertTable}
               onInsertImage={onInsertImage}
@@ -143,7 +138,6 @@ export function DocxToolbar(props: DocxToolbarProps) {
               onInsertTOC={onInsertTOC}
               onApplyWatermark={onApplyWatermark}
               currentWatermark={currentWatermark}
-              watermarkPresets={watermarkPresets}
               tableContext={tableContext}
               onTableAction={onTableAction}
               imageContext={imageContext}

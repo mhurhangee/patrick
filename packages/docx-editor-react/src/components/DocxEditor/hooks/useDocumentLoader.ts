@@ -35,7 +35,6 @@ export function useDocumentLoader({
   setLoadingState,
   setComments,
   setShowCommentsSidebar,
-  onError,
   resetForNewDocument,
   commentsLoadedRef,
   commentIdAllocator,
@@ -52,7 +51,6 @@ export function useDocumentLoader({
   setLoadingState: (state: { isLoading: boolean; parseError: string | null }) => void;
   setComments: React.Dispatch<React.SetStateAction<Comment[]>>;
   setShowCommentsSidebar: React.Dispatch<React.SetStateAction<boolean>>;
-  onError: ((error: Error) => void) | undefined;
   resetForNewDocument: () => void;
   // `resetForNewDocument` (declared earlier in the parent) needs to clear
   // this ref on every load. Lifted out of the hook for that reason.
@@ -101,10 +99,9 @@ export function useDocumentLoader({
         if (loadGenerationRef.current !== generation) return;
         const message = error instanceof Error ? error.message : 'Failed to parse document';
         setLoadingState({ isLoading: false, parseError: message });
-        onError?.(error instanceof Error ? error : new Error(message));
       }
     },
-    [resetForNewDocument, loadParsedDocument, onError, setLoadingState]
+    [resetForNewDocument, loadParsedDocument, setLoadingState]
   );
 
   // React to documentBuffer / document prop changes.

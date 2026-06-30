@@ -17,10 +17,6 @@ import { renderAllPagesNow } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
 import type { PagedEditorRef } from '../PagedEditor';
 
-function toFileIOError(error: unknown, fallbackMessage: string): Error {
-  return error instanceof Error ? error : new Error(fallbackMessage);
-}
-
 /**
  * File-IO surface of the editor: save (to buffer), download, print, open
  * a DOCX from disk, insert an image from disk. The two file <input> refs
@@ -35,8 +31,6 @@ export function useFileIO({
   pagedEditorRef,
   containerRef,
   comments,
-  onOpen,
-  onError,
   onPrint,
   loadBuffer,
   getActiveEditorView,
@@ -46,8 +40,6 @@ export function useFileIO({
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   comments: Comment[];
-  onOpen: ((file: File) => void | Promise<void>) | undefined;
-  onError: ((error: Error) => void) | undefined;
   onPrint: (() => void) | undefined;
   loadBuffer: (buffer: DocxInput) => Promise<void>;
   getActiveEditorView: () => EditorView | null | undefined;
@@ -110,12 +102,11 @@ export function useFileIO({
         }
 
         return buffer;
-      } catch (error) {
-        onError?.(toFileIOError(error, 'Failed to save document'));
+      } catch {
         return null;
       }
     },
-    [agentRef, pagedEditorRef, comments, onError]
+    [agentRef, pagedEditorRef, comments]
   );
 
   const handleDirectPrint = useCallback(() => {
@@ -202,29 +193,15 @@ body { background: white; }
 
   const handleDocxFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (onOpen) {
-        const input = event.currentTarget;
-        const file = input.files?.[0];
-        input.value = '';
-        if (!file) return;
-
-        try {
-          await onOpen(file);
-        } catch (error) {
-          onError?.(toFileIOError(error, 'Failed to open document'));
-        }
-        return;
-      }
-
       try {
         const result = await readDocxFileFromInput(event.nativeEvent);
         if (!result) return;
         await loadBuffer(result.buffer);
-      } catch (error) {
-        onError?.(toFileIOError(error, 'Failed to open document'));
+      } catch {
+        // noop
       }
     },
-    [loadBuffer, onError, onOpen]
+    [loadBuffer]
   );
 
   const handleInsertImageClick = useCallback(() => {
