@@ -509,7 +509,14 @@ export function renderLine(
           const next = runsForLine[j];
           if (isTabRun(next) || isLineBreakRun(next)) break;
           if (isTextRun(next)) {
-            lineEl.appendChild(renderTextRun(next, doc, options?.context?.resolvedCommentIds));
+            lineEl.appendChild(
+              renderTextRun(
+                next,
+                doc,
+                options?.context?.resolvedCommentIds,
+                options?.context?.suppressTrackedChangeStyling
+              )
+            );
           } else if (isFieldRun(next) && options?.context) {
             lineEl.appendChild(renderFieldRun(next, doc, options.context));
           } else if (isImageRun(next)) {
@@ -543,7 +550,12 @@ export function renderLine(
       lineEl.appendChild(tabEl);
       currentX += tabWidth;
     } else if (isTextRun(run)) {
-      const runEl = renderTextRun(run, doc, options?.context?.resolvedCommentIds);
+      const runEl = renderTextRun(
+        run,
+        doc,
+        options?.context?.resolvedCommentIds,
+        options?.context?.suppressTrackedChangeStyling
+      );
 
       // For highlighted runs, extend background to fill the full line height.
       // Inline elements' background only covers the content area (font ascent+descent),

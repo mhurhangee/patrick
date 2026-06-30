@@ -653,64 +653,15 @@
    INLINE HEADER/FOOTER EDITING — Dim body, separator bar, dotted borders
    ============================================================================ */
 
-/* Header/footer CONTENT is non-interactive in normal mode: a single click on a
-   header/footer is already a no-op (Word parity), and — crucially — a page- or
+/* Header/footer content is non-interactive (render-only): a click on a
+   header/footer is a no-op (Word parity), and — crucially — a page- or
    margin-anchored shape (e.g. a full-page letterhead in a header) overflows the
    band and would otherwise sit on top of the body and swallow clicks meant for
-   the document text (#856). The band element itself keeps pointer events so it
-   stays the double-click-to-edit target; only its content is passed through. */
+   the document text (#856). Passing the content through keeps those clicks
+   reaching the body. */
 .layout-page-header > *,
 .layout-page-footer > * {
   pointer-events: none;
-}
-
-/* While editing a region, its content must be hittable again so clicks map to
-   header/footer caret positions. */
-.paged-editor--editing-header .layout-page-header > *,
-.paged-editor--editing-footer .layout-page-footer > * {
-  pointer-events: auto;
-}
-
-/* Dim body content when editing header/footer */
-.paged-editor--hf-editing .layout-page-content {
-  opacity: 0.4;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-/* While editing one HF region, the sibling region (and the non-edited area)
-   shows a normal arrow, not the double-click "pointer" hint. The active
-   region's `cursor: text` below wins via later source order. */
-.paged-editor--hf-editing .layout-page-header,
-.paged-editor--hf-editing .layout-page-footer {
-  cursor: default;
-}
-
-/* Dotted border on active header area; text caret since it's being edited */
-.paged-editor--editing-header .layout-page-header {
-  border-bottom: 1px dotted var(--doc-primary);
-  cursor: text;
-}
-
-/* Dotted border on active footer area; text caret since it's being edited */
-.paged-editor--editing-footer .layout-page-footer {
-  border-top: 1px dotted var(--doc-primary);
-  cursor: text;
-}
-
-/*
- * HF editing unification phase 2 (openspec/changes/unify-hf-editing/):
- * we used to hide the painter's HF region during edit and show the inline
- * overlay's PM-rendered `<table>` on top. Now the painter is the sole
- * visible renderer in both modes — the overlay's PM container moves
- * off-screen instead (see InlineHeaderFooterEditor.tsx). Keeping the
- * dotted-border affordance above; everything painter-related stays visible.
- */
-
-/* Remove hover effect on header/footer when in editing mode */
-.paged-editor--hf-editing .layout-page-header:hover,
-.paged-editor--hf-editing .layout-page-footer:hover {
-  background-color: transparent;
 }
 
 /* =============================================================================

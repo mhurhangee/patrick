@@ -78,12 +78,12 @@ export function useContextMenus({
 
   // The body editor's right-click is wired through PagedEditor's
   // onContextMenu (handleContextMenu below). This handler is mounted on the
-  // outer editor shell to catch HF-region clicks while the inline editor is
-  // open — the body's plumbing won't fire for HF clicks.
+  // outer editor shell to catch right-clicks in the gutter around the pages,
+  // where the body's plumbing won't fire.
   const handleEditorContextMenu = useCallback(
     (e: React.MouseEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target?.closest('.paged-editor__pages') && !target.closest('.hf-inline-editor')) {
+      if (target?.closest('.paged-editor__pages')) {
         return;
       }
       e.preventDefault();

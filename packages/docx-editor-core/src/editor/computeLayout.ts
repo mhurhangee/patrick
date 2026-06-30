@@ -149,8 +149,8 @@ function resolveFootnoteColumnLayout(
 /**
  * Run the pure layout compute pass (the 6 steps in this file's header), lifted
  * verbatim from `useLayoutPipeline`. The adapter performs the DOM paint
- * (`renderPages`), scroll-restore, `painter:painted`, and state writeback with
- * the returned values.
+ * (`renderPages`), scroll-restore, and state writeback with the returned
+ * values.
  */
 export function computeLayout(inputs: ComputeLayoutInputs): LayoutComputation {
   const {

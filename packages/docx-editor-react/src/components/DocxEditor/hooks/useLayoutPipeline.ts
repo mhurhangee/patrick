@@ -17,7 +17,6 @@ import type { EditorState } from 'prosemirror-state';
 
 import type { FlowBlock, Layout, Measure } from '@eigenpal/docx-editor-core/layout-engine';
 import { getMargins, getPageSize, getColumns } from '@eigenpal/docx-editor-core/layout-bridge';
-import type { Node as PMNode } from 'prosemirror-model';
 import {
   LayoutPainter,
   renderPages,
@@ -65,15 +64,6 @@ export interface UseLayoutPipelineOptions {
   footerContent?: HeaderFooter | null;
   firstPageHeaderContent?: HeaderFooter | null;
   firstPageFooterContent?: HeaderFooter | null;
-  /**
-   * Resolve the current PM document for an HF instance, when a persistent
-   * hidden PM EditorView exists for it. Phase 1 of the HF unification
-   * (openspec/changes/unify-hf-editing/) — the painter prefers the PM
-   * doc over re-parsing `HeaderFooter.content` so future phases that
-   * dispatch edits into the PM are picked up automatically. Returns null
-   * for HF instances without a mounted PM (boot, or rId not yet projected).
-   */
-  getHfPmDoc?: (hf: HeaderFooter) => PMNode | null;
   pageGap: number;
   zoom: number;
   resolvedCommentIds?: Set<number>;
@@ -109,7 +99,6 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
     footerContent,
     firstPageHeaderContent,
     firstPageFooterContent,
-    getHfPmDoc,
     pageGap,
     zoom,
     resolvedCommentIds,
@@ -139,11 +128,9 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
   const onTotalPagesChangeRef = useRef(onTotalPagesChange);
   const onAnchorPositionsChangeRef = useRef(onAnchorPositionsChange);
   const onRenderedDomContextReadyRef = useRef(onRenderedDomContextReady);
-  const getHfPmDocRef = useRef(getHfPmDoc);
   onTotalPagesChangeRef.current = onTotalPagesChange;
   onAnchorPositionsChangeRef.current = onAnchorPositionsChange;
   onRenderedDomContextReadyRef.current = onRenderedDomContextReady;
-  getHfPmDocRef.current = getHfPmDoc;
 
   // Total-pages notifier — fires only when count changes (including N → 0).
   const lastTotalPagesRef = useRef<number>(0);
@@ -248,7 +235,8 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
           firstPageHeaderContent,
           firstPageFooterContent,
           measureBlocks,
-          getHfPmDoc: (hf) => getHfPmDocRef.current?.(hf) ?? null,
+          // Header/footer is render-only — always paint from `hf.content`.
+          getHfPmDoc: () => null,
         });
         setBlocks(newBlocks);
         setMeasures(newMeasures);
@@ -309,17 +297,6 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
               pendingIncrementalScrollSnapshotWrittenAtRef.current = performance.now();
             }
           }
-
-          // Deterministic "painter is done writing" signal. HF caret +
-          // selection-rect resolvers wait on this instead of `requestAnimationFrame`
-          // chains — the rAF approach raced the painter and stale
-          // `data-pm-start` spans showed up on the first frame after engage
-          // (`computeHfCaretRectFromView` had to retry through a second rAF).
-          // Bubbling CustomEvent so any ancestor (DocxEditorPagedArea) can
-          // listen via `pagesContainerRef.current?.addEventListener(...)`.
-          pagesContainerRef.current?.dispatchEvent(
-            new CustomEvent('painter:painted', { bubbles: true })
-          );
 
           if (onRenderedDomContextReadyRef.current) {
             const domContext = createRenderedDomContext(pagesContainerRef.current, zoom);
@@ -436,8 +413,6 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
       footerContent,
       firstPageHeaderContent,
       firstPageFooterContent,
-      // `getHfPmDoc` is read through a ref in the pipeline so identity
-      // changes don't re-trigger the layout effect every render.
       sectionProperties,
       finalSectionProperties,
       document,

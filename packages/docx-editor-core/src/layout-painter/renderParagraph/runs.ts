@@ -35,7 +35,8 @@ import {
 function applyRunStyles(
   element: HTMLElement,
   run: TextRun | TabRun,
-  resolvedCommentIds?: Set<number>
+  resolvedCommentIds?: Set<number>,
+  suppressTrackedChangeStyling = false
 ): void {
   // Font properties
   if (run.fontFamily) {
@@ -176,8 +177,10 @@ function applyRunStyles(
     }
   }
 
-  // Tracked insertion styling — light green background with dashed border
-  if (run.isInsertion) {
+  // Tracked insertion styling — light green background with dashed border.
+  // Suppressed in render-only contexts (headers/footers) where the change
+  // can't be acted on, so it paints as plain text.
+  if (run.isInsertion && !suppressTrackedChangeStyling) {
     element.style.backgroundColor = 'rgba(52, 168, 83, 0.08)';
     element.style.borderBottom = '2px dashed #2e7d32';
     element.style.paddingBottom = '1px';
@@ -188,7 +191,8 @@ function applyRunStyles(
   }
 
   // Tracked deletion styling — light red background with strikethrough
-  if (run.isDeletion) {
+  // (suppressed in render-only contexts; see above).
+  if (run.isDeletion && !suppressTrackedChangeStyling) {
     element.style.backgroundColor = 'rgba(211, 47, 47, 0.08)';
     element.style.color = '#c62828';
     if (!decorations.includes('line-through')) decorations.push('line-through');
@@ -271,12 +275,13 @@ export function applyPmPositions(element: HTMLElement, pmStart?: number, pmEnd?:
 export function renderTextRun(
   run: TextRun,
   doc: Document,
-  resolvedCommentIds?: Set<number>
+  resolvedCommentIds?: Set<number>,
+  suppressTrackedChangeStyling?: boolean
 ): HTMLElement {
   const span = doc.createElement('span');
   span.className = `${PARAGRAPH_CLASS_NAMES.run} ${PARAGRAPH_CLASS_NAMES.text}`;
 
-  applyRunStyles(span, run, resolvedCommentIds);
+  applyRunStyles(span, run, resolvedCommentIds, suppressTrackedChangeStyling);
   applyPmPositions(span, run.pmStart, run.pmEnd);
 
   // Handle hyperlinks
@@ -654,7 +659,12 @@ export function renderFieldRun(run: FieldRun, doc: Document, context: RenderCont
     text,
   };
 
-  return renderTextRun(resolvedRun, doc, context?.resolvedCommentIds);
+  return renderTextRun(
+    resolvedRun,
+    doc,
+    context?.resolvedCommentIds,
+    context?.suppressTrackedChangeStyling
+  );
 }
 
 /**
@@ -662,7 +672,7 @@ export function renderFieldRun(run: FieldRun, doc: Document, context: RenderCont
  */
 export function renderRun(run: Run, doc: Document, context?: RenderContext): HTMLElement {
   if (isTextRun(run)) {
-    return renderTextRun(run, doc, context?.resolvedCommentIds);
+    return renderTextRun(run, doc, context?.resolvedCommentIds, context?.suppressTrackedChangeStyling);
   }
   if (isTabRun(run)) {
     // Tab runs should be handled by renderLine with proper width calculation

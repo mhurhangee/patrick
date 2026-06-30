@@ -175,6 +175,14 @@ export interface RenderContext {
    * fact (#379).
    */
   positioning?: 'absolute' | 'flow';
+  /**
+   * Suppress the green/red tracked-change run styling (insertions/deletions
+   * render as plain text). Set for headers/footers, which are render-only —
+   * their tracked changes can't be accepted/rejected in-app, so painting
+   * un-actionable redlines there would mislead. The underlying marks still
+   * round-trip on save.
+   */
+  suppressTrackedChangeStyling?: boolean;
 }
 
 /**

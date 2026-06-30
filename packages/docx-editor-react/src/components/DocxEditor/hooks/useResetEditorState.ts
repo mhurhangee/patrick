@@ -5,10 +5,10 @@ import { EMPTY_ANCHOR_POSITIONS } from '../commentFactories';
 
 /**
  * Bundles the document-load reset surface — every state setter that
- * needs to clear when the user opens a new document. Twelve setters
- * fan out from one callback: comments, headings, sidebar visibility,
- * the new-comment workflow state, the floating button, H/F editing,
- * anchor positions, find-replace matches, and the orphan-cleanup timer.
+ * needs to clear when the user opens a new document. Setters fan out
+ * from one callback: comments, headings, sidebar visibility, the
+ * new-comment workflow state, the floating button, anchor positions,
+ * find-replace matches, and the orphan-cleanup timer.
  *
  * Lifted out of `DocxEditor.tsx` so the orchestrator doesn't carry the
  * ~20-line setter dump. The two `*LoadedRef`s come in from the parent
@@ -25,8 +25,6 @@ export function useResetEditorState({
   setCommentSelectionRange,
   setAddCommentYPosition,
   setFloatingCommentBtn,
-  setHfEditPosition,
-  setHfEditIsFirstPage,
   setAnchorPositions,
   clearFindReplaceMatches,
   cleanOrphanedCommentsTimerRef,
@@ -42,8 +40,6 @@ export function useResetEditorState({
   >;
   setAddCommentYPosition: React.Dispatch<React.SetStateAction<number | null>>;
   setFloatingCommentBtn: React.Dispatch<React.SetStateAction<{ top: number; left: number } | null>>;
-  setHfEditPosition: React.Dispatch<React.SetStateAction<'header' | 'footer' | null>>;
-  setHfEditIsFirstPage: React.Dispatch<React.SetStateAction<boolean>>;
   setAnchorPositions: React.Dispatch<React.SetStateAction<Map<string, number>>>;
   clearFindReplaceMatches: () => void;
   cleanOrphanedCommentsTimerRef: React.RefObject<ReturnType<typeof setTimeout> | null>;
@@ -58,8 +54,6 @@ export function useResetEditorState({
     setCommentSelectionRange(null);
     setAddCommentYPosition(null);
     setFloatingCommentBtn(null);
-    setHfEditPosition(null);
-    setHfEditIsFirstPage(false);
     setAnchorPositions(EMPTY_ANCHOR_POSITIONS);
     clearFindReplaceMatches();
     if (cleanOrphanedCommentsTimerRef.current) {
@@ -76,8 +70,6 @@ export function useResetEditorState({
     setCommentSelectionRange,
     setAddCommentYPosition,
     setFloatingCommentBtn,
-    setHfEditPosition,
-    setHfEditIsFirstPage,
     setAnchorPositions,
     clearFindReplaceMatches,
     cleanOrphanedCommentsTimerRef,
