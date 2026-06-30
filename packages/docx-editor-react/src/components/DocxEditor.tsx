@@ -514,10 +514,10 @@ import type { EditorMode } from './DocxEditor/internals/editing-modes';
 import { getInitialSectionProperties } from './DocxEditor/internals/pmAnchors';
 import {
   PENDING_COMMENT_ID,
-  EMPTY_ANCHOR_POSITIONS,
-  createComment,
   createCommentIdAllocator,
-} from './DocxEditor/commentFactories';
+} from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
+import { createComment } from '@eigenpal/docx-editor-core/prosemirror/commentOps';
+import { EMPTY_ANCHOR_POSITIONS } from './DocxEditor/commentFactories';
 
 /**
  * DocxEditor - Complete DOCX editor component

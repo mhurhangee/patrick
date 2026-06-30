@@ -36,7 +36,7 @@ import {
   applyProposedChange,
 } from '@eigenpal/docx-editor-core/prosemirror/commentOps';
 import type { CommentIdAllocator } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
-import { createComment } from '../commentFactories';
+import { createComment } from '@eigenpal/docx-editor-core/prosemirror/commentOps';
 
 /**
  * Owns the `useImperativeHandle` that exposes the public `DocxEditorRef`

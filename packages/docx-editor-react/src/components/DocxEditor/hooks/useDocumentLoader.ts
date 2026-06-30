@@ -12,7 +12,7 @@ import {
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { UseHistoryReturn } from '../../../hooks/useHistory';
 import type { PagedEditorRef } from '../PagedEditor';
-import type { CommentIdAllocator } from '../commentFactories';
+import type { CommentIdAllocator } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 import { seedCommentAllocator } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 
 /**
