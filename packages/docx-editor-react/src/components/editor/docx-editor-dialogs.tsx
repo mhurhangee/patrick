@@ -7,8 +7,8 @@ import type { FindMatch, FindOptions, FindResult } from '@eigenpal/docx-editor-c
 import type { ImageContext, ImagePropertiesData } from '../../types/image';
 import { CursorPopover } from '../primitives/cursor-popover';
 import { FindReplaceBar } from '../dialogs/find-replace-bar';
-import { HyperlinkPopover } from '../dialogs/hyperlink-popover';
-import type { useHyperlink } from '../../hooks/useHyperlink';
+import { HyperlinkPopover } from '../../features/hyperlinks/hyperlink-popover';
+import type { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
 import { ImagePropertiesForm } from '../toolbar/groups/image-properties-popover';
 import { SplitCellForm } from '../dialogs/split-cell-popover';
 import { TablePropertiesForm } from '../dialogs/table-properties-popover';

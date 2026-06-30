@@ -21,7 +21,7 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useFileIO } from '../../hooks/useFileIO';
 import { usePageSetupControls } from '../../hooks/usePageSetupControls';
 import { useWatermarkControls } from '../../hooks/useWatermarkControls';
-import { useHyperlink } from '../../hooks/useHyperlink';
+import { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
 import { useFindReplaceBridge } from '../../hooks/useFindReplaceBridge';
 import { useFormattingActions } from '../../hooks/useFormattingActions';
 import { useImageActions } from '../../hooks/useImageActions';
