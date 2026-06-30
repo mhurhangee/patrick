@@ -3,7 +3,7 @@ import type { TrackedChangeEntry } from '@eigenpal/docx-editor-core/utils/commen
 import { truncateText } from '@eigenpal/docx-editor-core/utils/comments';
 import { Button } from '@patrick/ui/components/button';
 import { Check, X } from 'lucide-react';
-import type { SidebarItemRenderProps } from '../../types/sidebar';
+import type { SidebarItemRenderProps } from './types';
 import { ReplyInput } from './reply-input';
 import { ReviewCardShell } from './review-card-shell';
 

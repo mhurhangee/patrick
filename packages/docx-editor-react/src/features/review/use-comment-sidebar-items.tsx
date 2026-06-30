@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
-import type { ReactSidebarItem } from '../types/sidebar';
+import type { ReactSidebarItem } from './types';
 import type { TrackedChangeEntry } from '@eigenpal/docx-editor-core/utils/comments';
-import { CommentCard } from '../components/sidebar/comment-card';
-import { TrackedChangeCard } from '../components/sidebar/tracked-change-card';
-import { AddCommentCard } from '../components/sidebar/add-comment-card';
-import { ResolvedCommentMarker } from '../components/sidebar/resolved-comment-marker';
+import { CommentCard } from './comment-card';
+import { TrackedChangeCard } from './tracked-change-card';
+import { AddCommentCard } from './add-comment-card';
+import { ResolvedCommentMarker } from './resolved-comment-marker';
 
 export interface CommentCallbacks {
   onCommentReply?: (commentId: number, text: string) => void;

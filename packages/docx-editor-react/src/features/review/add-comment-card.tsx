@@ -1,7 +1,7 @@
 import { Button } from '@patrick/ui/components/button';
 import { Textarea } from '@patrick/ui/components/textarea';
 import { useState } from 'react';
-import type { SidebarItemRenderProps } from '../../types/sidebar';
+import type { SidebarItemRenderProps } from './types';
 
 export interface AddCommentCardProps extends SidebarItemRenderProps {
   onSubmit?: (text: string) => void;
