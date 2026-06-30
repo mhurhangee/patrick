@@ -402,8 +402,8 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
   /**
    * Multiple rapid transactions (e.g. typing "hello") within the same frame
    * are coalesced so only the final state triggers a full layout pass. The
-   * coalescer lives in core (`createLayoutScheduler`) so React and Vue share
-   * it; the `runRef` indirection lets the stable scheduler always call the
+   * coalescer lives in core (`createLayoutScheduler`); the `runRef`
+   * indirection lets the stable scheduler always call the
    * latest `runLayoutPipeline` without recreating itself.
    */
   const runRef = useRef(runLayoutPipeline);

@@ -2,14 +2,13 @@
  * DOM-based selection / caret helpers for PagedEditor.
  *
  * The core DOM walks (`getCaretPositionFromDom` / `getSelectionRectsFromDom`)
- * live in `@eigenpal/docx-editor-core/layout-bridge` and are shared with the
- * Vue adapter. These thin React wrappers resolve the selection-overlay rect,
- * call the core walk, then divide by `zoom` so the result lands in the
- * React overlay's own (unscaled-but-CSS-scaled) coordinate space. React's
- * overlay sits OUTSIDE the scroll container, so — unlike Vue — it does not add
- * scrollTop/scrollLeft (intentional divergence, #670).
+ * live in `@eigenpal/docx-editor-core/layout-bridge`. These thin wrappers
+ * resolve the selection-overlay rect, call the core walk, then divide by
+ * `zoom` so the result lands in the overlay's own (unscaled-but-CSS-scaled)
+ * coordinate space. The overlay sits OUTSIDE the scroll container, so it does
+ * not add scrollTop/scrollLeft.
  *
- * `applyCellSelectionHighlight` is re-exported from core (shared with Vue).
+ * `applyCellSelectionHighlight` is re-exported from core.
  */
 
 import {

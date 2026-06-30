@@ -397,7 +397,7 @@ export function useContextMenus({
           break;
         }
       }
-      // TextContextMenu calls onClose after onAction, so no need to close here.
+      // The menu auto-closes on select (Radix onSelect), so no explicit close here.
     },
     [
       getActiveEditorView,

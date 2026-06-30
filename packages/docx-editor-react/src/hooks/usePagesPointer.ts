@@ -153,7 +153,7 @@ export function usePagesPointer(opts: UsePagesPointerOptions): UsePagesPointerRe
   // Table resize state machine (column-between, row, right-edge handles).
   const tableResize = useTableResizeState({ hiddenPMRef });
 
-  // Cell-drag selection state machine (shared with Vue via core).
+  // Cell-drag selection state machine (tracker lives in core).
   const cellDragRef = useRef(createCellDragTracker());
 
   // Table insert button state + delayed-hide timer

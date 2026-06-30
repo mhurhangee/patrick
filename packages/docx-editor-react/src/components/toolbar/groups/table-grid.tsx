@@ -3,8 +3,7 @@ import { useState } from 'react';
 
 /**
  * A hover-to-size table grid picker for the Insert menu. Tailwind + global
- * shadcn tokens (works inside a portalled dropdown, unlike the legacy
- * `--doc-*`-styled TableGridInline). Pick = click a cell.
+ * shadcn tokens, so it works inside a portalled dropdown. Pick = click a cell.
  */
 export function TableGrid({
   onPick,

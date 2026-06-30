@@ -212,9 +212,9 @@ body { background: white; }
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       const view = getActiveEditorView();
-      // `insertImageFromFile` is the shared core flow (Vue calls it too): read
-      // the file, fit the image to the page width, and insert it inline with
-      // the `insertion` mark when suggesting mode is active.
+      // `insertImageFromFile` is the shared core flow: read the file, fit the
+      // image to the page width, and insert it inline with the `insertion`
+      // mark when suggesting mode is active.
       if (file && view) insertImageFromFile(view, file, { onInserted: focusActiveEditor });
 
       // Reset the input so the same file can be selected again
