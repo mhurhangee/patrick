@@ -8,7 +8,7 @@ import {
   type FindResult,
 } from '@eigenpal/docx-editor-core/utils/findReplace';
 import type { useFindReplace } from '../../../hooks/useFindReplace';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { PagedEditorRef } from '../../DocxEditor/PagedEditor';
 
 type PmFindMatch = FindMatch & {
   pmFrom: number;

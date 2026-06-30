@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { PagedEditorRef } from '../../DocxEditor/PagedEditor';
 
 /**
  * Bundles the editor's view + focus/undo/redo helpers, threaded to every

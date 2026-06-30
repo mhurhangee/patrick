@@ -11,8 +11,8 @@ import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
 import type { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import type { DocxInput } from '@eigenpal/docx-editor-core/utils';
-import { useFileIO } from './hooks/useFileIO';
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useFileIO } from '../editor/hooks/useFileIO';
+import { useKeyboardShortcuts } from '../editor/hooks/useKeyboardShortcuts';
 import type { PagedEditorRef } from './PagedEditor';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
