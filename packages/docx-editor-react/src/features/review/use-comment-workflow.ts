@@ -1,9 +1,9 @@
 /**
- * The comment + tracked-change orchestration, lifted out of the DocxEditor god
- * file. Owns the sidebar-card callbacks, the cursor→card selection walker, and
- * the derived sets the renderer needs (resolved-id masks, replacement aliases).
+ * The comment + tracked-change orchestration: the sidebar-card callbacks, the
+ * cursor→card selection walker, and the derived sets the renderer needs
+ * (resolved-id masks, replacement aliases).
  *
- * Two load-bearing patterns are preserved verbatim from the original inline code:
+ * Two load-bearing patterns:
  *
  * 1. `commentCallbacksRef.current` is reassigned on EVERY render (in the hook
  *    body, not a memo/effect) so its closures always capture fresh state
