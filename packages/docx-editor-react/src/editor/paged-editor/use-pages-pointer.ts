@@ -42,10 +42,10 @@ import {
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import { findWordBoundaries } from '@eigenpal/docx-editor-core/utils';
 
-import type { HiddenProseMirrorRef } from '../editor/hidden-prose-mirror';
-import type { ImageSelectionInfo } from '../editor/overlays/ImageSelectionOverlay';
-import { useDragAutoScroll } from './useDragAutoScroll';
-import { useTableResizeState } from './useTableResizeState';
+import type { HiddenProseMirrorRef } from './hidden-prose-mirror';
+import type { ImageSelectionInfo } from './overlays/ImageSelectionOverlay';
+import { useDragAutoScroll } from './use-drag-auto-scroll';
+import { useTableResizeState } from './use-table-resize-state';
 import {
   createCellDragTracker,
   findCellPosFromPmPos as coreFindCellPosFromPmPos,

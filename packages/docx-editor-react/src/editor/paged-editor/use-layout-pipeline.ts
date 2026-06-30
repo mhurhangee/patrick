@@ -39,18 +39,18 @@ import type {
   Theme,
 } from '@eigenpal/docx-editor-core/types/document';
 
-import type { HiddenProseMirrorRef } from '../editor/hidden-prose-mirror';
+import type { HiddenProseMirrorRef } from './hidden-prose-mirror';
 import type { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
-import { computeAnchorPositions } from '../editor/internals/sidebarAnchorPositions';
-import { measureBlocks } from '../editor/internals/measureBlock';
-import { viewportMinHeightPx } from '../editor/internals/scrollUtils';
+import { computeAnchorPositions } from './internals/sidebarAnchorPositions';
+import { measureBlocks } from './internals/measureBlock';
+import { viewportMinHeightPx } from './internals/scrollUtils';
 import {
   applyScrollRestore,
   buildPendingScrollRestore,
   captureScrollAnchor,
   reclampIncrementalSnapshot,
   type PendingScrollRestore,
-} from '../editor/internals/scrollRestore';
+} from './internals/scrollRestore';
 
 export interface UseLayoutPipelineOptions {
   document: Document | null;
