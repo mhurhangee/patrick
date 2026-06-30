@@ -1,13 +1,13 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { TrackedChangesResult } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
-import { cn } from '../../lib/utils';
-import { ErrorBoundary } from '../states/error-boundary';
+import { cn } from '../lib/utils';
+import { ErrorBoundary } from '../components/states/error-boundary';
 import {
   DocumentOutline,
   OUTLINE_LEFT_OFFSET,
   OUTLINE_BUTTON_LEFT_OFFSET,
-} from '../../features/outline/document-outline';
-import { OutlineToggleButton } from '../../features/outline/outline-toggle-button';
+} from '../features/outline/document-outline';
+import { OutlineToggleButton } from '../features/outline/outline-toggle-button';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
 
 interface OutlineProps {

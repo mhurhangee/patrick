@@ -1,7 +1,7 @@
-import { ImageContextMenu } from '../../features/context-menu/image-context-menu';
-import { TextContextMenu } from '../../features/context-menu/text-context-menu';
-import type { useImageContextMenu } from '../../features/context-menu/use-image-context-menu';
-import type { TextContextMenuItem } from '../../features/context-menu/types';
+import { ImageContextMenu } from '../features/context-menu/image-context-menu';
+import { TextContextMenu } from '../features/context-menu/text-context-menu';
+import type { useImageContextMenu } from '../features/context-menu/use-image-context-menu';
+import type { TextContextMenuItem } from '../features/context-menu/types';
 
 interface ContextMenuState {
   isOpen: boolean;

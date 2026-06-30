@@ -23,8 +23,8 @@ import {
   clampRangeToDoc,
 } from '@eigenpal/docx-editor-core/prosemirror/queries';
 
-import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
-import type { PagedEditorRef } from '../components/editor/paged-editor';
+import type { HiddenProseMirrorRef } from '../editor/hidden-prose-mirror';
+import type { PagedEditorRef } from '../editor/paged-editor';
 
 interface RefApiInputs {
   hiddenPMRef: React.RefObject<HiddenProseMirrorRef | null>;

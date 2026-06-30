@@ -22,7 +22,7 @@ import {
   commitImageInlineMove,
 } from '@eigenpal/docx-editor-core/prosemirror/imageCommit';
 
-import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
+import type { HiddenProseMirrorRef } from '../editor/hidden-prose-mirror';
 
 export interface UseImageInteractionsOptions {
   pagesContainerRef: React.RefObject<HTMLDivElement | null>;

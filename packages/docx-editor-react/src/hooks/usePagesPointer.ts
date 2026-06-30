@@ -42,8 +42,8 @@ import {
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import { findWordBoundaries } from '@eigenpal/docx-editor-core/utils';
 
-import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
-import type { ImageSelectionInfo } from '../components/editor/overlays/ImageSelectionOverlay';
+import type { HiddenProseMirrorRef } from '../editor/hidden-prose-mirror';
+import type { ImageSelectionInfo } from '../editor/overlays/ImageSelectionOverlay';
 import { useDragAutoScroll } from './useDragAutoScroll';
 import { useTableResizeState } from './useTableResizeState';
 import {
