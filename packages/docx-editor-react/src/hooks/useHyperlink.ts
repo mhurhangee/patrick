@@ -5,8 +5,8 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
 import { useCallback, useState } from 'react';
-import { normalizeUrl } from '../../../lib/hyperlink';
-import type { HyperlinkMode } from '../../dialogs/hyperlink-popover';
+import { normalizeUrl } from '../lib/hyperlink';
+import type { HyperlinkMode } from '../components/dialogs/hyperlink-popover';
 
 interface LinkData {
   href: string;

@@ -15,7 +15,7 @@ import { readDocxFileFromInput, type DocxInput } from '@eigenpal/docx-editor-cor
 import { insertImageFromFile } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import { renderAllPagesNow } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
-import type { PagedEditorRef } from '../PagedEditor';
+import type { PagedEditorRef } from '../components/editor/paged-editor';
 
 /**
  * File-IO surface of the editor: save (to buffer), download, print, open
@@ -23,8 +23,8 @@ import type { PagedEditorRef } from '../PagedEditor';
  * live here too because they're hidden inputs whose `click()` is wrapped
  * by the trigger callbacks.
  *
- * `getActiveEditorView` and `focusActiveEditor` come from the parent
- * because they switch targets when the header/footer editor is active.
+ * `getActiveEditorView` and `focusActiveEditor` come from the parent so
+ * every hook shares the one editor-view accessor.
  */
 export function useFileIO({
   agentRef,

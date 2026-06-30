@@ -19,7 +19,7 @@ import type { EditorState, Transaction, Plugin } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 
 // Internal components
-import { HiddenProseMirror, type HiddenProseMirrorRef } from './HiddenProseMirror';
+import { HiddenProseMirror, type HiddenProseMirrorRef } from './hidden-prose-mirror';
 import { SelectionOverlay } from './overlays/SelectionOverlay';
 import { ImageSelectionOverlay } from './overlays/ImageSelectionOverlay';
 import { DecorationLayer } from './overlays/DecorationLayer';
@@ -62,13 +62,13 @@ import {
   pluginOverlaysStyles,
 } from './internals/styles';
 import { viewportMinHeightPx } from './internals/scrollUtils';
-import { useLayoutPipeline } from './hooks/useLayoutPipeline';
-import { useSelectionOverlay } from './hooks/useSelectionOverlay';
-import { useImageInteractions } from './hooks/useImageInteractions';
-import { usePagedScrollApi } from './hooks/usePagedScrollApi';
-import { usePagesPointer } from './hooks/usePagesPointer';
-import { usePagedEditorRefApi } from './hooks/usePagedEditorRefApi';
-import { useLayoutTriggers } from './hooks/useLayoutTriggers';
+import { useLayoutPipeline } from '../../hooks/useLayoutPipeline';
+import { useSelectionOverlay } from '../../hooks/useSelectionOverlay';
+import { useImageInteractions } from '../../hooks/useImageInteractions';
+import { usePagedScrollApi } from '../../hooks/usePagedScrollApi';
+import { usePagesPointer } from '../../hooks/usePagesPointer';
+import { usePagedEditorRefApi } from '../../hooks/usePagedEditorRefApi';
+import { useLayoutTriggers } from '../../hooks/useLayoutTriggers';
 import { TableInsertButton } from './overlays/TableInsertButton';
 
 export { DEFAULT_PAGE_WIDTH };

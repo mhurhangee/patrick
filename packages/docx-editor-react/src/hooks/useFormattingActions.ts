@@ -36,10 +36,9 @@ import {
 import { createStyleResolver } from '@eigenpal/docx-editor-core/prosemirror';
 import { getCachedNumberingMap } from '@eigenpal/docx-editor-core/docx';
 import type { EditorView } from 'prosemirror-view';
-import type { FormattingAction } from '../../../types/formatting';
+import type { FormattingAction } from '../types/formatting';
 import { pointsToHalfPoints } from '@eigenpal/docx-editor-core/utils/units';
 import { mapHexToHighlightName } from '@eigenpal/docx-editor-core/utils/highlightColors';
-import type { PagedEditorRef } from '../PagedEditor';
 
 /**
  * Toolbar action handlers: the big `handleFormat` switch that routes
@@ -50,7 +49,6 @@ import type { PagedEditorRef } from '../PagedEditor';
 export function useFormattingActions({
   getActiveEditorView,
   focusActiveEditor,
-  pagedEditorRef,
   lastSelectionRef,
   openHyperlinkCreate,
   openHyperlinkEdit,
@@ -59,7 +57,6 @@ export function useFormattingActions({
 }: {
   getActiveEditorView: () => EditorView | null | undefined;
   focusActiveEditor: () => void;
-  pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   lastSelectionRef: React.RefObject<{ from: number; to: number } | null>;
   openHyperlinkCreate: (selectedText: string) => void;
   openHyperlinkEdit: (data: { href: string; displayText: string; tooltip?: string }) => void;
@@ -77,18 +74,12 @@ export function useFormattingActions({
       view.focus();
 
       // Selection restoration: dropdown clicks (font picker, style picker, etc.)
-      // can move focus to the dropdown portal and collapse the body selection.
-      // Restore the saved selection so the action lands on the user's intended
-      // range. Only the body editor needs this — the HF editor manages its own.
-      const isBodyEditor = view === pagedEditorRef.current?.getView();
+      // can move focus to the dropdown portal and collapse the selection.
+      // Restore the saved selection so the action lands on the user's intended range.
       const { from, to } = view.state.selection;
       const savedSelection = lastSelectionRef.current;
 
-      if (
-        isBodyEditor &&
-        savedSelection &&
-        (from !== savedSelection.from || to !== savedSelection.to)
-      ) {
+      if (savedSelection && (from !== savedSelection.from || to !== savedSelection.to)) {
         try {
           const tr = view.state.tr.setSelection(
             TextSelection.create(view.state.doc, savedSelection.from, savedSelection.to)
@@ -195,7 +186,6 @@ export function useFormattingActions({
     },
     [
       getActiveEditorView,
-      pagedEditorRef,
       lastSelectionRef,
       openHyperlinkCreate,
       openHyperlinkEdit,

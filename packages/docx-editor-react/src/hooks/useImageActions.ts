@@ -5,7 +5,7 @@ import {
   toolbarValueToLayoutTarget,
 } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
-import type { ImagePropertiesData } from '../../../types/image';
+import type { ImagePropertiesData } from '../types/image';
 
 /** Minimal shape the hook needs from the parent's selection-tracker state. */
 interface ImageContext {
@@ -13,15 +13,14 @@ interface ImageContext {
 }
 
 /**
- * Image-related dialogs and toolbar actions:
+ * Image-related dialog + toolbar actions:
  *  - wrap type (inline ↔ float-wrap variants) via setImageWrapType
  *  - 90° rotate + horizontal/vertical flip via transform attr
- *  - position dialog (horizontal/vertical anchor + distFrom* offsets)
  *  - properties dialog (alt text, border, width/height)
  *
- * Owns the open/closed state for each dialog; the JSX consumer reads the
- * `*Open` flags + the apply/cancel callbacks. `pmImageContext` comes
- * from the parent's selection-tracker state because it's set by the
+ * Owns the properties dialog's open/closed state; the JSX consumer reads
+ * the `imagePropsOpen` flag + the apply/cancel callbacks. `pmImageContext`
+ * comes from the parent's selection-tracker state because it's set by the
  * image right-click flow.
  */
 export function useImageActions({

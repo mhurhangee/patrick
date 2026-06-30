@@ -23,7 +23,7 @@
 import { useCallback, useRef } from 'react';
 import type { EditorView } from 'prosemirror-view';
 
-import type { HiddenProseMirrorRef } from '../HiddenProseMirror';
+import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
 import {
   commitColumnResize,
   commitRightEdgeResize,

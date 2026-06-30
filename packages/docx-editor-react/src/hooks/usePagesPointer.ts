@@ -42,9 +42,9 @@ import {
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import { findWordBoundaries } from '@eigenpal/docx-editor-core/utils';
 
-import type { HiddenProseMirrorRef } from '../HiddenProseMirror';
-import type { ImageSelectionInfo } from '../overlays/ImageSelectionOverlay';
-import { useDragAutoScroll } from '../../../hooks/useDragAutoScroll';
+import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
+import type { ImageSelectionInfo } from '../components/editor/overlays/ImageSelectionOverlay';
+import { useDragAutoScroll } from './useDragAutoScroll';
 import { useTableResizeState } from './useTableResizeState';
 import {
   createCellDragTracker,

@@ -20,7 +20,7 @@ import { clearAllCaches, resetCanvasContext } from '@eigenpal/docx-editor-core/l
 import type { HeaderFooter } from '@eigenpal/docx-editor-core/types/document';
 import type { EditorState } from 'prosemirror-state';
 
-import type { HiddenProseMirrorRef } from '../HiddenProseMirror';
+import type { HiddenProseMirrorRef } from '../components/editor/hidden-prose-mirror';
 
 export interface UseLayoutTriggersOptions {
   hiddenPMRef: React.RefObject<HiddenProseMirrorRef | null>;
@@ -68,7 +68,7 @@ export function useLayoutTriggers(opts: UseLayoutTriggersOptions): void {
     };
   }, [hiddenPMRef]);
 
-  // Re-layout when H/F content changes (HF editor save, etc.).
+  // Re-layout when the resolved H/F content changes (e.g. a load swaps it).
   const headerFooterEpochRef = useRef(0);
   useEffect(() => {
     // Skip the initial render — handleEditorViewReady already did the first layout.
