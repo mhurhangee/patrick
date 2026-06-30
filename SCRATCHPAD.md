@@ -39,6 +39,13 @@ Both are fixed at once by making section properties PM-native (mirror the waterm
 attribute → undoable transaction that the change tracker sees). *Trigger: the save data-loss is
 worth fixing soon; the undo stance only if we revisit it.*
 
+## Test suite
+- `Intermittent test flake` **[low]**: the full `bun test` suite occasionally reports `1 fail` (~1 in 5
+  runs), then passes on re-run; observed during the editor refactor (2026-06-30). Not yet identified
+  (the runner didn't surface the name; deterministic suites unaffected). *Trigger: if CI goes
+  intermittently red, hunt it via `bun test --rerun-each` / per-file runs to find the order-dependent
+  or time/random-dependent test.*
+
 ## Fidelity & correctness
 
 - `DOCX FIDELITY REGRESSION CORPUS` **[high — the editor is the bet]**: the vendored editor is ~134k LOC of production core we didn't write and isn't perfect (we already found latent core bugs — `computeOptionsHash` silently dropped the watermark so it never repainted; plus the whole audit). The scary failure mode is an attorney getting a mangled `.docx` on a real filing — format bugs are trust-killers in a way UI glitches aren't, and they live in code we don't have the author's mental model for. The adopted ~28k core tests guard the *editor author's* fixtures, NOT the documents Patrick's users actually open.
