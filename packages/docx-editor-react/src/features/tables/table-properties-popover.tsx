@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@patrick/ui/components/select';
 import { useState } from 'react';
-import type { TablePropertiesValue } from '../../types/table';
+import type { TablePropertiesValue } from './types';
 
 /**
  * Table-properties form shown in a cursor-anchored popover (off the table menu):

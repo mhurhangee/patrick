@@ -4,12 +4,12 @@ import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import { Separator } from '@patrick/ui/components/separator';
 import type { FormattingAction, SelectionFormatting } from '../../types/formatting';
 import type { ImageContext } from '../../types/image';
-import type { TableAction } from '../../types/table';
+import type { TableAction } from '../../features/tables/types';
 import { CharacterGroup } from './groups/character-group';
 import { ImageGroup } from './groups/image-group';
 import { InsertMenu } from './groups/insert-menu';
 import { ParagraphGroup } from './groups/paragraph-group';
-import { TableGroup } from './groups/table-group';
+import { TableGroup } from '../../features/tables/table-group';
 
 export interface FormatRowProps {
   currentFormatting: SelectionFormatting;
