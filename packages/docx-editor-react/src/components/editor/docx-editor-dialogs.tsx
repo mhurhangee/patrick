@@ -3,12 +3,12 @@ import type { Document, SectionProperties } from '@eigenpal/docx-editor-core/typ
 import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../../features/find-replace/use-find-replace';
-import type { ImageContext, ImagePropertiesData } from '../../types/image';
+import type { ImageContext, ImagePropertiesData } from '../../features/images/types';
 import { CursorPopover } from '../primitives/cursor-popover';
 import { FindReplaceBar } from '../../features/find-replace/find-replace-bar';
 import { HyperlinkPopover } from '../../features/hyperlinks/hyperlink-popover';
 import type { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
-import { ImagePropertiesForm } from '../toolbar/groups/image-properties-popover';
+import { ImagePropertiesForm } from '../../features/images/image-properties-popover';
 import { SplitCellForm } from '../../features/tables/split-cell-popover';
 import { TablePropertiesForm } from '../../features/tables/table-properties-popover';
 

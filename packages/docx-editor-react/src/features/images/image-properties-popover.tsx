@@ -4,8 +4,8 @@ import { Label } from '@patrick/ui/components/label';
 import { Switch } from '@patrick/ui/components/switch';
 import { Textarea } from '@patrick/ui/components/textarea';
 import { useEffect, useState } from 'react';
-import { useAspectLockedSize } from '../../../hooks/useAspectLockedSize';
-import type { ImageContext, ImagePropertiesData } from '../../../types/image';
+import { useAspectLockedSize } from './use-aspect-locked-size';
+import type { ImageContext, ImagePropertiesData } from './types';
 
 /**
  * The image-properties form (alt text + dimensions with an aspect-ratio lock).

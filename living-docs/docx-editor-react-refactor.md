@@ -123,7 +123,8 @@ with `/code-review`.
    (pure moves; `showOutlineProp`/RTL already cut in slice 0; watermark submenu deferred to toolbar).
 5. **Tables** ✅ — relocated to `features/tables` (toolbar group + dialogs + hook + types; orphaned
    actions were cut in slice 0). `useTableResizeState` + `TableInsertButton` deferred to slice 9.
-6. **Images** — span two trees; unify the 3 context shapes.
+6. **Images** ✅ — relocated to `features/images` + unified the 3 image-context shapes onto one
+   `ImageContext` (PmImageContext + the local `{pos}` shadow removed). Overlay/menu bits → slices 7/9.
 7. **Context menu** — depends on tables/images/comments being settled; split builder by concern.
 8. **Toolbar / formatting** — promote shared `color-control`/`shared.ts`; extract watermark submenu.
 9. **Paged-editor internal restructure** — the `PmSurface` context; `paged-editor/*` subfolders.
