@@ -15,7 +15,6 @@
  */
 
 import React, { useRef, useState, useCallback, useMemo, forwardRef, memo } from 'react';
-import type { CSSProperties } from 'react';
 import type { EditorState, Transaction, Plugin } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 
@@ -117,10 +116,6 @@ export interface PagedEditorProps {
   onRenderedDomContextReady?: (context: RenderedDomContext) => void;
   /** Plugin overlays to render inside the viewport. */
   pluginOverlays?: React.ReactNode;
-  /** Custom class name. */
-  className?: string;
-  /** Custom styles. */
-  style?: CSSProperties;
   /** Whether comments sidebar is open (shifts document left). */
   commentsSidebarOpen?: boolean;
   /** Sidebar overlay rendered inside the scroll container (scrolls with document). */
@@ -267,8 +262,6 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
       onReady,
       onRenderedDomContextReady,
       pluginOverlays,
-      className,
-      style,
       commentsSidebarOpen = false,
       sidebarOverlay,
       scrollContainerRef: scrollContainerRefProp,
@@ -664,8 +657,8 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
     return (
       <div
         ref={containerRef}
-        className={`ep-root paged-editor ${className ?? ''}`}
-        style={{ ...containerStyles, ...style }}
+        className="ep-root paged-editor"
+        style={containerStyles}
         tabIndex={0}
         onFocus={handleContainerFocus}
         onBlur={handleContainerBlur}

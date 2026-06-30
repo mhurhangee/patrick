@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { PagedEditorRef } from '../../DocxEditor/PagedEditor';
-import { findSelectionYPosition } from '../../DocxEditor/internals/pmAnchors';
+import type { PagedEditorRef } from '../PagedEditor';
+import { findSelectionYPosition } from '../internals/pmAnchors';
 
 /**
  * Owns the floating "Add comment" button that hovers next to a
