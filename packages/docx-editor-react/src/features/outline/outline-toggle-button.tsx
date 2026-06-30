@@ -1,4 +1,4 @@
-import { Z_INDEX } from '../../styles/zIndex';
+import { Z_INDEX } from '../../lib/z-index';
 import { OUTLINE_BUTTON_LEFT_OFFSET } from './document-outline';
 import { List } from 'lucide-react';
 

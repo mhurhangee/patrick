@@ -23,7 +23,7 @@ import { useImageContextMenu } from './use-image-context-menu';
 import type { TextContextAction, TextContextMenuItem } from './types';
 import { findSelectionYPosition } from '../../editor/internals/pmAnchors';
 import { beginPendingComment } from '../review/pending-comment-mark';
-import { formatKeys } from '../../hooks/formatKeys';
+import { formatKeys } from '../../lib/format-keys';
 
 interface ContextMenuState {
   isOpen: boolean;
