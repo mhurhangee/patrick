@@ -11,19 +11,7 @@ import {
   addColumnRight,
   deleteColumn as pmDeleteColumn,
   deleteTable as pmDeleteTable,
-  selectTable as pmSelectTable,
-  selectRow as pmSelectRow,
-  selectColumn as pmSelectColumn,
   mergeCells as pmMergeCells,
-  setCellBorder,
-  setCellVerticalAlign,
-  setCellMargins,
-  setCellTextDirection,
-  toggleNoWrap,
-  setRowHeight,
-  toggleHeaderRow,
-  distributeColumns,
-  autoFitContents,
   removeTableBorders,
   setAllTableBorders,
   setOutsideTableBorders,
@@ -55,10 +43,9 @@ interface BorderSpec {
 
 /**
  * Owns the two table-specific dialogs (`tablePropsOpen`,
- * `splitCellDialogState`) plus the big `handleTableAction` switch that
- * routes every toolbar/menu table command to a ProseMirror command —
- * borders, cell shading, alignment, header row, distribute, table-style
- * presets resolved through the document's style sheet.
+ * `splitCellDialogState`) plus the `handleTableAction` switch that routes
+ * the toolbar's table commands to a ProseMirror command — row/column edits,
+ * merge/split, the border presets, cell shading, and the properties dialog.
  *
  * The `borderSpecRef` lives in the parent because the toolbar's color +
  * width pickers mutate it directly; the hook reads and writes its
@@ -131,15 +118,6 @@ export function useTableDialogs({
         case 'deleteTable':
           pmDeleteTable(view.state, view.dispatch);
           break;
-        case 'selectTable':
-          pmSelectTable(view.state, view.dispatch);
-          break;
-        case 'selectRow':
-          pmSelectRow(view.state, view.dispatch);
-          break;
-        case 'selectColumn':
-          pmSelectColumn(view.state, view.dispatch);
-          break;
         case 'mergeCells':
           pmMergeCells(view.state, view.dispatch);
           break;
@@ -159,18 +137,6 @@ export function useTableDialogs({
         case 'borderNone':
           removeTableBorders(view.state, view.dispatch);
           break;
-        case 'borderTop':
-          setCellBorder('top', borderSpecRef.current, true)(view.state, view.dispatch);
-          break;
-        case 'borderBottom':
-          setCellBorder('bottom', borderSpecRef.current, true)(view.state, view.dispatch);
-          break;
-        case 'borderLeft':
-          setCellBorder('left', borderSpecRef.current, true)(view.state, view.dispatch);
-          break;
-        case 'borderRight':
-          setCellBorder('right', borderSpecRef.current, true)(view.state, view.dispatch);
-          break;
         default:
           if (typeof action === 'object') {
             if (action.type === 'cellFillColor') {
@@ -182,28 +148,6 @@ export function useTableDialogs({
             } else if (action.type === 'borderWidth') {
               borderSpecRef.current = { ...borderSpecRef.current, size: action.size };
               setTableBorderWidth(action.size)(view.state, view.dispatch);
-            } else if (action.type === 'cellBorder') {
-              setCellBorder(action.side, {
-                style: action.style,
-                size: action.size,
-                color: { rgb: action.color.replace(/^#/, '') },
-              })(view.state, view.dispatch);
-            } else if (action.type === 'cellVerticalAlign') {
-              setCellVerticalAlign(action.align)(view.state, view.dispatch);
-            } else if (action.type === 'cellMargins') {
-              setCellMargins(action.margins)(view.state, view.dispatch);
-            } else if (action.type === 'cellTextDirection') {
-              setCellTextDirection(action.direction)(view.state, view.dispatch);
-            } else if (action.type === 'toggleNoWrap') {
-              toggleNoWrap()(view.state, view.dispatch);
-            } else if (action.type === 'rowHeight') {
-              setRowHeight(action.height, action.rule)(view.state, view.dispatch);
-            } else if (action.type === 'toggleHeaderRow') {
-              toggleHeaderRow()(view.state, view.dispatch);
-            } else if (action.type === 'distributeColumns') {
-              distributeColumns()(view.state, view.dispatch);
-            } else if (action.type === 'autoFitContents') {
-              autoFitContents()(view.state, view.dispatch);
             } else if (action.type === 'openTableProperties') {
               setTablePropsRect(getCaretRect());
               setTablePropsOpen(true);
