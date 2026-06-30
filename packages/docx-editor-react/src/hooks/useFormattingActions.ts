@@ -50,7 +50,7 @@ export function useFormattingActions({
   lastSelectionRef,
   openHyperlinkCreate,
   openHyperlinkEdit,
-  historyStateRef,
+  docStateRef,
   getCachedStyleResolver,
 }: {
   getActiveEditorView: () => EditorView | null | undefined;
@@ -58,7 +58,7 @@ export function useFormattingActions({
   lastSelectionRef: React.RefObject<{ from: number; to: number } | null>;
   openHyperlinkCreate: (selectedText: string) => void;
   openHyperlinkEdit: (data: { href: string; displayText: string; tooltip?: string }) => void;
-  historyStateRef: React.RefObject<Document | null>;
+  docStateRef: React.RefObject<Document | null>;
   getCachedStyleResolver: (
     styles: Parameters<typeof createStyleResolver>[0]
   ) => ReturnType<typeof createStyleResolver>;
@@ -158,7 +158,7 @@ export function useFormattingActions({
             break;
           case 'applyStyle': {
             // Read latest doc through ref to dodge stale closures.
-            const currentDoc = historyStateRef.current;
+            const currentDoc = docStateRef.current;
             const styleResolver = currentDoc?.package.styles
               ? getCachedStyleResolver(currentDoc.package.styles)
               : null;
@@ -185,7 +185,7 @@ export function useFormattingActions({
       lastSelectionRef,
       openHyperlinkCreate,
       openHyperlinkEdit,
-      historyStateRef,
+      docStateRef,
       getCachedStyleResolver,
     ]
   );
