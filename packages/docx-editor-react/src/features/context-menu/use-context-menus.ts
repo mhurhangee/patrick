@@ -21,7 +21,7 @@ import {
 import type { WrapType } from '@eigenpal/docx-editor-core/docx/wrapTypes';
 import { useImageContextMenu } from './use-image-context-menu';
 import type { TextContextAction, TextContextMenuItem } from './types';
-import { findSelectionYPosition } from '../../editor/internals/pmAnchors';
+import { findSelectionYPosition } from '../../lib/painted-anchors';
 import { beginPendingComment } from '../review/pending-comment-mark';
 import { formatKeys } from '../../lib/format-keys';
 

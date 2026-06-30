@@ -100,8 +100,8 @@ interface EditorState {
   pmImageContext: ImageContext | null;
 }
 
-export type { EditorMode } from './internals/editing-modes';
-import type { EditorMode } from './internals/editing-modes';
+export type { EditorMode } from '../features/toolbar/editing-modes';
+import type { EditorMode } from '../features/toolbar/editing-modes';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -110,7 +110,7 @@ import type { EditorMode } from './internals/editing-modes';
 // `injectReplyRangeMarkers` + `injectTCReplyRangeMarkers` live in
 // `@eigenpal/docx-editor-core/docx` (pre-serialization range-marker injection).
 
-import { getInitialSectionProperties } from './internals/pmAnchors';
+import { getInitialSectionProperties } from '../lib/section-properties';
 import {
   createCommentIdAllocator,
 } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
