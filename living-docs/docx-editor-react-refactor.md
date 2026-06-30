@@ -127,11 +127,13 @@ with `/code-review`.
 > live code before acting** (per code-review-triage). Durable deferrals also → `SCRATCHPAD.md`.
 
 ### A. Correctness-risk (verify, then fix in its slice — these are why we did the audit)
-- **A1 — Competing undo.** `useDocumentHistory({enableKeyboardShortcuts:true})` (docx-editor.tsx:422)
-  registers a `document`-level Ctrl+Z (useHistory.ts:309-338) that drives a React history stack
-  fighting PM's own undo keymap. The React undo path is otherwise vestigial. → slice 1.
-- **A2 — Unbounded never-read snapshot stack.** Every edit `history.push(document)` stores a full
-  Document JSON (maxEntries:100) nothing reads (docx-editor.tsx:588-599). → slice 1.
+- **A1 — Competing undo.** ✅ FIXED (slice 1). `useHistory.ts` deleted; replaced by
+  `useDocumentState` (plain `{state,set,reset}`). The `document`-level Ctrl+Z listener is gone —
+  PM's `Mod-z` keymap (core `HistoryExtension`) is now the sole undo path, in sync with the
+  rendered doc. Verified PM binds the keymap before removing the listener.
+- **A2 — Unbounded never-read snapshot stack.** ✅ FIXED (slice 1). The undo/redo stacks went with
+  `useHistory`; `useDocumentState` holds one current document, no snapshot history. (Also removed
+  the dead 10-method return surface deferred from slice 0, and `pushDocument`'s dead return value.)
 - **A3 — `onSelectionChange` arity drift.** Typed `(from,to)=>void` (paged-editor.tsx:105), called
   with args (useSelectionOverlay.ts:108), but the live caller is `()=>void` ignoring them
   (docx-editor.tsx:1050). Works by accident; refactor trap. → slice 9.
@@ -196,3 +198,13 @@ with `/code-review`.
 
 - 2026-06-30 — methodology agreed; living-doc created.
 - 2026-06-30 — 6-way audit complete; inventory + ledger + running order merged. Ready for slice 0.
+- 2026-06-30 — **slice 0 SHIPPED** (PR #133, merged to main). Dead-code + unwired-feature purge,
+  26 files / −95 net (−305 in code). `/code-review` high ran clean.
+- 2026-06-30 — **slice 1 (history/undo) — in progress.** Deleted `useHistory.ts`; added
+  `useDocumentState`; rewired docx-editor.tsx + useDocumentLoader.tsx; renamed `historyStateRef`
+  → `docStateRef` across 4 hooks. Fixes A1 + A2. All gates green.
+- 2026-06-30 — slice 1 code review (high, ×2): caught (a) page-setup no longer Ctrl+Z-undoable —
+  **accepted by design** (page setup is a doc attribute, not content; Michael's call), documented +
+  SCRATCHPAD-logged; (b) per-keystroke document `JSON.stringify` (pre-existing) — **fixed** (guard
+  dropped, `set`/`reset` collapsed); (c) unstable `useDocumentState` return identity — **fixed**
+  (memoized). Watermark undo confirmed working (it's a PM doc attribute).

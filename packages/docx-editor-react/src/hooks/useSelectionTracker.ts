@@ -54,7 +54,7 @@ export function useSelectionTracker({
   lastSelectionRef,
   borderSpecRef,
   theme,
-  historyStateRef,
+  docStateRef,
   getCachedStyleResolver,
   setFloatingCommentBtn,
   applySelectionDelta,
@@ -65,7 +65,7 @@ export function useSelectionTracker({
   lastSelectionRef: React.RefObject<{ from: number; to: number } | null>;
   borderSpecRef: React.RefObject<BorderSpec>;
   theme: Theme | null | undefined;
-  historyStateRef: React.RefObject<{ package: { styles?: unknown } } | null>;
+  docStateRef: React.RefObject<{ package: { styles?: unknown } } | null>;
   getCachedStyleResolver: (
     styles: Parameters<typeof createStyleResolver>[0]
   ) => ReturnType<typeof createStyleResolver>;
@@ -138,7 +138,7 @@ export function useSelectionTracker({
       let fontFamily = textFormatting.fontFamily?.ascii || textFormatting.fontFamily?.hAnsi;
       let fontSize = textFormatting.fontSize;
       if (!fontFamily || !fontSize) {
-        const currentDoc = historyStateRef.current;
+        const currentDoc = docStateRef.current;
         const paraStyleId = selectionState.styleId;
         if (currentDoc?.package.styles && paraStyleId) {
           const resolver = getCachedStyleResolver(
@@ -209,7 +209,7 @@ export function useSelectionTracker({
       lastSelectionRef,
       borderSpecRef,
       theme,
-      historyStateRef,
+      docStateRef,
       getCachedStyleResolver,
       setFloatingCommentBtn,
       applySelectionDelta,

@@ -10,7 +10,7 @@ import {
   type DocxInput,
 } from '@eigenpal/docx-editor-core/utils';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
-import type { UseHistoryReturn } from './useHistory';
+import type { DocumentStateApi } from './useDocumentState';
 import type { PagedEditorRef } from '../components/editor/paged-editor';
 import {
   type CommentIdAllocator,
@@ -30,7 +30,7 @@ import {
 export function useDocumentLoader({
   documentBuffer,
   initialDocument,
-  history,
+  docState,
   agentRef,
   pagedEditorRef,
   setLoadingState,
@@ -43,7 +43,7 @@ export function useDocumentLoader({
 }: {
   documentBuffer: DocxInput | null | undefined;
   initialDocument: Document | null | undefined;
-  history: UseHistoryReturn<Document | null>;
+  docState: DocumentStateApi<Document | null>;
   agentRef: React.RefObject<DocumentAgent | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   // The full EditorState shape lives in the parent; we only need to flip
@@ -70,7 +70,7 @@ export function useDocumentLoader({
   const loadParsedDocument = useCallback(
     (doc: Document) => {
       resetForNewDocument();
-      history.reset(doc);
+      docState.set(doc);
       setLoadingState({ isLoading: false, parseError: null });
       loadDocumentFonts(doc).catch((err) => {
         console.warn('Failed to load document fonts:', err);
@@ -83,7 +83,7 @@ export function useDocumentLoader({
         })
       );
     },
-    [resetForNewDocument, history, setLoadingState, setDocumentFonts]
+    [resetForNewDocument, docState, setLoadingState, setDocumentFonts]
   );
 
   const loadBuffer = useCallback(
@@ -117,14 +117,14 @@ export function useDocumentLoader({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentBuffer, initialDocument]);
 
-  // Keep the DocumentAgent in sync with the latest history state.
+  // Keep the DocumentAgent in sync with the latest document state.
   useEffect(() => {
-    if (history.state) {
-      agentRef.current = new DocumentAgent(history.state);
+    if (docState.state) {
+      agentRef.current = new DocumentAgent(docState.state);
     } else {
       agentRef.current = null;
     }
-  }, [history.state, agentRef]);
+  }, [docState.state, agentRef]);
 
   // Extract any baked-in comments from the document model on first load.
   // Bumps the shared comment/revision ID counter above all loaded IDs so new
@@ -132,7 +132,7 @@ export function useDocumentLoader({
   // share the OOXML ID space).
   useEffect(() => {
     if (commentsLoadedRef.current) return;
-    const doc = history.state;
+    const doc = docState.state;
     if (!doc) return;
     commentsLoadedRef.current = true;
     const bodyComments = doc.package?.document?.comments;
@@ -149,7 +149,7 @@ export function useDocumentLoader({
       pagedEditorRef.current?.getView() ?? null
     );
   }, [
-    history.state,
+    docState.state,
     pagedEditorRef,
     setComments,
     setShowCommentsSidebar,

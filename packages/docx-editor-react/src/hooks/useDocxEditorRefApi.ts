@@ -36,7 +36,7 @@ export function useDocxEditorRefApi({
   ref,
   agentRef,
   document,
-  historyStateRef,
+  docStateRef,
   pagedEditorRef,
   handleSave,
   setZoom,
@@ -53,7 +53,7 @@ export function useDocxEditorRefApi({
   ref: React.ForwardedRef<DocxEditorRef>;
   agentRef: React.RefObject<DocumentAgent | null>;
   document: Document | null;
-  historyStateRef: React.RefObject<Document | null>;
+  docStateRef: React.RefObject<Document | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   handleSave: (options?: { selective?: boolean }) => Promise<ArrayBuffer | null>;
   setZoom: (zoom: number) => void;
@@ -124,7 +124,7 @@ export function useDocxEditorRefApi({
       setParagraphStyle: (options) => {
         const view = pagedEditorRef.current?.getView();
         if (!view) return false;
-        const currentDoc = historyStateRef.current;
+        const currentDoc = docStateRef.current;
         const styleResolver = currentDoc?.package?.styles
           ? getCachedStyleResolver(currentDoc.package.styles)
           : null;

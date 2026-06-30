@@ -56,7 +56,7 @@ import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from '../states/editor-states';
 import { type DocxInput } from '@eigenpal/docx-editor-core/utils';
 import type { ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
-import { useDocumentHistory } from '../../hooks/useHistory';
+import { useDocumentState } from '../../hooks/useDocumentState';
 
 // Extension system
 import { createStarterKit } from '@eigenpal/docx-editor-core/prosemirror/extensions';
@@ -414,12 +414,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const contentChangeSubscribersRef = useRef(new Set<(doc: Document) => void>());
   const selectionChangeSubscribersRef = useRef(new Set<(s: SelectionState | null) => void>());
 
-  // History hook for undo/redo - start with null document
-  const history = useDocumentHistory<Document | null>(initialDocument || null, {
-    maxEntries: 100,
-    groupingInterval: 500,
-    enableKeyboardShortcuts: true,
-  });
+  // The current document — rendered source of truth. Undo/redo is ProseMirror's
+  // (the Mod-z keymap), so this is plain state, not a history stack.
+  const docState = useDocumentState<Document | null>(initialDocument || null);
 
   // Extension manager — built once, provides schema + plugins + commands
   const extensionManager = useMemo(() => {
@@ -457,9 +454,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     scrollContainerRef,
     isLoading: state.isLoading,
   });
-  // Keep history.state accessible in stable callbacks without stale closures
-  const historyStateRef = useRef(history.state);
-  historyStateRef.current = history.state;
+  // Keep docState.state accessible in stable callbacks without stale closures
+  const docStateRef = useRef(docState.state);
+  docStateRef.current = docState.state;
   // Track current border color/width for border presets (like Google Docs)
   const borderSpecRef = useRef({ style: 'single', size: 4, color: { rgb: '000000' } });
   // Cache style resolver to avoid recreating on every selection change
@@ -517,7 +514,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   const { loadBuffer } = useDocumentLoader({
     documentBuffer,
     initialDocument,
-    history,
+    docState,
     agentRef,
     pagedEditorRef,
     setLoadingState: useCallback((s: { isLoading: boolean; parseError: string | null }) => {
@@ -558,10 +555,10 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // Effects run child-first, so `view.state` already reflects the new doc by
   // the time this runs.
   useEffect(() => {
-    if (state.isLoading || !history.state) return;
+    if (state.isLoading || !docState.state) return;
     const view = pagedEditorRef.current?.getView();
     if (view) setPmState(view.state);
-  }, [state.isLoading, history.state]);
+  }, [state.isLoading, docState.state]);
 
   // Auto-open the sidebar once if the loaded document already has tracked changes.
   useCommentLifecycle({
@@ -584,10 +581,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
 
   const pushDocument = useCallback(
     (document: Document) => {
-      history.push(document);
-      return document;
+      docState.set(document);
     },
-    [history]
+    [docState]
   );
 
   // Handle document change
@@ -646,7 +642,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     lastSelectionRef,
     borderSpecRef,
     theme,
-    historyStateRef,
+    docStateRef,
     getCachedStyleResolver,
     setFloatingCommentBtn,
     applySelectionDelta: useCallback((delta) => setState((prev) => ({ ...prev, ...delta })), []),
@@ -738,7 +734,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     lastSelectionRef,
     openHyperlinkCreate: hyperlink.openCreate,
     openHyperlinkEdit: hyperlink.openEdit,
-    historyStateRef,
+    docStateRef,
     getCachedStyleResolver,
   });
 
@@ -777,7 +773,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     handleOpenPageSetup,
     handlePageSetupApply,
   } = usePageSetupControls({
-    document: history.state,
+    document: docState.state,
     readOnly,
     handleDocumentChange,
   });
@@ -811,8 +807,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   useDocxEditorRefApi({
     ref,
     agentRef,
-    document: history.state,
-    historyStateRef,
+    document: docState.state,
+    docStateRef,
     pagedEditorRef,
     handleSave,
     setZoom: (zoom: number) => setState((prev) => ({ ...prev, zoom })),
@@ -828,10 +824,10 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   });
 
   const initialSectionProperties = useMemo(
-    () => getInitialSectionProperties(history.state),
-    [history.state]
+    () => getInitialSectionProperties(docState.state),
+    [docState.state]
   );
-  const finalSectionProperties = history.state?.package.document?.finalSectionProperties;
+  const finalSectionProperties = docState.state?.package.document?.finalSectionProperties;
 
   // Header/footer content for the painter. Render-only: the painter reads it
   // straight from the document model; the content round-trips untouched on save.
@@ -841,8 +837,8 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     firstHeader: firstPageHeaderContent,
     firstFooter: firstPageFooterContent,
   } = useMemo(
-    () => resolveHeaderFooter(history.state ?? null, finalSectionProperties ?? initialSectionProperties),
-    [history.state, initialSectionProperties, finalSectionProperties]
+    () => resolveHeaderFooter(docState.state ?? null, finalSectionProperties ?? initialSectionProperties),
+    [docState.state, initialSectionProperties, finalSectionProperties]
   );
 
   // Container styles - using overflow: auto so sticky toolbar works
@@ -1008,7 +1004,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // DEFAULT_PAGE_WIDTH) gets a smaller side margin and, with the old default,
   // slid left under the outline toggle/panel. Taking the max across all section
   // widths also covers mixed-orientation docs.
-  const docBody = history.state?.package?.document;
+  const docBody = docState.state?.package?.document;
   const sectionPageWidths = [
     docBody?.finalSectionProperties?.pageWidth,
     ...(docBody?.sections?.map((s) => s.properties?.pageWidth) ?? []),
@@ -1152,7 +1148,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   }
 
   // Render placeholder when no document
-  if (!history.state) {
+  if (!docState.state) {
     return (
       <div
         className={cn('ep-root docx-editor docx-editor-empty', isDark && 'dark')}
@@ -1218,7 +1214,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
         !readOnlyProp ? (
           <DocxEditorToolbar
             toolbarRefCallback={toolbarRefCallback}
-            document={history.state}
+            document={docState.state}
             pmState={pmState}
             selectionFormatting={state.selectionFormatting}
             tableContext={state.pmTableContext}
@@ -1255,7 +1251,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
         <DocxEditorPagedArea
           pagedEditorRef={pagedEditorRef}
           scrollContainerRef={scrollContainerRef}
-          document={history.state}
+          document={docState.state}
           theme={theme}
           initialSectionProperties={initialSectionProperties}
           finalSectionProperties={finalSectionProperties}
@@ -1349,7 +1345,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           showPageSetup={showPageSetup}
           onPageSetupClose={() => setShowPageSetup(false)}
           onPageSetupApply={handlePageSetupApply}
-          document={history.state}
+          document={docState.state}
         />
       }
       fileInputs={

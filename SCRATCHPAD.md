@@ -20,6 +20,15 @@ re-add properly inside the owning feature slice rather than restoring the dead p
 - `Outline default-open` **[low]**: the outline could open by default via a prop; it was inert
   (hard-coded closed). *Trigger: if a "remember outline state" preference is wanted.*
 
+## Undo / model state
+- `Page setup not on the Ctrl+Z undo stack` **[low — likely working-as-intended]**: page setup
+  (size/orientation/margins) is a model-level doc attribute (`finalSectionProperties`, no PM
+  representation), so it isn't revertible via Ctrl+Z — treated as a *document attribute, not
+  content* (a deliberate stance; the old global-keydown history that reverted it was the A1 bug,
+  removed in slice 1). If we ever decide page setup SHOULD be undoable, the route is PM-native
+  section properties (mirror the watermark `doc` attribute → undoable transaction). *Trigger: only
+  if we revisit the design stance.*
+
 ## Fidelity & correctness
 
 - `DOCX FIDELITY REGRESSION CORPUS` **[high — the editor is the bet]**: the vendored editor is ~134k LOC of production core we didn't write and isn't perfect (we already found latent core bugs — `computeOptionsHash` silently dropped the watermark so it never repainted; plus the whole audit). The scary failure mode is an attorney getting a mangled `.docx` on a real filing — format bugs are trust-killers in a way UI glitches aren't, and they live in code we don't have the author's mental model for. The adopted ~28k core tests guard the *editor author's* fixtures, NOT the documents Patrick's users actually open.
