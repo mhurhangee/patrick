@@ -337,6 +337,11 @@ export function ImageSelectionOverlay({
       const DRAG_THRESHOLD = 4; // px before considering it a drag
       const startX = e.clientX;
       const startY = e.clientY;
+      // The ghost is `position: fixed` on document.body — OUTSIDE the viewport's
+      // `transform: scale(zoom)` — so it needs the on-screen (zoomed) size, not
+      // the unzoomed `overlayRect`. Drag zoom is constant, so capture it once.
+      const ghostWidth = overlayRect.width * zoomRef.current;
+      const ghostHeight = overlayRect.height * zoomRef.current;
       let dragStarted = false;
       let ghostEl: HTMLElement | null = null;
 
@@ -359,14 +364,14 @@ export function ImageSelectionOverlay({
             'position: fixed; pointer-events: none; z-index: 10000; ' +
             'opacity: 0.5; border: 2px dashed #2563eb; border-radius: 4px; ' +
             'background: rgba(37, 99, 235, 0.1);';
-          ghostEl.style.width = `${overlayRect.width}px`;
-          ghostEl.style.height = `${overlayRect.height}px`;
+          ghostEl.style.width = `${ghostWidth}px`;
+          ghostEl.style.height = `${ghostHeight}px`;
           document.body.appendChild(ghostEl);
         }
 
         if (ghostEl) {
-          ghostEl.style.left = `${moveEvent.clientX - overlayRect.width / 2}px`;
-          ghostEl.style.top = `${moveEvent.clientY - overlayRect.height / 2}px`;
+          ghostEl.style.left = `${moveEvent.clientX - ghostWidth / 2}px`;
+          ghostEl.style.top = `${moveEvent.clientY - ghostHeight / 2}px`;
         }
       };
 

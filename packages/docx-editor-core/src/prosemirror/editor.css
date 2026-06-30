@@ -334,13 +334,6 @@
   cursor: grab;
 }
 
-/* Image dragging state */
-.prosemirror-editor .ProseMirror.pm-image-dragging img.docx-image.ProseMirror-selectednode {
-  opacity: 0.4;
-  outline: 2px dashed var(--doc-primary, #4285f4);
-  cursor: grabbing;
-}
-
 /* Fallback for images without docx-image class */
 .prosemirror-editor .ProseMirror img:not(.docx-image) {
   max-width: 100%;
@@ -590,15 +583,6 @@
 /* ============================================================================
    IMAGE DROP INDICATOR - Shows where a dragged image will land
    ============================================================================ */
-
-/* Custom drop indicator (from ImageDragExtension) */
-.prosemirror-editor .ProseMirror .pm-drop-indicator {
-  position: absolute;
-  width: 2px;
-  background: var(--doc-primary, #4285f4);
-  pointer-events: none;
-  z-index: 50;
-}
 
 /* prosemirror-dropcursor styling */
 .prosemirror-editor .ProseMirror .ProseMirror-dropcursor {

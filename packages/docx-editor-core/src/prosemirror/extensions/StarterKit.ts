@@ -64,7 +64,6 @@ import { ListExtension } from './features/ListExtension';
 import { BaseKeymapExtension } from './features/BaseKeymapExtension';
 import { EmptyParagraphFormatExtension } from './features/EmptyParagraphFormatExtension';
 import { SelectionTrackerExtension } from './features/SelectionTrackerExtension';
-import { ImageDragExtension } from './features/ImageDragExtension';
 import { ImagePasteExtension } from './features/ImagePasteExtension';
 import { DropCursorExtension } from './features/DropCursorExtension';
 import { ParagraphChangeTrackerExtension } from './features/ParagraphChangeTrackerExtension';
@@ -144,7 +143,6 @@ export function createStarterKit(options: StarterKitOptions = {}): AnyExtension[
   add('image', ImageExtension());
   add('textBox', TextBoxExtension());
   add('shape', ShapeExtension());
-  add('imageDrag', ImageDragExtension());
   add('imagePaste', ImagePasteExtension());
   add('dropCursor', DropCursorExtension());
   add('horizontalRule', HorizontalRuleExtension());
