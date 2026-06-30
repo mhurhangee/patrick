@@ -23,9 +23,9 @@ import type { PagedEditorRef } from '../PagedEditor';
 import {
   addCommentToRange,
   applyProposedChange,
+  createComment,
 } from '@eigenpal/docx-editor-core/prosemirror/commentOps';
 import type { CommentIdAllocator } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
-import { createComment } from '../commentFactories';
 
 /**
  * Owns the `useImperativeHandle` that exposes the public `DocxEditorRef`

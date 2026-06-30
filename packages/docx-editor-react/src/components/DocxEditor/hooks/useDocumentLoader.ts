@@ -12,8 +12,10 @@ import {
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { UseHistoryReturn } from '../../../hooks/useHistory';
 import type { PagedEditorRef } from '../PagedEditor';
-import type { CommentIdAllocator } from '../commentFactories';
-import { seedCommentAllocator } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
+import {
+  type CommentIdAllocator,
+  seedCommentAllocator,
+} from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 
 /**
  * Document lifecycle: load buffer / pre-parsed doc, keep the agent in
