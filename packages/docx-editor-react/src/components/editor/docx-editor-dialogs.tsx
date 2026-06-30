@@ -16,7 +16,7 @@ import { TablePropertiesForm } from '../dialogs/table-properties-popover';
 // is owned by this component instead of the orchestrator. `lazy()` runs at
 // module load, so co-locating with the JSX keeps the code-split boundary.
 const PageSetupDialog = lazy(() =>
-  import('../dialogs/page-setup-dialog').then((m) => ({ default: m.PageSetupDialog }))
+  import('../../features/page-setup/page-setup-dialog').then((m) => ({ default: m.PageSetupDialog }))
 );
 
 interface SplitCellDialogState {
