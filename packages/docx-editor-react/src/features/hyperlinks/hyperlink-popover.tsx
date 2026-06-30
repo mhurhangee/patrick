@@ -11,7 +11,7 @@ import { Button } from '@patrick/ui/components/button';
 import { Input } from '@patrick/ui/components/input';
 import { Check, Copy, Link, Pencil, Type, Unlink } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { isValidUrl } from '../../lib/hyperlink';
+import { isValidUrl } from './hyperlink';
 
 export type HyperlinkMode = 'view' | 'edit';
 
