@@ -41,7 +41,6 @@ import { DocxEditorOverlays } from './DocxEditor/DocxEditorOverlays';
 import { DocxEditorDialogs } from './DocxEditor/DocxEditorDialogs';
 import { DocxEditorToolbar } from './DocxEditor/DocxEditorToolbar';
 import { DocxEditorPagedArea } from './DocxEditor/DocxEditorPagedArea';
-import { ContentControlWidgets } from './DocxEditor/ContentControlWidgets';
 import { useResetEditorState } from './DocxEditor/hooks/useResetEditorState';
 import { DocxEditorShell } from './DocxEditor/DocxEditorShell';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
@@ -1656,12 +1655,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
             setIsAddingComment={setIsAddingComment}
             setFloatingCommentBtn={setFloatingCommentBtn}
           />
-          {!readOnly && (
-            <ContentControlWidgets
-              containerRef={containerRef}
-              getView={() => pagedEditorRef.current?.getView() ?? null}
-            />
-          )}
         </>
       }
       overlays={

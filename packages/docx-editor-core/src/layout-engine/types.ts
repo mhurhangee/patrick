@@ -7,10 +7,6 @@
  * @public
  */
 
-import type { InlineSdtWidget } from './inlineSdtWidgets';
-
-export type { InlineSdtWidget } from './inlineSdtWidgets';
-
 /**
  * Unique identifier for a block in the document.
  * Format: typically `${index}-${type}` or just the block index.
@@ -130,8 +126,6 @@ export type TextRun = RunFormatting & {
   pmStart?: number;
   /** Absolute ProseMirror position (exclusive) after last character. */
   pmEnd?: number;
-  /** Inline content-control widget metadata when this run is the visible glyph. */
-  inlineSdtWidget?: InlineSdtWidget;
 };
 
 /**
