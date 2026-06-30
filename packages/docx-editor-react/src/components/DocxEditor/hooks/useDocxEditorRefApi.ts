@@ -4,13 +4,7 @@ import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
 import {
   createStyleResolver,
-  findContentControlsInPM,
-  findContentControlPos,
-  setContentControlContentTr,
-  removeContentControlTr,
-  setContentControlValueTr,
   type SelectionState,
-  type PMContentControl,
 } from '@eigenpal/docx-editor-core/prosemirror';
 import {
   findInDocument as findInDocumentCore,
@@ -22,12 +16,7 @@ import {
   setParagraphStyle,
   insertBreak,
 } from '@eigenpal/docx-editor-core/prosemirror/applyFormatting';
-import {
-  ContentControlNotFoundError,
-  type ContentControlFilter,
-  type ContentControlValue,
-} from '@eigenpal/docx-editor-core/agent';
-import type { DocxInput, ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
+import type { ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
 import { getCachedNumberingMap } from '@eigenpal/docx-editor-core/docx';
 import type { DocxEditorRef } from '../../DocxEditor';
 import type { PagedEditorRef } from '../PagedEditor';
@@ -40,11 +29,8 @@ import { createComment } from '../commentFactories';
 
 /**
  * Owns the `useImperativeHandle` that exposes the public `DocxEditorRef`
- * surface to consumers. Hand-rolled to preserve the exact dep array the
- * editor-contract gate enforces.
- *
- * The shape MUST match `DocxEditorRef` byte-for-byte —
- * `scripts/check-editor-contract.mjs` will fail otherwise.
+ * surface to consumers. Hand-rolled so the dep array stays explicit (the ref
+ * identity only changes when one of its captured values does).
  */
 export function useDocxEditorRefApi({
   ref,
@@ -53,12 +39,9 @@ export function useDocxEditorRefApi({
   historyStateRef,
   pagedEditorRef,
   handleSave,
-  zoom,
   setZoom,
   openFind,
   scrollPageInfoRef,
-  loadParsedDocument,
-  loadBuffer,
   comments,
   setComments,
   setShowCommentsSidebar,
@@ -73,12 +56,9 @@ export function useDocxEditorRefApi({
   historyStateRef: React.RefObject<Document | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   handleSave: (options?: { selective?: boolean }) => Promise<ArrayBuffer | null>;
-  zoom: number;
   setZoom: (zoom: number) => void;
   openFind: () => void;
   scrollPageInfoRef: React.RefObject<{ currentPage: number; totalPages: number }>;
-  loadParsedDocument: (doc: Document) => void;
-  loadBuffer: (buffer: DocxInput) => Promise<void>;
   comments: Comment[];
   setComments: React.Dispatch<React.SetStateAction<Comment[]>>;
   setShowCommentsSidebar: React.Dispatch<React.SetStateAction<boolean>>;
@@ -97,11 +77,7 @@ export function useDocxEditorRefApi({
       getEditorRef: () => pagedEditorRef.current,
       save: handleSave,
       setZoom,
-      getZoom: () => zoom,
       openFind,
-      focus: () => {
-        pagedEditorRef.current?.focus();
-      },
       getCurrentPage: () => scrollPageInfoRef.current.currentPage,
       getTotalPages: () => scrollPageInfoRef.current.totalPages,
       scrollToPage: (pageNumber: number) => {
@@ -110,9 +86,6 @@ export function useDocxEditorRefApi({
       scrollToPosition: (pmPos: number) => {
         pagedEditorRef.current?.scrollToPosition(pmPos);
       },
-      loadDocument: loadParsedDocument,
-      loadDocumentBuffer: loadBuffer,
-
       addComment: (options) => {
         const view = pagedEditorRef.current?.getView();
         if (!view) return null;
@@ -194,68 +167,6 @@ export function useDocxEditorRefApi({
 
       getComments: () => comments,
 
-      getContentControls: (filter?: ContentControlFilter): PMContentControl[] => {
-        const view = pagedEditorRef.current?.getView();
-        return view ? findContentControlsInPM(view.state.doc, filter ?? {}) : [];
-      },
-
-      scrollToContentControl: (filter: ContentControlFilter): boolean => {
-        const view = pagedEditorRef.current?.getView();
-        if (!view) return false;
-        const pos = findContentControlPos(view.state.doc, filter);
-        if (pos == null) return false;
-        pagedEditorRef.current?.scrollToPosition(pos);
-        return true;
-      },
-
-      setContentControlContent: (
-        filter: ContentControlFilter,
-        text: string,
-        options?: { force?: boolean }
-      ): boolean => {
-        const view = pagedEditorRef.current?.getView();
-        if (!view) return false;
-        try {
-          view.dispatch(setContentControlContentTr(view.state, filter, text, options));
-          return true;
-        } catch (err) {
-          // Not-found is a soft miss; a lock refusal surfaces to the caller.
-          if (err instanceof ContentControlNotFoundError) return false;
-          throw err;
-        }
-      },
-
-      removeContentControl: (
-        filter: ContentControlFilter,
-        options?: { force?: boolean; keepContent?: boolean }
-      ): boolean => {
-        const view = pagedEditorRef.current?.getView();
-        if (!view) return false;
-        try {
-          view.dispatch(removeContentControlTr(view.state, filter, options));
-          return true;
-        } catch (err) {
-          if (err instanceof ContentControlNotFoundError) return false;
-          throw err;
-        }
-      },
-
-      setContentControlValue: (
-        filter: ContentControlFilter,
-        value: ContentControlValue,
-        options?: { force?: boolean }
-      ): boolean => {
-        const view = pagedEditorRef.current?.getView();
-        if (!view) return false;
-        try {
-          view.dispatch(setContentControlValueTr(view.state, filter, value, options));
-          return true;
-        } catch (err) {
-          if (err instanceof ContentControlNotFoundError) return false;
-          throw err;
-        }
-      },
-
       onContentChange: (listener) => {
         contentChangeSubscribersRef.current.add(listener);
         return () => {
@@ -270,16 +181,7 @@ export function useDocxEditorRefApi({
         };
       },
     }),
-    // Dep array preserved byte-for-byte from the original site so the editor-
-    // contract parity gate stays green and consumers see the same ref-identity
-    // semantics they had pre-extraction.
-    [
-      document,
-      zoom,
-      handleSave,
-      loadParsedDocument,
-      loadBuffer,
-      comments,
-    ]
+    // Ref identity changes only when one of these captured values does.
+    [document, handleSave, comments]
   );
 }
