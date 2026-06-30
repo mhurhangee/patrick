@@ -2,7 +2,7 @@
 // Drift guard for the agent SDK surface. See openspec §8b.1.
 
 import type { EditorRefLike } from '@eigenpal/docx-editor-agents/react';
-import type { DocxEditorRef } from '../components/DocxEditor';
+import type { DocxEditorRef } from '../components/editor/docx-editor';
 
 function assertAssignable<T>(_value: T): void {}
 
