@@ -79,9 +79,7 @@ import {
   extractSelectionState,
   createStyleResolver,
   type TableContextInfo,
-  type PMContentControl,
 } from '@eigenpal/docx-editor-core/prosemirror';
-import type { ContentControlFilter, ContentControlValue } from '@eigenpal/docx-editor-core/agent';
 import {
   acceptChange,
   rejectChange,
@@ -291,12 +289,8 @@ export interface DocxEditorRef {
   save: (options?: { selective?: boolean }) => Promise<ArrayBuffer | null>;
   /** Set zoom level */
   setZoom: (zoom: number) => void;
-  /** Get current zoom level */
-  getZoom: () => number;
   /** Open the find/replace bar (e.g. from an app-level search button). */
   openFind: () => void;
-  /** Focus the editor */
-  focus: () => void;
   /** Get current page number */
   getCurrentPage: () => number;
   /** Get total page count */
@@ -352,10 +346,6 @@ export interface DocxEditorRef {
    * @example ref.current?.highlightRange(10, 24)
    */
   highlightRange: (from: number, to: number) => void;
-  /** Load a pre-parsed document programmatically */
-  loadDocument: (doc: Document) => void;
-  /** Load a DOCX buffer programmatically (ArrayBuffer, Uint8Array, Blob, or File) */
-  loadDocumentBuffer: (buffer: DocxInput) => Promise<void>;
   /** Add a comment programmatically. Anchored by Word `w14:paraId` so
    * it survives unrelated edits. Returns the comment ID, or null if
    * the paraId is unknown or the search text isn't found / is ambiguous. */
@@ -440,45 +430,6 @@ export interface DocxEditorRef {
   } | null;
   /** Get all comments. */
   getComments: () => Comment[];
-  /**
-   * List block-level content controls (SDTs) in the live document, optionally
-   * filtered by `tag`/`alias`/`id`/`type`. Each result includes the control's
-   * text and PM position. Anchors for templates and document automation.
-   */
-  getContentControls: (filter?: ContentControlFilter) => PMContentControl[];
-  /** Scroll the first content control matching `filter` into view. Returns false if none. */
-  scrollToContentControl: (filter: ContentControlFilter) => boolean;
-  /**
-   * Replace the content of the first control matching `filter` with `text`
-   * (newlines become paragraphs). Returns false if no match. Throws if the
-   * control is content-locked unless `{ force: true }`.
-   */
-  setContentControlContent: (
-    filter: ContentControlFilter,
-    text: string,
-    options?: { force?: boolean }
-  ) => boolean;
-  /**
-   * Remove the first control matching `filter`. With `{ keepContent: true }`
-   * the inner blocks are unwrapped in place. Returns false if no match. Throws
-   * if the control is deletion-locked unless `{ force: true }`.
-   */
-  removeContentControl: (
-    filter: ContentControlFilter,
-    options?: { force?: boolean; keepContent?: boolean }
-  ) => boolean;
-  /**
-   * Set a typed value on the first control matching `filter`: a dropdown
-   * selection (`{ kind: 'dropdown', value }`), checkbox (`{ kind: 'checkbox',
-   * checked }`), or date (`{ kind: 'date', date }`). Updates the visible
-   * content and structured state. Returns false if no match; throws if
-   * content-locked (unless `force`) or the value doesn't fit the control type.
-   */
-  setContentControlValue: (
-    filter: ContentControlFilter,
-    value: ContentControlValue,
-    options?: { force?: boolean }
-  ) => boolean;
   /** Subscribe to document changes. Fires after every committed edit. Returns unsubscribe. */
   onContentChange: (listener: (document: Document) => void) => () => void;
   /** Subscribe to selection changes (cursor moves / selection changes). Returns unsubscribe. */
@@ -801,7 +752,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     cleanOrphanedCommentsTimerRef,
   });
 
-  const { loadParsedDocument, loadBuffer } = useDocumentLoader({
+  const { loadBuffer } = useDocumentLoader({
     documentBuffer,
     initialDocument,
     externalContent,
@@ -1125,12 +1076,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     historyStateRef,
     pagedEditorRef,
     handleSave,
-    zoom: state.zoom,
     setZoom: (zoom: number) => setState((prev) => ({ ...prev, zoom })),
     openFind: () => findReplace.openFind(),
     scrollPageInfoRef,
-    loadParsedDocument,
-    loadBuffer,
     comments,
     setComments,
     setShowCommentsSidebar,
