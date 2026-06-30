@@ -1,8 +1,7 @@
 /**
  * Derived editor chrome geometry: section properties, header/footer content for
  * the painter, the container/main/scroll style objects, and the page-width math
- * that positions the centered page + sidebar. Pulled out of the orchestrator so
- * the god file composes rather than computes.
+ * that positions the centered page + sidebar.
  */
 
 import type { CSSProperties } from 'react';
