@@ -134,7 +134,14 @@ with `/code-review`.
    tables/images reuse. DEFERRED (optional): extract the watermark submenu from insert-menu → page-setup;
    move `formatKeys` → `lib/`. (Slice numbers below shifted +1 by the tracked-changes/comments split.)
 9. **Paged-editor internal restructure** — the `PmSurface` context; `paged-editor/*` subfolders.
-10. **Tracked-changes**, then **11. Comments** — ⚠️ **VITAL / HIGHEST-CARE SLICES** (native Word
+10–11. **Tracked-changes + comments** ✅✅ **DONE (VITAL domain complete).** Handled as: safety-net
+    tests (PR #142) → relocate to `features/review/` (#143) → extract `useCommentWorkflow` (#144, TWO
+    adversarial reviews, zero correctness bugs) → disambiguate `onAddComment`→`onBeginAddComment` +
+    fix §A6 docstring/branch (#145) → centralize the 4-site pending-mark into `pending-comment-mark.ts`
+    (#146). Every step behavior-preserving + reviewed; the redline engine (`resolveById`) never touched.
+    §A6 resolved as working-as-intended (markers hide when sidebar open). The original below is kept
+    for the record:
+    ⚠️ **VITAL / HIGHEST-CARE SLICES** (native Word
     redlines + accept/reject are Patrick's core value to attorneys — Michael flagged these for
     "double extra attention"). SPLIT into two slices, not one. Protocol: (a) fresh deep re-read of
     the domain before touching anything (the audit is stale by package-time); (b) extract the ~250
@@ -239,6 +246,9 @@ with `/code-review`.
   bar); two follow-up findings (one-frame count flash; reset-on-buffer-identity) assessed as
   cosmetic/mooted, not actioned. Slice 4 (outline + page-setup → features/, pure moves). Pure-move
   slices verified by gates only; logic slices get the cloud review.
+- 2026-06-30 — **VITAL domain (tracked-changes + comments) COMPLETE** (PRs #142–#146). god file
+  1385→1146 lines (the orchestration is now `features/review/use-comment-workflow.ts`). Remaining
+  refactor work: slice 9 (paged-editor engine consolidation) + slice 12 (god-file final decomposition).
 - 2026-06-30 — **VITAL domain (tracked-changes + comments) underway, with care.** 3-agent deep
   re-read done → exact ground truth (live accept/reject = by-id→resolveById; §A6 margin-marker is
   NOT a bug = intended; the two auto-opens are NOT redundant; 8 danger zones logged). Michael signed
