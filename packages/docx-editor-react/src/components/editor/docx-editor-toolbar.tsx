@@ -5,7 +5,7 @@ import type { Document, Watermark } from '@eigenpal/docx-editor-core/types/docum
 import type { TableContextInfo } from '@eigenpal/docx-editor-core/prosemirror';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
 import type { SelectionFormatting, FormattingAction } from '../../types/formatting';
-import type { TableAction } from '../../types/table';
+import type { TableAction } from '../../features/tables/types';
 import type { ImageContext } from '../../types/image';
 import type { EditorMode } from './internals/editing-modes';
 import { DocxToolbar } from '../toolbar/docx-toolbar';

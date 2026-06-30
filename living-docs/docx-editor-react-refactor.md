@@ -121,7 +121,8 @@ with `/code-review`.
    the dead match-list, fixed A5 (removed redundant `currentResult` writer), collapsed dialog props.
 4. **Outline** + **page-setup/watermark** ✅ — relocated to `features/outline` + `features/page-setup`
    (pure moves; `showOutlineProp`/RTL already cut in slice 0; watermark submenu deferred to toolbar).
-5. **Tables** — needs the orphaned-action decision (§C) made first.
+5. **Tables** ✅ — relocated to `features/tables` (toolbar group + dialogs + hook + types; orphaned
+   actions were cut in slice 0). `useTableResizeState` + `TableInsertButton` deferred to slice 9.
 6. **Images** — span two trees; unify the 3 context shapes.
 7. **Context menu** — depends on tables/images/comments being settled; split builder by concern.
 8. **Toolbar / formatting** — promote shared `color-control`/`shared.ts`; extract watermark submenu.

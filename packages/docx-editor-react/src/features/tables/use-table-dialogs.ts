@@ -21,7 +21,7 @@ import {
   setTableBorderWidth,
 } from '@eigenpal/docx-editor-core/prosemirror';
 import type { EditorView } from 'prosemirror-view';
-import type { TableAction } from '../types/table';
+import type { TableAction } from './types';
 
 interface SplitCellDialogState {
   isOpen: boolean;

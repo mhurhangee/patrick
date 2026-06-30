@@ -21,9 +21,9 @@ import {
   Table2,
   Trash2,
 } from 'lucide-react';
-import type { TableAction } from '../../../types/table';
-import { ColorControl } from '../color-control';
-import { STANDARD_SWATCHES, keepFocus } from '../shared';
+import type { TableAction } from './types';
+import { ColorControl } from '../../components/toolbar/color-control';
+import { STANDARD_SWATCHES, keepFocus } from '../../components/toolbar/shared';
 
 const BORDER_PRESETS: { action: TableAction; label: string }[] = [
   { action: 'borderAll', label: 'All borders' },

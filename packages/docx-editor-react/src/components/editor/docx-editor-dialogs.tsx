@@ -9,8 +9,8 @@ import { FindReplaceBar } from '../../features/find-replace/find-replace-bar';
 import { HyperlinkPopover } from '../../features/hyperlinks/hyperlink-popover';
 import type { useHyperlink } from '../../features/hyperlinks/use-hyperlink';
 import { ImagePropertiesForm } from '../toolbar/groups/image-properties-popover';
-import { SplitCellForm } from '../dialogs/split-cell-popover';
-import { TablePropertiesForm } from '../dialogs/table-properties-popover';
+import { SplitCellForm } from '../../features/tables/split-cell-popover';
+import { TablePropertiesForm } from '../../features/tables/table-properties-popover';
 
 // Same lazy() imports as the parent — pulled in here so the dialog chunk
 // is owned by this component instead of the orchestrator. `lazy()` runs at
