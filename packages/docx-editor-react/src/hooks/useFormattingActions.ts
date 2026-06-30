@@ -25,8 +25,6 @@ import {
   applyStyle,
   getHyperlinkAttrs,
   getSelectedText,
-  setRtl,
-  setLtr,
   insertPageBreak,
   insertSectionBreakNextPage,
   insertSectionBreakContinuous,
@@ -111,8 +109,6 @@ export function useFormattingActions({
         return;
       }
       if (action === 'clearFormatting') return void clearFormatting(view.state, view.dispatch);
-      if (action === 'setRtl') return void setRtl(view.state, view.dispatch);
-      if (action === 'setLtr') return void setLtr(view.state, view.dispatch);
       if (action === 'insertLink') {
         const selectedText = getSelectedText(view.state);
         const existingLink = getHyperlinkAttrs(view.state);
