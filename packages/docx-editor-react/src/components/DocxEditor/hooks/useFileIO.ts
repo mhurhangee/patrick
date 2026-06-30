@@ -15,7 +15,7 @@ import { readDocxFileFromInput, type DocxInput } from '@eigenpal/docx-editor-cor
 import { insertImageFromFile } from '@eigenpal/docx-editor-core/prosemirror/commands';
 import { renderAllPagesNow } from '@eigenpal/docx-editor-core/layout-painter';
 import type { EditorView } from 'prosemirror-view';
-import type { PagedEditorRef } from '../../DocxEditor/PagedEditor';
+import type { PagedEditorRef } from '../PagedEditor';
 
 /**
  * File-IO surface of the editor: save (to buffer), download, print, open

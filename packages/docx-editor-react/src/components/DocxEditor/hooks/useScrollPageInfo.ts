@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { PagedEditorRef } from '../../DocxEditor/PagedEditor';
+import type { PagedEditorRef } from '../PagedEditor';
 
 export interface ScrollPageInfo {
   currentPage: number;
