@@ -10,7 +10,6 @@
  */
 
 import { useRef, useCallback, useState, useEffect, useMemo, forwardRef } from 'react';
-import type { CSSProperties } from 'react';
 import type { Document } from '@eigenpal/docx-editor-core/types/document';
 
 import { cn } from '../lib/utils';
@@ -26,7 +25,6 @@ import { useFormattingActions } from '../features/toolbar/use-formatting-actions
 import { useImageActions } from '../features/images/use-image-actions';
 import { useDocxEditorRefApi } from '../hooks/useDocxEditorRefApi';
 import { useTableDialogs } from '../features/tables/use-table-dialogs';
-import { resolveHeaderFooter } from '@eigenpal/docx-editor-core/layout-bridge';
 import { useDocumentLoader } from '../hooks/useDocumentLoader';
 import { useContextMenus } from '../features/context-menu/use-context-menus';
 import { useCommentManagement } from '../features/review/use-comment-management';
@@ -43,9 +41,8 @@ import { useResetEditorState } from '../hooks/useResetEditorState';
 import { DocxEditorShell } from './docx-editor-shell';
 import { ReviewHighlightStyles } from './review-highlight-styles';
 import { ReviewProvider } from '../features/review/review-context';
+import { useEditorChrome } from './use-editor-chrome';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
-import { OUTLINE_BUTTON_RESERVED_SPACE, OUTLINE_RESERVED_SPACE } from '../features/outline/document-outline';
-import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
 import { useCommentWorkflow } from '../features/review/use-comment-workflow';
 import { extractTrackedChanges } from '@eigenpal/docx-editor-core/prosemirror/utils/extractTrackedChanges';
 import { type EditorState as PMEditorState } from 'prosemirror-state';
@@ -77,7 +74,7 @@ import {
 } from '@eigenpal/docx-editor-core/utils';
 
 // Paginated editor
-import { type PagedEditorRef, DEFAULT_PAGE_WIDTH } from './paged-editor';
+import type { PagedEditorRef } from './paged-editor';
 
 
 // ============================================================================
@@ -112,7 +109,6 @@ import type { EditorMode } from '../features/toolbar/editing-modes';
 // `injectReplyRangeMarkers` + `injectTCReplyRangeMarkers` live in
 // `@eigenpal/docx-editor-core/docx` (pre-serialization range-marker injection).
 
-import { getInitialSectionProperties } from '../lib/section-properties';
 import {
   createCommentIdAllocator,
 } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
@@ -604,41 +600,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     commentIdAllocator: commentIdAllocatorRef.current,
   });
 
-  const initialSectionProperties = useMemo(
-    () => getInitialSectionProperties(docState.state),
-    [docState.state]
-  );
-  const finalSectionProperties = docState.state?.package.document?.finalSectionProperties;
-
-  // Header/footer content for the painter. Render-only: the painter reads it
-  // straight from the document model; the content round-trips untouched on save.
-  const {
-    header: headerContent,
-    footer: footerContent,
-    firstHeader: firstPageHeaderContent,
-    firstFooter: firstPageFooterContent,
-  } = useMemo(
-    () => resolveHeaderFooter(docState.state ?? null, finalSectionProperties ?? initialSectionProperties),
-    [docState.state, initialSectionProperties, finalSectionProperties]
-  );
-
-  // Container styles - using overflow: auto so sticky toolbar works
-  const containerStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    width: '100%',
-    backgroundColor: 'var(--doc-bg)',
-  };
-
-  const mainContentStyle: CSSProperties = {
-    display: 'flex',
-    flex: 1,
-    minHeight: 0, // Allow flex item to shrink below content size
-    minWidth: 0, // Allow flex item to shrink below content width on narrow viewports
-    flexDirection: 'row',
-  };
-
   // Comment + tracked-change orchestration (sidebar callbacks, cursor→card
   // walker, resolved-id masks). The sidebar cards and accept/reject paths live
   // in features/review; this is the glue that drives them.
@@ -668,6 +629,20 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   });
 
   const sidebarOpen = allSidebarItems.length > 0;
+
+  const {
+    initialSectionProperties,
+    finalSectionProperties,
+    headerContent,
+    footerContent,
+    firstPageHeaderContent,
+    firstPageFooterContent,
+    minLayoutWidth,
+    pageWidthPx,
+    containerStyle,
+    mainContentStyle,
+    editorContainerStyle,
+  } = useEditorChrome({ document: docState.state, showOutline, sidebarOpen });
 
   // Bundled for ReviewContext — the review state the paged-area's sidebar overlay
   // + floating button consume, so it no longer drills through the paged area.
@@ -707,43 +682,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       setFloatingCommentBtn,
     ]
   );
-
-  // Reserve 2× the left-edge allowance so the centered page clears whatever
-  // outline UI is showing, without forcing a shift on wide viewports.
-  const outlineLeftAllowance = showOutline ? OUTLINE_RESERVED_SPACE : OUTLINE_BUTTON_RESERVED_SPACE;
-  // Reserve against the WIDEST page in the doc, not the portrait default: pages
-  // center via `alignItems:center`, so a landscape section (wider than
-  // DEFAULT_PAGE_WIDTH) gets a smaller side margin and, with the old default,
-  // slid left under the outline toggle/panel. Taking the max across all section
-  // widths also covers mixed-orientation docs.
-  const docBody = docState.state?.package?.document;
-  const sectionPageWidths = [
-    docBody?.finalSectionProperties?.pageWidth,
-    ...(docBody?.sections?.map((s) => s.properties?.pageWidth) ?? []),
-  ].filter((w): w is number => typeof w === 'number' && w > 0);
-  const maxPageWidthPx = sectionPageWidths.length
-    ? Math.round(Math.max(...sectionPageWidths) / 15)
-    : DEFAULT_PAGE_WIDTH;
-
-  const minLayoutWidth =
-    2 * outlineLeftAllowance + maxPageWidthPx + (sidebarOpen ? SIDEBAR_DOCUMENT_SHIFT * 2 : 0);
-
-  // pageWidthPx — the final section's width — positions the sidebar / comment
-  // margin markers against the page most content lives under.
-  const sectionPropsPageWidth = docBody?.finalSectionProperties?.pageWidth;
-  const pageWidthPx = sectionPropsPageWidth
-    ? Math.round(sectionPropsPageWidth / 15)
-    : DEFAULT_PAGE_WIDTH;
-
-
-  const editorContainerStyle: CSSProperties = {
-    flex: 1,
-    minHeight: 0,
-    minWidth: 0, // Allow flex item to shrink below content width on narrow viewports
-    overflow: 'auto', // Sole scroll container — PagedEditor sizes to content
-    position: 'relative',
-    overflowAnchor: 'none',
-  };
 
   // Render loading state
   if (state.isLoading) {
