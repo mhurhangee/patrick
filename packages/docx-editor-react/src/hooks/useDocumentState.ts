@@ -9,7 +9,7 @@
  * `set` carries a genuinely new document.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export interface DocumentStateApi<T> {
   /** The current document (the rendered source of truth). */
@@ -20,5 +20,7 @@ export interface DocumentStateApi<T> {
 
 export function useDocumentState<T>(initial: T): DocumentStateApi<T> {
   const [state, setState] = useState<T>(initial);
-  return { state, set: setState };
+  // Stable object identity (changes only when `state` does) so consumers'
+  // `[docState]`-keyed memoizations actually memoize. `setState` is stable.
+  return useMemo(() => ({ state, set: setState }), [state]);
 }
