@@ -221,14 +221,6 @@ export interface DocxEditorProps {
   mode?: EditorMode;
   /** Callback when the editing mode changes */
   onModeChange?: (mode: EditorMode) => void;
-  /** Callback when a comment is added via the UI */
-  onCommentAdd?: (comment: Comment) => void;
-  /** Callback when a comment is resolved via the UI */
-  onCommentResolve?: (comment: Comment) => void;
-  /** Callback when a comment is deleted via the UI */
-  onCommentDelete?: (comment: Comment) => void;
-  /** Callback when a reply is added to a comment via the UI */
-  onCommentReply?: (reply: Comment, parent: Comment) => void;
   /**
    * Callback when rendered DOM context is ready (for plugin overlays).
    * Used by PluginHost to get access to the rendered page DOM for positioning.
@@ -478,10 +470,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     onPrint,
     mode: modeProp,
     onModeChange,
-    onCommentAdd,
-    onCommentResolve,
-    onCommentDelete,
-    onCommentReply,
     externalPlugins,
     externalContent = false,
     onEditorViewReady,
@@ -547,7 +535,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     cleanOrphanedCommentsTimerRef,
     cleanOrphanedComments,
   } = useCommentManagement({
-    onCommentDelete,
     pagedEditorRef,
   });
 
@@ -1099,12 +1086,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   commentCallbacksRef.current = {
     onCommentReply: (id, text) => {
       const reply = createComment(commentIdAllocatorRef.current, text, author, id);
-      const parent = comments.find((c) => c.id === id);
       setComments((prev) => [...prev, reply]);
-      if (parent) onCommentReply?.(reply, parent);
     },
     onCommentResolve: (id) => {
-      const target = comments.find((c) => c.id === id);
       setComments((prev) => prev.map((c) => (c.id === id ? { ...c, done: true } : c)));
       // Collapse the card to its checkmark marker immediately. Resolving
       // doesn't go through a PM transaction, so the cursor-based collapse
@@ -1113,13 +1097,11 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       if (expandedSidebarItem === `comment-${id}`) {
         setExpandedSidebarItem(null);
       }
-      if (target) onCommentResolve?.({ ...target, done: true });
     },
     onCommentUnresolve: (id) => {
       setComments((prev) => prev.map((c) => (c.id === id ? { ...c, done: undefined } : c)));
     },
     onCommentDelete: (id) => {
-      const target = comments.find((c) => c.id === id);
       setComments((prev) => prev.filter((c) => c.id !== id && c.parentId !== id));
       // Remove the comment mark from PM to clear the yellow highlight
       const view = pagedEditorRef.current?.getView();
@@ -1130,7 +1112,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
           if (tr.docChanged) view.dispatch(tr);
         }
       }
-      if (target) onCommentDelete?.(target);
     },
     onAddComment: (addText) => {
       const comment = createComment(commentIdAllocatorRef.current, addText, author);
@@ -1150,7 +1131,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       setIsAddingComment(false);
       setCommentSelectionRange(null);
       setAddCommentYPosition(null);
-      onCommentAdd?.(comment);
     },
     onCancelAddComment: () => {
       const view = pagedEditorRef.current?.getView();

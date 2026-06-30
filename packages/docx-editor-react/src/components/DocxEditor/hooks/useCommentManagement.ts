@@ -15,10 +15,8 @@ interface FloatingCommentBtn {
  * and the orphaned-comments debouncer.
  */
 export function useCommentManagement({
-  onCommentDelete,
   pagedEditorRef,
 }: {
-  onCommentDelete: ((comment: Comment) => void) | undefined;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
 }) {
   const [comments, setInternalComments] = useState<Comment[]>([]);
@@ -38,8 +36,6 @@ export function useCommentManagement({
   commentsRef.current = comments;
   const isAddingCommentRef = useRef(isAddingComment);
   isAddingCommentRef.current = isAddingComment;
-  const onCommentDeleteRef = useRef(onCommentDelete);
-  onCommentDeleteRef.current = onCommentDelete;
 
   // Unified setter that resolves the new value and mutates internal state.
   // Reads through `commentsRef.current` for the functional-update branch so the
@@ -84,9 +80,6 @@ export function useCommentManagement({
     }
     if (orphanedIds.size === 0) return;
 
-    for (const c of currentComments) {
-      if (orphanedIds.has(c.id)) onCommentDeleteRef.current?.(c);
-    }
     setComments((prev) =>
       prev.filter((c) => !orphanedIds.has(c.id) && !orphanedIds.has(c.parentId!))
     );
