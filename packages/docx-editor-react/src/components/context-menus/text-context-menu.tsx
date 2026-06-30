@@ -42,9 +42,6 @@ export function TextContextMenu({
     >
       {isOpen &&
         items.map((item, index) => {
-          if (item.action === 'separator') {
-            return <DropdownMenuSeparator key={`sep-${index}`} />;
-          }
           const disabled =
             item.disabled ??
             (item.action === 'cut' || item.action === 'copy' || item.action === 'delete'

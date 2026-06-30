@@ -185,7 +185,6 @@ export function useSelectionTracker({
         listState,
         styleId: selectionState.styleId ?? undefined,
         indentLeft: paragraphFormatting.indentLeft,
-        bidi: !!paragraphFormatting.bidi,
       };
 
       applySelectionDelta({

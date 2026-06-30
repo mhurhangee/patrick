@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { collectHeadings, type HeadingInfo } from '@eigenpal/docx-editor-core/utils';
-import type { PagedEditorRef } from '../components/editor/paged-editor';
+import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
 
 /**
  * Owns the document outline panel: visibility, headings, and chrome
@@ -8,29 +7,16 @@ import type { PagedEditorRef } from '../components/editor/paged-editor';
  * offset of the editor).
  */
 export function useOutlineSidebar({
-  showOutlineProp,
-  pagedEditorRef,
   scrollContainerRef,
   isLoading,
 }: {
-  showOutlineProp: boolean;
-  pagedEditorRef: React.RefObject<PagedEditorRef | null>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   isLoading: boolean;
 }) {
-  const [showOutline, setShowOutline] = useState(showOutlineProp);
+  const [showOutline, setShowOutline] = useState(false);
   const showOutlineRef = useRef(false);
   showOutlineRef.current = showOutline;
   const [outlineHeadings, setHeadingInfos] = useState<HeadingInfo[]>([]);
-
-  // Sync outline visibility when prop changes
-  useEffect(() => {
-    setShowOutline(showOutlineProp);
-    if (showOutlineProp) {
-      const view = pagedEditorRef.current?.getView();
-      if (view) setHeadingInfos(collectHeadings(view.state.doc));
-    }
-  }, [showOutlineProp, pagedEditorRef]);
 
   // Toolbar height — drives vertical positioning of the outline panel/button.
   // ResizeObserver tracks the toolbar wrapper so panel placement keeps up with

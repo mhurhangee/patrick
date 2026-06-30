@@ -7,7 +7,6 @@ export type TextContextAction =
   | 'pasteAsPlainText'
   | 'selectAll'
   | 'delete'
-  | 'separator'
   | 'addRowAbove'
   | 'addRowBelow'
   | 'deleteRow'

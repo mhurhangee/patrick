@@ -4,9 +4,6 @@ import { cn } from '@patrick/ui/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
-/** @deprecated Use HeadingInfo from utils/headingCollector instead */
-export type OutlineHeading = HeadingInfo;
-
 // Outline panel geometry (px). Only the *_RESERVED_SPACE values leak out —
 // the editor uses them to size the layout so the centered page never sits
 // under the panel or the toggle button. The anchor matches the collapsed

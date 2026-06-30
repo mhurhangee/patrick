@@ -310,8 +310,7 @@ import type { EditorMode } from './internals/editing-modes';
 // ============================================================================
 
 // `injectReplyRangeMarkers` + `injectTCReplyRangeMarkers` live in
-// `@eigenpal/docx-editor-core/docx` so React + Vue share the same
-// pre-serialization range-marker injection.
+// `@eigenpal/docx-editor-core/docx` (pre-serialization range-marker injection).
 
 import { getInitialSectionProperties } from './internals/pmAnchors';
 import {
@@ -455,8 +454,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     toolbarRefCallback,
     editorScrollLeft,
   } = useOutlineSidebar({
-    showOutlineProp: false,
-    pagedEditorRef,
     scrollContainerRef,
     isLoading: state.isLoading,
   });
@@ -667,7 +664,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     openHyperlinkEdit: hyperlink.openEdit,
   });
 
-  // Handle table insert from toolbar
   // Toggle document outline sidebar
   const handleToggleOutline = useCallback(() => {
     setShowOutline((prev) => {

@@ -1,8 +1,7 @@
 /**
  * Block-measurement pipeline for PagedEditor — paragraph/table/image/
  * textBox measurement. The floating-zone pre-scan + per-block cumulative-Y
- * orchestration lives in core's `measureBlocksWithFloats` so React and Vue
- * stay in lockstep.
+ * orchestration lives in core's `measureBlocksWithFloats`.
  *
  * `measureBlock` contains the FlowBlock exhaustiveness switch. The
  * `assertExhaustiveFlowBlock(block, 'react PagedEditor measureBlock')`

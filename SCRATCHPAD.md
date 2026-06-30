@@ -8,6 +8,18 @@ Tags: `[high|med|low]` rough priority · *italic trigger* = when it becomes wort
 
 # DOCX editor
 
+## Removed in refactor slice 0 — re-add as real features when wanted
+The editor refactor (`living-docs/docx-editor-react-refactor.md`) cut half-built/unwired Word
+features that had plumbing but no UI. All reversible via git (branch `refactor/editor-slice0-purge`);
+re-add properly inside the owning feature slice rather than restoring the dead plumbing.
+- `RTL / bidi text direction` **[low]**: `setRtl`/`setLtr` commands + paragraph `bidi` tracking
+  existed with no toolbar control. *Trigger: a customer needs RTL documents (unlikely for EP/US).*
+- `Table-cell formatting ops` **[med]**: per-side cell borders, cell vertical-align, cell margins,
+  cell text-direction, no-wrap, row-height, toggle-header-row, distribute-columns, auto-fit — the
+  core commands exist; only the toolbar UI is missing. *Trigger: table fidelity becomes a user ask.*
+- `Outline default-open` **[low]**: the outline could open by default via a prop; it was inert
+  (hard-coded closed). *Trigger: if a "remember outline state" preference is wanted.*
+
 ## Fidelity & correctness
 
 - `DOCX FIDELITY REGRESSION CORPUS` **[high — the editor is the bet]**: the vendored editor is ~134k LOC of production core we didn't write and isn't perfect (we already found latent core bugs — `computeOptionsHash` silently dropped the watermark so it never repainted; plus the whole audit). The scary failure mode is an attorney getting a mangled `.docx` on a real filing — format bugs are trust-killers in a way UI glitches aren't, and they live in code we don't have the author's mental model for. The adopted ~28k core tests guard the *editor author's* fixtures, NOT the documents Patrick's users actually open.

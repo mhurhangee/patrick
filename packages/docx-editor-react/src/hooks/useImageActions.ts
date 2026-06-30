@@ -61,8 +61,7 @@ export function useImageActions({
       if (!node || node.type.name !== 'image') return;
 
       // The toolbar and the right-click menu share `setImageWrapType` and its
-      // `resolveAnchorAttrs` taxonomy. `toolbarValueToLayoutTarget` lives in
-      // core so the Vue adapter doesn't have to duplicate it.
+      // `resolveAnchorAttrs` taxonomy; `toolbarValueToLayoutTarget` lives in core.
       const target = toolbarValueToLayoutTarget(toolbarValue);
       if (!target) return;
 

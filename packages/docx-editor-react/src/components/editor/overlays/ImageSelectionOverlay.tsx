@@ -20,7 +20,7 @@ import {
 // TYPES
 // =============================================================================
 
-/** Resize handle position; the resize math lives in core (shared with Vue). */
+/** Resize handle position; the resize math lives in core. */
 type ResizeHandle = ImageResizeHandle;
 
 export interface ImageSelectionInfo {

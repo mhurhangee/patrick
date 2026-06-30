@@ -35,8 +35,8 @@ export interface ColorControlProps {
 }
 
 /**
- * A colour picker trigger + popover, reused for text colour and highlight (and,
- * later, table border/fill). The icon shows a thin bar of the current colour;
+ * A colour picker trigger + popover, reused for text colour, highlight, and
+ * table border/fill. The icon shows a thin bar of the current colour;
  * the popover offers a clear row, a swatch grid, and a custom hex input.
  */
 export function ColorControl({
