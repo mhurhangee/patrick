@@ -38,9 +38,9 @@ Tags: `[high|med|low]` rough priority · *italic trigger* = when it becomes wort
 - **Deep-read findings (deferred, 2026-06-30):** (a) `usePagedScrollApi.scrollToParaIdImpl` flashes the highlight twice — once synchronously, once after the paint-settle rAF — so an already-painted target double-blinks. The `highlight` path is unwired roadmap infra (claim-chart "highlight the basis passage"), so fix + smoke-test it **when that feature is wired**, not blind now. (b) `useLayoutPipeline`'s remaining H/F comment-anchor loop is kept conservatively — verify whether an H/F-anchored comment from a loaded `.docx` can actually reach the `comments` list (if not, that loop is also dead and removable).
 - *Trigger: a dedicated editor-feature pass after the audit cull/fixes settle.*
 
-## Plugin system (dedicated pass)
+## Plugin system — RESOLVED (2026-06-30)
 
-- `plugin-api/*` + `plugins/template/*` were deliberately left out of the editor audit — give the plugin system its own design + cull pass. It's the extension surface for future patent transforms (e.g. claims formatting); docxtemplater is the worked reference.
+- The React **PluginHost** system (`docx-editor-react/plugin-api/*` + `plugins/template/*` + `DecorationLayer`) was investigated and **CUT** (PR #131, ~1,900 lines) — unused by Patrick and NOT the extension mechanism. The actual extension surface for future patent transforms (e.g. claims formatting, the flatten-tracked-changes transform below) is **`docx-editor-core/core-plugins/*`** (docxtemplater = worked reference) — kept, untouched.
 
 ## Chrome cleanup (post-A5 follow-ups)
 
@@ -49,7 +49,6 @@ Minor cleanups in chrome we already wrote (outside the audit scope):
 - `ZoomPill` 400ms polling runs for every editor's lifetime (`docx-viewer.tsx`; share one timer / pause when not visible).
 - hex `<input>` in `color-control.tsx` is hand-rolled vs `@patrick/ui` `Input`.
 - `highlightColors.ts` (serialise) and `colorResolver` `HIGHLIGHT_COLORS` (render) disagree on the 5 dark-variant hexes → picked ≠ rendered highlight.
-- `BUILTIN_STYLES` table-style presets (`internals/table-style-presets.ts`, extracted in the dead-code cull) are pure DOM-free Word data but live in the react package, while core owns table-style resolution (`newTableStyle.ts`, `styleResolver`) and the planned patent table transforms. [low] *Trigger:* if/when a core-side table transform needs the presets — move them to core then (no current core consumer, so premature now). Flagged by code-review altitude pass on the cull.
 
 ## Provenance / docs framing (one pass once the rework settles)
 
