@@ -167,19 +167,6 @@ export {
 } from './commands';
 export type { TableContextInfo, BorderPreset } from './commands';
 
-/** Block content-control (SDT) discovery + edit on the live PM state. */
-export {
-  findContentControlsInPM,
-  findContentControlPos,
-  setContentControlContentTr,
-  removeContentControlTr,
-  setContentControlValueTr,
-  setContentControlValueAtPosTr,
-  addRepeatingSectionItemTr,
-  removeRepeatingSectionItemTr,
-  type PMContentControl,
-} from './contentControls';
-
 /** Word `w14:paraId` → ProseMirror position before matching paragraph. */
 export { findStartPosForParaId } from './utils/findStartPosForParaId';
 export { findParagraphByParaId } from './utils/findParagraphByParaId';

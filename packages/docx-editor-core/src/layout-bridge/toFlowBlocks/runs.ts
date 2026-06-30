@@ -15,7 +15,6 @@ import type {
   FieldRun,
   RunFormatting,
 } from '../../layout-engine/types';
-import type { InlineSdtWidget } from '../../layout-engine/inlineSdtWidgets';
 import type { ParagraphAttrs as PMParagraphAttrs } from '../../prosemirror/schema/nodes';
 import type {
   TextColorAttrs,
@@ -306,24 +305,6 @@ function stripTocHyperlinkStyle(formatting: RunFormatting): void {
   delete formatting.underline;
 }
 
-function isContentLocked(lock: unknown): boolean {
-  return lock === 'contentLocked' || lock === 'sdtContentLocked';
-}
-
-function inlineCheckboxWidgetFor(child: PMNode, childPos: number): InlineSdtWidget | undefined {
-  const attrs = child.attrs as Record<string, unknown>;
-  if (attrs.sdtType !== 'checkbox') return undefined;
-  if (isContentLocked(attrs.lock) || attrs.dataBinding != null) return undefined;
-  return {
-    kind: 'checkbox',
-    groupId: `sdt@${childPos}`,
-    pos: childPos,
-    tag: attrs.tag != null ? String(attrs.tag) : undefined,
-    alias: attrs.alias != null ? String(attrs.alias) : undefined,
-    checked: typeof attrs.checked === 'boolean' ? attrs.checked : undefined,
-  };
-}
-
 /**
  * Convert a paragraph node to runs.
  */
@@ -344,11 +325,7 @@ export function paragraphToRuns(
 
   // Single dispatcher for one inline PM child. Recurses on `sdt` so nested
   // content controls keep contributing runs at the right pmStart/pmEnd.
-  function pushRunsForChild(
-    child: PMNode,
-    childPos: number,
-    inlineSdtWidget?: InlineSdtWidget
-  ): void {
+  function pushRunsForChild(child: PMNode, childPos: number): void {
     if (child.isText && child.text) {
       const formatting = extractRunFormatting(child.marks, theme);
       if (inTocParagraph) stripTocHyperlinkStyle(formatting);
@@ -359,7 +336,6 @@ export function paragraphToRuns(
         ...formatting,
         pmStart: childPos,
         pmEnd: childPos + child.nodeSize,
-        inlineSdtWidget,
       };
       runs.push(run);
     } else if (child.type.name === 'hardBreak') {
@@ -456,10 +432,9 @@ export function paragraphToRuns(
         pmEnd: childPos + child.nodeSize,
       });
     } else if (child.type.name === 'sdt') {
-      const inlineWidget = inlineCheckboxWidgetFor(child, childPos) ?? inlineSdtWidget;
       const sdtInnerOffset = childPos + 1; // +1 for opening tag
       child.forEach((sdtChild, sdtChildOffset) => {
-        pushRunsForChild(sdtChild, sdtInnerOffset + sdtChildOffset, inlineWidget);
+        pushRunsForChild(sdtChild, sdtInnerOffset + sdtChildOffset);
       });
     }
   }
