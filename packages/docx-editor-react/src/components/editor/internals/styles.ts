@@ -50,14 +50,3 @@ export const pagesContainerStyles: CSSProperties = {
   alignItems: 'center',
   overflowAnchor: 'none',
 };
-
-export const pluginOverlaysStyles: CSSProperties = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  pointerEvents: 'none',
-  overflow: 'visible',
-  zIndex: 8,
-};

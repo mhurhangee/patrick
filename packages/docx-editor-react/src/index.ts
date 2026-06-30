@@ -2,9 +2,7 @@
  * @eigenpal/docx-editor-react
  *
  * Root entry for the React editor: the `DocxEditor` component + its imperative
- * `DocxEditorRef`. The advanced plugin surface stays public through an explicit
- * subpath:
- * - `@eigenpal/docx-editor-react/plugin-api`
+ * `DocxEditorRef`.
  *
  * Framework-agnostic document utilities (document factories, etc.) live in
  * `@eigenpal/docx-editor-core`. Agent/MCP surfaces live in
