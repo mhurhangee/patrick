@@ -20,14 +20,24 @@ re-add properly inside the owning feature slice rather than restoring the dead p
 - `Outline default-open` **[low]**: the outline could open by default via a prop; it was inert
   (hard-coded closed). *Trigger: if a "remember outline state" preference is wanted.*
 
-## Undo / model state
-- `Page setup not on the Ctrl+Z undo stack` **[low — likely working-as-intended]**: page setup
-  (size/orientation/margins) is a model-level doc attribute (`finalSectionProperties`, no PM
-  representation), so it isn't revertible via Ctrl+Z — treated as a *document attribute, not
-  content* (a deliberate stance; the old global-keydown history that reverted it was the A1 bug,
-  removed in slice 1). If we ever decide page setup SHOULD be undoable, the route is PM-native
-  section properties (mirror the watermark `doc` attribute → undoable transaction). *Trigger: only
-  if we revisit the design stance.*
+## Page setup lives outside ProseMirror
+Page setup (size/orientation/margins) is a model-level doc attribute (`finalSectionProperties`, no
+PM representation), applied via `usePageSetupControls` → `handleDocumentChange`. Two consequences:
+- `Page-setup changes are dropped by selective save` **[high — data loss]**: the default save is
+  *selective* (`useFileIO` → `agent.toBuffer({ selective })`), and `attemptSelectiveSave`
+  (`docx/selectiveSave.ts`) only patches the `changedParaIds` it gets from the PM editor state and
+  never re-emits the body sectPr. A page-setup change is not a PM transaction, so `changedParaIds`
+  is empty and the original sectPr is kept → the margin/orientation/size change is NOT written to
+  the `.docx`. Only a full repack (`selective:false` → `repackDocx`, which serializes
+  `finalSectionProperties`, documentSerializer.ts:149-150) persists it. Confirmed by inspection +
+  user report. *Interim fix: force a full repack when section properties changed (mirror the
+  `hasInjectedReplies` force in `useFileIO`). Proper fix: make section properties PM-native.*
+- `Page setup not on the Ctrl+Z undo stack` **[low — working-as-intended]**: not revertible via
+  Ctrl+Z (PM undo only covers content transactions) — treated as a doc attribute, not content
+  (deliberate; the old global-keydown history that reverted it was the A1 bug, removed in slice 1).
+Both are fixed at once by making section properties PM-native (mirror the watermark `doc`
+attribute → undoable transaction that the change tracker sees). *Trigger: the save data-loss is
+worth fixing soon; the undo stance only if we revisit it.*
 
 ## Fidelity & correctness
 
