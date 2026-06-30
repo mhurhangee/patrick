@@ -9,7 +9,7 @@
  * renders selection rectangles in container-relative coordinates.
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { SelectionRect, CaretPosition } from '@eigenpal/docx-editor-core/layout-bridge';
 
 // =============================================================================
@@ -105,55 +105,19 @@ const Caret: React.FC<{
   isFocused: boolean;
 }> = ({ position, color, width, blinkInterval, isFocused }) => {
   const [visible, setVisible] = useState(isFocused);
-  const blinkTimerRef = useRef<number | null>(null);
 
+  // One effect owns the blink timer. The `position` deps make it re-run on
+  // caret movement too, which restarts the cycle so the caret shows solid
+  // immediately after typing/navigation before resuming its blink.
   useEffect(() => {
-    // Clear any existing timer
-    if (blinkTimerRef.current) {
-      window.clearInterval(blinkTimerRef.current);
-      blinkTimerRef.current = null;
-    }
-
-    // Only blink when focused and interval is set
-    if (isFocused && blinkInterval > 0) {
-      setVisible(true);
-      blinkTimerRef.current = window.setInterval(() => {
-        setVisible((v) => !v);
-      }, blinkInterval);
-    } else {
-      // Hide caret when not focused
+    if (!isFocused || blinkInterval <= 0) {
       setVisible(false);
+      return;
     }
-
-    return () => {
-      if (blinkTimerRef.current) {
-        window.clearInterval(blinkTimerRef.current);
-      }
-    };
-  }, [isFocused, blinkInterval]);
-
-  // Reset blink cycle when position changes (show immediately after typing/navigation)
-  useEffect(() => {
-    if (!isFocused) return;
-
     setVisible(true);
-
-    // Restart blink timer from this moment
-    if (blinkTimerRef.current) {
-      window.clearInterval(blinkTimerRef.current);
-    }
-    if (blinkInterval > 0) {
-      blinkTimerRef.current = window.setInterval(() => {
-        setVisible((v) => !v);
-      }, blinkInterval);
-    }
-
-    return () => {
-      if (blinkTimerRef.current) {
-        window.clearInterval(blinkTimerRef.current);
-      }
-    };
-  }, [position.x, position.y, isFocused, blinkInterval]);
+    const timer = window.setInterval(() => setVisible((v) => !v), blinkInterval);
+    return () => window.clearInterval(timer);
+  }, [isFocused, blinkInterval, position.x, position.y]);
 
   return <div style={caretStyles(position, color, width, visible)} data-testid="caret" />;
 };
