@@ -29,7 +29,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { EditorState } from 'prosemirror-state';
 import type { Decoration, EditorView } from 'prosemirror-view';
 import { createRenderedDomContext } from '../../../plugin-api/RenderedDomContext';
-import type { LayoutSelectionGate } from '../internals/LayoutSelectionGate';
+import type { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 
 interface DecorationLayerProps {
   /** Returns the current PM view (or null if not yet mounted). */

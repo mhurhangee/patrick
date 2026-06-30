@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { PagedEditorRef } from '../PagedEditor';
-import { PENDING_COMMENT_ID } from '../commentFactories';
+import { PENDING_COMMENT_ID } from '@eigenpal/docx-editor-core/prosemirror/commentIdAllocator';
 
 interface FloatingCommentBtn {
   top: number;
