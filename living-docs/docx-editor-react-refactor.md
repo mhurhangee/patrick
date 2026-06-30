@@ -119,7 +119,8 @@ with `/code-review`.
 2. **Hyperlinks** ✅ — smallest, cleanest leaf; established the `features/` pattern (pure move).
 3. **Find/replace** ✅ — merged the two hooks into `features/find-replace/use-find-replace`, dropped
    the dead match-list, fixed A5 (removed redundant `currentResult` writer), collapsed dialog props.
-4. **Outline** + **page-setup/watermark** — self-contained; resolve `showOutlineProp` + RTL gate.
+4. **Outline** + **page-setup/watermark** ✅ — relocated to `features/outline` + `features/page-setup`
+   (pure moves; `showOutlineProp`/RTL already cut in slice 0; watermark submenu deferred to toolbar).
 5. **Tables** — needs the orphaned-action decision (§C) made first.
 6. **Images** — span two trees; unify the 3 context shapes.
 7. **Context menu** — depends on tables/images/comments being settled; split builder by concern.
@@ -212,6 +213,12 @@ with `/code-review`.
 - 2026-06-30 — **slice 1 (history/undo) — in progress.** Deleted `useHistory.ts`; added
   `useDocumentState`; rewired docx-editor.tsx + useDocumentLoader.tsx; renamed `historyStateRef`
   → `docStateRef` across 4 hooks. Fixes A1 + A2. All gates green.
+- 2026-06-30 — **slices 2–4 SHIPPED.** Slice 2 (hyperlinks→features/, est. the pattern, PR #135).
+  Slice 3 (find/replace consolidation, PR #136): merged the two hooks, dropped dead match-list,
+  fixed A5; cloud review caught a real stale-find-bar-after-doc-swap bug → fixed (reset closes the
+  bar); two follow-up findings (one-frame count flash; reset-on-buffer-identity) assessed as
+  cosmetic/mooted, not actioned. Slice 4 (outline + page-setup → features/, pure moves). Pure-move
+  slices verified by gates only; logic slices get the cloud review.
 - 2026-06-30 — slice 1 code review (high, ×2): caught (a) page-setup no longer Ctrl+Z-undoable —
   **accepted by design** (page setup is a doc attribute, not content; Michael's call), documented +
   SCRATCHPAD-logged; (b) per-keystroke document `JSON.stringify` (pre-existing) — **fixed** (guard
