@@ -125,7 +125,10 @@ with `/code-review`.
    actions were cut in slice 0). `useTableResizeState` + `TableInsertButton` deferred to slice 9.
 6. **Images** ✅ — relocated to `features/images` + unified the 3 image-context shapes onto one
    `ImageContext` (PmImageContext + the local `{pos}` shadow removed). Overlay/menu bits → slices 7/9.
-7. **Context menu** — depends on tables/images/comments being settled; split builder by concern.
+7. **Context menu** ✅ — relocated to `features/context-menu` (incl. the image-menu bits from slice 6).
+   Kept `use-image-context-menu` as its own file (return type is the overlays' prop contract). The
+   builder-by-concern split was deferred (the action switch touches comment dispatch — revisit with
+   the comments slice; logged below if pursued).
 8. **Toolbar / formatting** — promote shared `color-control`/`shared.ts`; extract watermark submenu.
 9. **Paged-editor internal restructure** — the `PmSurface` context; `paged-editor/*` subfolders.
 10. **Tracked-changes**, then **11. Comments** — ⚠️ **VITAL / HIGHEST-CARE SLICES** (native Word
