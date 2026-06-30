@@ -739,7 +739,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     openTableProperties,
     scrollContainerRef,
     editorContentRef,
-    onAddComment: useCallback(
+    onBeginAddComment: useCallback(
       ({ from, to, yPos }: { from: number; to: number; yPos: number | null }) => {
         setCommentSelectionRange({ from, to });
         setAddCommentYPosition(yPos);

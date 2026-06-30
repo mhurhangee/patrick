@@ -1,9 +1,8 @@
 /**
- * CommentMarginMarkers — small icons at the page right edge
- *
- * Active comments: speech bubble when sidebar closed
- * Resolved comments: speech bubble + check, always visible
- * Clicking opens sidebar / toggles resolved popup
+ * CommentMarginMarkers — small icons at the page right edge, shown only while the
+ * comments sidebar is CLOSED. When it's open, the sidebar's own cards (active) and
+ * resolved-dot markers stand in, so a margin marker would just duplicate them.
+ * Active = speech bubble; resolved = speech bubble + check. Click opens the sidebar.
  */
 
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
@@ -33,10 +32,8 @@ export function CommentMarginMarkers({
   const markers = rootComments
     .map((comment) => {
       const isResolved = resolvedCommentIds.has(comment.id);
-      // Active: hide when sidebar is open (card visible in sidebar)
-      if (!isResolved && sidebarOpen) return null;
-      // Resolved: hide when sidebar is open (expanded resolved card visible in sidebar)
-      if (isResolved && sidebarOpen) return null;
+      // Markers only show while the sidebar is closed (open → the sidebar stands in).
+      if (sidebarOpen) return null;
       const y = anchorPositions.get(`comment-${comment.id}`);
       if (y == null) return null;
       return { comment, isResolved, y };

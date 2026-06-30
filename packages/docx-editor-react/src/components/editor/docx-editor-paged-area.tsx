@@ -23,9 +23,9 @@ import type { ReactSidebarItem } from '../../features/review/types';
  * button anchored to a non-empty selection. Headers/footers are painted
  * read-only by the layout engine — there is no inline H/F editor.
  *
- * The floating button dispatches a pending comment mark inline rather
- * than going through onAddComment — same shape as the right-click menu's
- * addComment branch.
+ * The floating button dispatches a pending comment mark inline, then begins
+ * the compose workflow — the same shape as the right-click menu's addComment
+ * branch (which calls `onBeginAddComment`).
  */
 export function DocxEditorPagedArea({
   // PagedEditor refs + state

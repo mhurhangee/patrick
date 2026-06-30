@@ -46,7 +46,7 @@ interface ContextMenuState {
  * The text menu's `addComment` branch needs to mutate comment-management
  * state (selection range, Y position, sidebar visibility, isAddingComment,
  * floatingCommentBtn). To keep this hook independent of comment state
- * ownership, the parent passes a single `onAddComment({ from, to, yPos })`
+ * ownership, the parent passes a single `onBeginAddComment({ from, to, yPos })`
  * callback that fans out to those setters.
  */
 export function useContextMenus({
@@ -56,7 +56,7 @@ export function useContextMenus({
   openTableProperties,
   scrollContainerRef,
   editorContentRef,
-  onAddComment,
+  onBeginAddComment,
 }: {
   getActiveEditorView: () => EditorView | null | undefined;
   focusActiveEditor: () => void;
@@ -64,7 +64,7 @@ export function useContextMenus({
   openTableProperties: () => void;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   editorContentRef: React.RefObject<HTMLDivElement | null>;
-  onAddComment: (range: { from: number; to: number; yPos: number | null }) => void;
+  onBeginAddComment: (range: { from: number; to: number; yPos: number | null }) => void;
 }) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
@@ -393,7 +393,7 @@ export function useContextMenus({
           const tr = view.state.tr.addMark(from, to, pendingMark);
           tr.setSelection(TextSelection.create(tr.doc, to));
           view.dispatch(tr);
-          onAddComment({ from, to, yPos });
+          onBeginAddComment({ from, to, yPos });
           break;
         }
       }
@@ -406,7 +406,7 @@ export function useContextMenus({
       openTableProperties,
       scrollContainerRef,
       editorContentRef,
-      onAddComment,
+      onBeginAddComment,
     ]
   );
 
