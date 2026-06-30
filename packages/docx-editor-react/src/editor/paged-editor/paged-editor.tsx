@@ -34,7 +34,7 @@ import { DEFAULT_PAGE_HEIGHT_PX } from '@eigenpal/docx-editor-core/layout-bridge
 import { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 
 // Visual line navigation hook
-import { useVisualLineNavigation } from '../hooks/useVisualLineNavigation';
+import { useVisualLineNavigation } from './use-visual-line-navigation';
 
 // Sidebar constants
 import { SIDEBAR_DOCUMENT_SHIFT } from '@eigenpal/docx-editor-core/utils/sidebarConstants';
@@ -59,13 +59,13 @@ import {
   pagesContainerStyles,
 } from './internals/styles';
 import { viewportMinHeightPx } from './internals/scrollUtils';
-import { useLayoutPipeline } from '../hooks/useLayoutPipeline';
-import { useSelectionOverlay } from '../hooks/useSelectionOverlay';
-import { useImageInteractions } from '../hooks/useImageInteractions';
-import { usePagedScrollApi } from '../hooks/usePagedScrollApi';
-import { usePagesPointer } from '../hooks/usePagesPointer';
-import { usePagedEditorRefApi } from '../hooks/usePagedEditorRefApi';
-import { useLayoutTriggers } from '../hooks/useLayoutTriggers';
+import { useLayoutPipeline } from './use-layout-pipeline';
+import { useSelectionOverlay } from './use-selection-overlay';
+import { useImageInteractions } from './use-image-interactions';
+import { usePagedScrollApi } from './use-paged-scroll-api';
+import { usePagesPointer } from './use-pages-pointer';
+import { usePagedEditorRefApi } from './use-paged-editor-ref-api';
+import { useLayoutTriggers } from './use-layout-triggers';
 import { TableInsertButton } from './overlays/TableInsertButton';
 
 export { DEFAULT_PAGE_WIDTH };

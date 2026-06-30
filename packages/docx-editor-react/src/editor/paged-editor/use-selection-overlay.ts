@@ -26,14 +26,14 @@ import {
 import type { FlowBlock, Layout, Measure } from '@eigenpal/docx-editor-core/layout-engine';
 import { enclosingSdtGroupIds, applySdtFocus } from '@eigenpal/docx-editor-core/layout-painter';
 
-import type { HiddenProseMirrorRef } from '../editor/hidden-prose-mirror';
-import type { ImageSelectionInfo } from '../editor/overlays/ImageSelectionOverlay';
+import type { HiddenProseMirrorRef } from './hidden-prose-mirror';
+import type { ImageSelectionInfo } from './overlays/ImageSelectionOverlay';
 import type { LayoutSelectionGate } from '@eigenpal/docx-editor-core/prosemirror/utils/LayoutSelectionGate';
 import {
   applyCellSelectionHighlight,
   computeSelectionRectsFromDom,
   getCaretFromDom,
-} from '../editor/internals/domSelection';
+} from './internals/domSelection';
 
 export interface UseSelectionOverlayOptions {
   layout: Layout | null;
