@@ -43,24 +43,30 @@ export function useLayoutTriggers(opts: UseLayoutTriggersOptions): void {
     firstPageFooterContent,
   } = opts;
 
-  // Re-layout on web-font load. FontFaceSet.onloadingdone catches new
-  // fonts as they finish loading.
+  // Re-layout on web-font load. FontFaceSet 'loadingdone' fires as fonts finish
+  // loading. The listener mounts once and reads the pipeline callbacks through
+  // refs so a late font load re-lays-out with the current callbacks (they change
+  // identity as layout deps change).
+  const runLayoutPipelineRef = useRef(runLayoutPipeline);
+  const updateSelectionOverlayRef = useRef(updateSelectionOverlay);
+  runLayoutPipelineRef.current = runLayoutPipeline;
+  updateSelectionOverlayRef.current = updateSelectionOverlay;
+
   useEffect(() => {
     const handleFontsLoaded = () => {
       const view = hiddenPMRef.current?.getView();
       if (view) {
         resetCanvasContext();
         clearAllCaches();
-        runLayoutPipeline(view.state);
-        updateSelectionOverlay(view.state);
+        runLayoutPipelineRef.current(view.state);
+        updateSelectionOverlayRef.current(view.state);
       }
     };
     window.document.fonts.addEventListener('loadingdone', handleFontsLoaded);
     return () => {
       window.document.fonts.removeEventListener('loadingdone', handleFontsLoaded);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hiddenPMRef]);
 
   // Re-layout when H/F content changes (HF editor save, etc.).
   const headerFooterEpochRef = useRef(0);
