@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import type { Document } from '@eigenpal/docx-editor-core/types/document';
 import {
   getSplitCellDialogConfig,
   splitActiveTableCell,
@@ -25,7 +24,6 @@ import {
   toggleHeaderRow,
   distributeColumns,
   autoFitContents,
-  applyTableStyle,
   removeTableBorders,
   setAllTableBorders,
   setOutsideTableBorders,
@@ -33,11 +31,9 @@ import {
   setCellFillColor,
   setTableBorderColor,
   setTableBorderWidth,
-  createStyleResolver,
 } from '@eigenpal/docx-editor-core/prosemirror';
 import type { EditorView } from 'prosemirror-view';
 import type { TableAction } from '../../../types/table';
-import { getBuiltinTableStyle, type TableStylePreset } from '../internals/table-style-presets';
 
 interface SplitCellDialogState {
   isOpen: boolean;
@@ -74,17 +70,11 @@ export function useTableDialogs({
   getCaretRect,
   focusActiveEditor,
   borderSpecRef,
-  historyStateRef,
-  getCachedStyleResolver,
 }: {
   getActiveEditorView: () => EditorView | null | undefined;
   getCaretRect: () => DOMRect | null;
   focusActiveEditor: () => void;
   borderSpecRef: React.RefObject<BorderSpec>;
-  historyStateRef: React.RefObject<Document | null>;
-  getCachedStyleResolver: (
-    styles: Parameters<typeof createStyleResolver>[0]
-  ) => ReturnType<typeof createStyleResolver>;
 }) {
   const [tablePropsOpen, setTablePropsOpen] = useState(false);
   const [tablePropsRect, setTablePropsRect] = useState<DOMRect | null>(null);
@@ -217,86 +207,13 @@ export function useTableDialogs({
             } else if (action.type === 'openTableProperties') {
               setTablePropsRect(getCaretRect());
               setTablePropsOpen(true);
-            } else if (action.type === 'applyTableStyle') {
-              // Resolve style data from built-in presets or the document's stylesheet.
-              let preset: TableStylePreset | undefined = getBuiltinTableStyle(action.styleId);
-              const currentDoc = historyStateRef.current;
-              if (!preset && currentDoc?.package.styles) {
-                const styleResolver = getCachedStyleResolver(currentDoc.package.styles);
-                const docStyle = styleResolver.getStyle(action.styleId);
-                if (docStyle) {
-                  preset = { id: docStyle.styleId, name: docStyle.name ?? docStyle.styleId };
-                  if (docStyle.tblPr?.borders) {
-                    const b = docStyle.tblPr.borders;
-                    preset.tableBorders = {};
-                    for (const side of [
-                      'top',
-                      'bottom',
-                      'left',
-                      'right',
-                      'insideH',
-                      'insideV',
-                    ] as const) {
-                      const bs = b[side];
-                      if (bs) {
-                        preset.tableBorders[side] = {
-                          style: bs.style,
-                          size: bs.size,
-                          color: bs.color?.rgb ? { rgb: bs.color.rgb } : undefined,
-                        };
-                      }
-                    }
-                  }
-                  if (docStyle.tblStylePr) {
-                    preset.conditionals = {};
-                    for (const cond of docStyle.tblStylePr) {
-                      const entry: Record<string, unknown> = {};
-                      if (cond.tcPr?.shading?.fill)
-                        entry.backgroundColor = `#${cond.tcPr.shading.fill}`;
-                      if (cond.tcPr?.borders) {
-                        const borders: Record<string, unknown> = {};
-                        for (const s of ['top', 'bottom', 'left', 'right'] as const) {
-                          const bs2 = cond.tcPr.borders[s];
-                          if (bs2)
-                            borders[s] = {
-                              style: bs2.style,
-                              size: bs2.size,
-                              color: bs2.color?.rgb ? { rgb: bs2.color.rgb } : undefined,
-                            };
-                        }
-                        entry.borders = borders;
-                      }
-                      if (cond.rPr?.bold) entry.bold = true;
-                      if (cond.rPr?.color?.rgb) entry.color = `#${cond.rPr.color.rgb}`;
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      (preset.conditionals as any)[cond.type] = entry;
-                    }
-                  }
-                  preset.look = { firstRow: true, lastRow: false, noHBand: false, noVBand: true };
-                }
-              }
-              if (preset) {
-                applyTableStyle({
-                  styleId: preset.id,
-                  tableBorders: preset.tableBorders,
-                  conditionals: preset.conditionals,
-                  look: preset.look,
-                })(view.state, view.dispatch);
-              }
             }
           }
       }
 
       focusActiveEditor();
     },
-    [
-      getActiveEditorView,
-      focusActiveEditor,
-      openSplitCellDialog,
-      borderSpecRef,
-      historyStateRef,
-      getCachedStyleResolver,
-    ]
+    [getActiveEditorView, focusActiveEditor, openSplitCellDialog, borderSpecRef]
   );
 
   const handleSplitCellDialogClose = useCallback(() => {

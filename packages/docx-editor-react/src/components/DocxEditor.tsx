@@ -966,8 +966,6 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     getCaretRect,
     focusActiveEditor,
     borderSpecRef,
-    historyStateRef,
-    getCachedStyleResolver,
   });
 
   const openTableProperties = useCallback(

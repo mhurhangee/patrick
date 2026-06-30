@@ -57,8 +57,7 @@ export type TableAction =
         justification?: 'left' | 'center' | 'right' | null;
       };
     }
-  | { type: 'openTableProperties' }
-  | { type: 'applyTableStyle'; styleId: string };
+  | { type: 'openTableProperties' };
 
 /** Editable table-level properties (matches the core `setTableProperties` command). */
 export interface TablePropertiesValue {
