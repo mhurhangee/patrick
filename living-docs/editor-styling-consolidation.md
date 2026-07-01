@@ -171,7 +171,28 @@ the app `--doc-paper`. End: `grep -r "--doc-"` returns nothing. Diff is pure ren
   the frontend `index.css` rather than relocating dead config — the host no longer hand-wires any
   editor token. (A missing Tailwind utility is a silent no-op, so verified by exhaustive grep, not
   the build.)
-- **Next:** Phase 4 (de-inline static thematic styles — the last phase).
+- **Phase 4 — DONE** (branch `refactor/editor-styling-deinline`). The only genuinely-thematic
+  inline colours were the selection-overlay + image-selection accents (Google-blue, with `#2563eb`
+  duplicated) — tokenised to `--docx-selection-rect` / `--docx-image-accent` (pixel-identical).
+  Deliberately LEFT inline: (a) the static flex-chrome CSSProperties objects (`use-editor-chrome`,
+  `paged-editor/internals/styles`) — structural layout, not thematic; (b) the white-handle /
+  black-label overlay chrome; (c) the drag ghost's colour literal (it's on `document.body`,
+  outside `.ep-root`, so a token can't resolve — the same escape-scope exception as print/clipboard).
+
+## ✅ CONSOLIDATION COMPLETE (Phases 0–4, PRs #160–#165 + splits)
+The editor's styling now: lives entirely in `docx-editor-react/src/styles/` (tokens.css / editor.css /
+prosemirror.css / revisions.css); uses ONE uniform `--docx-*` token namespace, single-source (no
+hardcoded redline/comment copies; escape-scope surfaces carry `var(--docx-*, literal)` fallbacks);
+the host `index.css` wires no editor token. Mental model achieved: **restyle the editor → look in
+`docx-editor-react`.**
+
+**Surfaced for Michael (design, not refactor):** the selection/image overlay accents are Google-blue
+(`--docx-selection-rect` / `--docx-image-accent`), while text-selection + chrome are emerald
+(`--primary`-derived). Now that they're tokens, aligning them to emerald is a one-line change — his call.
+
+**Remaining junk (logged above, separate dead-CSS/dead-export sweeps):** dead
+`.paged-editor__decoration-overlay` + yjs CSS; dead `.docx-editor-vue__pages-viewport` selectors;
+possible broader dead exports in `docx-editor-core/src/utils`.
 
 ## Smell ledger (found, not yet fixed — separate passes)
 - `styles/editor.css` `.paged-editor__decoration-overlay` + the `.ProseMirror-yjs-cursor`
