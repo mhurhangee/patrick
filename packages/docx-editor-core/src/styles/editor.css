@@ -82,6 +82,24 @@
   /* Link */
   --doc-link: var(--primary); /* hyperlinks */
 
+  /* Tracked changes & comments — the single source of truth for the redline
+   * palette. Referenced by the painter, the toDOM marks, the structural
+   * revision CSS, and the focus-highlight overlay (no hardcoded copies).
+   * One value each, not overridden in dark — the `.layout-page` smart-invert
+   * filter recolours them for dark mode, exactly as the old literals were. */
+  --docx-revision-ins: #2e7d32; /* insertion border/glyph/outline */
+  --docx-revision-ins-bg: rgba(52, 168, 83, 0.08); /* insertion run background */
+  --docx-revision-ins-bg-focus: rgba(52, 168, 83, 0.2); /* focused in the sidebar */
+  --docx-revision-del: #c62828; /* deletion text/border/glyph/outline */
+  --docx-revision-del-bg: rgba(211, 47, 47, 0.08); /* deletion run background */
+  --docx-revision-del-bg-focus: rgba(211, 47, 47, 0.2); /* focused in the sidebar */
+  --docx-comment-bg: rgba(255, 212, 0, 0.15); /* painted comment run */
+  --docx-comment-border: rgba(255, 212, 0, 0.4);
+  --docx-comment-bg-focus: rgba(255, 212, 0, 0.35); /* focused comment */
+  --docx-comment-border-focus: rgba(255, 212, 0, 0.7);
+  --docx-comment-bg-mark: rgba(255, 212, 0, 0.25); /* hidden-PM toDOM mark */
+  --docx-comment-border-mark: rgba(255, 212, 0, 0.6);
+
   /* Shadows & overlays */
   --doc-shadow: rgba(0, 0, 0, 0.15);
   --doc-shadow-strong: rgba(0, 0, 0, 0.3);
