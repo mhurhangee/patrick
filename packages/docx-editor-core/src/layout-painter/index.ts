@@ -208,7 +208,7 @@ export class LayoutPainter {
     this.container.style.gap = `${pageGap}px`;
     this.container.style.padding = `${pageGap}px`;
     this.container.style.backgroundColor =
-      this.options.containerBackground ?? 'var(--doc-bg, #f8f9fa)';
+      this.options.containerBackground ?? 'var(--docx-bg, #f8f9fa)';
     this.container.style.minHeight = '100%';
   }
 
@@ -261,8 +261,8 @@ export class LayoutPainter {
     pageEl.style.height = `${page.size.h}px`;
     // CSS vars so .ep-root.dark re-themes the canvas (view transform only —
     // saved DOCX unchanged). Mirrors applyPageStyles in renderPage.ts.
-    pageEl.style.backgroundColor = this.options.pageBackground ?? 'var(--doc-page-bg, #ffffff)';
-    pageEl.style.color = 'var(--doc-page-text, #000000)';
+    pageEl.style.backgroundColor = this.options.pageBackground ?? 'var(--docx-page-bg, #ffffff)';
+    pageEl.style.color = 'var(--docx-page-text, #000000)';
     pageEl.style.overflow = 'hidden';
 
     if (this.options.showShadow) {

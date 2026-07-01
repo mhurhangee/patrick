@@ -169,7 +169,7 @@ function applyContainerStyles(container: HTMLElement, pageGap: number): void {
   container.style.alignItems = 'center';
   container.style.gap = `${pageGap}px`;
   container.style.padding = `${pageGap}px`;
-  container.style.backgroundColor = 'var(--doc-bg, #f8f9fa)';
+  container.style.backgroundColor = 'var(--docx-bg, #f8f9fa)';
 }
 
 /** Pages to keep rendered above and below the visible area for smooth scrolling. */

@@ -77,7 +77,7 @@ export interface SelectionRange {
  * Default selection highlight style (matches Word/Google Docs)
  */
 export const DEFAULT_SELECTION_STYLE: SelectionHighlightConfig = {
-  backgroundColor: 'var(--doc-selection)',
+  backgroundColor: 'var(--docx-selection)',
   borderRadius: 0,
   zIndex: 0,
   opacity: 1,
@@ -453,24 +453,24 @@ export function injectSelectionStyles(
     .docx-run-highlighted::selection,
     .docx-run-highlighted *::selection {
       /* For highlighted (yellow background) text, use darker selection */
-      background-color: var(--doc-selection-strong) !important;
+      background-color: var(--docx-selection-strong) !important;
     }
 
     .docx-run-highlighted::-moz-selection,
     .docx-run-highlighted *::-moz-selection {
-      background-color: var(--doc-selection-strong) !important;
+      background-color: var(--docx-selection-strong) !important;
     }
 
     /* Selection in dark text */
     .docx-run-dark-bg::selection,
     .docx-run-dark-bg *::selection {
       /* Use lighter selection for dark backgrounds */
-      background-color: var(--doc-selection-strong) !important;
+      background-color: var(--docx-selection-strong) !important;
     }
 
     .docx-run-dark-bg::-moz-selection,
     .docx-run-dark-bg *::-moz-selection {
-      background-color: var(--doc-selection-strong) !important;
+      background-color: var(--docx-selection-strong) !important;
     }
 
     /* Programmatic highlight class */

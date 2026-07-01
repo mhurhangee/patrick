@@ -12,7 +12,7 @@
 
 /* The vendored docx editor is consumed from source; this app's Tailwind
    generates its utility classes, which live in the React adapter's components.
-   The editor's chrome stylesheet + `--doc-*` tokens come from
+   The editor's chrome stylesheet + `--docx-*` tokens come from
    docx-editor-core/src/styles/editor.css, imported where the editor mounts. */
 @source "../../../packages/docx-editor-react/src";
 
@@ -133,7 +133,7 @@
 	/* Document canvas — paper, stays light in dark mode (not overridden in .dark).
 	   PDFs are scans and docx are white paper; we show them as-is, framed by the
 	   themed chrome. Matches the docx editor's own canvas (#f8f9fa). */
-	--doc-paper: #f8f9fa;
+	--canvas-paper: #f8f9fa;
 }
 
 .dark {
@@ -173,37 +173,37 @@
 	--radius-3xl: calc(var(--radius) * 2.2);
 	--radius-4xl: calc(var(--radius) * 2.6);
 
-	/* docx editor chrome tokens (--doc-*) — values are defined on `.ep-root` in
+	/* docx editor chrome tokens (--docx-*) — values are defined on `.ep-root` in
 	   the editor's chrome stylesheet (light + dark); these mappings let the app's
-	   Tailwind generate the `bg-doc-*`/`text-doc-*`/`border-doc-*` utilities the
+	   Tailwind generate the `bg-docx-*`/`text-docx-*`/`border-docx-*` utilities the
 	   editor components use. */
-	--color-doc-surface: var(--doc-surface);
-	--color-doc-bg: var(--doc-bg);
-	--color-doc-bg-subtle: var(--doc-bg-subtle);
-	--color-doc-bg-hover: var(--doc-bg-hover);
-	--color-doc-bg-input: var(--doc-bg-input);
-	--color-doc-primary: var(--doc-primary);
-	--color-doc-primary-hover: var(--doc-primary-hover);
-	--color-doc-primary-light: var(--doc-primary-light);
-	--color-doc-accent: var(--doc-accent);
-	--color-doc-accent-bg: var(--doc-accent-bg);
-	--color-doc-on-primary: var(--doc-on-primary);
-	--color-doc-text: var(--doc-text);
-	--color-doc-text-muted: var(--doc-text-muted);
-	--color-doc-text-subtle: var(--doc-text-subtle);
-	--color-doc-text-placeholder: var(--doc-text-placeholder);
-	--color-doc-border: var(--doc-border);
-	--color-doc-border-light: var(--doc-border-light);
-	--color-doc-border-dark: var(--doc-border-dark);
-	--color-doc-border-input: var(--doc-border-input);
-	--color-doc-error: var(--doc-error);
-	--color-doc-error-bg: var(--doc-error-bg);
-	--color-doc-success: var(--doc-success);
-	--color-doc-success-bg: var(--doc-success-bg);
-	--color-doc-warning: var(--doc-warning);
-	--color-doc-warning-bg: var(--doc-warning-bg);
-	--color-doc-warning-text: var(--doc-warning-text);
-	--color-doc-link: var(--doc-link);
+	--color-docx-surface: var(--docx-surface);
+	--color-docx-bg: var(--docx-bg);
+	--color-docx-bg-subtle: var(--docx-bg-subtle);
+	--color-docx-bg-hover: var(--docx-bg-hover);
+	--color-docx-bg-input: var(--docx-bg-input);
+	--color-docx-primary: var(--docx-primary);
+	--color-docx-primary-hover: var(--docx-primary-hover);
+	--color-docx-primary-light: var(--docx-primary-light);
+	--color-docx-accent: var(--docx-accent);
+	--color-docx-accent-bg: var(--docx-accent-bg);
+	--color-docx-on-primary: var(--docx-on-primary);
+	--color-docx-text: var(--docx-text);
+	--color-docx-text-muted: var(--docx-text-muted);
+	--color-docx-text-subtle: var(--docx-text-subtle);
+	--color-docx-text-placeholder: var(--docx-text-placeholder);
+	--color-docx-border: var(--docx-border);
+	--color-docx-border-light: var(--docx-border-light);
+	--color-docx-border-dark: var(--docx-border-dark);
+	--color-docx-border-input: var(--docx-border-input);
+	--color-docx-error: var(--docx-error);
+	--color-docx-error-bg: var(--docx-error-bg);
+	--color-docx-success: var(--docx-success);
+	--color-docx-success-bg: var(--docx-success-bg);
+	--color-docx-warning: var(--docx-warning);
+	--color-docx-warning-bg: var(--docx-warning-bg);
+	--color-docx-warning-text: var(--docx-warning-text);
+	--color-docx-link: var(--docx-link);
 }
 
 @layer base {

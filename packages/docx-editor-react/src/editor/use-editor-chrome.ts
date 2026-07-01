@@ -22,7 +22,7 @@ const containerStyle: CSSProperties = {
   flexDirection: 'column',
   height: '100%',
   width: '100%',
-  backgroundColor: 'var(--doc-bg)',
+  backgroundColor: 'var(--docx-bg)',
 };
 const mainContentStyle: CSSProperties = {
   display: 'flex',

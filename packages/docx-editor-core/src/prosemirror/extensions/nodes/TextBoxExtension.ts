@@ -167,7 +167,7 @@ export const TextBoxExtension = createNodeExtension({
         styles.push(`border: ${attrs.outlineWidth}px ${style} ${color}`);
       } else {
         // Default thin border for text boxes
-        styles.push('border: 1px solid var(--doc-border, #d1d5db)');
+        styles.push('border: 1px solid var(--docx-border, #d1d5db)');
       }
 
       // Internal margins/padding

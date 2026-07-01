@@ -147,7 +147,7 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
       new LayoutPainter({
         pageGap,
         showShadow: true,
-        pageBackground: 'var(--doc-page-bg, #ffffff)',
+        pageBackground: 'var(--docx-page-bg, #ffffff)',
       }),
     [pageGap]
   );
@@ -245,7 +245,7 @@ export function useLayoutPipeline(opts: UseLayoutPipelineOptions): UseLayoutPipe
           const renderPagesKind = renderPages(newLayout.pages, pagesContainerRef.current, {
             pageGap,
             showShadow: true,
-            pageBackground: 'var(--doc-page-bg, #ffffff)',
+            pageBackground: 'var(--docx-page-bg, #ffffff)',
             blockLookup,
             headerContent: headerContentForRender,
             footerContent: footerContentForRender,

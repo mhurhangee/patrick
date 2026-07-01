@@ -148,4 +148,11 @@ the app `--doc-paper`. End: `grep -r "--doc-"` returns nothing. Diff is pure ren
 - Section-order: Phase 0 is independently shippable and the biggest win — safe to do first/alone.
 
 ## Status
-PLANNED. Awaiting go on scope (full consolidation vs Phase-0-first).
+- **Phase 0 — DONE** (PR #160, merged): redline/comment palette tokenised to `--docx-*`,
+  single source of truth, with the print/clipboard fallback fix.
+- **Phase 0.5 — DONE** (this branch): `--doc-*` → `--docx-*` across all live code (core + react
+  + frontend), `--color-doc-*` → `--color-docx-*`, app token `--doc-paper` → `--canvas-paper`.
+  Zero `--doc-*` in live code (only historical CHANGELOG prose retains it, correctly).
+- **Next:** Phase 1 (find/AI + SDT/section-break CSS dedup) → Phase 2 (relocate CSS into
+  `docx-editor-react/src/styles/`) → Phase 3 (move `@theme` mappings off the host) → Phase 4
+  (de-inline static thematic styles).

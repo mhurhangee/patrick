@@ -30,7 +30,7 @@ export const containerStyles: CSSProperties = {
   width: '100%',
   minHeight: '100%',
   overflow: 'visible',
-  backgroundColor: 'var(--doc-bg)',
+  backgroundColor: 'var(--docx-bg)',
 };
 
 export const viewportStyles: CSSProperties = {

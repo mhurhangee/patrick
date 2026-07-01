@@ -188,7 +188,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 	}
 	if (pages.length === 0) {
 		return (
-			<div className="flex h-full items-center justify-center bg-[var(--doc-paper)]">
+			<div className="flex h-full items-center justify-center bg-[var(--canvas-paper)]">
 				<Patrick variant="drawing" size={48} label="Loading PDF" />
 			</div>
 		);
@@ -204,7 +204,7 @@ export function PdfViewer({ filename }: { filename: string }) {
 			<div
 				ref={scrollRef}
 				onScroll={onScroll}
-				className="h-full overflow-auto bg-[var(--doc-paper)] p-4"
+				className="h-full overflow-auto bg-[var(--canvas-paper)] p-4"
 			>
 				<div className="mx-auto flex w-fit flex-col items-center gap-4">
 					{pages.map((page, i) => (
