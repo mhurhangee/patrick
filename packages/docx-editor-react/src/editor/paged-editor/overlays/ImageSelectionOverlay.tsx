@@ -67,7 +67,7 @@ export interface ImageSelectionOverlayProps {
 const HANDLE_SIZE = 10;
 const HANDLE_HALF = HANDLE_SIZE / 2;
 const BORDER_WIDTH = 2;
-const ACCENT_COLOR = '#2563eb'; // Blue-600
+const ACCENT_COLOR = 'var(--docx-image-accent)';
 
 const overlayStyles: CSSProperties = {
   position: 'absolute',
@@ -358,7 +358,9 @@ export function ImageSelectionOverlay({
           setIsDragging(true);
           onDragStartRef.current?.();
 
-          // Create ghost element
+          // Create ghost element. The colours mirror --docx-image-accent but stay
+          // literal: the ghost lives on document.body, outside .ep-root, where the
+          // token wouldn't resolve.
           ghostEl = document.createElement('div');
           ghostEl.style.cssText =
             'position: fixed; pointer-events: none; z-index: 10000; ' +
