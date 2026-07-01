@@ -204,31 +204,6 @@ export type {
   TemplateError,
 } from './processTemplate';
 
-// Selection highlight
-export {
-  DEFAULT_SELECTION_STYLE,
-  HIGH_CONTRAST_SELECTION_STYLE,
-  SELECTION_CSS_VARS,
-  getSelectionRects,
-  mergeAdjacentRects,
-  getMergedSelectionRects,
-  getHighlightRectStyle,
-  generateSelectionCSS,
-  hasActiveSelection,
-  getSelectedText,
-  isSelectionWithin,
-  getSelectionBoundingRect,
-  highlightTextRange,
-  selectRange,
-  clearSelection,
-  isSelectionBackwards,
-  normalizeSelectionDirection,
-  injectSelectionStyles,
-  removeSelectionStyles,
-  areSelectionStylesInjected,
-  createSelectionChangeHandler,
-} from './selectionHighlight';
-export type { HighlightRect, SelectionHighlightConfig, SelectionRange } from './selectionHighlight';
 
 // Paragraph flash helpers
 export {

@@ -153,6 +153,19 @@ the app `--doc-paper`. End: `grep -r "--doc-"` returns nothing. Diff is pure ren
 - **Phase 0.5 — DONE** (this branch): `--doc-*` → `--docx-*` across all live code (core + react
   + frontend), `--color-doc-*` → `--color-docx-*`, app token `--doc-paper` → `--canvas-paper`.
   Zero `--doc-*` in live code (only historical CHANGELOG prose retains it, correctly).
-- **Next:** Phase 1 (find/AI + SDT/section-break CSS dedup) → Phase 2 (relocate CSS into
-  `docx-editor-react/src/styles/`) → Phase 3 (move `@theme` mappings off the host) → Phase 4
-  (de-inline static thematic styles).
+- **Phase 1 — DONE** (branch `refactor/editor-styling-css-dedup`): find/AI dup resolved by
+  deleting the entirely-dead `utils/selectionHighlight.ts` (~570 lines — the injected `<style>`
+  copy of the find/AI/selection rules; static `editor.css` was the live source) + its barrel
+  re-export. Block-SDT + section-break rules deduped: removed from `styles/editor.css` (chrome),
+  kept in `prosemirror/editor.css` (painter/PM DOM — the semantically-correct home).
+- **Next:** Phase 2 (relocate CSS into `docx-editor-react/src/styles/`) → Phase 3 (move `@theme`
+  mappings off the host) → Phase 4 (de-inline static thematic styles).
+
+## Smell ledger (found, not yet fixed — separate passes)
+- `styles/editor.css` `.paged-editor__decoration-overlay` + the `.ProseMirror-yjs-cursor`
+  block reference `DecorationLayer.tsx` / y-prosemirror, both of which were removed in the
+  editor leaning. Likely dead CSS — verify the classes are emitted nowhere, then cut. (Not in
+  Phase 1 scope — logged to avoid braiding a dead-CSS sweep into the dedup.)
+- `utils/selectionHighlight.ts` turned out ENTIRELY dead, not just its injected styles — a sign
+  other `utils/*` modules may have large unused surfaces (knip is exempt for the vendored editor,
+  so nothing flags them). Worth a dedicated dead-export sweep of `docx-editor-core/src/utils`.
