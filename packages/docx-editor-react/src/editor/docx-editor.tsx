@@ -226,6 +226,9 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
   // Refs (pagedEditorRef is declared earlier — useCommentManagement needs it)
   const agentRef = useRef<DocumentAgent | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Set when page setup changes (model-level, not a PM transaction); read by the
+  // save path to force a full repack so the body sectPr actually persists.
+  const sectionPropsDirtyRef = useRef(false);
   // Save the last known selection for restoring after toolbar interactions
   const lastSelectionRef = useRef<{ from: number; to: number } | null>(null);
   const editorContentRef = useRef<HTMLDivElement>(null);
@@ -336,6 +339,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     loadBuffer,
     getActiveEditorView,
     focusActiveEditor,
+    sectionPropsDirtyRef,
   });
 
   // Mirror PM state on each external document load (mount-time view creation
@@ -566,6 +570,7 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
     document: docState.state,
     readOnly,
     handleDocumentChange,
+    sectionPropsDirtyRef,
   });
 
   const {

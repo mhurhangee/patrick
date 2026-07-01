@@ -23,15 +23,15 @@ re-add properly inside the owning feature slice rather than restoring the dead p
 ## Page setup lives outside ProseMirror
 Page setup (size/orientation/margins) is a model-level doc attribute (`finalSectionProperties`, no
 PM representation), applied via `usePageSetupControls` → `handleDocumentChange`. Two consequences:
-- `Page-setup changes are dropped by selective save` **[high — data loss]**: the default save is
-  *selective* (`useFileIO` → `agent.toBuffer({ selective })`), and `attemptSelectiveSave`
-  (`docx/selectiveSave.ts`) only patches the `changedParaIds` it gets from the PM editor state and
-  never re-emits the body sectPr. A page-setup change is not a PM transaction, so `changedParaIds`
-  is empty and the original sectPr is kept → the margin/orientation/size change is NOT written to
-  the `.docx`. Only a full repack (`selective:false` → `repackDocx`, which serializes
-  `finalSectionProperties`, documentSerializer.ts:149-150) persists it. Confirmed by inspection +
-  user report. *Interim fix: force a full repack when section properties changed (mirror the
-  `hasInjectedReplies` force in `useFileIO`). Proper fix: make section properties PM-native.*
+- `Page-setup changes are dropped by selective save` **[FIXED — interim, 2026-07-01]**: the default
+  save is *selective* (`useFileIO` → `agent.toBuffer({ selective })`), and `attemptSelectiveSave`
+  only patches `changedParaIds` and never re-emits the body sectPr; a page-setup change isn't a PM
+  transaction so `changedParaIds` is empty → the margin/orientation/size change was NOT written to
+  the `.docx`. **Interim fix shipped:** `usePageSetupControls` flips a `sectionPropsDirtyRef`, which
+  `useFileIO` reads to force `structuralChange` → full repack (mirrors the `hasInjectedReplies`
+  force); regression test in `selectiveSave.test.ts`. **Proper fix still open:** make section
+  properties PM-native (a `doc` attribute → undoable transaction the change tracker sees), which
+  also resolves the undo-stack point below and lets selective save persist them without a full repack.
 - `Page setup not on the Ctrl+Z undo stack` **[low — working-as-intended]**: not revertible via
   Ctrl+Z (PM undo only covers content transactions) — treated as a doc attribute, not content
   (deliberate; the old global-keydown history that reverted it was the A1 bug, removed in slice 1).
@@ -96,7 +96,7 @@ one uniform `--docx-*` token namespace, single-source; the host `index.css` wire
 Deferred items surfaced during it:
 - `DEAD CSS SWEEP`: `styles/editor.css` `.paged-editor__decoration-overlay` + `.ProseMirror-yjs-cursor` reference the removed React PluginHost/`DecorationLayer` + y-prosemirror; and 5 dead `.docx-editor-vue__pages-viewport` scrollbar selectors (no Vue adapter). Verify no DOM emits these, then cut.
 - `DEAD-EXPORT SWEEP of docx-editor-core/src/utils`: `selectionHighlight.ts` turned out ENTIRELY dead (~578 lines, removed in #162); knip is exempt for the vendored editor, so other `utils/*` modules likely hide large unused surfaces. Worth a dedicated pass.
-- `OVERLAY ACCENT COLOUR` (design, not refactor): the selection/image overlay accents are Google-blue (`--docx-selection-rect` / `--docx-image-accent`), while text-selection + chrome are emerald (`--primary`-derived). Now tokens → aligning them to emerald is a one-line change. *Michael's call.*
+- (Overlay accent colour: DECIDED — keep the selection/image accents a distinct blue, not emerald; tokenised as `--docx-selection-rect` / `--docx-image-accent`, self-documented in tokens.css. No action.)
 
 ## Provenance / docs framing (one pass once the rework settles)
 

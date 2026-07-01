@@ -35,6 +35,7 @@ export function useFileIO({
   loadBuffer,
   getActiveEditorView,
   focusActiveEditor,
+  sectionPropsDirtyRef,
 }: {
   agentRef: React.RefObject<DocumentAgent | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
@@ -44,6 +45,8 @@ export function useFileIO({
   loadBuffer: (buffer: DocxInput) => Promise<void>;
   getActiveEditorView: () => EditorView | null | undefined;
   focusActiveEditor: () => void;
+  /** Set when page setup changed — forces a full repack so the body sectPr persists. */
+  sectionPropsDirtyRef: React.RefObject<boolean>;
 }) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const docxInputRef = useRef<HTMLInputElement>(null);
@@ -83,12 +86,17 @@ export function useFileIO({
           // Force full repack if any reply comments exist (both comment replies and
           // tracked-change replies need range markers injected into document.xml,
           // which selective save can't handle since the affected paragraphs may not
-          // be in changedParaIds)
+          // be in changedParaIds), or if page setup changed. A page-setup change
+          // isn't a PM transaction, so it's not in changedParaIds and selective
+          // save never re-emits the body sectPr — only a full repack persists it.
           const hasInjectedReplies = comments.some((c) => c.parentId != null);
           selectiveOptions = {
             selective: {
               changedParaIds: getChangedParagraphIds(editorState),
-              structuralChange: hasStructuralChanges(editorState) || hasInjectedReplies,
+              structuralChange:
+                hasStructuralChanges(editorState) ||
+                hasInjectedReplies ||
+                sectionPropsDirtyRef.current,
               hasUntrackedChanges: hasUntrackedChanges(editorState),
             },
           };
@@ -101,12 +109,16 @@ export function useFileIO({
           view.dispatch(clearTrackedChanges(view.state));
         }
 
+        // The save persisted the current state (a full repack when page setup
+        // changed) into originalBuffer, so the sectPr is now baked in.
+        if (buffer !== null) sectionPropsDirtyRef.current = false;
+
         return buffer;
       } catch {
         return null;
       }
     },
-    [agentRef, pagedEditorRef, comments]
+    [agentRef, pagedEditorRef, comments, sectionPropsDirtyRef]
   );
 
   const handleDirectPrint = useCallback(() => {
