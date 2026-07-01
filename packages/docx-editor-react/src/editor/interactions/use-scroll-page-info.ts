@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import type { PagedEditorRef } from '../editor/paged-editor';
-import { DEFAULT_PAGE_GAP, VIEWPORT_PADDING_TOP } from '../editor/paged-editor/internals/styles';
+import type { PagedEditorRef } from '../paged-editor';
+import { DEFAULT_PAGE_GAP, VIEWPORT_PADDING_TOP } from '../paged-editor/internals/styles';
 
 export interface ScrollPageInfo {
   currentPage: number;

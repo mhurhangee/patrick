@@ -10,8 +10,8 @@ import {
   type DocxInput,
 } from '@eigenpal/docx-editor-core/utils';
 import type { FontOption } from '@eigenpal/docx-editor-core/utils/fontOptions';
-import type { DocumentStateApi } from './useDocumentState';
-import type { PagedEditorRef } from '../editor/paged-editor';
+import type { DocumentStateApi } from './use-document-state';
+import type { PagedEditorRef } from '../paged-editor';
 import {
   type CommentIdAllocator,
   seedCommentAllocator,

@@ -8,8 +8,8 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror';
 import { resolveColorToHex } from '@eigenpal/docx-editor-core/utils';
 import type { EditorView } from 'prosemirror-view';
-import type { SelectionFormatting } from '../features/toolbar/types';
-import type { ImageContext } from '../features/images/types';
+import type { SelectionFormatting } from '../../features/toolbar/types';
+import type { ImageContext } from '../../features/images/types';
 
 interface BorderSpec {
   style: string;

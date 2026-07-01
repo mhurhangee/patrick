@@ -18,8 +18,8 @@ import {
 } from '@eigenpal/docx-editor-core/prosemirror/applyFormatting';
 import type { ScrollToParaIdOptions } from '@eigenpal/docx-editor-core/utils';
 import { getCachedNumberingMap } from '@eigenpal/docx-editor-core/docx';
-import type { DocxEditorRef } from '../editor/docx-editor';
-import type { PagedEditorRef } from '../editor/paged-editor';
+import type { DocxEditorRef } from '../types';
+import type { PagedEditorRef } from '../paged-editor';
 import {
   addCommentToRange,
   applyProposedChange,
