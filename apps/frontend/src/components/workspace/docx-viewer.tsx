@@ -1,5 +1,5 @@
 import { DocxEditor, type DocxEditorRef } from "@eigenpal/docx-editor-react";
-import "@eigenpal/docx-editor-core/styles/editor.css";
+import "@eigenpal/docx-editor-react/styles/editor.css";
 import { estimateTextTokens } from "@patrick/shared";
 import { InfoTooltip } from "@patrick/ui/components/tooltip";
 import { useCallback, useEffect, useRef, useState } from "react";

@@ -169,3 +169,6 @@ the app `--doc-paper`. End: `grep -r "--doc-"` returns nothing. Diff is pure ren
 - `utils/selectionHighlight.ts` turned out ENTIRELY dead, not just its injected styles — a sign
   other `utils/*` modules may have large unused surfaces (knip is exempt for the vendored editor,
   so nothing flags them). Worth a dedicated dead-export sweep of `docx-editor-core/src/utils`.
+- Dead `.docx-editor-vue__pages-viewport` scrollbar selectors (5, in `styles/editor.css`) — the
+  Vue adapter is gone, so no DOM emits them. They ride in multi-selector rules alongside the live
+  `.docx-editor__scroll-container`; drop the Vue half in a dead-CSS sweep (with the two above).

@@ -106,12 +106,10 @@
   --docx-shadow-subtle: rgba(0, 0, 0, 0.06);
   --docx-overlay: rgba(0, 0, 0, 0.5); /* modal backdrops */
 
-  /* Sidebar card elevation (Google-grey, compound) — shared by React's
-   * cardStyles.ts and the Vue comment/tracked-change cards so both match. */
+  /* Sidebar card elevation (Google-grey, compound) — shared with cardStyles.ts. */
   --docx-card-shadow: 0 1px 3px rgba(60, 64, 67, 0.2), 0 2px 6px rgba(60, 64, 67, 0.08);
   --docx-card-shadow-strong: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
-  /* Elevated dropdown/popover (Tailwind shadow-lg) — mirrors React's Radix
-   * Select content so the Vue toolbar dropdowns match. */
+  /* Elevated dropdown/popover — mirrors the Radix Select content (Tailwind shadow-lg). */
   --docx-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 
   /* Focus ring & text selection (derived from primary) */
@@ -257,8 +255,7 @@
 
 .ep-root .docx-editor__scroll-container {
   /* `both-edges` reserves a symmetric gutter so the centered page stays centered
-     on classic-scrollbar platforms (single-edge nudges it ~7px left). Matches
-     the Vue viewport (DocxEditor.css `__pages-viewport`). */
+     on classic-scrollbar platforms (single-edge nudges it ~7px left). */
   scrollbar-gutter: stable both-edges;
 }
 
@@ -771,6 +768,5 @@
   pointer-events: none;
 }
 
-/* Tracked-revision styles live in core (prosemirror/editor.css), shared
-   by React + Vue adapters. Do not duplicate here. */
+/* Tracked-revision styles live in prosemirror.css (painter/PM DOM), not here. */
 

@@ -4,7 +4,8 @@
   "description": "React DOCX editor adapter for @eigenpal/docx-editor-core.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./styles/editor.css": "./src/styles/editor.css"
   },
   "sideEffects": [
     "*.css"

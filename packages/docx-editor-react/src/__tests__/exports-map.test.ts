@@ -7,9 +7,9 @@ const pkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) a
   exports: Record<string, string>;
 };
 
-// The React adapter holds Patrick's consumed DocxEditor symbol (via '.'). It is
-// consumed entirely from source (no build); the chrome stylesheet now lives in
-// docx-editor-core. Guard its export map the way docx-editor-core's is guarded.
+// The React adapter holds Patrick's consumed DocxEditor symbol (via '.') and the
+// editor's chrome stylesheet (via './styles/editor.css'). It is consumed entirely
+// from source (no build). Guard its export map the way docx-editor-core's is guarded.
 describe('docx-editor-react exports map', () => {
   test('every export resolves to an existing file', () => {
     const missing: string[] = [];

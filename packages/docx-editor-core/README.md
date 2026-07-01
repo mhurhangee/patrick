@@ -59,7 +59,6 @@ Each subpath tree-shakes independently. Pick the smallest entry point that gives
 | An MCP server                     | `./mcp`                                                          | Model Context Protocol server scaffolding                                          |
 | Just unit/color/clipboard helpers | `./utils`                                                        | `twipsToPixels`, `resolveColor`, font loading, clipboard, selection helpers        |
 | Just a type                       | `./types/document`, `./types/content`, `./types/agentApi`        | `Document`, `Paragraph`, `Comment`, `AgentCommand`, ...                            |
-| Default editor stylesheet         | `./prosemirror/editor.css`                                       | Import once at the top of your app                                                 |
 
 ## Stability
 
