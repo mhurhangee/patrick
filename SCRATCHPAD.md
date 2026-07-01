@@ -88,6 +88,16 @@ Minor cleanups in chrome we already wrote (outside the audit scope):
 - hex `<input>` in `color-control.tsx` is hand-rolled vs `@patrick/ui` `Input`.
 - `highlightColors.ts` (serialise) and `colorResolver` `HIGHLIGHT_COLORS` (render) disagree on the 5 dark-variant hexes → picked ≠ rendered highlight.
 
+## Styling consolidation — follow-ups (2026-07-01)
+
+The styling consolidation shipped (PRs #160–#166): editor styling lives entirely in
+`docx-editor-react/src/styles/` (`tokens.css` / `editor.css` / `prosemirror.css` / `revisions.css`),
+one uniform `--docx-*` token namespace, single-source; the host `index.css` wires no editor token.
+Deferred items surfaced during it:
+- `DEAD CSS SWEEP`: `styles/editor.css` `.paged-editor__decoration-overlay` + `.ProseMirror-yjs-cursor` reference the removed React PluginHost/`DecorationLayer` + y-prosemirror; and 5 dead `.docx-editor-vue__pages-viewport` scrollbar selectors (no Vue adapter). Verify no DOM emits these, then cut.
+- `DEAD-EXPORT SWEEP of docx-editor-core/src/utils`: `selectionHighlight.ts` turned out ENTIRELY dead (~578 lines, removed in #162); knip is exempt for the vendored editor, so other `utils/*` modules likely hide large unused surfaces. Worth a dedicated pass.
+- `OVERLAY ACCENT COLOUR` (design, not refactor): the selection/image overlay accents are Google-blue (`--docx-selection-rect` / `--docx-image-accent`), while text-selection + chrome are emerald (`--primary`-derived). Now tokens → aligning them to emerald is a one-line change. *Michael's call.*
+
 ## Provenance / docs framing (one pass once the rework settles)
 
 - The editor has diverged a lot from the recovered eigenpal source (lean pass, lucide, source-consumption, Tailwind v4, full chrome rebuild). "Vendored fork" no longer fits — it's a **substantially-modified derivative we own + develop in-tree**. Update the README line ("the vendored, Apache-2.0 ProseMirror editor") to e.g. *"began as the Apache-2.0 @eigenpal/docx-editor, which went offline mid-2026; recovered and substantially modified, now developed in-tree."* `NOTICE` attribution is already correct — leave it.
