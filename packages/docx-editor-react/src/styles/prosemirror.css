@@ -651,10 +651,10 @@
 /* =============================================================================
  * Tracked structural revisions — painter + ProseMirror DOM cues
  *
- * Lives in core because both React and Vue painters/PM trees emit the same
- * class set via toDOM and renderParagraph. Colours come from the shared
- * --docx-revision-ins (green) / --docx-revision-del (red) tokens, so the
- * whole redline palette has one source of truth.
+ * The painter + ProseMirror DOM emit the same class set via toDOM and
+ * renderParagraph. Colours come from the shared --docx-revision-ins (green) /
+ * --docx-revision-del (red) tokens, so the whole redline palette has one
+ * source of truth.
  * ============================================================================= */
 
 /* Paragraph mark — painter fragment (renderParagraph.ts) */
