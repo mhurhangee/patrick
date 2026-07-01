@@ -158,8 +158,15 @@ the app `--doc-paper`. End: `grep -r "--doc-"` returns nothing. Diff is pure ren
   copy of the find/AI/selection rules; static `editor.css` was the live source) + its barrel
   re-export. Block-SDT + section-break rules deduped: removed from `styles/editor.css` (chrome),
   kept in `prosemirror/editor.css` (painter/PM DOM — the semantically-correct home).
-- **Next:** Phase 2 (relocate CSS into `docx-editor-react/src/styles/`) → Phase 3 (move `@theme`
-  mappings off the host) → Phase 4 (de-inline static thematic styles).
+- **Phase 2 — DONE** (PR #163): both stylesheets relocated into `docx-editor-react/src/styles/`
+  (editor.css chrome, prosemirror.css painter); contract-path + `CLAUDE.md` updated; frontend's
+  now-unused core dep dropped.
+- **Phase 2b — DONE** (branch `refactor/editor-styling-split`): concern-split via `@import`
+  aggregators (consumers unchanged) — `tokens.css` (the `--docx-*` palette) out of editor.css;
+  `revisions.css` (the redline cues) out of prosemirror.css. Verified no rule lost by diffing
+  sorted non-comment lines against the pre-split files.
+- **Next:** Phase 3 (move `@theme` `--color-docx-*` mappings off the host into an editor CSS the
+  host `@import`s) → Phase 4 (de-inline static thematic styles).
 
 ## Smell ledger (found, not yet fixed — separate passes)
 - `styles/editor.css` `.paged-editor__decoration-overlay` + the `.ProseMirror-yjs-cursor`
