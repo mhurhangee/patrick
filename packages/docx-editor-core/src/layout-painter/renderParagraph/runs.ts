@@ -169,8 +169,8 @@ function applyRunStyles(
       (id) => !resolvedCommentIds || !resolvedCommentIds.has(id)
     );
     if (activeCommentId != null) {
-      element.style.backgroundColor = 'var(--docx-comment-bg)';
-      element.style.borderBottom = '1px solid var(--docx-comment-border)';
+      element.style.backgroundColor = 'var(--docx-comment-bg, rgba(255, 212, 0, 0.15))';
+      element.style.borderBottom = '1px solid var(--docx-comment-border, rgba(255, 212, 0, 0.4))';
       element.style.cursor = 'pointer';
       element.style.transition = 'background-color 0.15s ease';
       element.dataset.commentId = String(activeCommentId);
@@ -181,8 +181,8 @@ function applyRunStyles(
   // Suppressed in render-only contexts (headers/footers) where the change
   // can't be acted on, so it paints as plain text.
   if (run.isInsertion && !suppressTrackedChangeStyling) {
-    element.style.backgroundColor = 'var(--docx-revision-ins-bg)';
-    element.style.borderBottom = '2px dashed var(--docx-revision-ins)';
+    element.style.backgroundColor = 'var(--docx-revision-ins-bg, rgba(52, 168, 83, 0.08))';
+    element.style.borderBottom = '2px dashed var(--docx-revision-ins, #2e7d32)';
     element.style.paddingBottom = '1px';
     element.classList.add('docx-insertion');
     if (run.changeAuthor) element.dataset.changeAuthor = run.changeAuthor;
@@ -193,10 +193,10 @@ function applyRunStyles(
   // Tracked deletion styling — light red background with strikethrough
   // (suppressed in render-only contexts; see above).
   if (run.isDeletion && !suppressTrackedChangeStyling) {
-    element.style.backgroundColor = 'var(--docx-revision-del-bg)';
-    element.style.color = 'var(--docx-revision-del)';
+    element.style.backgroundColor = 'var(--docx-revision-del-bg, rgba(211, 47, 47, 0.08))';
+    element.style.color = 'var(--docx-revision-del, #c62828)';
     if (!decorations.includes('line-through')) decorations.push('line-through');
-    element.style.textDecorationColor = 'var(--docx-revision-del)';
+    element.style.textDecorationColor = 'var(--docx-revision-del, #c62828)';
     element.classList.add('docx-deletion');
     if (run.changeAuthor) element.dataset.changeAuthor = run.changeAuthor;
     if (run.changeDate) element.dataset.changeDate = run.changeDate;
@@ -598,11 +598,11 @@ export function renderImageRun(run: ImageRun, doc: Document): HTMLElement {
  */
 function applyImageRevisionStyle(el: HTMLElement, run: ImageRun): void {
   if (run.isInsertion) {
-    el.style.outline = '2px solid var(--docx-revision-ins)';
+    el.style.outline = '2px solid var(--docx-revision-ins, #2e7d32)';
     el.style.outlineOffset = '1px';
     el.classList.add('docx-insertion');
   } else if (run.isDeletion) {
-    el.style.outline = '2px solid var(--docx-revision-del)';
+    el.style.outline = '2px solid var(--docx-revision-del, #c62828)';
     el.style.outlineOffset = '1px';
     el.style.opacity = '0.6';
     el.classList.add('docx-deletion');

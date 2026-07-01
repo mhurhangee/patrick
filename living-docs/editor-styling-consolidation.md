@@ -98,9 +98,15 @@ transitional core definition is resolved there.) Exact values (pixel-identical):
 - Repoint: painter `renderParagraph/runs.ts` (172,184,196,601,605), `TrackedChangeExtensions`
   toDOM (52,100), `CommentExtension` toDOM (37), `review-highlight-styles.tsx` (20,30,31), and
   the `.layout-revision-*`/`.ep-revision-*` CSS rules. Kills the green/red-in-5-places smell.
-- New tokens carry NO literal fallback (`var(--docx-revision-ins-bg)`, not `…, rgba(...)`) —
-  the token IS the single source of truth (editor.css is always loaded at mount). Contrast the
-  existing `var(--doc-page-bg, #fff)` where the fallback is load-bearing (token is dark-only).
+- Fallback rule (learned the hard way in review — the FIRST no-fallback attempt regressed print
+  + clipboard): surfaces whose styled node can LEAVE the `.ep-root` scope MUST keep the literal as
+  a `var(--docx-*, <literal>)` fallback — the **painter inline styles** (cloned into the
+  stylesheet-less print window by `handleDirectPrint`) and the **toDOM marks** (serialised into
+  clipboard HTML pasted into external apps). Only the in-scope surfaces — the CSS-file rules and
+  the React `<style>` overlay — use bare `var()`. This matches the existing `var(--doc-bg, #fff)`
+  painter convention (whose fallback exists for exactly this reason). Yes the literal is restated
+  in the fallback, but it's a portable default, not dumb duplication — print/clipboard genuinely
+  can't see the token.
 - Also fold find (`FFFF00`/`FFFFAA`) + AI-preview into tokens (`--docx-paragraph-flash-color`
   already exists) — but that can slip to Phase 1 with the find/AI dedup if Phase 0 gets big.
 
