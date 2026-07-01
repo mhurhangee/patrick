@@ -25,7 +25,7 @@ npm install @eigenpal/docx-editor-react
 ```tsx
 import { useState } from 'react';
 import { DocxEditor } from '@eigenpal/docx-editor-react';
-import '@eigenpal/docx-editor-core/styles/editor.css';
+import '@eigenpal/docx-editor-react/styles/editor.css';
 
 export function App() {
   const [buffer, setBuffer] = useState<ArrayBuffer | null>(null);
@@ -52,7 +52,7 @@ Skip the file picker for new documents. `createEmptyDocument` returns a fresh `D
 ```tsx
 import { DocxEditor } from '@eigenpal/docx-editor-react';
 import { createEmptyDocument } from '@eigenpal/docx-editor-core';
-import '@eigenpal/docx-editor-core/styles/editor.css';
+import '@eigenpal/docx-editor-react/styles/editor.css';
 
 const doc = createEmptyDocument();
 // Or with options:
@@ -96,7 +96,7 @@ Set `showFileOpen={false}` to hide the built-in Open item and leave Cmd/Ctrl+O f
 
 - `@eigenpal/docx-editor-react` — `DocxEditor`, `DocxEditorRef`
 - `@eigenpal/docx-editor-react/plugin-api` — plugin host and plugin-facing types
-- `@eigenpal/docx-editor-core/styles/editor.css` — the editor's chrome stylesheet (plain CSS; import once where the editor mounts)
+- `@eigenpal/docx-editor-react/styles/editor.css` — the editor's chrome stylesheet (plain CSS; import once where the editor mounts)
 
 ## Plugins
 

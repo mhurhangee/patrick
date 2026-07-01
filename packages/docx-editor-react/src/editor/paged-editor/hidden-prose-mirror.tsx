@@ -42,7 +42,7 @@ import type { Document, StyleDefinitions } from '@eigenpal/docx-editor-core/type
 
 // Import ProseMirror CSS
 import 'prosemirror-view/style/prosemirror.css';
-import '@eigenpal/docx-editor-core/prosemirror/editor.css';
+import '../../styles/prosemirror.css';
 
 // ============================================================================
 // TYPES

@@ -20,7 +20,6 @@
     "./prosemirror/utils/visualLineNavigation": "./src/prosemirror/utils/visualLineNavigation.ts",
     "./prosemirror/extensions/nodes/TableExtension": "./src/prosemirror/extensions/nodes/TableExtension/index.ts",
     "./prosemirror/template/prosemirror-plugin": "./src/prosemirror/template/prosemirror-plugin.ts",
-    "./prosemirror/editor.css": "./src/prosemirror/editor.css",
     "./docx": "./src/docx/index.ts",
     "./docx/wrapTypes": "./src/docx/wrapTypes.ts",
     "./docx/serializer": "./src/docx/serializer/index.ts",
@@ -76,8 +75,7 @@
     "./prosemirror/plugins/selectionTracker": "./src/prosemirror/plugins/selectionTracker.ts",
     "./prosemirror/schema": "./src/prosemirror/schema/index.ts",
     "./prosemirror/styles": "./src/prosemirror/styles/index.ts",
-    "./utils/paragraphFlashTypes": "./src/utils/paragraphFlashTypes.ts",
-    "./styles/editor.css": "./src/styles/editor.css"
+    "./utils/paragraphFlashTypes": "./src/utils/paragraphFlashTypes.ts"
   },
   "files": [
     "src"

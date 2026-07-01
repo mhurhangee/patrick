@@ -84,9 +84,6 @@ importers:
       '@eigenpal/docx-editor-agents':
         specifier: workspace:*
         version: link:../../packages/docx-editor-agents
-      '@eigenpal/docx-editor-core':
-        specifier: workspace:*
-        version: link:../../packages/docx-editor-core
       '@eigenpal/docx-editor-react':
         specifier: workspace:*
         version: link:../../packages/docx-editor-react

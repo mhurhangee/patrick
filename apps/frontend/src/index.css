@@ -13,7 +13,7 @@
 /* The vendored docx editor is consumed from source; this app's Tailwind
    generates its utility classes, which live in the React adapter's components.
    The editor's chrome stylesheet + `--docx-*` tokens come from
-   docx-editor-core/src/styles/editor.css, imported where the editor mounts. */
+   docx-editor-react/src/styles/editor.css, imported where the editor mounts. */
 @source "../../../packages/docx-editor-react/src";
 
 /* radix data-state variants, no-scrollbar utility, accordion keyframes */

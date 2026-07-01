@@ -37,7 +37,7 @@ import type { RevisionInfo } from '../types/content/trackedChange';
 /**
  * Apply tracked-change classes + data attrs to a painted row/cell. The
  * sidebar reads `data-revision-id` / `data-revision-author` to anchor
- * cards; the CSS in `prosemirror/editor.css` keys on the two classes.
+ * cards; the editor's prosemirror.css stylesheet keys on the two classes.
  */
 function applyRevisionAttrs(
   el: HTMLElement,
