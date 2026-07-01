@@ -15,7 +15,7 @@ export const DropCursorExtension = createExtension({
     return {
       plugins: [
         dropCursor({
-          color: 'var(--doc-primary, #4285f4)',
+          color: 'var(--docx-primary, #4285f4)',
           width: 2,
         }),
       ],

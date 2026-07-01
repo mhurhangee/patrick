@@ -252,7 +252,7 @@ export function applyPageStyles(
   // the canvas without any adapter wiring. Word renders a dark page with light
   // text in dark mode; this is a VIEW transform only — the saved DOCX is never
   // changed, and authored run colors keep their own inline color.
-  element.style.backgroundColor = options.backgroundColor ?? 'var(--doc-page-bg, #ffffff)';
+  element.style.backgroundColor = options.backgroundColor ?? 'var(--docx-page-bg, #ffffff)';
   element.style.overflow = 'hidden';
 
   // Page-level default (11pt Calibri). Must use the same chain as canvas
@@ -261,7 +261,7 @@ export function applyPageStyles(
   element.style.fontFamily = resolveFontFamily('Calibri').cssFallback;
   // Use pixels to match Canvas-based measurements (11pt = 11 * 96/72 ≈ 14.67px)
   element.style.fontSize = `${(11 * 96) / 72}px`;
-  element.style.color = 'var(--doc-page-text, #000000)';
+  element.style.color = 'var(--docx-page-text, #000000)';
 
   if (options.showBorders) {
     element.style.border = '1px solid #ccc';

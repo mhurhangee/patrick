@@ -12,15 +12,15 @@ import type { CSSProperties } from './cssTypes';
 export const CARD_STYLE_COLLAPSED: CSSProperties = {
   padding: '8px 10px',
   borderRadius: 8,
-  backgroundColor: 'var(--doc-card)',
+  backgroundColor: 'var(--docx-card)',
   cursor: 'pointer',
-  boxShadow: 'var(--doc-card-shadow)',
+  boxShadow: 'var(--docx-card-shadow)',
 };
 
 export const CARD_STYLE_EXPANDED: CSSProperties = {
   padding: '10px 12px',
   borderRadius: 8,
-  backgroundColor: 'var(--doc-surface)',
+  backgroundColor: 'var(--docx-surface)',
   cursor: 'pointer',
-  boxShadow: 'var(--doc-card-shadow-strong)',
+  boxShadow: 'var(--docx-card-shadow-strong)',
 };

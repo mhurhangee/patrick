@@ -65,7 +65,7 @@
   height: 40px;
   margin: 0 calc(-1 * var(--margin-left, 72px));
   margin-right: calc(-1 * var(--margin-right, 72px));
-  background: var(--doc-bg);
+  background: var(--docx-bg);
   border: none;
   pointer-events: none;
 }
@@ -104,7 +104,7 @@
   height: 1px;
   margin: 20px calc(-1 * var(--margin-left, 72px));
   margin-right: calc(-1 * var(--margin-right, 72px));
-  border-top: 1px dashed var(--doc-border);
+  border-top: 1px dashed var(--docx-border);
 }
 
 .prosemirror-editor .ProseMirror .docx-page-break-line::before {
@@ -113,10 +113,10 @@
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--doc-bg);
+  background: var(--docx-bg);
   padding: 0 8px;
   font-size: 10px;
-  color: var(--doc-text-muted);
+  color: var(--docx-text-muted);
   white-space: nowrap;
 }
 
@@ -256,7 +256,7 @@
 
 /* Selection styling */
 .prosemirror-editor .ProseMirror ::selection {
-  background: var(--doc-selection);
+  background: var(--docx-selection);
 }
 
 /* Placeholder styling */
@@ -329,7 +329,7 @@
 
 /* Selected image indicator */
 .prosemirror-editor .ProseMirror img.docx-image.ProseMirror-selectednode {
-  outline: 2px solid var(--doc-primary, #4285f4);
+  outline: 2px solid var(--docx-primary, #4285f4);
   outline-offset: 2px;
   cursor: grab;
 }
@@ -349,7 +349,7 @@
 }
 
 .prosemirror-editor .ProseMirror .docx-shape.ProseMirror-selectednode {
-  outline: 2px solid var(--doc-primary, #4285f4);
+  outline: 2px solid var(--docx-primary, #4285f4);
   outline-offset: 2px;
 }
 
@@ -361,24 +361,24 @@
 }
 
 .prosemirror-editor .ProseMirror .docx-textbox.ProseMirror-selectednode {
-  outline: 2px solid var(--doc-primary, #4285f4);
+  outline: 2px solid var(--docx-primary, #4285f4);
   outline-offset: 2px;
 }
 
 /* Links */
 .prosemirror-editor .ProseMirror a {
-  color: var(--doc-link);
+  color: var(--docx-link);
   text-decoration: underline;
 }
 
 .prosemirror-editor .ProseMirror a:hover {
-  color: var(--doc-primary-hover);
+  color: var(--docx-primary-hover);
 }
 
 /* Footnote/Endnote references */
 .prosemirror-editor .ProseMirror .docx-footnote-ref,
 .prosemirror-editor .ProseMirror .docx-endnote-ref {
-  color: var(--doc-link, #0066cc);
+  color: var(--docx-link, #0066cc);
   cursor: pointer;
   vertical-align: super;
   font-size: smaller;
@@ -454,7 +454,7 @@
 
 /* Selected cell highlight (multi-cell CellSelection) */
 .prosemirror-editor .ProseMirror .selectedCell {
-  background-color: var(--doc-primary-light);
+  background-color: var(--docx-primary-light);
 }
 
 /* Table selection */
@@ -462,7 +462,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--doc-primary-light);
+  background: var(--docx-primary-light);
   pointer-events: none;
 }
 
@@ -573,8 +573,8 @@
   display: block;
   text-align: center;
   font-size: 9px;
-  color: var(--doc-text-muted, #9ca3af);
-  border-top: 1px dashed var(--doc-border, #d1d5db);
+  color: var(--docx-text-muted, #9ca3af);
+  border-top: 1px dashed var(--docx-border, #d1d5db);
   margin-top: 4px;
   padding-top: 2px;
   pointer-events: none;

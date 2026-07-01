@@ -105,7 +105,7 @@ const handleBaseStyles: CSSProperties = {
 const dimensionStyles: CSSProperties = {
   position: 'absolute',
   backgroundColor: 'rgba(0, 0, 0, 0.75)',
-  color: 'var(--doc-on-primary)',
+  color: 'var(--docx-on-primary)',
   fontSize: '11px',
   fontFamily: 'system-ui, sans-serif',
   padding: '2px 8px',

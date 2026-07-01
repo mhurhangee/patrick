@@ -19,7 +19,7 @@ import { ZoomPill } from "./zoom-pill";
 // raw (top-left), so it must center itself; also used for our pre-fetch state.
 function DocxLoading() {
 	return (
-		<div className="flex h-full w-full items-center justify-center bg-[var(--doc-paper)]">
+		<div className="flex h-full w-full items-center justify-center bg-[var(--canvas-paper)]">
 			<Patrick variant="drawing" size={48} label="Loading document" />
 		</div>
 	);
