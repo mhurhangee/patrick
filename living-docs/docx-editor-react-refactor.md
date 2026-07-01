@@ -1,9 +1,10 @@
 # Refactoring `packages/docx-editor-react` — methodology & ledger
 
-**Status:** feature extraction + the VITAL tracked-changes/comments domain DONE (slices 0–8 + PRs
-#142–#146). **All that remains is finishing the `editor/` folder** — see **## COMPLETION PLAN** below
-(the authoritative forward plan; supersedes the brief slice 9/12 lines in the running order).
-**Owner:** Michael + Claude. **Source of truth — read it first, update it as we go.**
+**Status: ✅ SUBSTANTIVELY COMPLETE (2026-07-01).** All phases done bar two optional cosmetic bits
+(see end of COMPLETION PLAN). The package is fully concern-grouped (`features/` + top-level `editor/`),
+the engine is consolidated, the VITAL redline/comment domain was redone with deep care, and the god
+file is down **1385 → 924 lines** with the worst prop-drilling (the 40-prop paged-area) gone.
+**Owner:** Michael + Claude.
 
 ## Why this exists
 
@@ -83,6 +84,27 @@ which is **two unrelated things mashed together**:
 **Order rec:** A → B → C. A is shared groundwork; B is more mechanical (build momentum, settle the
 engine); C (the shell redesign) is the crown jewel, done last on a clean base. C *can* come right
 after A if the prop-drilling pain wants addressing sooner — A is the only hard prerequisite.
+
+### ✅ WHAT SHIPPED (PRs #150–#157)
+- **A1** promote → top-level `src/editor/` · **A2** lift `DocxEditorRef`/`Props` types → `editor/types.ts`
+  (~185 lines out) · **A3** stray utils → `lib/` (junk note: local `cn` is a deliberate clsx-only
+  variant, NOT a dedupe target).
+- **B1a** decouple mixed internals (`pmAnchors` split → `lib/`, `editing-modes` → `features/toolbar/`)
+  · **B1b** consolidate the engine into `editor/paged-editor/` (10 hooks + components + internals +
+  overlays; overlays stay in the engine per evidence).
+- **C1** extract `ReviewHighlightStyles` from the shell · **C2** de-drill the paged-area via
+  `ReviewContext` (40→~23 props; split into `ReviewSidebarOverlay` + a zero-prop `FloatingCommentButton`;
+  cloud-reviewed clean) · **C4** extract layout geometry → `useEditorChrome` (god file 1385→924).
+
+### DEFERRED / OPTIONAL (logged — do only if wanted; the package is in great shape without them)
+- **B2 — PmSurface bundling:** a React context doesn't fit (the engine hooks run in the same component
+  that would provide it); the only viable form is bundling 4 stable members into a memoized object —
+  marginal gain on render-critical code. Skipped.
+- **C3 — toolbar/dialogs prop-bundling:** those slots are focused adapter/container components whose
+  prop lists are their real APIs; bundling is cosmetic and would need to touch the underlying
+  `DocxToolbar`/dialog components. Skipped as low-value.
+- **State-blob split** (`state.isLoading/parseError` → loader; `selectionFormatting`/`pm*Context` →
+  selection tracker): modest god-file cleanup, not done.
 
 ## ⚠️ Load-bearing invariants the redesign must preserve (verified in the deep-read)
 **Engine:** the `LayoutSelectionGate` call ORDER (incrementStateSeq → onLayoutStart → … →
