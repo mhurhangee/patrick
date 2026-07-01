@@ -33,6 +33,7 @@ function FileIOHarness({
   const agentRef = useRef<DocumentAgent | null>(null);
   const pagedEditorRef = useRef<PagedEditorRef | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const sectionPropsDirtyRef = useRef(false);
   const fileIO = useFileIO({
     agentRef,
     pagedEditorRef,
@@ -42,6 +43,7 @@ function FileIOHarness({
     loadBuffer,
     getActiveEditorView: () => null,
     focusActiveEditor: () => {},
+    sectionPropsDirtyRef,
   });
 
   return (

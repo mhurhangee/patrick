@@ -35,6 +35,7 @@ export function useFileIO({
   loadBuffer,
   getActiveEditorView,
   focusActiveEditor,
+  sectionPropsDirtyRef,
 }: {
   agentRef: React.RefObject<DocumentAgent | null>;
   pagedEditorRef: React.RefObject<PagedEditorRef | null>;
@@ -44,6 +45,8 @@ export function useFileIO({
   loadBuffer: (buffer: DocxInput) => Promise<void>;
   getActiveEditorView: () => EditorView | null | undefined;
   focusActiveEditor: () => void;
+  /** Set when page setup changed — forces a full repack so the body sectPr persists. */
+  sectionPropsDirtyRef: React.RefObject<boolean>;
 }) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const docxInputRef = useRef<HTMLInputElement>(null);
@@ -51,6 +54,12 @@ export function useFileIO({
   const handleSave = useCallback(
     async (options?: { selective?: boolean }): Promise<ArrayBuffer | null> => {
       if (!agentRef.current) return null;
+
+      // Consume the page-setup dirty flag SYNCHRONOUSLY, before any await — a
+      // change applied during an in-flight save would otherwise be clobbered by
+      // a post-await reset (a set flag already forces this save to full-repack).
+      const sectionPropsChanged = sectionPropsDirtyRef.current;
+      sectionPropsDirtyRef.current = false;
 
       try {
         const agentDoc = agentRef.current.getDocument();
@@ -83,12 +92,17 @@ export function useFileIO({
           // Force full repack if any reply comments exist (both comment replies and
           // tracked-change replies need range markers injected into document.xml,
           // which selective save can't handle since the affected paragraphs may not
-          // be in changedParaIds)
+          // be in changedParaIds), or if page setup changed. A page-setup change
+          // isn't a PM transaction, so it's not in changedParaIds and selective
+          // save never re-emits the body sectPr — only a full repack persists it.
           const hasInjectedReplies = comments.some((c) => c.parentId != null);
           selectiveOptions = {
             selective: {
               changedParaIds: getChangedParagraphIds(editorState),
-              structuralChange: hasStructuralChanges(editorState) || hasInjectedReplies,
+              structuralChange:
+                hasStructuralChanges(editorState) ||
+                hasInjectedReplies ||
+                sectionPropsChanged,
               hasUntrackedChanges: hasUntrackedChanges(editorState),
             },
           };
@@ -103,10 +117,13 @@ export function useFileIO({
 
         return buffer;
       } catch {
+        // The save failed, so the sectPr change wasn't persisted — restore the
+        // dirty flag so the next save still forces a full repack.
+        if (sectionPropsChanged) sectionPropsDirtyRef.current = true;
         return null;
       }
     },
-    [agentRef, pagedEditorRef, comments]
+    [agentRef, pagedEditorRef, comments, sectionPropsDirtyRef]
   );
 
   const handleDirectPrint = useCallback(() => {

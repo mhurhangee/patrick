@@ -977,3 +977,48 @@ describe('attemptSelectiveSave — watermark header parts', () => {
     expect(result).toBeNull();
   });
 });
+
+// ============================================================================
+// Page setup (body section properties) in selective save
+// ============================================================================
+
+describe('attemptSelectiveSave — page setup / section properties', () => {
+  test('a page-setup change is dropped by selective save but persisted by a full repack', async () => {
+    const buffer = await loadFixture('example-with-image.docx');
+    const doc = await parseDocx(buffer, { preloadFonts: false });
+
+    const sectPr = doc.package.document.finalSectionProperties;
+    if (!sectPr || typeof sectPr.pageWidth !== 'number') {
+      console.log('Fixture has no numeric sectPr pageWidth, skipping');
+      return;
+    }
+    const originalWidth = sectPr.pageWidth;
+    const newWidth = originalWidth + 720; // a page-setup change (0.5in wider)
+    sectPr.pageWidth = newWidth;
+
+    // The bug: a page-setup change is not a paragraph edit, so a selective save
+    // (empty changedParaIds, no structural change) never re-emits the body sectPr
+    // — document.xml is untouched, so the change is silently dropped on reopen.
+    const selective = await attemptSelectiveSave(doc, buffer, {
+      changedParaIds: new Set(),
+      structuralChange: false,
+      hasUntrackedChanges: false,
+    });
+    expect(selective).not.toBeNull();
+    const afterSelective = await parseDocx(selective!, { preloadFonts: false });
+    expect(afterSelective.package.document.finalSectionProperties?.pageWidth).toBe(originalWidth);
+
+    // The fix: useFileIO forces structuralChange when page setup changed, so
+    // attemptSelectiveSave bails and the caller repacks — which serializes the
+    // updated sectPr, so the change survives the round-trip.
+    const bailed = await attemptSelectiveSave(doc, buffer, {
+      changedParaIds: new Set(),
+      structuralChange: true,
+      hasUntrackedChanges: false,
+    });
+    expect(bailed).toBeNull();
+    const repacked = await repackDocx(doc);
+    const afterRepack = await parseDocx(repacked, { preloadFonts: false });
+    expect(afterRepack.package.document.finalSectionProperties?.pageWidth).toBe(newWidth);
+  });
+});
