@@ -55,6 +55,12 @@ export function useFileIO({
     async (options?: { selective?: boolean }): Promise<ArrayBuffer | null> => {
       if (!agentRef.current) return null;
 
+      // Consume the page-setup dirty flag SYNCHRONOUSLY, before any await — a
+      // change applied during an in-flight save would otherwise be clobbered by
+      // a post-await reset (a set flag already forces this save to full-repack).
+      const sectionPropsChanged = sectionPropsDirtyRef.current;
+      sectionPropsDirtyRef.current = false;
+
       try {
         const agentDoc = agentRef.current.getDocument();
 
@@ -96,7 +102,7 @@ export function useFileIO({
               structuralChange:
                 hasStructuralChanges(editorState) ||
                 hasInjectedReplies ||
-                sectionPropsDirtyRef.current,
+                sectionPropsChanged,
               hasUntrackedChanges: hasUntrackedChanges(editorState),
             },
           };
@@ -109,12 +115,11 @@ export function useFileIO({
           view.dispatch(clearTrackedChanges(view.state));
         }
 
-        // The save persisted the current state (a full repack when page setup
-        // changed) into originalBuffer, so the sectPr is now baked in.
-        if (buffer !== null) sectionPropsDirtyRef.current = false;
-
         return buffer;
       } catch {
+        // The save failed, so the sectPr change wasn't persisted — restore the
+        // dirty flag so the next save still forces a full repack.
+        if (sectionPropsChanged) sectionPropsDirtyRef.current = true;
         return null;
       }
     },
