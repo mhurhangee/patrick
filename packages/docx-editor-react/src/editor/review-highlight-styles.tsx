@@ -17,7 +17,7 @@ export function ReviewHighlightStyles({
   if (expandedSidebarItem.startsWith('comment-')) {
     const commentId = expandedSidebarItem.replace('comment-', '');
     return (
-      <style>{`.paged-editor__pages [data-comment-id="${commentId}"] { background-color: rgba(255, 212, 0, 0.35) !important; border-bottom: 2px solid rgba(255, 212, 0, 0.7) !important; }`}</style>
+      <style>{`.paged-editor__pages [data-comment-id="${commentId}"] { background-color: var(--docx-comment-bg-focus) !important; border-bottom: 2px solid var(--docx-comment-border-focus) !important; }`}</style>
     );
   }
 
@@ -27,8 +27,8 @@ export function ReviewHighlightStyles({
     const insRevId = tc?.insertionRevisionId;
     return (
       <style>{`
-        .paged-editor__pages .docx-insertion[data-revision-id="${insRevId ?? revId}"] { background-color: rgba(52, 168, 83, 0.2) !important; border-bottom: 2px solid #2e7d32 !important; }
-        .paged-editor__pages .docx-deletion[data-revision-id="${revId}"] { background-color: rgba(211, 47, 47, 0.2) !important; text-decoration-thickness: 2px !important; }
+        .paged-editor__pages .docx-insertion[data-revision-id="${insRevId ?? revId}"] { background-color: var(--docx-revision-ins-bg-focus) !important; border-bottom: 2px solid var(--docx-revision-ins) !important; }
+        .paged-editor__pages .docx-deletion[data-revision-id="${revId}"] { background-color: var(--docx-revision-del-bg-focus) !important; text-decoration-thickness: 2px !important; }
       `}</style>
     );
   }

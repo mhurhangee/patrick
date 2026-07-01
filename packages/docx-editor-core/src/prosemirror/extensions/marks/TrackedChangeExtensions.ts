@@ -49,7 +49,7 @@ export const InsertionExtension = createMarkExtension({
           'data-author': mark.attrs.author,
           ...(mark.attrs.date ? { 'data-date': mark.attrs.date } : {}),
           ...(mark.attrs.isMovePair ? { 'data-move-pair': 'true' } : {}),
-          style: 'color: #2e7d32;',
+          style: 'color: var(--docx-revision-ins);',
         },
         0,
       ];
@@ -97,7 +97,7 @@ export const DeletionExtension = createMarkExtension({
           'data-author': mark.attrs.author,
           ...(mark.attrs.date ? { 'data-date': mark.attrs.date } : {}),
           ...(mark.attrs.isMovePair ? { 'data-move-pair': 'true' } : {}),
-          style: 'color: #c62828;',
+          style: 'color: var(--docx-revision-del);',
         },
         0,
       ];

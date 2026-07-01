@@ -589,11 +589,11 @@ function renderListMarker(
   span.style.minWidth = `${minWidth}px`;
   span.textContent = marker;
   // A list whose numbering is a pending tracked change paints its marker in the
-  // revision color (inline — painter output isn't reliably under .ep-root CSS).
+  // shared revision colour token (the painter's pages container is under .ep-root).
   if (revision === 'ins') {
-    span.style.color = '#2e7d32';
+    span.style.color = 'var(--docx-revision-ins)';
   } else if (revision === 'del') {
-    span.style.color = '#c62828';
+    span.style.color = 'var(--docx-revision-del)';
     span.style.textDecoration = 'line-through';
   }
   return span;
