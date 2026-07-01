@@ -4,7 +4,7 @@ import { setTableProperties } from '@eigenpal/docx-editor-core/prosemirror/comma
 import type { EditorView } from 'prosemirror-view';
 import type { useFindReplace } from '../features/find-replace/use-find-replace';
 import type { ImageContext, ImagePropertiesData } from '../features/images/types';
-import { CursorPopover } from '../components/primitives/cursor-popover';
+import { CursorPopover } from './cursor-popover';
 import { FindReplaceBar } from '../features/find-replace/find-replace-bar';
 import { HyperlinkPopover } from '../features/hyperlinks/hyperlink-popover';
 import type { useHyperlink } from '../features/hyperlinks/use-hyperlink';

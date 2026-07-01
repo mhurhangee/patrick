@@ -16,28 +16,29 @@ import { cn } from '../lib/utils';
 import type { SelectionFormatting } from '../features/toolbar/types';
 import type { ImageContext } from '../features/images/types';
 import { useOutlineSidebar } from '../features/outline/use-outline-sidebar';
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useFileIO } from '../hooks/useFileIO';
+import { useKeyboardShortcuts } from './interactions/use-keyboard-shortcuts';
+import { useFileIO } from './lifecycle/use-file-io';
 import { usePageSetupControls } from '../features/page-setup/use-page-setup-controls';
 import { useWatermarkControls } from '../features/page-setup/use-watermark-controls';
 import { useHyperlink } from '../features/hyperlinks/use-hyperlink';
 import { useFormattingActions } from '../features/toolbar/use-formatting-actions';
 import { useImageActions } from '../features/images/use-image-actions';
-import { useDocxEditorRefApi } from '../hooks/useDocxEditorRefApi';
+import { useDocxEditorRefApi } from './ref-api/use-docx-editor-ref-api';
 import { useTableDialogs } from '../features/tables/use-table-dialogs';
-import { useDocumentLoader } from '../hooks/useDocumentLoader';
+import { useDocumentLoader } from './lifecycle/use-document-loader';
 import { useContextMenus } from '../features/context-menu/use-context-menus';
 import { useCommentManagement } from '../features/review/use-comment-management';
 import { useCommentLifecycle } from '../features/review/use-comment-lifecycle';
-import { useSelectionTracker } from '../hooks/useSelectionTracker';
+import { useSelectionTracker } from './interactions/use-selection-tracker';
 import { useFloatingCommentBtn } from '../features/review/use-floating-comment-btn';
-import { useActiveEditor } from '../hooks/useActiveEditor';
-import { useScrollPageInfo } from '../hooks/useScrollPageInfo';
+import { useActiveEditor } from './ref-api/use-active-editor';
+import { useScrollPageInfo } from './interactions/use-scroll-page-info';
 import { DocxEditorOverlays } from './docx-editor-overlays';
 import { DocxEditorDialogs } from './docx-editor-dialogs';
-import { DocxEditorToolbar } from './docx-editor-toolbar';
+import { undoDepth, redoDepth } from 'prosemirror-history';
+import { DocxToolbar } from '../features/toolbar/docx-toolbar';
 import { DocxEditorPagedArea } from './docx-editor-paged-area';
-import { useResetEditorState } from '../hooks/useResetEditorState';
+import { useResetEditorState } from './lifecycle/use-reset-editor-state';
 import { DocxEditorShell } from './docx-editor-shell';
 import { ReviewHighlightStyles } from './review-highlight-styles';
 import { ReviewProvider } from '../features/review/review-context';
@@ -49,8 +50,8 @@ import { type EditorState as PMEditorState } from 'prosemirror-state';
 // Dialog hooks and utilities (static imports — lightweight, no UI)
 import { useFindReplace } from '../features/find-replace/use-find-replace';
 import { DocumentAgent } from '@eigenpal/docx-editor-core/agent';
-import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from '../components/states/editor-states';
-import { useDocumentState } from '../hooks/useDocumentState';
+import { DefaultLoadingIndicator, DefaultPlaceholder, ParseError } from './states/editor-states';
+import { useDocumentState } from './lifecycle/use-document-state';
 
 // Extension system
 import { createStarterKit } from '@eigenpal/docx-editor-core/prosemirror/extensions';
@@ -778,39 +779,46 @@ export const DocxEditor = forwardRef<DocxEditorRef, DocxEditorProps>(function Do
       onToggleOutline={handleToggleOutline}
       toolbar={
         !readOnlyProp ? (
-          <DocxEditorToolbar
-            toolbarRefCallback={toolbarRefCallback}
-            document={docState.state}
-            pmState={pmState}
-            selectionFormatting={state.selectionFormatting}
-            tableContext={state.pmTableContext}
-            imageContext={state.pmImageContext}
-            readOnly={readOnly}
-            editingMode={editingMode}
-            setEditingMode={setEditingMode}
-            setShowCommentsSidebar={setShowCommentsSidebar}
-            setExpandedSidebarItem={setExpandedSidebarItem}
-            showCommentsSidebar={showCommentsSidebar}
-            renderTitleBarRight={renderTitleBarRight}
-            documentFonts={documentFonts}
-            onFormat={handleFormat}
-            onUndo={undoActiveEditor}
-            onRedo={redoActiveEditor}
-            onPrint={handleDirectPrint}
-            onInsertTable={handleInsertTable}
-            onInsertImage={handleInsertImageClick}
-            onInsertPageBreak={handleInsertPageBreak}
-            onInsertSectionBreakNextPage={handleInsertSectionBreakNextPage}
-            onInsertSectionBreakContinuous={handleInsertSectionBreakContinuous}
-            onInsertTOC={handleInsertTOC}
-            onImageWrapType={handleImageWrapType}
-            onImageTransform={handleImageTransform}
-            onOpenImageProperties={handleOpenImageProperties}
-            onPageSetup={handleOpenPageSetup}
-            onApplyWatermark={handleWatermarkApply}
-            currentWatermark={currentWatermark}
-            onTableAction={handleTableAction}
-          />
+          <div ref={toolbarRefCallback} className="z-50 flex flex-col gap-0 flex-shrink-0">
+            <DocxToolbar
+              renderTitleBarRight={renderTitleBarRight}
+              editingMode={editingMode}
+              onModeChange={(mode) => {
+                setEditingMode(mode);
+                if (mode === 'suggesting') setShowCommentsSidebar(true);
+              }}
+              commentsActive={showCommentsSidebar}
+              onToggleComments={() => {
+                setShowCommentsSidebar((v) => !v);
+                setExpandedSidebarItem(null);
+              }}
+              canUndo={pmState ? undoDepth(pmState) > 0 : false}
+              canRedo={pmState ? redoDepth(pmState) > 0 : false}
+              onUndo={undoActiveEditor}
+              onRedo={redoActiveEditor}
+              onPrint={handleDirectPrint}
+              onPageSetup={handleOpenPageSetup}
+              onApplyWatermark={handleWatermarkApply}
+              currentWatermark={currentWatermark}
+              readOnly={readOnly}
+              currentFormatting={state.selectionFormatting}
+              onFormat={handleFormat}
+              documentFonts={documentFonts}
+              documentStyles={docState.state?.package.styles?.styles}
+              onInsertTable={handleInsertTable}
+              onInsertImage={handleInsertImageClick}
+              onInsertPageBreak={handleInsertPageBreak}
+              onInsertSectionBreakNextPage={handleInsertSectionBreakNextPage}
+              onInsertSectionBreakContinuous={handleInsertSectionBreakContinuous}
+              onInsertTOC={handleInsertTOC}
+              tableContext={state.pmTableContext}
+              onTableAction={handleTableAction}
+              imageContext={state.pmImageContext}
+              onImageWrapType={handleImageWrapType}
+              onImageTransform={handleImageTransform}
+              onOpenImageProperties={handleOpenImageProperties}
+            />
+          </div>
         ) : null
       }
       pagedArea={

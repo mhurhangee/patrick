@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { Comment } from '@eigenpal/docx-editor-core/types/content';
 import type { HeadingInfo } from '@eigenpal/docx-editor-core/utils';
-import { EMPTY_ANCHOR_POSITIONS } from '../features/review/constants';
+import { EMPTY_ANCHOR_POSITIONS } from '../../features/review/constants';
 
 /**
  * Bundles the document-load reset surface — every state setter that
