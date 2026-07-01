@@ -165,8 +165,13 @@ the app `--doc-paper`. End: `grep -r "--doc-"` returns nothing. Diff is pure ren
   aggregators (consumers unchanged) — `tokens.css` (the `--docx-*` palette) out of editor.css;
   `revisions.css` (the redline cues) out of prosemirror.css. Verified no rule lost by diffing
   sorted non-comment lines against the pre-split files.
-- **Next:** Phase 3 (move `@theme` `--color-docx-*` mappings off the host into an editor CSS the
-  host `@import`s) → Phase 4 (de-inline static thematic styles).
+- **Phase 3 — DONE** (branch `refactor/editor-styling-host-theme`): the host's `@theme`
+  `--color-docx-*` mappings turned out DEAD (zero `bg-docx-*`/`text-docx-*`/… utility usages
+  anywhere; the editor styles via raw `var(--docx-*)` + shadcn utilities). So deleted them from
+  the frontend `index.css` rather than relocating dead config — the host no longer hand-wires any
+  editor token. (A missing Tailwind utility is a silent no-op, so verified by exhaustive grep, not
+  the build.)
+- **Next:** Phase 4 (de-inline static thematic styles — the last phase).
 
 ## Smell ledger (found, not yet fixed — separate passes)
 - `styles/editor.css` `.paged-editor__decoration-overlay` + the `.ProseMirror-yjs-cursor`

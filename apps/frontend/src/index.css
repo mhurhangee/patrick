@@ -172,38 +172,6 @@
 	--color-chart-1: var(--chart-1);
 	--radius-3xl: calc(var(--radius) * 2.2);
 	--radius-4xl: calc(var(--radius) * 2.6);
-
-	/* docx editor chrome tokens (--docx-*) — values are defined on `.ep-root` in
-	   the editor's chrome stylesheet (light + dark); these mappings let the app's
-	   Tailwind generate the `bg-docx-*`/`text-docx-*`/`border-docx-*` utilities the
-	   editor components use. */
-	--color-docx-surface: var(--docx-surface);
-	--color-docx-bg: var(--docx-bg);
-	--color-docx-bg-subtle: var(--docx-bg-subtle);
-	--color-docx-bg-hover: var(--docx-bg-hover);
-	--color-docx-bg-input: var(--docx-bg-input);
-	--color-docx-primary: var(--docx-primary);
-	--color-docx-primary-hover: var(--docx-primary-hover);
-	--color-docx-primary-light: var(--docx-primary-light);
-	--color-docx-accent: var(--docx-accent);
-	--color-docx-accent-bg: var(--docx-accent-bg);
-	--color-docx-on-primary: var(--docx-on-primary);
-	--color-docx-text: var(--docx-text);
-	--color-docx-text-muted: var(--docx-text-muted);
-	--color-docx-text-subtle: var(--docx-text-subtle);
-	--color-docx-text-placeholder: var(--docx-text-placeholder);
-	--color-docx-border: var(--docx-border);
-	--color-docx-border-light: var(--docx-border-light);
-	--color-docx-border-dark: var(--docx-border-dark);
-	--color-docx-border-input: var(--docx-border-input);
-	--color-docx-error: var(--docx-error);
-	--color-docx-error-bg: var(--docx-error-bg);
-	--color-docx-success: var(--docx-success);
-	--color-docx-success-bg: var(--docx-success-bg);
-	--color-docx-warning: var(--docx-warning);
-	--color-docx-warning-bg: var(--docx-warning-bg);
-	--color-docx-warning-text: var(--docx-warning-text);
-	--color-docx-link: var(--docx-link);
 }
 
 @layer base {
