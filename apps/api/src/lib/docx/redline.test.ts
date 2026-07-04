@@ -312,23 +312,26 @@ describe("resolveParagraphRevision (in-app accept/reject)", () => {
 		});
 		expect(edited.applied).toBe(true);
 		if (!edited.applied) return;
-		const idx = (await readDraftParagraphs(edited.bytes)).find((p) =>
+		const edp = (await readDraftParagraphs(edited.bytes)).find((p) =>
 			p.text.includes("12 May 2026"),
-		)?.index;
-		expect(idx).toBeDefined();
-		if (!idx) return;
+		);
+		expect(edp).toBeDefined();
+		if (!edp) return;
 
 		const resolved = await resolveParagraphRevision(
 			edited.bytes,
-			idx,
+			edp.index,
 			"accept",
+			edp.text,
 		);
 		expect(resolved.applied).toBe(true);
 		if (!resolved.applied) return;
 		const paragraphs = await readDraftParagraphs(resolved.bytes);
 		expect(paragraphs.some((p) => p.text === MODIFIED)).toBe(true);
 		// No pending revisions remain in that paragraph.
-		expect(paragraphs.find((p) => p.index === idx)?.hasRevisions).toBe(false);
+		expect(paragraphs.find((p) => p.index === edp.index)?.hasRevisions).toBe(
+			false,
+		);
 	});
 
 	test("reject restores the original text with no revisions left", async () => {
@@ -338,21 +341,45 @@ describe("resolveParagraphRevision (in-app accept/reject)", () => {
 		});
 		expect(edited.applied).toBe(true);
 		if (!edited.applied) return;
-		const idx = (await readDraftParagraphs(edited.bytes)).find((p) =>
+		const edp = (await readDraftParagraphs(edited.bytes)).find((p) =>
 			p.text.includes("12 May 2026"),
-		)?.index;
-		if (!idx) return;
+		);
+		if (!edp) return;
 
 		const resolved = await resolveParagraphRevision(
 			edited.bytes,
-			idx,
+			edp.index,
 			"reject",
+			edp.text,
 		);
 		expect(resolved.applied).toBe(true);
 		if (!resolved.applied) return;
 		const paragraphs = await readDraftParagraphs(resolved.bytes);
 		expect(paragraphs.some((p) => p.text === TARGET)).toBe(true);
-		expect(paragraphs.find((p) => p.index === idx)?.hasRevisions).toBe(false);
+		expect(paragraphs.find((p) => p.index === edp.index)?.hasRevisions).toBe(
+			false,
+		);
+	});
+
+	test("content-addresses: refuses when the shown text is no longer there", async () => {
+		const edited = await applyRedline(await fixtureBytes(), {
+			targetText: TARGET,
+			newText: MODIFIED,
+		});
+		expect(edited.applied).toBe(true);
+		if (!edited.applied) return;
+		const edp = (await readDraftParagraphs(edited.bytes)).find((p) =>
+			p.text.includes("12 May 2026"),
+		);
+		if (!edp) return;
+		// Same index, but the expected text doesn't match what's on disk.
+		const result = await resolveParagraphRevision(
+			edited.bytes,
+			edp.index,
+			"accept",
+			"a paragraph that reads nothing like the real one",
+		);
+		expect(result.applied).toBe(false);
 	});
 
 	test("refuses a paragraph with no pending redline", async () => {
@@ -360,6 +387,7 @@ describe("resolveParagraphRevision (in-app accept/reject)", () => {
 			await fixtureBytes(),
 			3,
 			"accept",
+			"whatever",
 		);
 		expect(result.applied).toBe(false);
 	});

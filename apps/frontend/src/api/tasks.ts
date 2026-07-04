@@ -178,7 +178,8 @@ export const tasksApi = {
 			{},
 		),
 	/** A .docx as paragraphs-of-runs (each run carrying its revision id + author)
-	 *  plus its comments — the review view's single fetch. */
+	 *  plus its comments — the review view's single fetch. `resolvable` marks a
+	 *  paragraph that carries Patrick's own redline (accept/reject-able in-app). */
 	docxText: (id: string, filename: string) =>
 		api.get<{
 			paragraphs: {
@@ -190,15 +191,18 @@ export const tasksApi = {
 					author?: string;
 				}[];
 				hasRevisions: boolean;
+				resolvable: boolean;
 			}[];
 			comments: DraftComment[];
 		}>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/docx-text`),
-	/** Accept or reject Patrick's redline in one paragraph, in place. */
+	/** Accept or reject Patrick's redline in one paragraph, in place.
+	 *  expectedText content-addresses the paragraph (indices shift on disk). */
 	resolveDraft: (
 		id: string,
 		filename: string,
 		paragraphIndex: number,
 		action: "accept" | "reject",
+		expectedText: string,
 	) =>
 		api.post<
 			| { status: "applied" }
@@ -207,6 +211,7 @@ export const tasksApi = {
 		>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/resolve`, {
 			paragraphIndex,
 			action,
+			expectedText,
 		}),
 	/** Open a document in its native app (Word/LibreOffice) on the attorney's machine. */
 	openDocument: (id: string, filename: string) =>

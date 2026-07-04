@@ -27,7 +27,21 @@ type DocxRun = {
 	revisionId?: number;
 	author?: string;
 };
-type DocxParagraph = { index: number; runs: DocxRun[]; hasRevisions: boolean };
+type DocxParagraph = {
+	index: number;
+	runs: DocxRun[];
+	hasRevisions: boolean;
+	resolvable: boolean;
+};
+
+/** A paragraph's accepted-view text (keep insertions, drop deletions) — what the
+ *  card shows as the result, and the content-address sent with a resolve. */
+function acceptedText(p: DocxParagraph): string {
+	return p.runs
+		.filter((r) => r.kind !== "del")
+		.map((r) => r.text)
+		.join("");
+}
 
 function useDraftStatus(filename: string, enabled: boolean) {
 	const { activeTaskId } = useActiveTask();
@@ -151,37 +165,45 @@ function ReviewView({
 		return map;
 	}, [comments]);
 
+	const [error, setError] = useState<string | null>(null);
+
 	// Paragraphs the reviewer cares about: a pending redline, or a comment.
 	const items = paragraphs.filter(
 		(p) => p.hasRevisions || commentsByPara.has(p.index),
 	);
+	// Comments whose anchor couldn't be placed (paragraphIndex undefined → key 0)
+	// still surface, in a trailing section — never silently dropped.
+	const unanchored = commentsByPara.get(0) ?? [];
 
-	// Which paragraphs have a resolve waiting for the draft to close (parsed from
-	// the parked-op summaries, `accept ¶N` / `reject ¶N`).
+	// Paragraphs with a resolve waiting for the draft to close — read structurally
+	// from the parked op, not by regexing its display summary.
 	const queued = useMemo(() => {
 		const s = new Set<number>();
-		for (const op of status?.parkedOps ?? []) {
-			if (op.kind !== "resolve") continue;
-			const m = /¶(\d+)/.exec(op.summary);
-			if (m?.[1]) s.add(Number(m[1]));
-		}
+		for (const op of status?.parkedOps ?? [])
+			if (op.kind === "resolve" && op.paragraphIndex != null)
+				s.add(op.paragraphIndex);
 		return s;
 	}, [status?.parkedOps]);
 
 	const resolve = useMutation({
 		mutationFn: ({
-			paragraphIndex,
+			paragraph,
 			action,
 		}: {
-			paragraphIndex: number;
+			paragraph: DocxParagraph;
 			action: "accept" | "reject";
 		}) =>
 			tasksApi.resolveDraft(
 				activeTaskId ?? "",
 				filename,
-				paragraphIndex,
+				paragraph.index,
 				action,
+				acceptedText(paragraph),
 			),
+		onSuccess: (outcome) => {
+			setError(outcome.status === "failed" ? outcome.reason : null);
+		},
+		onError: () => setError("Couldn't apply that — please try again."),
 		onSettled: () => {
 			queryClient.invalidateQueries({
 				queryKey: ["tasks", activeTaskId, "docx-text", filename],
@@ -192,7 +214,7 @@ function ReviewView({
 		},
 	});
 
-	if (items.length === 0)
+	if (items.length === 0 && unanchored.length === 0)
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground text-sm">
 				<Check className="size-5 text-emerald-500" />
@@ -205,6 +227,11 @@ function ReviewView({
 
 	return (
 		<div className="mx-auto max-w-3xl space-y-3 px-4 py-6">
+			{error && (
+				<div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-xs">
+					{error}
+				</div>
+			)}
 			{items.map((p) => (
 				<ChangeCard
 					key={p.index}
@@ -212,14 +239,20 @@ function ReviewView({
 					comments={commentsByPara.get(p.index) ?? []}
 					queued={queued.has(p.index)}
 					busy={resolve.isPending}
-					onAccept={() =>
-						resolve.mutate({ paragraphIndex: p.index, action: "accept" })
-					}
-					onReject={() =>
-						resolve.mutate({ paragraphIndex: p.index, action: "reject" })
-					}
+					onAccept={() => resolve.mutate({ paragraph: p, action: "accept" })}
+					onReject={() => resolve.mutate({ paragraph: p, action: "reject" })}
 				/>
 			))}
+			{unanchored.length > 0 && (
+				<div className="rounded-lg border bg-card">
+					<div className="border-b px-3 py-1.5 text-muted-foreground text-xs">
+						Comments (not anchored to a paragraph)
+					</div>
+					{unanchored.map((c) => (
+						<CommentRow key={c.id} comment={c} />
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -250,8 +283,15 @@ function ChangeCard({
 						queued — close the draft in Word to apply
 					</Badge>
 				)}
+				{/* A tracked change that isn't Patrick's own can only be resolved in
+				    Word — offer no in-app buttons that would silently no-op. */}
+				{paragraph.hasRevisions && !paragraph.resolvable && (
+					<span className="text-muted-foreground text-[10px]">
+						tracked change — accept/reject in Word
+					</span>
+				)}
 				<span className="flex-1" />
-				{paragraph.hasRevisions && !queued && (
+				{paragraph.resolvable && !queued && (
 					<div className="flex items-center gap-1">
 						<Button
 							variant="ghost"
@@ -278,17 +318,20 @@ function ChangeCard({
 				{renderRuns(paragraph.runs)}
 			</p>
 			{comments.map((c) => (
-				<div
-					key={c.id}
-					className="flex items-start gap-2 border-t bg-muted/30 px-3 py-2 text-muted-foreground text-xs"
-				>
-					<MessageSquareText className="mt-0.5 size-3.5 shrink-0" />
-					<span>
-						<span className="font-medium text-foreground">{c.author}</span>:{" "}
-						{c.text}
-					</span>
-				</div>
+				<CommentRow key={c.id} comment={c} />
 			))}
+		</div>
+	);
+}
+
+function CommentRow({ comment }: { comment: DraftComment }) {
+	return (
+		<div className="flex items-start gap-2 border-t bg-muted/30 px-3 py-2 text-muted-foreground text-xs">
+			<MessageSquareText className="mt-0.5 size-3.5 shrink-0" />
+			<span>
+				<span className="font-medium text-foreground">{comment.author}</span>:{" "}
+				{comment.text}
+			</span>
 		</div>
 	);
 }

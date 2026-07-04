@@ -50,7 +50,7 @@ import {
 	writeDocumentMeta,
 } from "../lib/documents";
 import { danceFor } from "../lib/docx/dance";
-import { listComments, readDraftRuns } from "../lib/docx/redline";
+import { readDraftReview } from "../lib/docx/redline";
 import { fetchPublication } from "../lib/patents";
 import { readProfile } from "../lib/profiles";
 import { deleteTask, listTasks, readTask, writeTask } from "../lib/tasks";
@@ -378,15 +378,17 @@ tasks.post("/:id/documents/:filename/unlock", async (c) => {
 		: c.json({ error: "not found" }, 404);
 });
 
-// Re-lock an unlocked original — flip it back to read-only.
+// Re-lock an unlocked original — flip it back to read-only, and drop any of
+// Patrick's parked edits (the attorney locked it to STOP editing; queued edits
+// must not drain into it when Word next closes).
 tasks.post("/:id/documents/:filename/relock", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const ok = await relockDocument(
-		task.folder,
-		basename(c.req.param("filename")),
-	);
-	return ok ? c.json({ ok: true }) : c.json({ error: "not unlocked" }, 400);
+	const name = basename(c.req.param("filename"));
+	const ok = await relockDocument(task.folder, name);
+	if (!ok) return c.json({ error: "not unlocked" }, 400);
+	await danceFor(task.folder, name).discardParked();
+	return c.json({ ok: true });
 });
 
 // Rename a Patrick-owned doc. Originals are refused.
@@ -490,19 +492,27 @@ tasks.post(
 tasks.post("/:id/documents/:filename/resolve", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const { paragraphIndex, action } = await c.req
-		.json<{ paragraphIndex?: number; action?: "accept" | "reject" }>()
-		.catch(() => ({ paragraphIndex: undefined, action: undefined }));
+	const body: {
+		paragraphIndex?: number;
+		action?: "accept" | "reject";
+		expectedText?: string;
+	} = await c.req.json().catch(() => ({}));
+	const { paragraphIndex, action, expectedText } = body;
 	if (
 		typeof paragraphIndex !== "number" ||
-		(action !== "accept" && action !== "reject")
+		(action !== "accept" && action !== "reject") ||
+		typeof expectedText !== "string"
 	)
-		return c.json({ error: "paragraphIndex + action required" }, 400);
+		return c.json(
+			{ error: "paragraphIndex + action + expectedText required" },
+			400,
+		);
 	const dance = danceFor(task.folder, basename(c.req.param("filename")));
 	const outcome = await dance.applyOrPark({
 		kind: "resolve",
 		paragraphIndex,
 		action,
+		expectedText,
 	});
 	return c.json(outcome);
 });
@@ -517,11 +527,7 @@ tasks.get("/:id/documents/:filename/docx-text", async (c) => {
 	if (!(await file.exists())) return c.json({ error: "file not found" }, 404);
 	try {
 		const bytes = new Uint8Array(await file.arrayBuffer());
-		const [paragraphs, comments] = await Promise.all([
-			readDraftRuns(bytes),
-			listComments(bytes),
-		]);
-		return c.json({ paragraphs, comments });
+		return c.json(await readDraftReview(bytes));
 	} catch {
 		return c.json({ error: "could not read this .docx" }, 422);
 	}

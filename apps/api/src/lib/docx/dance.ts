@@ -35,18 +35,22 @@ export type DraftOp =
 	| { kind: "comment"; request: CommentRequest }
 	// The attorney's in-app accept/reject of a paragraph's redline — mutates the
 	// file, so it rides the dance (parks while the draft is open) like an edit.
-	| { kind: "resolve"; paragraphIndex: number; action: "accept" | "reject" };
+	// expectedText content-addresses the paragraph (indices can shift on disk).
+	| {
+			kind: "resolve";
+			paragraphIndex: number;
+			action: "accept" | "reject";
+			expectedText: string;
+	  };
 
 export type OpOutcome =
 	| { status: "applied" }
 	| { status: "parked"; parkedEdits: number }
 	| { status: "failed"; reason: string };
 
-/** The parked-op shape surfaced in DraftStatus (kind + a short summary). */
-function summariseOp(op: DraftOp): {
-	kind: "redline" | "comment" | "resolve";
-	summary: string;
-} {
+/** The parked-op shape surfaced in DraftStatus (kind + summary + structured
+ *  paragraphIndex on resolves, so the UI matches queued changes without regex). */
+function summariseOp(op: DraftOp): DraftStatus["parkedOps"][number] {
 	if (op.kind === "redline")
 		return { kind: "redline", summary: op.edit.targetText.slice(0, 80) };
 	if (op.kind === "comment")
@@ -54,6 +58,7 @@ function summariseOp(op: DraftOp): {
 	return {
 		kind: "resolve",
 		summary: `${op.action} ¶${op.paragraphIndex}`,
+		paragraphIndex: op.paragraphIndex,
 	};
 }
 
@@ -227,6 +232,7 @@ export class DraftDance {
 								bytes,
 								op.paragraphIndex,
 								op.action,
+								op.expectedText,
 								this.author,
 							);
 		} catch (err) {
@@ -282,6 +288,19 @@ export class DraftDance {
 	/** Clear surfaced failures once the UI has shown them. */
 	clearFailures(): void {
 		this.failures = [];
+	}
+
+	/**
+	 * Drop every parked op (and the on-disk queue) without applying — for
+	 * re-lock: the attorney locked the file to STOP Patrick editing, so queued
+	 * edits must not drain into it when Word next closes.
+	 */
+	discardParked(): Promise<void> {
+		return this.enqueue(async () => {
+			this.parked = [];
+			this.failures = [];
+			await this.persistParked();
+		});
 	}
 }
 

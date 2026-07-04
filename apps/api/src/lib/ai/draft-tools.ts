@@ -12,9 +12,8 @@ import { z } from "zod";
 import { danceFor } from "../docx/dance";
 import {
 	type DraftRun,
-	listComments,
 	REDLINE_AUTHOR,
-	readDraftRuns,
+	readDraftReview,
 } from "../docx/redline";
 
 // The draft-editing tools: server-executed against the active draft on disk
@@ -55,13 +54,12 @@ export function buildDraftTools(folder: string, activeDraft: string | null) {
 
 	const readDraft = tool({
 		description:
-			"Read the active draft, paragraph by paragraph, showing the FULL review state — [n] is the paragraph number (used by add_draft_comment). Pending tracked changes are shown inline: {++inserted++} and {--deleted--}, tagged {++…++}[author] when the author isn't you. To get edit_paragraph's target_text, read a paragraph AS IF ACCEPTED — keep the {++inserted++} text, drop the {--deleted--} text. Comments are listed under the paragraph they anchor to (an attorney comment mentioning @Patrick is an instruction to you). The draft lives on disk and the attorney edits it in Word too, so always read fresh before editing.",
+			"Read the active draft, paragraph by paragraph, showing the FULL review state — [n] is the paragraph number (used by add_draft_comment). Pending tracked changes are shown inline: {++inserted++} and {--deleted--}, tagged {++…++}[author] when the author isn't you. For a paragraph with pending changes, a `target_text:` line gives the exact current text to quote for edit_paragraph (no need to reconstruct it from the markup). Comments are listed under the paragraph they anchor to (an attorney comment mentioning @Patrick is an instruction to you). The draft lives on disk and the attorney edits it in Word too, so always read fresh before editing.",
 		inputSchema: z.object({}),
 		execute: async () => {
 			const bytes = await draftBytes();
 			if (!draft || !bytes) return noDraft;
-			const paragraphs = await readDraftRuns(bytes);
-			const comments = await listComments(bytes);
+			const { paragraphs, comments } = await readDraftReview(bytes);
 			const status = await danceFor(folder, draft).status();
 
 			const byParagraph = new Map<number, typeof comments>();
@@ -77,6 +75,16 @@ export function buildDraftTools(folder: string, activeDraft: string | null) {
 				const text = p.runs.map(renderRun).join("");
 				if (!text.trim() && !byParagraph.has(p.index)) continue;
 				lines.push(`[${p.index}]${p.hasRevisions ? " (r)" : ""} ${text}`);
+				// On a revised paragraph, hand the agent the exact accepted text to
+				// quote — reconstructing it from the markup is error-prone and a wrong
+				// target_text makes edit_paragraph's exact match fail.
+				if (p.hasRevisions) {
+					const accepted = p.runs
+						.filter((r) => r.kind !== "del")
+						.map((r) => r.text)
+						.join("");
+					lines.push(`    target_text: ${JSON.stringify(accepted)}`);
+				}
 				for (const c of byParagraph.get(p.index) ?? [])
 					lines.push(`    ↳ comment [${c.author}]: ${c.text}`);
 			}
@@ -161,7 +169,7 @@ export function buildDraftTools(folder: string, activeDraft: string | null) {
 		execute: async () => {
 			const bytes = await draftBytes();
 			if (!draft || !bytes) return noDraft;
-			const comments = await listComments(bytes);
+			const { comments } = await readDraftReview(bytes);
 			if (comments.length === 0) return { comments: [] };
 			return {
 				comments: comments.map((c) => ({ author: c.author, text: c.text })),
