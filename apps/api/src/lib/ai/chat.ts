@@ -1,7 +1,5 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { getAiSdkTools } from "@eigenpal/docx-editor-agents/ai-sdk/server";
-import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
 import { fileCachedFetcher, lookupProvisions } from "@patrick/law";
 import {
 	type ExchangeMetadata,
@@ -31,9 +29,11 @@ import {
 	readDocumentMeta,
 	readExtractedText,
 } from "../documents";
+import { extractDocxText } from "../docx/redline";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
 import { buildChartTools, chartManifest } from "./chart-tools";
+import { buildDraftTools } from "./draft-tools";
 import { createFindLaw } from "./find-law";
 import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
@@ -65,18 +65,6 @@ async function frozenTemplate(
 	const existing = chatId ? await readChat(folder, chatId) : null;
 	return existing?.systemTemplate ?? profile.prompts.agentpat;
 }
-
-// The drafting subset Patrick gets: locate + mutate, plus reads (the active
-// draft isn't in the static prompt — the agent reads it live, always current).
-const TOOL_ALLOW = new Set([
-	"read_document",
-	"read_selection",
-	"find_text",
-	"read_changes",
-	"read_comments",
-	"add_comment",
-	"suggest_change",
-]);
 
 type RequestBody = {
 	messages: UIMessage[];
@@ -276,9 +264,9 @@ const epcLookup = tool({
 	}),
 });
 
-// Read-only docx → indexed plain text, headless from disk. The headless parse is
-// the pricey bit and originals don't change, so memoise by path+mtime — a
-// multi-turn chat then extracts each pinned docx once, not every turn.
+// Read-only docx → plain text, headless from disk. Originals don't change, so
+// memoise by path+mtime — a multi-turn chat then extracts each pinned docx
+// once, not every turn.
 const docxTextCache = new Map<string, { mtimeMs: number; text: string }>();
 
 async function docxText(folder: string, filename: string): Promise<string> {
@@ -287,13 +275,7 @@ async function docxText(folder: string, filename: string): Promise<string> {
 		const mtimeMs = (await stat(path)).mtimeMs;
 		const cached = docxTextCache.get(path);
 		if (cached && cached.mtimeMs === mtimeMs) return cached.text;
-		const buf = await readFile(path);
-		const bytes = buf.buffer.slice(
-			buf.byteOffset,
-			buf.byteOffset + buf.byteLength,
-		) as ArrayBuffer;
-		const reviewer = await DocxReviewer.fromBuffer(bytes, "Patrick");
-		const text = reviewer.getContentAsText().trim();
+		const text = await extractDocxText(new Uint8Array(await readFile(path)));
 		docxTextCache.set(path, { mtimeMs, text });
 		return text;
 	} catch {
@@ -440,12 +422,14 @@ export async function pinnedWithRequiredPrimary(
 	} as ModelMessage;
 }
 
-// The tools Patrick gets for a turn: editor tools (no execute — they run against
-// the live editor client-side) + the law/search/HITL tools. Web search and the
-// open-a-file proposal are conditional. Built in one place so the inspection
-// panel can list the exact active tool names without drifting from what ships.
+// The tools Patrick gets for a turn: the draft tools (server-executed against
+// the active draft on disk, through the dance) + the law/search/HITL tools.
+// Web search and the open-a-file proposal are conditional. Built in one place
+// so the inspection panel can list the exact active tool names without
+// drifting from what ships.
 function buildChatTools(opts: {
 	folder: string;
+	activeDraft: string | null;
 	profile: Profile;
 	provider: Provider;
 	apiKey: string;
@@ -454,9 +438,7 @@ function buildChatTools(opts: {
 	hasDocs: boolean;
 }) {
 	return {
-		...Object.fromEntries(
-			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
-		),
+		...buildDraftTools(opts.folder, opts.activeDraft),
 		suggestLabel,
 		suggestBrief,
 		suggestPrompt,
@@ -525,6 +507,7 @@ export async function handleChat(c: Context) {
 	// PATRICK_CAPABILITIES in @patrick/shared so the prompt describes Patrick honestly.
 	const tools = buildChatTools({
 		folder: task.folder,
+		activeDraft,
 		profile,
 		provider,
 		apiKey,

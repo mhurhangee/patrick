@@ -84,7 +84,7 @@ describe("buildSystemPrompt — manifest (lists, never content)", () => {
 	test("names the active draft and routes edits through the tools; else says none", () => {
 		const withDraft = build({ draft: "Response (Patrick).docx" });
 		expect(withDraft).toContain("Active draft: Response (Patrick).docx");
-		expect(withDraft).toContain("suggest_change");
+		expect(withDraft).toContain("edit_paragraph");
 		expect(build({ draft: null })).toContain("No editable draft is open.");
 	});
 

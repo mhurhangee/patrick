@@ -84,12 +84,6 @@ importers:
       '@dnd-kit/react':
         specifier: ^0.5.0
         version: 0.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@eigenpal/docx-editor-agents':
-        specifier: workspace:*
-        version: link:../../packages/docx-editor-agents
-      '@eigenpal/docx-editor-react':
-        specifier: workspace:*
-        version: link:../../packages/docx-editor-react
       '@fontsource-variable/hanken-grotesk':
         specifier: ^5.2.8
         version: 5.2.8
@@ -117,9 +111,6 @@ importers:
       '@tauri-apps/plugin-dialog':
         specifier: ^2.7.1
         version: 2.7.1
-      '@tauri-apps/plugin-shell':
-        specifier: ^2.3.5
-        version: 2.3.5
       '@tesseract.js-data/eng':
         specifier: ^1.0.0
         version: 1.0.0
@@ -2752,9 +2743,6 @@ packages:
 
   '@tauri-apps/plugin-dialog@2.7.1':
     resolution: {integrity: sha512-OK1UBXYt+ojcmxMktzzuyonYIFta8CmAASpX+CA+DTGK24KlHjhYI6x2iOJ/TjZF4N7/ACK1oFmEOjIY9IhzOQ==}
-
-  '@tauri-apps/plugin-shell@2.3.5':
-    resolution: {integrity: sha512-jewtULhiQ7lI7+owCKAjc8tYLJr92U16bPOeAa472LHJdgaibLP83NcfAF2e+wkEcA53FxKQAZ7byDzs2eeizg==}
 
   '@tesseract.js-data/eng@1.0.0':
     resolution: {integrity: sha512-mbTumm6KQPUHyzTPQaF3ObXYnx0SqqfV2nabqFVQBwD6Kl7PhGSLSzOlfFTWy0P3BjghaSKA2W9GB19Jk+ZcTg==}
@@ -6971,10 +6959,6 @@ snapshots:
       '@tauri-apps/cli-win32-x64-msvc': 2.11.3
 
   '@tauri-apps/plugin-dialog@2.7.1':
-    dependencies:
-      '@tauri-apps/api': 2.11.1
-
-  '@tauri-apps/plugin-shell@2.3.5':
     dependencies:
       '@tauri-apps/api': 2.11.1
 

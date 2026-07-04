@@ -21,7 +21,7 @@ function taskBlock(task: Task): string {
 
 // The system prompt holds INSTRUCTIONS + a MANIFEST only — never document
 // content. Read-only sources ride as cached messages (see chat.ts); the editable
-// draft is read live through the editor tools. This keeps the system prefix
+// draft is read live through the draft tools. This keeps the system prefix
 // stable and cacheable for the whole chat.
 
 function manifest(
@@ -42,9 +42,9 @@ function manifest(
 	lines.push("");
 	if (activeDraft) {
 		lines.push(
-			`Active draft: ${activeDraft} — the document you edit. Use the document tools ` +
-				"(read_document / find_text / suggest_change) to read its current state and make " +
-				"tracked changes. Don't reproduce it in chat; work on it through the tools.",
+			`Active draft: ${activeDraft} — the document you edit. Use the draft tools ` +
+				"(read_draft / edit_paragraph / add_draft_comment) to read its current state and make " +
+				"tracked changes the attorney reviews in Word. Don't reproduce it in chat; work on it through the tools.",
 		);
 	} else {
 		lines.push("No editable draft is open.");

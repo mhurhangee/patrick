@@ -6,7 +6,13 @@ import {
 } from "@ansonlai/docx-redline-js";
 import { applyOperationToDocumentXml } from "@ansonlai/docx-redline-js/services/standalone-operation-runner.js";
 import type { DraftComment } from "@patrick/shared";
-import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
+import {
+	DOMParser,
+	XMLSerializer,
+	type Document as XmlDocument,
+	type Element as XmlElement,
+	type Node as XmlNode,
+} from "@xmldom/xmldom";
 import JSZip from "jszip";
 
 // The ONLY import point for @ansonlai/docx-redline-js. Patrick edits .docx on
@@ -55,28 +61,31 @@ async function documentXmlOf(zip: JSZip): Promise<string> {
 	return entry.async("string");
 }
 
-const parseXml = (xml: string) =>
+const parseXml = (xml: string): XmlDocument =>
 	new DOMParser().parseFromString(xml, "text/xml");
-const serializeXml = (node: Node) => new XMLSerializer().serializeToString(node);
+const serializeXml = (node: XmlNode) =>
+	new XMLSerializer().serializeToString(node);
 
-type XmlElement = ReturnType<typeof parseXml>["documentElement"] & object;
-
-function paragraphsOf(doc: ReturnType<typeof parseXml>): XmlElement[] {
+function paragraphsOf(doc: XmlDocument): XmlElement[] {
 	const list = doc.getElementsByTagNameNS(W_NS, "p");
 	const out: XmlElement[] = [];
 	for (let i = 0; i < list.length; i++) {
 		const p = list[i];
-		if (p) out.push(p as XmlElement);
+		if (p) out.push(p);
 	}
 	return out;
 }
 
-function hasAncestor(node: Node, localName: string, until: Node): boolean {
+function hasAncestor(
+	node: XmlNode,
+	localName: string,
+	until: XmlNode,
+): boolean {
 	for (let n = node.parentNode; n && n !== until; n = n.parentNode) {
 		if (
 			n.nodeType === 1 &&
 			(n as XmlElement).localName === localName &&
-			n.namespaceURI === W_NS
+			(n as XmlElement).namespaceURI === W_NS
 		)
 			return true;
 	}
@@ -86,7 +95,7 @@ function hasAncestor(node: Node, localName: string, until: Node): boolean {
 /** Paragraph text in a given view: accepted (ins in, del out) or base (the reverse). */
 function paragraphText(p: XmlElement, view: "accepted" | "base"): string {
 	let text = "";
-	const walk = (node: Node) => {
+	const walk = (node: XmlNode) => {
 		for (let c = node.firstChild; c; c = c.nextSibling) {
 			if (c.nodeType !== 1) continue;
 			const el = c as XmlElement;
@@ -147,7 +156,8 @@ const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 function rejectAuthorRevisionsIn(p: XmlElement, author: string): void {
 	const doc = p.ownerDocument;
 	if (!doc) return;
-	const byAuthor = (el: XmlElement) => el.getAttributeNS(W_NS, "author") === author;
+	const byAuthor = (el: XmlElement) =>
+		el.getAttributeNS(W_NS, "author") === author;
 
 	const collect = (localName: string): XmlElement[] => {
 		const list = p.getElementsByTagNameNS(W_NS, localName);

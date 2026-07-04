@@ -135,9 +135,7 @@ export class DraftDance {
 	async tick(): Promise<void> {
 		if (this.parked.length === 0 || (await this.isLocked())) return;
 		const ops = this.parked.splice(0);
-		ops.sort((a, b) =>
-			a.kind === b.kind ? 0 : a.kind === "comment" ? -1 : 1,
-		);
+		ops.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "comment" ? -1 : 1));
 		while (ops.length > 0) {
 			const op = ops.shift() as DraftOp;
 			const outcome = await this.applyNow(op);

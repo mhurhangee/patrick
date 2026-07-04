@@ -1,11 +1,16 @@
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { DraftDance } from "./dance";
 import { extractDocxText, listComments } from "./redline";
 
-const FIXTURE = join(process.cwd(), "e2e", "fixtures", "uspto-office-action.docx");
+const FIXTURE = join(
+	process.cwd(),
+	"e2e",
+	"fixtures",
+	"uspto-office-action.docx",
+);
 const DRAFT = "Response (Patrick).docx";
 
 const TARGET =

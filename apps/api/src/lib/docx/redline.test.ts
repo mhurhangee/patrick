@@ -1,9 +1,9 @@
+import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import {
 	acceptTrackedChangesInOoxml,
 	rejectTrackedChangesInOoxml,
 } from "@ansonlai/docx-redline-js";
-import { describe, expect, test } from "bun:test";
 import JSZip from "jszip";
 import {
 	addComment,
@@ -14,14 +14,21 @@ import {
 } from "./redline";
 
 // A real USPTO office action — styles, numbering, header, examiner comments.
-const FIXTURE = join(process.cwd(), "e2e", "fixtures", "uspto-office-action.docx");
+const FIXTURE = join(
+	process.cwd(),
+	"e2e",
+	"fixtures",
+	"uspto-office-action.docx",
+);
 
 const fixtureBytes = async () =>
 	new Uint8Array(await Bun.file(FIXTURE).arrayBuffer());
 
 const documentXmlOf = async (bytes: Uint8Array) => {
 	const zip = await JSZip.loadAsync(bytes);
-	return zip.file("word/document.xml")!.async("string");
+	const entry = zip.file("word/document.xml");
+	if (!entry) throw new Error("no document.xml");
+	return entry.async("string");
 };
 
 const textOf = (xml: string) =>
@@ -57,7 +64,7 @@ describe("applyRedline", () => {
 		if (!result.applied) return;
 
 		const xml = await documentXmlOf(result.bytes);
-		expect(xml).toContain('<w:ins w:id=');
+		expect(xml).toContain("<w:ins w:id=");
 		expect(xml).toContain('w:author="Patrick"');
 
 		const accepted = acceptTrackedChangesInOoxml(xml, { allAuthors: true });
