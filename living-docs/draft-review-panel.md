@@ -79,11 +79,14 @@ discard them first).
 
 ## Sequencing
 
-1. PR 2 — editor package teardown (unchanged; gated on the Windows Word
-   checkpoint before merge).
-2. Review view v1: condensed changed-paragraph cards + per-change
-   accept/reject + per-change applied/queued status (1, e).
-3. read_draft full review state (2) — small, high agent-quality win.
-4. Quick-edit + adjust/comment cards (a, b, c, f).
+1. ~~PR 2 — editor package teardown~~ **DONE** (#170, Windows Word checkpoint passed).
+2. ~~Review view v1: condensed changed-paragraph cards + per-change accept/reject
+   + applied/queued status (1, e)~~ **DONE** (`feat/draft-review-panel`):
+   DraftPanel is now Review mode (changed/commented paragraphs as cards with
+   Accept/Reject through the dance) + a Document mode toggle; `resolveParagraphRevision`
+   is the in-place accept/reject; queued state parsed from `parkedOps`.
+3. ~~read_draft full review state (2)~~ **DONE**: pending redlines inline as
+   {++ins++}/{--del--} (author-tagged) + comments listed under their anchor paragraph.
+4. Quick-edit + adjust/comment cards (a, b, c, f) — NEXT.
 5. Overlap-aware attorney-revision editing (3A).
 6. Re-lock (4).
