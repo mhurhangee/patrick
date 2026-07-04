@@ -14,10 +14,7 @@
 			"!packages/law/data",
 			"!packages/benchmarking/data",
 			"!e2e/fixtures",
-			"!spikes",
-			"!packages/docx-editor-core",
-			"!packages/docx-editor-agents",
-			"!packages/docx-editor-react"
+			"!spikes"
 		]
 	},
 	"formatter": {

@@ -124,7 +124,6 @@ packages/
   ui/            @patrick/ui — the shared design system: shadcn primitives + stone/emerald tokens (frontend + site)
   law/           the EP law dataset + retrieval (EPC, EPO Guidelines, case law)
   benchmarking/  a grounding benchmark for the agent's legal accuracy
-  docx-editor-*  the vendored, Apache-2.0 ProseMirror .docx editor + tracked-changes agent tools (core/agents/react/i18n)
 ```
 
 Across the repo: TanStack Router + Query, Vercel AI SDK v7 (Anthropic / OpenAI /

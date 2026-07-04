@@ -6,7 +6,12 @@ Tags: `[high|med|low]` rough priority · *italic trigger* = when it becomes wort
 
 ---
 
-# Headless docx redlining (post-editor)
+# Headless docx redlining
+
+The in-app editor (the vendored `docx-editor-*` packages) is GONE — Patrick
+edits `.docx` on disk as tracked changes; Word is the review surface. The
+follow-up design (review panel, read_draft visibility, multi-round revisions,
+re-lock) lives in `living-docs/draft-review-panel.md`.
 
 Deferred from the PR #169 code-review triage (the confirmed bugs were fixed on the branch):
 - `ENGINE FIRST-MATCH TARGETING` **[med]**: `applyOperationToDocumentXml` resolves the target
@@ -26,114 +31,22 @@ Deferred from the PR #169 code-review triage (the confirmed bugs were fixed on t
   supersede only Patrick's runs and diff against the attorney-accepted view. *Trigger: the refusal
   proves annoying in real drafting sessions.*
 
----
+Survivors from the editor-era backlog, restated for the new world:
 
-# DOCX editor
-
-## Removed in refactor slice 0 — re-add as real features when wanted
-The editor refactor (`living-docs/docx-editor-react-refactor.md`) cut half-built/unwired Word
-features that had plumbing but no UI. All reversible via git (branch `refactor/editor-slice0-purge`);
-re-add properly inside the owning feature slice rather than restoring the dead plumbing.
-- `RTL / bidi text direction` **[low]**: `setRtl`/`setLtr` commands + paragraph `bidi` tracking
-  existed with no toolbar control. *Trigger: a customer needs RTL documents (unlikely for EP/US).*
-- `Table-cell formatting ops` **[med]**: per-side cell borders, cell vertical-align, cell margins,
-  cell text-direction, no-wrap, row-height, toggle-header-row, distribute-columns, auto-fit — the
-  core commands exist; only the toolbar UI is missing. *Trigger: table fidelity becomes a user ask.*
-- `Outline default-open` **[low]**: the outline could open by default via a prop; it was inert
-  (hard-coded closed). *Trigger: if a "remember outline state" preference is wanted.*
-
-## Page setup lives outside ProseMirror
-Page setup (size/orientation/margins) is a model-level doc attribute (`finalSectionProperties`, no
-PM representation), applied via `usePageSetupControls` → `handleDocumentChange`. Two consequences:
-- `Page-setup changes are dropped by selective save` **[FIXED — interim, 2026-07-01]**: the default
-  save is *selective* (`useFileIO` → `agent.toBuffer({ selective })`), and `attemptSelectiveSave`
-  only patches `changedParaIds` and never re-emits the body sectPr; a page-setup change isn't a PM
-  transaction so `changedParaIds` is empty → the margin/orientation/size change was NOT written to
-  the `.docx`. **Interim fix shipped:** `usePageSetupControls` flips a `sectionPropsDirtyRef`, which
-  `useFileIO` reads to force `structuralChange` → full repack (mirrors the `hasInjectedReplies`
-  force); regression test in `selectiveSave.test.ts`. **Proper fix still open:** make section
-  properties PM-native (a `doc` attribute → undoable transaction the change tracker sees), which
-  also resolves the undo-stack point below and lets selective save persist them without a full repack.
-- `Page setup not on the Ctrl+Z undo stack` **[low — working-as-intended]**: not revertible via
-  Ctrl+Z (PM undo only covers content transactions) — treated as a doc attribute, not content
-  (deliberate; the old global-keydown history that reverted it was the A1 bug, removed in slice 1).
-Both are fixed at once by making section properties PM-native (mirror the watermark `doc`
-attribute → undoable transaction that the change tracker sees). *Trigger: the save data-loss is
-worth fixing soon; the undo stance only if we revisit it.*
-
-## Test suite
-- `Intermittent test flake` **[low]**: the full `bun test` suite occasionally reports `1 fail` (~1 in 5
-  runs), then passes on re-run; observed during the editor refactor (2026-06-30). Not yet identified
-  (the runner didn't surface the name; deterministic suites unaffected). *Trigger: if CI goes
-  intermittently red, hunt it via `bun test --rerun-each` / per-file runs to find the order-dependent
-  or time/random-dependent test.*
-
-## Fidelity & correctness
-
-- `DOCX FIDELITY REGRESSION CORPUS` **[high — the editor is the bet]**: the vendored editor is ~134k LOC of production core we didn't write and isn't perfect (we already found latent core bugs — `computeOptionsHash` silently dropped the watermark so it never repainted; plus the whole audit). The scary failure mode is an attorney getting a mangled `.docx` on a real filing — format bugs are trust-killers in a way UI glitches aren't, and they live in code we don't have the author's mental model for. The adopted ~28k core tests guard the *editor author's* fixtures, NOT the documents Patrick's users actually open.
-  - **The idea:** a mechanical regression harness over a corpus of *real-world* prosecution docs — office actions, attorney letters/responses, granted patents & published applications, claim sets, EP/US specs, the attorney's own templates — exercising the full Patrick path and asserting **format is preserved**.
-  - **Cover (the things that actually break):** round-trip fidelity (`parse → serialize → diff`: numbering, styles, tables, H/F, footnotes, fields, section props, fonts); tracked-changes via the agent tools (drive `suggest_change`/`add_comment`/`find_text`, assert valid native Word tracked changes that round-trip — Patrick's critical path); edit-then-serialize (insert/delete/replace, accept/reject, comment → re-serialize, assert no drift around the edit site); layout/perf sanity (pagination stability + a perf budget on long granted patents).
-  - **Build notes:** fixtures are binary `.docx` under `e2e/fixtures/` (resolved via cwd; `bun test` from root). Need a small, *legally shareable* corpus — published patents/applications + EPO office actions are public; scrub/synthesise anything client-confidential. Pin golden/structural assertions (not brittle full-byte; Word is non-deterministic). New suite driven through the **agents** layer (`DocxReviewer`/tool executor) so it tests Patrick's actual usage. Supersedes the generic `TEST SUITE` defer for the docx path. *Trigger: soon — directly attacks the "a format bug will be a pain" risk by making them loud + early.*
-
-## Engine & rendering features
-
-- `RULER (proper) + indent markers`: the vendored rulers were cut in the A5 sweep — never displayed (`showRuler` defaulted false), margins-only (Page Setup already does that), **no indent markers**. The attorney-valuable version is a real ruler with **draggable first-line / hanging / left / right indent markers** (corner triangles), especially for **claims**. Build it properly (drag → `setIndentLeft`/`setIndentRight`/`setIndentFirstLine` core commands exist; cut handlers lived in `usePageSetupControls`). Pairs with the "tab indents but cursor doesn't move" engine bug (in IDEAS).
-- `MARGIN MARKERS (generic)`: page-edge markers (shown when the comments sidebar is closed) only mark comments today. Make them generic — also surface **tracked changes** with insertion/deletion/replace icons (click to jump/expand) for an at-a-glance annotation map. Pairs with the "preview if accepted" view mode.
-- `VIEW MODE: preview-if-accepted` **[important]**: a mode that renders the document as if all tracked changes were accepted (clean preview), without actually accepting. Suits the generic margin-marker overview.
-- `CARET NAV THROUGH A LINK` (engine/core): arrow-keying through a hyperlink is bizarre — the caret reads as stuck at the link's start and you must step past each letter; typing mid-link still inserts at the apparent-start. A ProseMirror hyperlink-mark / caret-mapping issue in core, not the link UI. Surfaced during the hyperlink-popover redesign; the audit deliberately skipped it as known-pre-existing.
-- `DARK-MODE HIGHLIGHT counter-invert` (rendering): highlights are page content → recoloured by the dark smart-invert (invert+hue-rotate), so saturated Word highlight colours round-trip imperfectly and some look wrong. Fix: counter-invert highlighted runs (like images) so they render true-colour + dark-text in both modes. Needs the layout-painter to tag highlighted runs with a stable class/attr (currently inline `background-color`, no selector); then ~3 lines of CSS.
-- `PARAGRAPH STYLES: inject built-in defs` (deep): StyleMenu lists only doc-defined styles (+Normal) so every option works; applying a built-in like Heading 1 when the doc lacks the definition is a no-op. Deep fix: `applyStyle` should inject the missing built-in style definition (Word-like) so the full Normal/Title/Heading 1–6 set is always offerable + works on any doc (incl. blank Patrick drafts). Lives in editor core (style application / docx stylesheet).
-- `EDITOR PANE RESPONSIVENESS`: shell panels (`_app.tsx`) are %-sized → at small windows the editor pane shrinks with no px floor and the fixed-width docx page overflows / sits "behind" the chat. Fix 1: a "Fit width" zoom mode (auto-scale page to pane, recompute on resize) — the real answer to narrow panes. Fix 2: editor-center px min-width (~400px) + auto-collapse chat/sidebar when the window can't honor it. Toolbar collapse already keys off pane width (container query), bottomed-out at the ~400px floor.
-
-## Editable sub-documents — footnotes + headers/footers (deep feature)
-
-- Shared root cause: footnote bodies AND headers/footers are **render-only** (painted by the layout pipeline, not editable bodies in PagedEditor). Viewing works; typing doesn't. Existing ones from an opened `.docx` render fine — acceptable for now (dev confirmed he can live with render-only).
-- **Footnote authoring was never built upstream** (confirmed in vendor commit a4021a7): core `insertFootnote`/`insertEndnote` exist but are called nowhere; the `FootnotePropertiesDialog` + plumbing existed but was never triggered (no menu/button/shortcut, any version). We cut the dead dialog. So this is genuinely new work, not a regression.
-- Two slices, do together (same machinery — editable painted region + model write-back + serialization):
-  - **Footnotes**: Insert ▸ Footnote → allocate next id, insert ref (existing command), create a Footnote body entry, author/edit the body (popover for light, real editable region for full). Serializer already round-trips notes (`noteSerializer.ts` + tests) — VERIFY a new note saves with a round-trip test.
-  - **Headers/footers**: make the painted H/F editable (the known limitation in CLAUDE.md, "future feature not a bug").
-- Light version (popover-authored footnote, body stays painted) is the cheaper first step; full version (inline-editable regions) is the proper fix and also unlocks editable H/F.
-- **H/F editing was STRIPPED back to read-only** (branch `refactor/editor-hf-readonly`, 2026-06-30): the half-built editing apparatus (`InlineHeaderFooterEditor`, `HiddenHeaderFooterPMs`, `useHeaderFooterEditing`, the off-screen per-rId PM views + the HF caret/selection machinery in `headerFooterLayout.ts`) is deleted. The audit's HF sub-bugs (even-page `hdrFtrType`, `hfRid` untyped mutation, dup HF anchor loops, HF-fallback scroll gaps) are moot — that code is gone. Editable H/F is now genuinely greenfield work, not a fix.
-- **Residual read-only gap to resolve when H/F editing is rebuilt (known, accepted 2026-06-30):** tracked changes that live inside a loaded doc's header/footer are **not** in the changes sidebar and are **not** touched by accept/reject or accept-all (they live in `hf.content`, separate from the body PM doc), yet round-trip untouched on save. We now paint them as plain text (the `suppressTrackedChangeStyling` flag) so they're not shown as un-actionable redlines — but an attorney who accept-all's the body and saves can still ship a doc that retains pending H/F revisions. Rare in prosecution (headers are usually static), accepted for now. Editable H/F (or a load-time "this doc has H/F tracked changes" warning) closes it.
-- **Deep-read findings (deferred, 2026-06-30):** (a) `usePagedScrollApi.scrollToParaIdImpl` flashes the highlight twice — once synchronously, once after the paint-settle rAF — so an already-painted target double-blinks. The `highlight` path is unwired roadmap infra (claim-chart "highlight the basis passage"), so fix + smoke-test it **when that feature is wired**, not blind now. (b) `useLayoutPipeline`'s remaining H/F comment-anchor loop is kept conservatively — verify whether an H/F-anchored comment from a loaded `.docx` can actually reach the `comments` list (if not, that loop is also dead and removable).
-- *Trigger: a dedicated editor-feature pass after the audit cull/fixes settle.*
-
-## Plugin system — RESOLVED (2026-06-30)
-
-- The React **PluginHost** system (`docx-editor-react/plugin-api/*` + `plugins/template/*` + `DecorationLayer`) was investigated and **CUT** (PR #131, ~1,900 lines) — unused by Patrick and NOT the extension mechanism. The actual extension surface for future patent transforms (e.g. claims formatting, the flatten-tracked-changes transform below) is **`docx-editor-core/core-plugins/*`** (docxtemplater = worked reference) — kept, untouched.
-
-## Chrome cleanup (post-A5 follow-ups)
-
-Minor cleanups in chrome we already wrote (outside the audit scope):
-- font `groups` memo rebuilds the whole catalogue on every cursor move between differently-fonted runs (`character-group.tsx`; memoize on `[documentFonts, fontFamilies]`).
-- `ZoomPill` 400ms polling runs for every editor's lifetime (`docx-viewer.tsx`; share one timer / pause when not visible).
-- hex `<input>` in `color-control.tsx` is hand-rolled vs `@patrick/ui` `Input`.
-- `highlightColors.ts` (serialise) and `colorResolver` `HIGHLIGHT_COLORS` (render) disagree on the 5 dark-variant hexes → picked ≠ rendered highlight.
-
-## Styling consolidation — follow-ups (2026-07-01)
-
-The styling consolidation shipped (PRs #160–#166): editor styling lives entirely in
-`docx-editor-react/src/styles/` (`tokens.css` / `editor.css` / `prosemirror.css` / `revisions.css`),
-one uniform `--docx-*` token namespace, single-source; the host `index.css` wires no editor token.
-Deferred items surfaced during it:
-- `DEAD CSS SWEEP`: `styles/editor.css` `.paged-editor__decoration-overlay` + `.ProseMirror-yjs-cursor` reference the removed React PluginHost/`DecorationLayer` + y-prosemirror; and 5 dead `.docx-editor-vue__pages-viewport` scrollbar selectors (no Vue adapter). Verify no DOM emits these, then cut.
-- `DEAD-EXPORT SWEEP of docx-editor-core/src/utils`: `selectionHighlight.ts` turned out ENTIRELY dead (~578 lines, removed in #162); knip is exempt for the vendored editor, so other `utils/*` modules likely hide large unused surfaces. Worth a dedicated pass.
-- (Overlay accent colour: DECIDED — keep the selection/image accents a distinct blue, not emerald; tokenised as `--docx-selection-rect` / `--docx-image-accent`, self-documented in tokens.css. No action.)
-
-## Provenance / docs framing (one pass once the rework settles)
-
-- The editor has diverged a lot from the recovered eigenpal source (lean pass, lucide, source-consumption, Tailwind v4, full chrome rebuild). "Vendored fork" no longer fits — it's a **substantially-modified derivative we own + develop in-tree**. Update the README line ("the vendored, Apache-2.0 ProseMirror editor") to e.g. *"began as the Apache-2.0 @eigenpal/docx-editor, which went offline mid-2026; recovered and substantially modified, now developed in-tree."* `NOTICE` attribution is already correct — leave it.
-- Optional: a pinned GitHub **Discussion** telling the editor story (recovered orphaned Apache-2.0 OSS, evolving in-tree) + roadmap, contributions welcome — fits the "Open · Transparent" positioning.
-
----
-
-# Patrick agent ↔ editor
-
-- `@Patrick in a comment/reply → Chat`: a comment/reply can @-mention Patrick; the thread routes to the chat agent, which uses its tools (find/read/search) and can edit the doc AND/OR reply *in the comment*. E.g. highlight a clause, "@Patrick is this novel over D1?" → Patrick investigates → answers in the comment + optionally suggests a tracked change. Needs: an `@` affordance in the reply input, a comment↔chat bridge, a `reply_to_comment` agent tool.
-- `Flatten tracked changes → permanent styled markup`: convert insertion-underline / deletion-strikethrough revisions into *permanent* coloured/underlined/struck text, so the result copy-pastes / emails / PDFs cleanly without the tracked-change machinery. A core-plugin document transform (the "future patent transforms" slot), surfaced from the card overflow menu. Distinct from accept/reject (which removes the markup entirely).
-- `Insert mode without tracked changes`: an agent edit mode that writes directly, not via tracked changes. *Defer — react-docx-editor was in rapid flux; revisit now it's settled.*
-- `Inline docx AI editor`: edit inside the document, not only via chat. *Defer — same reason.*
-- `Search-anchor exact-match fragility`: comment/suggest `search` anchors are exact-match (smart quotes / em-dashes / brackets break them) — guide the agent toward short verbatim snippets, or normalise punctuation in the matcher. (Agent recovers via retry today.) Likely a small prompting fix.
+- `REAL-DOCX REGRESSION CORPUS` **[med]**: grow `e2e/fixtures/` with more real
+  public prosecution documents (office actions, granted patents, claim sets) and
+  run the redline suites over each — round-trip, accept/reject restoration,
+  comment anchoring. Office actions are public record; adding one is copying a
+  file. *Trigger: the first fidelity bug a new fixture would have caught.*
+- `FLATTEN TRACKED CHANGES → permanent styled markup` **[low]**: convert
+  ins/del revisions into permanent coloured/struck text for clean copy-paste /
+  PDF. Now a headless adapter transform. *Trigger: a user asks.*
+- `INSERT MODE without tracked changes` **[low]**: a direct-write edit mode
+  (no w:ins/w:del) for non-review edits. Trivial in the adapter (accept-on-
+  write). *Trigger: drafting-from-scratch feels noisy as all-redlines.*
+- `INTERMITTENT bun test flake` **[low]**: pre-teardown the full suite very
+  occasionally reported 1 fail, unidentified; most suspect suites were the
+  editor's (now deleted). *Trigger: if it recurs post-teardown, hunt it.*
 
 ---
 

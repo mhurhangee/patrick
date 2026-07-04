@@ -2,7 +2,7 @@
 
 **Patrick is an agent-first patent-prosecution assistant. Open source, private by design, local-first.** Everything lives in the attorney's own folder, in open formats (`.docx`, `.pdf`), readable without the app. Every competitor is cloud SaaS with your documents on their servers; Patrick is the opposite — zero lock-in, zero hidden state. Tauri desktop today; a marketing/docs site is live (`apps/site`); a web and a hosted/cloud version are planned (they reuse the same `apps/frontend` + `packages/shared`).
 
-The product is built around **@eigenpal/docx-editor** — a local, Apache-2.0, ProseMirror-based WYSIWYG `.docx` editor with first-class **agent tools** (`read_document` / `find_text` / `suggest_change` / `add_comment` …) that produce **native Word tracked changes**, driven by AI SDK v6. That gives us a real editor + high-quality redlines off the shelf; Patrick (the agent) drives it. **The editor is now vendored into this monorepo and owned by us** (`packages/docx-editor-*`) — the upstream vanished, so we recovered the Apache-2.0 source and folded it in; see "The docx editor (vendored)".
+**There is no in-app document editor.** Patrick edits `.docx` files **on disk** as **native Word tracked changes** (headless reconciliation redlines), and **Word/LibreOffice is where the attorney reads, writes, and accepts/rejects** — the one review surface attorneys already trust. In-app, a draft is a live text preview + status, deliberately not a Word imitation. See "Headless docx redlining (THE editing model)".
 
 This file is mostly a **map** — what exists and where, so you can navigate to the code — but it also carries the load-bearing **why** behind the non-obvious architecture, so contributors (and their AI tools) don't reintroduce mistakes already fixed. Where a section says "don't", it's because doing the obvious thing caused a real bug.
 
@@ -19,11 +19,9 @@ packages/
   ui/          @patrick/ui — the shared design system: shadcn primitives (`components/*`) + cn + the stone/emerald tokens (`src/theme.css`), consumed by frontend + site (source-only)
   law/         @patrick/law — the EP law dataset + retrieval: EPC, EPO Guidelines, PCT-EPO Guidelines, Case Law of the Boards. Verbatim recall + find-the-law search source
   benchmarking/ a standalone grounding benchmark (the dev runs it himself — see the benchmarking memories)
-  docx-editor-core/    @eigenpal/docx-editor-core — vendored: the framework-agnostic engine (docx parse/serialize, ProseMirror, tracked changes, the agent DocumentAgent + core-plugins)
-  docx-editor-agents/  @eigenpal/docx-editor-agents — vendored: the agent bridge (docx tool schemas, the editor-bridge executor, AI-SDK server adapter, the headless DocxReviewer)
-  docx-editor-react/   @eigenpal/docx-editor-react — vendored: the React editor UI (DocxEditor) + its components/dialogs/toolbar
 scripts/        gen-patrick-docs.ts → packages/shared/src/patrick-docs.generated.ts (the agent's `patrick_help` corpus)
-e2e/fixtures/   binary .docx test fixtures for the vendored editor's round-trip suites (run `bun test` from the repo root)
+e2e/fixtures/   real-world .docx test fixtures for the headless redlining suites (run `bun test` from the repo root)
+spikes/         throwaway proof-of-concept scripts (lint/knip-exempt, run by hand with bun)
 living-docs/    transient per-task plans, deleted when the work ships (not durable docs)
 ```
 
@@ -31,34 +29,37 @@ living-docs/    transient per-task plans, deleted when the work ships (not durab
 
 ## Stack
 
-React 19 + Vite + Tailwind v4 + shadcn (stone/emerald) · TanStack Router (file-based) + TanStack Query · @eigenpal/docx-editor (ProseMirror, vendored in `packages/`) · Hono on Bun · AI SDK v6 + `@ai-sdk/react` (Anthropic / OpenAI / Google / Gateway, **BYOK**) · Next.js (`apps/site`) · pnpm · Biome · TS strict · Streamdown (chat markdown) · `bun:test` (runner).
+React 19 + Vite + Tailwind v4 + shadcn (stone/emerald) · TanStack Router (file-based) + TanStack Query · @ansonlai/docx-redline-js (headless OOXML tracked changes, pinned + wrapped) · Hono on Bun · AI SDK v6 + `@ai-sdk/react` (Anthropic / OpenAI / Google / Gateway, **BYOK**) · Next.js (`apps/site`) · pnpm · Biome · TS strict · Streamdown (chat markdown) · `bun:test` (runner).
 
-## The docx editor (vendored)
+## Headless docx redlining (THE editing model)
 
-`@eigenpal/docx-editor` (the ProseMirror `.docx` editor + agent tools) **vanished from npm/GitHub mid-2026**; we recovered the Apache-2.0 source and folded it into the monorepo as three `workspace:*` packages. **We own it now** — improve it in place; there's no upstream to PR. Provenance + the Apache-2.0 `NOTICE` live in each package.
+Patrick's editing engine is `@ansonlai/docx-redline-js` (MIT, pinned to a commit), consumed through ONE adapter: **`apps/api/src/lib/docx/redline.ts` is the only import point** — everything else goes through it. An edit is a **paragraph-scoped reconciliation**: the agent names a paragraph's current text and its full revised text; the engine word-level-diffs them into a minimal native redline (`w:ins`/`w:del`). Untouched XML stays byte-identical — fidelity by construction, no whole-file round-trip.
 
-**The package seam (load-bearing — don't collapse it):**
-- `docx-editor-core` — framework-agnostic. Consumed **two ways**: server-side **headless** (via agents → `DocxReviewer`, the api's docx→text) AND client-side (via react, the editor render). The `core`/`react` split is the **headless-vs-DOM (server-vs-client) seam, NOT a multi-framework artifact** — `core/headless` is DOM-free and the server depends on it. **Don't** merge core into react (it would drag react-dom/DOM into the server path).
-- `docx-editor-agents` — the bridge: docx tool *schemas* (`getAiSdkTools`) + the editor-bridge *executor* (`useDocxAgentTools`) + the headless *reviewer* (`DocxReviewer`). It does **~no AI-SDK orchestration** of its own (that all lives in `apps/api` + the frontend) — the boundary is clean, nothing to de-dupe.
-- `docx-editor-react` — the editor UI. The **chrome is Patrick's own** (toolbar, dialogs, sidebar cards, shell) rebuilt on `@patrick/ui` primitives; the vendored ProseMirror engine — the `PagedEditor` cluster (`paged-editor`/`hidden-prose-mirror`/`overlays/`/`internals/`) — lives under `components/editor/`, with its hooks in `src/hooks/`. The old `components/DocxEditor/` folder is **gone**: the engine was deep-read end-to-end, cleaned (real bugs fixed, dead/duplicate code cut), and reorganized. Treat it as solid, not a black box.
+**The adapter's guards are load-bearing (each one was a measured failure, not a hypothesis — don't bypass the adapter):**
+- The engine's paragraph matcher fuzzy-falls-back (a missing target can redline the WRONG paragraph) → the adapter resolves the paragraph itself: exact, unambiguous match on the as-read text, full paragraph text handed to the engine.
+- Re-redlining an already-redlined paragraph double-applies → the adapter **supersedes** its own pending revisions first (DOM surgery — safe because Patrick only ever emits plain `w:ins`/`w:del`); a paragraph's redline is always original → latest.
+- Every edit is **verified before the write**, strictly at the edited position; a failure never mutates the file. Paragraphs carrying the ATTORNEY's own pending tracked changes are refused (comment instead) — editing through them would absorb their authorship.
+- The engine stamps ghost formatting revisions (`w:rPrChange`) on rebuilt runs → stripped on every write. `numberingXml` from list-shaped rewrites is merged. Text-box content (`w:txbxContent`, `mc:Fallback`) is skipped everywhere — invisible, never duplicated.
 
-**Patrick's consumed contract is 5 symbols + 1 stylesheet:** `DocxEditor` + `DocxEditorRef` (react) and the chrome stylesheet `@eigenpal/docx-editor-react/styles/editor.css`; `getAiSdkTools` (agents/ai-sdk/server), `useDocxAgentTools` (agents/react), `DocxReviewer` (agents/server). Everything else is internal.
+**THE DANCE (`apps/api/src/lib/docx/dance.ts`)** — Word holds a lock on an open draft, so Patrick shares the file by protocol: **reads never block** (last-saved bytes are always readable); **writes apply immediately when the draft is closed and PARK while a Word/LO lock marker exists**, draining on a 1s tick the moment it's closed. Parked ops **persist to `.patrick/parked/`** (an app restart must not lose promised work). ALL mutations serialize through a per-draft promise chain — the model fires tool calls in parallel, and unserialized read-modify-write once collapsed 12 comments to 3. **Never write a draft in place while it's open** (Word won't reload; its next save clobbers). Attorney-side mental model, used verbatim in UI copy: **"Save = talk to Patrick. Close = let Patrick write."** A comment mentioning `@Patrick` is an instruction channel (surfaced via draft-status).
 
-**Leaned to Patrick's needs:** removed the editor's bundled chat UI + agent panel + MCP (Patrick ships its own chat), the entire i18n system (English strings inlined at every call site; the `docx-editor-i18n` package dropped), and the React **PluginHost** plugin system (`docx-editor-react/plugin-api/` + `plugins/template/` + the `DecorationLayer` decoration-forwarder) — all unused, and NOT the extension mechanism. **Kept `core-plugins/*` (incl. docxtemplater) as the extension surface** — that IS the mechanism: future patent transforms (e.g. claims formatting) become core-plugins; docxtemplater is the worked reference. Also kept footnotes + math.
+**The agent's draft tools** (server-executed, `apps/api/src/lib/ai/draft-tools.ts`; names single-sourced in `@patrick/shared/draft.ts`): `read_draft` (as-if-accepted text, `[n]` indices, `(r)` markers) / `edit_paragraph` (ONE paragraph per call) / `add_draft_comment` / `read_draft_comments`. They bind to the single **active draft** and write through the dance.
 
-**Build + tooling:** the editor is consumed **entirely from source** (package `exports` → `./src`, like `@patrick/shared`/`@patrick/ui`) — **no build at all, full HMR**; the frontend (Vite) and api (Bun) compile its TypeScript directly. **CSS is source too:** the editor's stylesheets live in `docx-editor-react/src/styles/` — `tokens.css` (the `--docx-*` palette, the single source of truth for editor colour), `editor.css` (chrome), `prosemirror.css` (painter/PM-DOM), `revisions.css` (tracked-change redline cues); the two entry files `@import` the split pieces, and are plain-CSS imports where the editor mounts. Their Tailwind **utility classes are generated by the host app's own Tailwind** (the frontend `@source`s the editor's React-adapter src). The editor defines **no shadcn tokens of its own** — it **inherits Patrick's** (`@patrick/ui`'s `theme.css`, incl. dark mode); only the editor-specific `--docx-*` tokens live with the editor and **the host wires none of them**. Escape-scope surfaces (painter inline styles cloned into the stylesheet-less print window; toDOM marks serialised to clipboard) carry a `var(--docx-*, <literal>)` fallback — the token can't resolve outside `.ep-root`. Because the consumers type-check the editor *source*, it meets the repo's `strict` standard — the extra `noUncheckedIndexedAccess` flag is **off repo-wide** (the editor was authored without it), and the headless `api` carries DOM types for the editor's isomorphic font/template code (the runtime stays DOM-free via `preloadFonts:false` + `typeof document` guards). The vendored packages stay **lint/knip-EXEMPT** (third-party surface) but **are typechecked** and covered by their own tests.
+**In-app surface:** `DraftPanel` (`apps/frontend/.../draft-panel.tsx`) — a live text preview with pending redlines rendered as ins/del marks + the dance status bar (lock state, parked count, @Patrick mentions, failures, Open in Word). Deliberately NOT a Word imitation; the evolution (condensed review view, in-app accept/reject) is designed in `living-docs/draft-review-panel.md`.
 
-**Known limitation:** headers/footers are **render-only** (painted, not in the editable body) — viewing yes, typing no. The half-built H/F *editing* apparatus was stripped back to render-only (it was broken); tracked changes inside an H/F paint as plain text and aren't accept/reject-able in-app (rare; logged in `SCRATCHPAD.md`). Editable H/F would be a future feature, not a bug.
+**Known limitations** (logged in `SCRATCHPAD.md`): text-box content is invisible to Patrick; paragraphs with attorney tracked changes are refused rather than merged; unlock is one-way (no re-lock yet).
 
 ## Storage — files all the way down
 
 No database in local mode. A **task = a folder on disk** the attorney already has; sources are never modified. Awareness/state lives in `<folder>/.patrick/`:
 
-- `documents.yaml` — per-file meta keyed by filename (`label`, `excluded`, `starred`, `createdInPatrick`, and for PDFs `extracted`/`ocr`/`contextMode`).
+- `documents.yaml` — per-file meta keyed by filename (`label`, `excluded`, `starred`, `createdInPatrick`, `unlocked`, and for PDFs `extracted`/`ocr`/`contextMode`).
 - `chats/<id>.json` — a persisted chat: its messages + its **locked system template** + its **locked model** + its **pinned sources**.
 - `charts/<id>.json` — a persisted **Chart** (claim charts first): rows, columns, cells, per-chart model. Its own object class, like a chat (see "Search, charting & citations").
 - `extracted/<file>.json` — text pulled from a PDF (native text layer or OCR), for the selectable overlay and the text-mode context.
 - `index/<file>.json` — the on-device search index for a document. Derived, regenerable state; not a visible document.
+- `backups/<file>` — the pristine bytes of an unlocked original, snapshotted once at unlock (never overwritten); also serves as the pinned-context source for that file.
+- `parked/<file>.json` — Patrick edits waiting for the draft to be closed in Word (the dance's queue, restart-safe).
 
 Config home (`~/.config/patrick/` via `apps/api/src/lib/config.ts`): `profiles/<id>/…` and `tasks/<id>/…` registries (YAML).
 
@@ -66,7 +67,7 @@ Config home (`~/.config/patrick/` via `apps/api/src/lib/config.ts`): `profiles/<
 
 - **Profile** — the attorney: identity + `practiceContext` + the **Patrick prompt template** (a guided block builder) + AI settings (BYOK provider/keys, **one default `model`**, reasoning `effort`). New profiles can start from a **template** (US/EP prosecution, drafting, an example client) — `packages/shared/src/profile-templates.ts`.
 - **Task** — a folder + a short **`name`**, a **`label`** (the brief → `<TASK>`), and **`notes`** (a living record, human + Patrick). Notes/brief are edited in the workspace sidebar and the task settings surface.
-- **Document** — any file in the folder. `editable ≡ createdInPatrick && .docx` (Patrick-owned drafts); everything else (PDFs, the attorney's own `.docx`) is read-only. Originals are never mutated/renamed/deleted (server returns 403); to edit one, Patrick proposes an **editable `(Patrick)` copy**.
+- **Document** — any file in the folder. `editable ≡ .docx && (createdInPatrick || unlocked)` — single-sourced as `isEditableDoc` in `@patrick/shared`. Everything else is read-only. Originals are never renamed/deleted, and never *edited* until the attorney **unlocks one in place** (`requestUnlock`): a one-consent flip that snapshots the pristine bytes to `.patrick/backups/` first — safe because every Patrick edit is a rejectable tracked change. No "(Patrick) copy" indirection.
 
 ## App shell
 
@@ -79,9 +80,9 @@ One always-on **`sidebar │ content surface │ Patrick`** shell from launch. A
 
 An evolution of OPEN = CONTEXT. **One system prompt per chat**, frozen at first send (before that it follows the live profile; after, it's locked + persisted). It is **read-only** — you author Patrick's instructions in the profile prompt builder (`/profile#prompt`), not per chat; to change a running chat's prompt you start a new chat. Likewise the **model is picked per chat and locks at first send** (parallel freeze). The system holds **instructions + a manifest only**, never document content.
 
-Two document classes, on the `editable ≡ createdInPatrick` line:
+Two document classes, on the `isEditableDoc` line:
 - **Read-only sources (PDF, original docx) = pinned context.** Injected as ONE leading **cached** message (PDF as file part *or* extracted text per `contextMode`, docx as headless-extracted text), append-only — committed when you send with it open, you can't un-pin (new chat to reset). Immutable ⇒ cacheable (provider `cacheControl`); the big stable source tokens are paid once.
-- **Editable docx = the live workspace.** Not in static context; the agent reads it live via the editor tools (always current) and edits via tracked changes. **One active draft at a time** (the tools bind to one editor); it's *sticky* — survives focusing a source to read it.
+- **Editable docx = the live workspace.** Not in static context; the agent reads the file live via `read_draft` (always current) and edits via tracked changes through the dance. **One active draft at a time** (the tools bind to one file); it's *sticky* — survives focusing a source to read it. Other editable drafts are named in the manifest (the attorney focuses a tab to switch). A pinned docx that later gets unlocked keeps serving its **pristine backup** as the pinned source — the pinned context stays immutable and cacheable while the live file is the draft.
 - **Folder awareness:** the system manifest lists the read-only sources NOT yet pinned (filename + label, never content); Patrick proposes pinning one via the HITL `requestOpenFile` tool.
 
 Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
@@ -93,7 +94,7 @@ Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
 
 ## Patrick (the agent)
 
-`useChat` (client) ↔ `POST /tasks/:id/chat` (`streamText`, BYOK model resolved per chat, reasoning per `effort`). **Editor tools ship with no `execute`** (`getAiSdkTools()`), so each call round-trips to the client's `onToolCall` and runs against the live editor (`useDocxAgentTools().executeToolCall`) → native tracked changes. The loop auto-continues (`sendAutomaticallyWhen`); it spans multiple requests (one per tool round-trip), so "busy" is derived from `lastAssistantMessageIsCompleteWithToolCalls`, not raw status.
+`useChat` (client) ↔ `POST /tasks/:id/chat` (`streamText`, BYOK model resolved per chat, reasoning per `effort`). The **draft tools execute server-side** against the `.docx` on disk (see "Headless docx redlining") — there is no client editor round-trip. The loop still auto-continues (`sendAutomaticallyWhen`) for HITL cards and the client-run `search_document`, so "busy" is derived from `lastAssistantMessageIsCompleteWithToolCalls`, not raw status. After a `createDraft`/`requestUnlock` accept, the handler sets the active draft **synchronously** (state + transport ref) — the auto-continued turn must not ship `activeDraft: null`.
 
 **HITL tools** (no-execute, resolved by an accept/reject card — `chat-message-parts.tsx` `HITL_SPECS` registry): `requestOpenFile` (pin a source), `suggestLabel`, `createDraft`, `requestUnlock`, `saveNote`. The agent can only *suggest*; the attorney decides. Adding one = a spec + a handler on `ToolUiHandlers` + a server no-execute tool.
 
@@ -120,10 +121,10 @@ Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
 
 ## Testing
 
-**Runner: `bun:test`.** `pnpm test` (= `bun test`) — **always from the repo root** (the editor's round-trip tests resolve fixtures via `process.cwd()/e2e/fixtures/`); `bunfig.toml` scopes discovery to the monorepo. ~1,756 tests, all green; CI (`.github/workflows/ci.yml`) runs `pnpm check` + `bun test` on every push/PR.
+**Runner: `bun:test`.** `pnpm test` (= `bun test`) — **always from the repo root** (the docx suites resolve fixtures via `process.cwd()/e2e/fixtures/`); `bunfig.toml` scopes discovery to the monorepo. All green; CI (`.github/workflows/ci.yml`) runs `pnpm check` + `bun test` on every push/PR.
 
-- **The vendored editor's own suites (~1,725)** — adopted wholesale as Patrick's first foundation: docx parse/serialize **round-trip**, the layout/pagination engine, ProseMirror conversion, and the **agents** suite (`DocxReviewer` / tracked changes / tools — Patrick's critical path).
-- **Patrick's own targeted tests** — the stable, high-stakes, pure-logic cores only: `@patrick/shared` `match.ts` (citation matchers) + `mergeColumnReads` (chart merge), and `apps/api/.../prompt.ts` `buildSystemPrompt` (context assembly = manifest-only-never-content). **Don't pre-test the UI we're about to restyle or the chat layer we're about to migrate** — test the stable cores + test-as-you-go.
+- **The docx redlining suites** (`apps/api/src/lib/docx/*.test.ts`) — Patrick's critical path, exercised against a REAL USPTO office action fixture: accept-all → new text / reject-all → original round-trips, supersede-not-stack, ambiguity + attorney-revision refusals, ghost-strip, text-box handling, and the dance (lock detection, park/drain ordering, 12-parallel-ops regression, restart persistence).
+- **Patrick's other targeted tests** — the stable, high-stakes, pure-logic cores: `@patrick/shared` `match.ts` (citation matchers) + `mergeColumnReads` (chart merge), `apps/api/.../prompt.ts` `buildSystemPrompt` (context assembly = manifest-only-never-content), and `documents.ts` unlock/backup semantics. Test the stable cores + test-as-you-go.
 - **Adding tests to a package:** co-locate `*.test.ts(x)`; the package needs `@types/bun` + `"types": ["bun"]` in its tsconfig (the DOM-free strict base won't resolve `bun:test` otherwise, and strict index access needs a typed `first()` helper or `toMatchObject`).
 
 ## Conventions
@@ -148,7 +149,7 @@ pnpm dev              # frontend + api together (browser dev)
 pnpm dev:desktop      # tauri dev
 pnpm dev:site         # the Next.js marketing/docs site
 pnpm check            # typecheck + lint:fix + knip
-pnpm test             # bun test — run from the repo root (editor fixtures resolve via cwd)
+pnpm test             # bun test — run from the repo root (docx fixtures resolve via cwd)
 pnpm gen:docs         # regenerate the agent's bundled docs after editing them
 ```
 

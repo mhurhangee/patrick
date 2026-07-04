@@ -49,8 +49,9 @@ So:
 - `pnpm update -r --latest <pkg>` — crosses a **major** for one package. Do these
   one at a time: read the changelog, then test the feature that uses it.
 
-Treat `@eigenpal/docx-editor-*` as load-bearing — read its notes and exercise a
-real tracked-change edit even on a minor bump. Keep `@types/node` on the Node LTS
+Treat `@ansonlai/docx-redline-js` as load-bearing — it is pinned to a commit and
+wrapped by `apps/api/src/lib/docx/redline.ts`; on any bump, run the docx suites
+and exercise a real tracked-change edit. Keep `@types/node` on the Node LTS
 major we build against (24). Dep bumps are internal-only, so they need no
 `CHANGELOG.md` entry.
 
