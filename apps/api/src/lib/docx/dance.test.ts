@@ -104,6 +104,30 @@ describe("applyOrPark", () => {
 		expect(comments.some((c) => c.text.includes("deadline check"))).toBe(true);
 	});
 
+	test("parallel ops all land (the model fires tool calls concurrently)", async () => {
+		// Regression: 12 parallel comments once collapsed to 3 — each op read the
+		// same base bytes and the last write won. The per-draft queue serializes.
+		const before = (await import("./redline")).listComments;
+		const baseline = (await before(await draftBytes())).length;
+		const outcomes = await Promise.all(
+			Array.from({ length: 12 }, (_, i) =>
+				dance.applyOrPark({
+					kind: "comment",
+					request: {
+						paragraphIndex: 9,
+						textToFind: "Non-Final Rejection",
+						text: `@Michael: parallel comment ${i + 1}.`,
+					},
+				}),
+			),
+		);
+		expect(outcomes.every((o) => o.status === "applied")).toBe(true);
+		const comments = await (await import("./redline")).listComments(
+			await draftBytes(),
+		);
+		expect(comments.length).toBe(baseline + 12);
+	});
+
 	test("records a failure when a parked edit no longer applies", async () => {
 		await writeFile(lockPath(), "lo");
 		await dance.applyOrPark({

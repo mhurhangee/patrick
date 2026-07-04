@@ -95,13 +95,28 @@ export class DraftDance {
 		};
 	}
 
+	// Every mutation is read-file → transform → write-file, so concurrent ops
+	// (the model fires tool calls in parallel) would read the same base bytes and
+	// the last write would silently swallow the others — measured in the wild:
+	// 3 of 12 parallel comments survived. ALL mutations serialize through this
+	// per-draft chain; reads (status) stay lock-free.
+	private chain: Promise<unknown> = Promise.resolve();
+
+	private enqueue<T>(fn: () => Promise<T>): Promise<T> {
+		const next = this.chain.then(fn, fn);
+		this.chain = next.catch(() => {});
+		return next;
+	}
+
 	/** Apply the op now if the draft is closed; park it for the tick if not. */
-	async applyOrPark(op: DraftOp): Promise<OpOutcome> {
-		if (await this.isLocked()) {
-			this.parked.push(op);
-			return { status: "parked", parkedEdits: this.parked.length };
-		}
-		return this.applyNow(op);
+	applyOrPark(op: DraftOp): Promise<OpOutcome> {
+		return this.enqueue(async () => {
+			if (await this.isLocked()) {
+				this.parked.push(op);
+				return { status: "parked", parkedEdits: this.parked.length };
+			}
+			return this.applyNow(op);
+		});
 	}
 
 	private async applyNow(op: DraftOp): Promise<OpOutcome> {
@@ -132,7 +147,12 @@ export class DraftDance {
 	 * arrival order. A failure is recorded and surfaced via status; a re-lock
 	 * mid-drain re-parks the remainder.
 	 */
-	async tick(): Promise<void> {
+	tick(): Promise<void> {
+		if (this.parked.length === 0) return Promise.resolve();
+		return this.enqueue(() => this.drain());
+	}
+
+	private async drain(): Promise<void> {
 		if (this.parked.length === 0 || (await this.isLocked())) return;
 		const ops = this.parked.splice(0);
 		ops.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "comment" ? -1 : 1));

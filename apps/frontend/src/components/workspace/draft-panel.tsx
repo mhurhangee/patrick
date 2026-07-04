@@ -56,8 +56,15 @@ export function DraftPanel({
 		});
 	}, [lastSavedMs, activeTaskId, filename, queryClient]);
 
-	// Feed the context control's token estimate for read-only docx sources.
-	const chars = doc?.paragraphs.reduce((n, p) => n + p.text.length, 0) ?? 0;
+	// Feed the context control's token estimate for read-only docx sources
+	// (deleted-run text doesn't count — it's gone once accepted).
+	const chars =
+		doc?.paragraphs.reduce(
+			(n, p) =>
+				n +
+				p.runs.reduce((m, r) => (r.kind === "del" ? m : m + r.text.length), 0),
+			0,
+		) ?? 0;
 	useEffect(() => {
 		if (doc && !editable)
 			recordDocSize(activeTaskId ?? "", filename, { chars });
@@ -81,25 +88,25 @@ export function DraftPanel({
 			{editable && <DraftStatusBar filename={filename} status={status} />}
 			<div className="min-h-0 flex-1 overflow-auto px-6 py-8 text-foreground">
 				<div className="mx-auto max-w-3xl text-sm">
-					{doc.paragraphs.filter((p) => p.text.trim()).length === 0 ? (
+					{doc.paragraphs.every((p) => !paragraphHasText(p)) ? (
 						<p className="text-muted-foreground">
 							This document is empty — ask Patrick to start drafting, or open it
 							in Word.
 						</p>
 					) : (
 						doc.paragraphs.map((p) =>
-							p.text.trim() ? (
+							paragraphHasText(p) ? (
 								<p
 									key={p.index}
 									className={cn(
 										"mt-3 leading-relaxed",
-										// A pending-redline cue, not a redline rendering: the real
-										// review (with strikethrough/underline) happens in Word.
 										p.hasRevisions &&
 											"-ml-3 border-l-2 border-l-primary/60 pl-3",
 									)}
 								>
-									{p.text}
+									{/* Pending redlines render as real marks; accept/reject
+									    still happens in Word's review pane. */}
+									{renderRuns(p.runs)}
 								</p>
 							) : null,
 						)
@@ -108,6 +115,35 @@ export function DraftPanel({
 			</div>
 		</div>
 	);
+}
+
+function paragraphHasText(p: {
+	runs: { text: string; kind: string }[];
+}): boolean {
+	return p.runs.some((r) => r.text.trim());
+}
+
+// Keys derive from each run's kind + character offset — stable for a given
+// fetched paragraph, no array-index keys.
+function renderRuns(runs: { text: string; kind: "text" | "ins" | "del" }[]) {
+	let offset = 0;
+	return runs.map((r) => {
+		const key = `${r.kind}@${offset}`;
+		offset += r.text.length;
+		if (r.kind === "ins")
+			return (
+				<ins key={key} className="text-primary decoration-primary/60">
+					{r.text}
+				</ins>
+			);
+		if (r.kind === "del")
+			return (
+				<del key={key} className="text-muted-foreground/70">
+					{r.text}
+				</del>
+			);
+		return <span key={key}>{r.text}</span>;
+	});
 }
 
 function DraftStatusBar({

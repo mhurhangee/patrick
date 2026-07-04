@@ -11,6 +11,7 @@ import {
 	extractDocxText,
 	listComments,
 	readDraftParagraphs,
+	readDraftRuns,
 } from "./redline";
 
 // A real USPTO office action — styles, numbering, header, examiner comments.
@@ -140,6 +141,27 @@ describe("applyRedline", () => {
 		expect(result.applied).toBe(false);
 		if (result.applied) return;
 		expect(result.reason).toContain("matches 2 paragraphs");
+	});
+});
+
+describe("readDraftRuns", () => {
+	test("pending redlines surface as ins/del runs for the preview", async () => {
+		const result = await applyRedline(await fixtureBytes(), {
+			targetText: TARGET,
+			newText: MODIFIED,
+		});
+		expect(result.applied).toBe(true);
+		if (!result.applied) return;
+		const paragraphs = await readDraftRuns(result.bytes);
+		const edited = paragraphs.find((p) => p.hasRevisions);
+		expect(edited).toBeDefined();
+		expect(edited?.runs.some((r) => r.kind === "ins")).toBe(true);
+		// Joined ins+text runs equal the accepted view.
+		const accepted = edited?.runs
+			.filter((r) => r.kind !== "del")
+			.map((r) => r.text)
+			.join("");
+		expect(accepted?.replace(/\s+/g, " ")).toContain("12 May 2026");
 	});
 });
 

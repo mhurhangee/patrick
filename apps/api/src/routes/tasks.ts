@@ -50,7 +50,7 @@ import {
 	writeDocumentMeta,
 } from "../lib/documents";
 import { danceFor } from "../lib/docx/dance";
-import { readDraftParagraphs } from "../lib/docx/redline";
+import { readDraftRuns } from "../lib/docx/redline";
 import { fetchPublication } from "../lib/patents";
 import { readProfile } from "../lib/profiles";
 import { deleteTask, listTasks, readTask, writeTask } from "../lib/tasks";
@@ -489,8 +489,8 @@ tasks.post(
 	},
 );
 
-// A .docx rendered as plain text (tracked changes as-if-accepted) — the
-// in-app preview; the real document opens in Word.
+// A .docx as paragraphs-of-runs, pending redlines marked ins/del — the in-app
+// preview; the real review (accept/reject) happens in Word.
 tasks.get("/:id/documents/:filename/docx-text", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
@@ -498,16 +498,10 @@ tasks.get("/:id/documents/:filename/docx-text", async (c) => {
 	const file = Bun.file(join(task.folder, name));
 	if (!(await file.exists())) return c.json({ error: "file not found" }, 404);
 	try {
-		const paragraphs = await readDraftParagraphs(
+		const paragraphs = await readDraftRuns(
 			new Uint8Array(await file.arrayBuffer()),
 		);
-		return c.json({
-			paragraphs: paragraphs.map((p) => ({
-				index: p.index,
-				text: p.text,
-				hasRevisions: p.hasRevisions,
-			})),
-		});
+		return c.json({ paragraphs });
 	} catch {
 		return c.json({ error: "could not read this .docx" }, 422);
 	}

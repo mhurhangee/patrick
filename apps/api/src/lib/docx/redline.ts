@@ -134,6 +134,54 @@ export async function readDraftParagraphs(
 	}));
 }
 
+export type DraftRun = { text: string; kind: "text" | "ins" | "del" };
+export type DraftParagraphRuns = {
+	index: number;
+	runs: DraftRun[];
+	hasRevisions: boolean;
+};
+
+/** Paragraph content split into runs with revision kind — the preview's shape,
+ *  so pending redlines render as real ins/del marks, not invisible text. */
+function paragraphRuns(p: XmlElement): DraftRun[] {
+	const runs: DraftRun[] = [];
+	const push = (text: string, kind: DraftRun["kind"]) => {
+		if (!text) return;
+		const last = runs[runs.length - 1];
+		if (last && last.kind === kind) last.text += text;
+		else runs.push({ text, kind });
+	};
+	const walk = (node: XmlNode) => {
+		for (let c = node.firstChild; c; c = c.nextSibling) {
+			if (c.nodeType !== 1) continue;
+			const el = c as XmlElement;
+			if (el.namespaceURI === W_NS && el.localName === "t") {
+				push(el.textContent ?? "", hasAncestor(el, "ins", p) ? "ins" : "text");
+				continue;
+			}
+			if (el.namespaceURI === W_NS && el.localName === "delText") {
+				push(el.textContent ?? "", "del");
+				continue;
+			}
+			walk(el);
+		}
+	};
+	walk(p);
+	return runs;
+}
+
+export async function readDraftRuns(
+	bytes: Uint8Array,
+): Promise<DraftParagraphRuns[]> {
+	const zip = await JSZip.loadAsync(bytes);
+	const doc = parseXml(await documentXmlOf(zip));
+	return paragraphsOf(doc).map((p, i) => ({
+		index: i + 1,
+		runs: paragraphRuns(p),
+		hasRevisions: paragraphHasRevisions(p),
+	}));
+}
+
 /** Plain text of a .docx (paragraphs joined by newlines) — context extraction. */
 export async function extractDocxText(bytes: Uint8Array): Promise<string> {
 	const paragraphs = await readDraftParagraphs(bytes);

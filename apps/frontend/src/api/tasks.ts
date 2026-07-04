@@ -170,10 +170,14 @@ export const tasksApi = {
 			`/tasks/${id}/documents/${encodeURIComponent(filename)}/draft-status/clear-failures`,
 			{},
 		),
-	/** A .docx as plain paragraphs (tracked changes as-if-accepted) — the preview. */
+	/** A .docx as paragraphs-of-runs, pending redlines marked ins/del — the preview. */
 	docxText: (id: string, filename: string) =>
 		api.get<{
-			paragraphs: { index: number; text: string; hasRevisions: boolean }[];
+			paragraphs: {
+				index: number;
+				runs: { text: string; kind: "text" | "ins" | "del" }[];
+				hasRevisions: boolean;
+			}[];
 		}>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/docx-text`),
 	/** Open a document in its native app (Word/LibreOffice) on the attorney's machine. */
 	openDocument: (id: string, filename: string) =>

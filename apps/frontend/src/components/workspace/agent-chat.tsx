@@ -8,6 +8,7 @@ import {
 	type ExchangeMetadata,
 	MODELS_BY_ID,
 	MUTATING_CHART_TOOLS,
+	MUTATING_DRAFT_TOOLS,
 	type PinnedSource,
 	READ_CHART_TOOL,
 	toStoredMessage,
@@ -76,6 +77,7 @@ import { SystemCard } from "./system-card";
 // refresh the open chart viewer via query invalidation; read_chart is read-only. Names come
 // from @patrick/shared so they can't drift from what buildChartTools actually ships.
 const CHART_TOOLS = new Set<string>(MUTATING_CHART_TOOLS);
+const DRAFT_MUTATORS = new Set<string>(MUTATING_DRAFT_TOOLS);
 
 const SERVER_TOOLS = new Set<string>([
 	"patrick_help",
@@ -396,28 +398,44 @@ function ChatSession({
 		},
 	});
 
-	// Chart tools mutate the Chart JSON server-side; refresh the charts list and any open
-	// viewer when one completes. Dedupe by toolCallId so each result invalidates once.
+	// Chart and draft tools mutate server-side state; refresh their viewers the
+	// moment a mutating result streams back. Dedupe by toolCallId so each result
+	// invalidates once.
 	const queryClient = useQueryClient();
-	const seenChartTools = useRef(new Set<string>());
+	const seenMutatingTools = useRef(new Set<string>());
 	useEffect(() => {
 		const taskId = activeTaskIdRef.current;
 		if (!taskId) return;
-		// Only the last assistant message can carry a newly-arrived chart result (earlier ones
+		// Only the last assistant message can carry a newly-arrived result (earlier ones
 		// were handled while they were last, deduped by toolCallId) — so don't re-walk the whole
 		// transcript on every streaming tick.
 		const last = messages[messages.length - 1];
 		if (last?.role !== "assistant") return;
-		let hit = false;
+		let chartHit = false;
+		let draftHit = false;
 		for (const part of last.parts) {
 			if (!isToolUIPart(part) || part.state !== "output-available") continue;
-			if (!CHART_TOOLS.has(getToolName(part))) continue;
-			if (seenChartTools.current.has(part.toolCallId)) continue;
-			seenChartTools.current.add(part.toolCallId);
-			hit = true;
+			const name = getToolName(part);
+			const isChart = CHART_TOOLS.has(name);
+			const isDraft = DRAFT_MUTATORS.has(name);
+			if (!isChart && !isDraft) continue;
+			if (seenMutatingTools.current.has(part.toolCallId)) continue;
+			seenMutatingTools.current.add(part.toolCallId);
+			if (isChart) chartHit = true;
+			if (isDraft) draftHit = true;
 		}
-		if (hit)
+		if (chartHit)
 			queryClient.invalidateQueries({ queryKey: ["tasks", taskId, "charts"] });
+		if (draftHit && activeDraftRef.current) {
+			// The draft file changed on disk (or an edit parked) — refresh the
+			// preview and the dance status without waiting for the poll.
+			queryClient.invalidateQueries({
+				queryKey: ["tasks", taskId, "docx-text", activeDraftRef.current],
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["tasks", taskId, "draft-status", activeDraftRef.current],
+			});
+		}
 	}, [messages, queryClient]);
 
 	const [composerEmpty, setComposerEmpty] = useState(true);
