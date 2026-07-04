@@ -10,7 +10,12 @@ import {
 import { tool } from "ai";
 import { z } from "zod";
 import { danceFor } from "../docx/dance";
-import { listComments, readDraftParagraphs } from "../docx/redline";
+import {
+	type DraftRun,
+	listComments,
+	REDLINE_AUTHOR,
+	readDraftRuns,
+} from "../docx/redline";
 
 // The draft-editing tools: server-executed against the active draft on disk
 // (headless tracked changes — the attorney reviews them in Word). Writes go
@@ -21,6 +26,18 @@ const noDraft = {
 	error:
 		"No active draft. Propose one first: createDraft (a fresh document) or requestUnlock (an editable copy of an original).",
 };
+
+// Render one run in CriticMarkup so the agent sees the full review state:
+// insertions {++…++}, deletions {--…--}, tagged with the author when it's the
+// attorney's own change rather than Patrick's.
+function renderRun(run: DraftRun): string {
+	if (run.kind === "text") return run.text;
+	const tag =
+		run.author && run.author !== REDLINE_AUTHOR ? `[${run.author}]` : "";
+	return run.kind === "ins"
+		? `{++${run.text}++}${tag}`
+		: `{--${run.text}--}${tag}`;
+}
 
 /** Bind the draft tools to the task folder + this turn's active draft. */
 export function buildDraftTools(folder: string, activeDraft: string | null) {
@@ -38,21 +55,39 @@ export function buildDraftTools(folder: string, activeDraft: string | null) {
 
 	const readDraft = tool({
 		description:
-			"Read the active draft's current text, paragraph by paragraph — [n] is the paragraph number used by add_draft_comment, and the text shown is what you quote as edit_paragraph's target_text. Pending tracked changes read as if accepted, and (r) marks a paragraph that has pending revisions. The draft lives on disk and the attorney edits it in Word too, so always read fresh before editing rather than relying on earlier reads.",
+			"Read the active draft, paragraph by paragraph, showing the FULL review state — [n] is the paragraph number (used by add_draft_comment). Pending tracked changes are shown inline: {++inserted++} and {--deleted--}, tagged {++…++}[author] when the author isn't you. To get edit_paragraph's target_text, read a paragraph AS IF ACCEPTED — keep the {++inserted++} text, drop the {--deleted--} text. Comments are listed under the paragraph they anchor to (an attorney comment mentioning @Patrick is an instruction to you). The draft lives on disk and the attorney edits it in Word too, so always read fresh before editing.",
 		inputSchema: z.object({}),
 		execute: async () => {
 			const bytes = await draftBytes();
 			if (!draft || !bytes) return noDraft;
-			const paragraphs = await readDraftParagraphs(bytes);
+			const paragraphs = await readDraftRuns(bytes);
+			const comments = await listComments(bytes);
 			const status = await danceFor(folder, draft).status();
-			const body = paragraphs
-				.filter((p) => p.text.trim())
-				.map((p) => `[${p.index}]${p.hasRevisions ? " (r)" : ""} ${p.text}`)
-				.join("\n");
+
+			const byParagraph = new Map<number, typeof comments>();
+			for (const c of comments) {
+				const key = c.paragraphIndex ?? 0;
+				(byParagraph.get(key) ?? byParagraph.set(key, []).get(key) ?? []).push(
+					c,
+				);
+			}
+
+			const lines: string[] = [];
+			for (const p of paragraphs) {
+				const text = p.runs.map(renderRun).join("");
+				if (!text.trim() && !byParagraph.has(p.index)) continue;
+				lines.push(`[${p.index}]${p.hasRevisions ? " (r)" : ""} ${text}`);
+				for (const c of byParagraph.get(p.index) ?? [])
+					lines.push(`    ↳ comment [${c.author}]: ${c.text}`);
+			}
+			// Comments whose anchor we couldn't place (rare) still surface.
+			for (const c of byParagraph.get(0) ?? [])
+				lines.push(`↳ comment [${c.author}]: ${c.text}`);
+
 			const note = status.openInEditor
 				? "\n\n(The attorney has the draft open in Word right now — your edits will be parked and applied when they close it. Unsaved changes of theirs aren't visible to you yet.)"
 				: "";
-			return `# ${draft}\n${body || "(the draft is empty)"}${note}`;
+			return `# ${draft}\n${lines.join("\n") || "(the draft is empty)"}${note}`;
 		},
 	});
 

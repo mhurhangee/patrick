@@ -69,14 +69,46 @@ describe("applyOrPark", () => {
 		await dance.tick(); // still locked — nothing happens
 		expect((await dance.status()).parkedEdits).toBe(1);
 
+		// While parked, status surfaces what's waiting (the panel shows "queued").
+		expect((await dance.status()).parkedOps).toEqual([
+			{ kind: "redline", summary: TARGET.slice(0, 80) },
+		]);
+
 		await unlink(lockPath());
 		await dance.tick();
 		const status = await dance.status();
 		expect(status.parkedEdits).toBe(0);
+		expect(status.parkedOps).toEqual([]);
 		expect(status.failures).toEqual([]);
 		expect(await extractDocxText(await draftBytes())).toContain(
 			"responsive to the amendment",
 		);
+	});
+
+	test("a resolve op accepts a redline in place (and parks like an edit)", async () => {
+		// Land an edit, then accept it via a resolve op.
+		await dance.applyOrPark({
+			kind: "redline",
+			edit: { targetText: TARGET, newText: MODIFIED },
+		});
+		const idx = (await import("./redline"))
+			.readDraftParagraphs(await draftBytes())
+			.then((ps) => ps.find((p) => p.text === MODIFIED)?.index);
+		const paragraphIndex = await idx;
+		expect(paragraphIndex).toBeDefined();
+		if (!paragraphIndex) return;
+		const outcome = await dance.applyOrPark({
+			kind: "resolve",
+			paragraphIndex,
+			action: "accept",
+		});
+		expect(outcome.status).toBe("applied");
+		const paragraphs = await (await import("./redline")).readDraftParagraphs(
+			await draftBytes(),
+		);
+		expect(
+			paragraphs.find((p) => p.index === paragraphIndex)?.hasRevisions,
+		).toBe(false);
 	});
 
 	test("drains comments before redlines so anchors still resolve", async () => {

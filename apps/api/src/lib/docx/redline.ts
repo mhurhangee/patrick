@@ -179,49 +179,75 @@ export async function readDraftParagraphs(
 		}));
 }
 
-export type DraftRun = { text: string; kind: "text" | "ins" | "del" };
+export type DraftRun = {
+	text: string;
+	kind: "text" | "ins" | "del";
+	/** The enclosing revision's w:id — the accept/reject handle (ins/del only). */
+	revisionId?: number;
+	/** The revision's author (ins/del only) — the attorney's own show distinctly. */
+	author?: string;
+};
 export type DraftParagraphRuns = {
 	index: number;
 	runs: DraftRun[];
 	hasRevisions: boolean;
 };
 
-/** Paragraph content split into runs with revision kind — the preview's shape,
- *  so pending redlines render as real ins/del marks, not invisible text. */
+/** The nearest enclosing w:ins/w:del of a node (with its id + author), if any. */
+function revisionAncestor(
+	node: XmlNode,
+	until: XmlNode,
+): { kind: "ins" | "del"; id: number; author: string } | null {
+	for (let n = node.parentNode; n && n !== until; n = n.parentNode) {
+		if (n.nodeType !== 1 || (n as XmlElement).namespaceURI !== W_NS) continue;
+		const el = n as XmlElement;
+		if (el.localName === "ins" || el.localName === "del")
+			return {
+				kind: el.localName,
+				id: Number(el.getAttributeNS(W_NS, "id") ?? "-1"),
+				author: el.getAttributeNS(W_NS, "author") ?? "",
+			};
+	}
+	return null;
+}
+
+/** Paragraph content split into runs with revision kind/id/author — the review
+ *  view's shape, so pending redlines render as real ins/del marks each carrying
+ *  its own accept/reject handle. */
 function paragraphRuns(p: XmlElement): DraftRun[] {
 	const runs: DraftRun[] = [];
-	const push = (text: string, kind: DraftRun["kind"]) => {
+	const push = (text: string, rev: ReturnType<typeof revisionAncestor>) => {
 		if (!text) return;
+		const kind = rev?.kind ?? "text";
 		const last = runs[runs.length - 1];
-		if (last && last.kind === kind) last.text += text;
-		else runs.push({ text, kind });
+		if (last && last.kind === kind && last.revisionId === rev?.id)
+			last.text += text;
+		else
+			runs.push(
+				rev
+					? { text, kind, revisionId: rev.id, author: rev.author }
+					: { text, kind },
+			);
 	};
-	const kindOf = (el: XmlElement): DraftRun["kind"] =>
-		hasAncestor(el, "del", p)
-			? "del"
-			: hasAncestor(el, "ins", p)
-				? "ins"
-				: "text";
 	const walk = (node: XmlNode) => {
 		for (let c = node.firstChild; c; c = c.nextSibling) {
 			if (c.nodeType !== 1) continue;
 			const el = c as XmlElement;
 			if (isOpaque(el)) continue;
-			if (el.namespaceURI === W_NS && el.localName === "t") {
-				push(el.textContent ?? "", hasAncestor(el, "ins", p) ? "ins" : "text");
-				continue;
-			}
-			if (el.namespaceURI === W_NS && el.localName === "delText") {
-				push(el.textContent ?? "", "del");
-				continue;
-			}
-			if (
+			const isText = el.namespaceURI === W_NS && el.localName === "t";
+			const isDel = el.namespaceURI === W_NS && el.localName === "delText";
+			const isSep =
 				el.namespaceURI === W_NS &&
 				(el.localName === "tab" ||
 					el.localName === "br" ||
-					el.localName === "cr")
-			) {
-				push(el.localName === "tab" ? "\t" : "\n", kindOf(el));
+					el.localName === "cr");
+			if (isText || isDel || isSep) {
+				const text = isSep
+					? el.localName === "tab"
+						? "\t"
+						: "\n"
+					: (el.textContent ?? "");
+				push(text, revisionAncestor(el, p));
 				continue;
 			}
 			walk(el);
@@ -298,6 +324,66 @@ function rejectAuthorRevisionsIn(p: XmlElement, author: string): void {
 		while (del.firstChild) parent.insertBefore(del.firstChild, del);
 		parent.removeChild(del);
 	}
+}
+
+/**
+ * Accept one author's pending revisions inside ONE paragraph — the mirror of
+ * rejectAuthorRevisionsIn: an insertion is kept (unwrap the `w:ins`), a deletion
+ * is made permanent (drop the `w:del` and its text). Same safe DOM surgery.
+ */
+function acceptAuthorRevisionsIn(p: XmlElement, author: string): void {
+	const byAuthor = (el: XmlElement) =>
+		el.getAttributeNS(W_NS, "author") === author;
+	const collect = (localName: string): XmlElement[] => {
+		const list = p.getElementsByTagNameNS(W_NS, localName);
+		const out: XmlElement[] = [];
+		for (let i = 0; i < list.length; i++) {
+			const el = list[i] as XmlElement;
+			if (el && byAuthor(el)) out.push(el);
+		}
+		return out;
+	};
+	// Deletion accepted → the text goes away.
+	for (const del of collect("del")) del.parentNode?.removeChild(del);
+	// Insertion accepted → keep the runs, drop the wrapper.
+	for (const ins of collect("ins")) {
+		const parent = ins.parentNode;
+		if (!parent) continue;
+		while (ins.firstChild) parent.insertBefore(ins.firstChild, ins);
+		parent.removeChild(ins);
+	}
+}
+
+export type ResolveResult =
+	| { applied: true; bytes: Uint8Array }
+	| { applied: false; reason: string };
+
+/**
+ * Accept or reject Patrick's pending redline in ONE paragraph, in place — the
+ * in-app equivalent of Word's accept/reject, without opening Word. A paragraph
+ * only ever carries one round of Patrick's revisions (the adapter supersedes),
+ * so the paragraph IS the change unit. Only `author`'s revisions are touched;
+ * the attorney's own are left intact.
+ */
+export async function resolveParagraphRevision(
+	bytes: Uint8Array,
+	paragraphIndex: number,
+	action: "accept" | "reject",
+	author = REDLINE_AUTHOR,
+): Promise<ResolveResult> {
+	const zip = await JSZip.loadAsync(bytes);
+	const doc = parseXml(await documentXmlOf(zip));
+	const entry = paragraphsOf(doc)[paragraphIndex - 1];
+	if (!entry || entry.nested)
+		return { applied: false, reason: `no paragraph ${paragraphIndex}` };
+	if (!paragraphHasRevisions(entry.el))
+		return { applied: false, reason: "that paragraph has no pending redline" };
+	if (action === "accept") acceptAuthorRevisionsIn(entry.el, author);
+	else rejectAuthorRevisionsIn(entry.el, author);
+	return {
+		applied: true,
+		bytes: await writeDocumentXml(zip, serializeXml(doc)),
+	};
 }
 
 // Patrick never makes formatting-only edits, so any Patrick-authored
@@ -500,12 +586,29 @@ export async function addComment(
 	return { applied: true, bytes: await writeDocumentXml(zip, result.oxml) };
 }
 
-/** All comments in the draft (word/comments.xml), in document order. */
+/** commentId → 1-based paragraph index, from the anchors in document.xml. The
+ *  anchor (`w:commentRangeStart`) lives in the body, not in comments.xml. */
+function commentAnchors(doc: XmlDocument): Map<string, number> {
+	const anchors = new Map<string, number>();
+	const paragraphs = paragraphsOf(doc);
+	paragraphs.forEach((entry, i) => {
+		const starts = entry.el.getElementsByTagNameNS(W_NS, "commentRangeStart");
+		for (let j = 0; j < starts.length; j++) {
+			const id = (starts[j] as XmlElement).getAttributeNS(W_NS, "id");
+			if (id && !anchors.has(id)) anchors.set(id, i + 1);
+		}
+	});
+	return anchors;
+}
+
+/** All comments in the draft (word/comments.xml), in document order, each with
+ *  the paragraph its anchor sits in. */
 export async function listComments(bytes: Uint8Array): Promise<DraftComment[]> {
 	const zip = await JSZip.loadAsync(bytes);
 	const entry = zip.file("word/comments.xml");
 	if (!entry) return [];
 	const doc = parseXml(await entry.async("string"));
+	const anchors = commentAnchors(parseXml(await documentXmlOf(zip)));
 	const comments = doc.getElementsByTagNameNS(W_NS, "comment");
 	const out: DraftComment[] = [];
 	for (let i = 0; i < comments.length; i++) {
@@ -514,10 +617,12 @@ export async function listComments(bytes: Uint8Array): Promise<DraftComment[]> {
 		const texts = el.getElementsByTagNameNS(W_NS, "t");
 		let text = "";
 		for (let j = 0; j < texts.length; j++) text += texts[j]?.textContent ?? "";
+		const id = el.getAttributeNS(W_NS, "id") ?? String(i);
 		out.push({
-			id: el.getAttributeNS(W_NS, "id") ?? String(i),
+			id,
 			author: el.getAttributeNS(W_NS, "author") ?? "",
 			text,
+			paragraphIndex: anchors.get(id),
 		});
 	}
 	return out;

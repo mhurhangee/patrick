@@ -16,6 +16,7 @@ import {
 	listComments,
 	REDLINE_AUTHOR,
 	type RedlineEdit,
+	resolveParagraphRevision,
 } from "./redline";
 
 // THE DANCE: Word/LibreOffice holds a lock on an open draft, so Patrick and the
@@ -31,17 +32,37 @@ import {
 
 export type DraftOp =
 	| { kind: "redline"; edit: RedlineEdit }
-	| { kind: "comment"; request: CommentRequest };
+	| { kind: "comment"; request: CommentRequest }
+	// The attorney's in-app accept/reject of a paragraph's redline — mutates the
+	// file, so it rides the dance (parks while the draft is open) like an edit.
+	| { kind: "resolve"; paragraphIndex: number; action: "accept" | "reject" };
 
 export type OpOutcome =
 	| { status: "applied" }
 	| { status: "parked"; parkedEdits: number }
 	| { status: "failed"; reason: string };
 
+/** The parked-op shape surfaced in DraftStatus (kind + a short summary). */
+function summariseOp(op: DraftOp): {
+	kind: "redline" | "comment" | "resolve";
+	summary: string;
+} {
+	if (op.kind === "redline")
+		return { kind: "redline", summary: op.edit.targetText.slice(0, 80) };
+	if (op.kind === "comment")
+		return { kind: "comment", summary: op.request.text.slice(0, 80) };
+	return {
+		kind: "resolve",
+		summary: `${op.action} ¶${op.paragraphIndex}`,
+	};
+}
+
 function describeOp(op: DraftOp): string {
-	return op.kind === "redline"
-		? `edit "${op.edit.targetText.slice(0, 60)}…"`
-		: `comment "${op.request.text.slice(0, 60)}…"`;
+	if (op.kind === "redline")
+		return `edit "${op.edit.targetText.slice(0, 60)}…"`;
+	if (op.kind === "comment")
+		return `comment "${op.request.text.slice(0, 60)}…"`;
+	return `${op.action} paragraph ${op.paragraphIndex}`;
 }
 
 export class DraftDance {
@@ -149,6 +170,7 @@ export class DraftDance {
 			exists,
 			openInEditor: await this.isLocked(),
 			parkedEdits: this.parked.length,
+			parkedOps: this.parked.map(summariseOp),
 			lastSavedMs,
 			mentions,
 			failures: [...this.failures],
@@ -188,12 +210,25 @@ export class DraftDance {
 		} catch {
 			return { status: "failed", reason: `cannot read ${this.filename}` };
 		}
-		let result: Awaited<ReturnType<typeof applyRedline | typeof addComment>>;
+		let result: Awaited<
+			ReturnType<
+				| typeof applyRedline
+				| typeof addComment
+				| typeof resolveParagraphRevision
+			>
+		>;
 		try {
 			result =
 				op.kind === "redline"
 					? await applyRedline(bytes, op.edit, this.author)
-					: await addComment(bytes, op.request, this.author);
+					: op.kind === "comment"
+						? await addComment(bytes, op.request, this.author)
+						: await resolveParagraphRevision(
+								bytes,
+								op.paragraphIndex,
+								op.action,
+								this.author,
+							);
 		} catch (err) {
 			return {
 				status: "failed",

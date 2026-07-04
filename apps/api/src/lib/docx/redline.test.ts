@@ -12,6 +12,7 @@ import {
 	listComments,
 	readDraftParagraphs,
 	readDraftRuns,
+	resolveParagraphRevision,
 } from "./redline";
 
 // A real USPTO office action — styles, numbering, header, examiner comments.
@@ -283,6 +284,85 @@ describe("readDraftRuns", () => {
 			.join("");
 		expect(accepted?.replace(/\s+/g, " ")).toContain("12 May 2026");
 	});
+
+	test("ins/del runs carry a revision id and author (the accept/reject handle)", async () => {
+		const result = await applyRedline(await fixtureBytes(), {
+			targetText: TARGET,
+			newText: MODIFIED,
+		});
+		expect(result.applied).toBe(true);
+		if (!result.applied) return;
+		const edited = (await readDraftRuns(result.bytes)).find(
+			(p) => p.hasRevisions,
+		);
+		const revRun = edited?.runs.find((r) => r.kind !== "text");
+		expect(revRun?.revisionId).toBeGreaterThanOrEqual(0);
+		expect(revRun?.author).toBe("Patrick");
+		expect(edited?.runs.find((r) => r.kind === "text")?.revisionId).toBe(
+			undefined,
+		);
+	});
+});
+
+describe("resolveParagraphRevision (in-app accept/reject)", () => {
+	test("accept makes Patrick's redline permanent (== accept-all here)", async () => {
+		const edited = await applyRedline(await fixtureBytes(), {
+			targetText: TARGET,
+			newText: MODIFIED,
+		});
+		expect(edited.applied).toBe(true);
+		if (!edited.applied) return;
+		const idx = (await readDraftParagraphs(edited.bytes)).find((p) =>
+			p.text.includes("12 May 2026"),
+		)?.index;
+		expect(idx).toBeDefined();
+		if (!idx) return;
+
+		const resolved = await resolveParagraphRevision(
+			edited.bytes,
+			idx,
+			"accept",
+		);
+		expect(resolved.applied).toBe(true);
+		if (!resolved.applied) return;
+		const paragraphs = await readDraftParagraphs(resolved.bytes);
+		expect(paragraphs.some((p) => p.text === MODIFIED)).toBe(true);
+		// No pending revisions remain in that paragraph.
+		expect(paragraphs.find((p) => p.index === idx)?.hasRevisions).toBe(false);
+	});
+
+	test("reject restores the original text with no revisions left", async () => {
+		const edited = await applyRedline(await fixtureBytes(), {
+			targetText: TARGET,
+			newText: MODIFIED,
+		});
+		expect(edited.applied).toBe(true);
+		if (!edited.applied) return;
+		const idx = (await readDraftParagraphs(edited.bytes)).find((p) =>
+			p.text.includes("12 May 2026"),
+		)?.index;
+		if (!idx) return;
+
+		const resolved = await resolveParagraphRevision(
+			edited.bytes,
+			idx,
+			"reject",
+		);
+		expect(resolved.applied).toBe(true);
+		if (!resolved.applied) return;
+		const paragraphs = await readDraftParagraphs(resolved.bytes);
+		expect(paragraphs.some((p) => p.text === TARGET)).toBe(true);
+		expect(paragraphs.find((p) => p.index === idx)?.hasRevisions).toBe(false);
+	});
+
+	test("refuses a paragraph with no pending redline", async () => {
+		const result = await resolveParagraphRevision(
+			await fixtureBytes(),
+			3,
+			"accept",
+		);
+		expect(result.applied).toBe(false);
+	});
 });
 
 describe("addComment / listComments", () => {
@@ -306,6 +386,8 @@ describe("addComment / listComments", () => {
 		expect(after.length).toBe(before.length + 1);
 		const mine = after.find((c) => c.text.includes("response deadline"));
 		expect(mine?.author).toBe("Patrick");
+		// The comment reports the paragraph it's anchored in (for the review card).
+		expect(mine?.paragraphIndex).toBe(anchor.index);
 	});
 
 	test("reports applied:false for an anchor that isn't in the paragraph", async () => {

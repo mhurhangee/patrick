@@ -6,6 +6,7 @@ import type {
 	ClaimLimitation,
 	Document,
 	DocumentMeta,
+	DraftComment,
 	DraftStatus,
 	ExtractedDoc,
 	LimitationRead,
@@ -170,15 +171,37 @@ export const tasksApi = {
 			`/tasks/${id}/documents/${encodeURIComponent(filename)}/draft-status/clear-failures`,
 			{},
 		),
-	/** A .docx as paragraphs-of-runs, pending redlines marked ins/del — the preview. */
+	/** A .docx as paragraphs-of-runs (each run carrying its revision id + author)
+	 *  plus its comments — the review view's single fetch. */
 	docxText: (id: string, filename: string) =>
 		api.get<{
 			paragraphs: {
 				index: number;
-				runs: { text: string; kind: "text" | "ins" | "del" }[];
+				runs: {
+					text: string;
+					kind: "text" | "ins" | "del";
+					revisionId?: number;
+					author?: string;
+				}[];
 				hasRevisions: boolean;
 			}[];
+			comments: DraftComment[];
 		}>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/docx-text`),
+	/** Accept or reject Patrick's redline in one paragraph, in place. */
+	resolveDraft: (
+		id: string,
+		filename: string,
+		paragraphIndex: number,
+		action: "accept" | "reject",
+	) =>
+		api.post<
+			| { status: "applied" }
+			| { status: "parked"; parkedEdits: number }
+			| { status: "failed"; reason: string }
+		>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/resolve`, {
+			paragraphIndex,
+			action,
+		}),
 	/** Open a document in its native app (Word/LibreOffice) on the attorney's machine. */
 	openDocument: (id: string, filename: string) =>
 		api.post<{ ok: boolean }>(
