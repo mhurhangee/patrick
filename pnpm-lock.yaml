@@ -29,15 +29,18 @@ importers:
       '@ai-sdk/openai':
         specifier: ^4.0.0
         version: 4.0.0(zod@4.4.3)
-      '@eigenpal/docx-editor-agents':
-        specifier: workspace:*
-        version: link:../../packages/docx-editor-agents
+      '@ansonlai/docx-redline-js':
+        specifier: github:AnsonLai/docx-redline-js#541a6cf
+        version: https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056(@xmldom/xmldom@0.9.10)
       '@patrick/law':
         specifier: workspace:*
         version: link:../../packages/law
       '@patrick/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@xmldom/xmldom':
+        specifier: ^0.9.10
+        version: 0.9.10
       ai:
         specifier: ^7.0.2
         version: 7.0.2(zod@4.4.3)
@@ -81,12 +84,6 @@ importers:
       '@dnd-kit/react':
         specifier: ^0.5.0
         version: 0.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@eigenpal/docx-editor-agents':
-        specifier: workspace:*
-        version: link:../../packages/docx-editor-agents
-      '@eigenpal/docx-editor-react':
-        specifier: workspace:*
-        version: link:../../packages/docx-editor-react
       '@fontsource-variable/hanken-grotesk':
         specifier: ^5.2.8
         version: 5.2.8
@@ -114,9 +111,6 @@ importers:
       '@tauri-apps/plugin-dialog':
         specifier: ^2.7.1
         version: 2.7.1
-      '@tauri-apps/plugin-shell':
-        specifier: ^2.3.5
-        version: 2.3.5
       '@tesseract.js-data/eng':
         specifier: ^1.0.0
         version: 1.0.0
@@ -570,6 +564,16 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@ansonlai/docx-redline-js@https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056':
+    resolution: {gitHosted: true, integrity: sha512-I8xOULUGQzT2bAxYoenngeWOrvS+qU/3vf2G+Vqfffu1gC5v+JfSgIaGamfXXe9l6uQyKSIqYHxq2vkQI9WTeg==, tarball: https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056}
+    version: 0.1.4
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@xmldom/xmldom': '>=0.8.0'
+    peerDependenciesMeta:
+      '@xmldom/xmldom':
+        optional: true
 
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
@@ -2740,9 +2744,6 @@ packages:
   '@tauri-apps/plugin-dialog@2.7.1':
     resolution: {integrity: sha512-OK1UBXYt+ojcmxMktzzuyonYIFta8CmAASpX+CA+DTGK24KlHjhYI6x2iOJ/TjZF4N7/ACK1oFmEOjIY9IhzOQ==}
 
-  '@tauri-apps/plugin-shell@2.3.5':
-    resolution: {integrity: sha512-jewtULhiQ7lI7+owCKAjc8tYLJr92U16bPOeAa472LHJdgaibLP83NcfAF2e+wkEcA53FxKQAZ7byDzs2eeizg==}
-
   '@tesseract.js-data/eng@1.0.0':
     resolution: {integrity: sha512-mbTumm6KQPUHyzTPQaF3ObXYnx0SqqfV2nabqFVQBwD6Kl7PhGSLSzOlfFTWy0P3BjghaSKA2W9GB19Jk+ZcTg==}
 
@@ -3498,6 +3499,9 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
+
+  diff-match-patch@1.0.5:
+    resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
 
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
@@ -5073,6 +5077,12 @@ snapshots:
       - zod
 
   '@alloc/quick-lru@5.2.0': {}
+
+  '@ansonlai/docx-redline-js@https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056(@xmldom/xmldom@0.9.10)':
+    dependencies:
+      diff-match-patch: 1.0.5
+    optionalDependencies:
+      '@xmldom/xmldom': 0.9.10
 
   '@antfu/install-pkg@1.1.0':
     dependencies:
@@ -6952,10 +6962,6 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.11.1
 
-  '@tauri-apps/plugin-shell@2.3.5':
-    dependencies:
-      '@tauri-apps/api': 2.11.1
-
   '@tesseract.js-data/eng@1.0.0': {}
 
   '@testing-library/dom@10.4.1':
@@ -7754,6 +7760,8 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  diff-match-patch@1.0.5: {}
 
   diff@8.0.4: {}
 

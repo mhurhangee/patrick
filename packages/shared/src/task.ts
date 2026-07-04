@@ -39,6 +39,9 @@ export type Document = {
 	starred?: boolean;
 	/** True if Patrick created this file (vs an original the attorney added). */
 	createdInPatrick?: boolean;
+	/** True if the attorney unlocked this original for in-place tracked-changes
+	 *  editing (a backup snapshot is kept under .patrick/backups). */
+	unlocked?: boolean;
 	/** True if Patrick fetched this from a data service (a retrieved publication). */
 	retrieved?: boolean;
 	/** Where a retrieved publication came from (e.g. "EPO OPS", "Google Patents"). */
@@ -62,12 +65,26 @@ export type DocumentMeta = Record<
 		excluded?: boolean;
 		starred?: boolean;
 		createdInPatrick?: boolean;
+		unlocked?: boolean;
 		retrieved?: boolean;
 		source?: string;
 		contextMode?: "image" | "text";
 		suggestions?: string[];
 	}
 >;
+
+/** Editable ≡ a .docx Patrick owns (created) or the attorney unlocked in place.
+ *  The single predicate for "Patrick may write tracked changes to this file". */
+export function isEditableDoc(d: {
+	filename: string;
+	createdInPatrick?: boolean;
+	unlocked?: boolean;
+}): boolean {
+	return (
+		d.filename.toLowerCase().endsWith(".docx") &&
+		(!!d.createdInPatrick || !!d.unlocked)
+	);
+}
 
 /** A word with its box, normalized to page fraction (0–1) so it scales to any
  *  zoom; from OCR (positions the selectable overlay over a scan). */
@@ -115,6 +132,7 @@ export function toDocumentMeta(documents: Document[]): DocumentMeta {
 		if (d.excluded) entry.excluded = true;
 		if (d.starred) entry.starred = true;
 		if (d.createdInPatrick) entry.createdInPatrick = true;
+		if (d.unlocked) entry.unlocked = true;
 		if (d.retrieved) entry.retrieved = true;
 		if (d.source) entry.source = d.source;
 		if (d.contextMode) entry.contextMode = d.contextMode;

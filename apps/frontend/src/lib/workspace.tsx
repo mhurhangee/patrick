@@ -1,4 +1,4 @@
-import { type ChartType, docKind } from "@patrick/shared";
+import { type ChartType, docKind, isEditableDoc } from "@patrick/shared";
 import {
 	createContext,
 	type Dispatch,
@@ -84,7 +84,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				id: d.filename,
 				label: d.filename,
 				kind,
-				editable: kind === "docx" && !!d.createdInPatrick,
+				editable: isEditableDoc(d),
 				suggestions: d.suggestions,
 			});
 		}

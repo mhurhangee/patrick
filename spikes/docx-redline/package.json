@@ -1,0 +1,10 @@
+{
+  "name": "docx-redline-spike",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ansonlai/docx-redline-js": "github:AnsonLai/docx-redline-js",
+    "@xmldom/xmldom": "^0.9.10",
+    "jszip": "^3.10.1"
+  }
+}

@@ -14,12 +14,12 @@ import { Skeleton } from "@patrick/ui/components/skeleton";
 import { InfoTooltip } from "@patrick/ui/components/tooltip";
 import { useNavigate } from "@tanstack/react-router";
 import {
-	Copy,
 	Eye,
 	EyeOff,
 	FileImage,
 	FilePlus2,
 	FileText,
+	LockOpen,
 	Pencil,
 	Plus,
 	RefreshCw,
@@ -134,9 +134,9 @@ export function DocumentsNav() {
 			onSuccess: ({ filename }) => openDoc(filename),
 		});
 
-	const editCopy = (filename: string) =>
+	const unlockDoc = (filename: string) =>
 		unlock.mutate(filename, {
-			onSuccess: ({ filename: copy }) => openDoc(copy),
+			onSuccess: ({ filename: name }) => openDoc(name),
 		});
 
 	const renameDoc = (from: string, to: string) =>
@@ -178,7 +178,7 @@ export function DocumentsNav() {
 			}
 			onOpen={() => openDoc(doc.filename)}
 			onUpdate={(patch) => update(doc.filename, patch)}
-			onEditCopy={() => editCopy(doc.filename)}
+			onUnlock={() => unlockDoc(doc.filename)}
 			onRename={(to) => renameDoc(doc.filename, to)}
 			onDelete={() => deleteDoc(doc.filename)}
 			onExtract={() => extractText(doc.filename)}
@@ -265,7 +265,7 @@ function DocumentRow({
 	state,
 	onOpen,
 	onUpdate,
-	onEditCopy,
+	onUnlock,
 	onRename,
 	onDelete,
 	onExtract,
@@ -278,7 +278,7 @@ function DocumentRow({
 	state: RowState;
 	onOpen: () => void;
 	onUpdate: (patch: Partial<Document>) => void;
-	onEditCopy: () => void;
+	onUnlock: () => void;
 	onRename: (to: string) => void;
 	onDelete: () => void;
 	onExtract: () => void;
@@ -356,7 +356,7 @@ function DocumentRow({
 						doc={doc}
 						kind={kind}
 						onUpdate={onUpdate}
-						onEditCopy={onEditCopy}
+						onUnlock={onUnlock}
 						onStartRename={() => setRenaming(true)}
 						onAskDelete={() => setConfirmDelete(true)}
 						onExtract={onExtract}
@@ -407,7 +407,7 @@ function DocumentMenu({
 	doc,
 	kind,
 	onUpdate,
-	onEditCopy,
+	onUnlock,
 	onStartRename,
 	onAskDelete,
 	onExtract,
@@ -419,7 +419,7 @@ function DocumentMenu({
 	doc: Document;
 	kind: DocKind;
 	onUpdate: (patch: Partial<Document>) => void;
-	onEditCopy: () => void;
+	onUnlock: () => void;
 	onStartRename: () => void;
 	onAskDelete: () => void;
 	onExtract: () => void;
@@ -428,10 +428,11 @@ function DocumentMenu({
 	labelling: boolean;
 	labelError: string | null;
 }) {
-	// Originals are the attorney's files — Patrick never renames/deletes them;
-	// instead it offers an editable working copy.
+	// Originals are the attorney's files — Patrick never renames/deletes them.
+	// A .docx original can be UNLOCKED for in-place tracked-changes editing (a
+	// pristine backup is snapshotted under .patrick/backups first).
 	const isPatrick = !!doc.createdInPatrick;
-	const canEditCopy = kind === "docx" && !isPatrick;
+	const canUnlock = kind === "docx" && !isPatrick && !doc.unlocked;
 	const mode = doc.contextMode ?? "image";
 
 	return (
@@ -525,12 +526,12 @@ function DocumentMenu({
 				</DropdownMenuItem>
 
 				{/* File */}
-				{canEditCopy && (
+				{canUnlock && (
 					<>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem onSelect={onEditCopy}>
-							<Copy />
-							Edit a copy
+						<DropdownMenuItem onSelect={onUnlock}>
+							<LockOpen />
+							Unlock for editing
 						</DropdownMenuItem>
 					</>
 				)}

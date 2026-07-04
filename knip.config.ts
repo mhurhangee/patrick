@@ -14,6 +14,8 @@ const config: KnipConfig = {
 		"packages/docx-editor-agents",
 		"packages/docx-editor-react",
 	],
+	// Throwaway proof-of-concept scripts (run by hand with bun), not app code.
+	ignore: ["spikes/**"],
 	workspaces: {
 		"apps/frontend": {
 			entry: [

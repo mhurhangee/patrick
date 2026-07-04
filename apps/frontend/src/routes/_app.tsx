@@ -9,7 +9,6 @@ import { AppSidebar } from "@/components/shell/app-sidebar";
 import { useTheme } from "@/components/theme-provider";
 import { AgentChat } from "@/components/workspace/agent-chat";
 import { useProfile } from "@/hooks/use-profiles";
-import { ActiveEditorProvider } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { applyAppearance } from "@/lib/appearance";
 import { LayoutProvider, useLayout } from "@/lib/layout";
@@ -30,9 +29,7 @@ function AppLayout() {
 		<WorkspaceProvider>
 			<CitationNavProvider>
 				<LayoutProvider>
-					<ActiveEditorProvider>
-						<AppShell />
-					</ActiveEditorProvider>
+					<AppShell />
 				</LayoutProvider>
 			</CitationNavProvider>
 		</WorkspaceProvider>

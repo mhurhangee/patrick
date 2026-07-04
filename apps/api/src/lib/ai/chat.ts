@@ -1,10 +1,9 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { getAiSdkTools } from "@eigenpal/docx-editor-agents/ai-sdk/server";
-import { DocxReviewer } from "@eigenpal/docx-editor-agents/server";
 import { fileCachedFetcher, lookupProvisions } from "@patrick/law";
 import {
 	type ExchangeMetadata,
+	isEditableDoc,
 	modelsForProvider,
 	PATRICK_DOCS,
 	type PinnedSource,
@@ -31,9 +30,11 @@ import {
 	readDocumentMeta,
 	readExtractedText,
 } from "../documents";
+import { extractDocxText } from "../docx/redline";
 import { readProfile } from "../profiles";
 import { readTask } from "../tasks";
 import { buildChartTools, chartManifest } from "./chart-tools";
+import { buildDraftTools } from "./draft-tools";
 import { createFindLaw } from "./find-law";
 import { createModel, reasoningOptions, vendorOf } from "./model";
 import { type AvailableDoc, buildSystemPrompt } from "./prompt";
@@ -66,18 +67,6 @@ async function frozenTemplate(
 	return existing?.systemTemplate ?? profile.prompts.agentpat;
 }
 
-// The drafting subset Patrick gets: locate + mutate, plus reads (the active
-// draft isn't in the static prompt — the agent reads it live, always current).
-const TOOL_ALLOW = new Set([
-	"read_document",
-	"read_selection",
-	"find_text",
-	"read_changes",
-	"read_comments",
-	"add_comment",
-	"suggest_change",
-]);
-
 type RequestBody = {
 	messages: UIMessage[];
 	profileId: string;
@@ -103,21 +92,32 @@ async function availableDocs(
 	folder: string,
 	pinned: PinnedSource[],
 	activeDraft: string | null,
-): Promise<AvailableDoc[]> {
+): Promise<{ available: AvailableDoc[]; otherDrafts: AvailableDoc[] }> {
 	const docs = await listDocuments(folder);
 	const pinnedNames = new Set(pinned.map((p) => p.filename));
-	return docs
-		.filter((d) => {
-			const editable =
-				d.filename.toLowerCase().endsWith(".docx") && !!d.createdInPatrick;
-			return (
-				!editable &&
-				!d.excluded &&
-				!pinnedNames.has(d.filename) &&
-				d.filename !== activeDraft
-			);
-		})
-		.map((d) => ({ filename: d.filename, label: d.label }));
+	const toEntry = (d: { filename: string; label?: string }) => ({
+		filename: d.filename,
+		label: d.label,
+	});
+	return {
+		available: docs
+			.filter(
+				(d) =>
+					!isEditableDoc(d) &&
+					!d.excluded &&
+					!pinnedNames.has(d.filename) &&
+					d.filename !== activeDraft,
+			)
+			.map(toEntry),
+		// Editable drafts other than the active one: the tools can't touch them,
+		// but the manifest must still name them or they vanish from Patrick's
+		// world (the attorney focuses a draft's tab to make it active).
+		otherDrafts: docs
+			.filter(
+				(d) => isEditableDoc(d) && !d.excluded && d.filename !== activeDraft,
+			)
+			.map(toEntry),
+	};
 }
 
 // HITL: no-execute tools. The model calls them to propose an action; the call
@@ -188,7 +188,7 @@ const createDraft = tool({
 
 const requestUnlock = tool({
 	description:
-		"Propose making an editable copy of an original .docx document (the attorney's originals are read-only) so you can draft amendments in it. The attorney accepts; the copy opens as the active draft. Only works on .docx files — PDFs and other formats can't be edited, so don't propose it for them; instead explain that, or use createDraft to start a fresh document.",
+		"Propose unlocking an original .docx for editing — the attorney's originals are read-only until they unlock one. On accept, the document itself becomes the active draft you edit as tracked changes (a pristine backup is snapshotted first; rejecting your redlines in Word restores the text exactly). Only works on .docx files — PDFs and other formats can't be edited, so don't propose it for them; instead explain that, or use createDraft to start a fresh document.",
 	inputSchema: z.object({
 		filename: z
 			.string()
@@ -276,24 +276,31 @@ const epcLookup = tool({
 	}),
 });
 
-// Read-only docx → indexed plain text, headless from disk. The headless parse is
-// the pricey bit and originals don't change, so memoise by path+mtime — a
-// multi-turn chat then extracts each pinned docx once, not every turn.
+// Read-only docx → plain text, headless from disk. Originals don't change, so
+// memoise by path+mtime — a multi-turn chat then extracts each pinned docx
+// once, not every turn.
+//
+// A pinned docx that was later UNLOCKED is a special case: the live file is now
+// the mutable draft (Patrick's pending redlines would read as accepted text,
+// and every edit would churn the cached prefix). The pinned source stays what
+// the attorney actually pinned — the pristine snapshot under .patrick/backups.
 const docxTextCache = new Map<string, { mtimeMs: number; text: string }>();
 
-async function docxText(folder: string, filename: string): Promise<string> {
-	const path = join(folder, filename);
+async function docxText(
+	folder: string,
+	filename: string,
+	pristine = false,
+): Promise<string> {
+	const backup = join(folder, ".patrick", "backups", filename);
+	const path =
+		pristine && (await stat(backup).catch(() => null))
+			? backup
+			: join(folder, filename);
 	try {
 		const mtimeMs = (await stat(path)).mtimeMs;
 		const cached = docxTextCache.get(path);
 		if (cached && cached.mtimeMs === mtimeMs) return cached.text;
-		const buf = await readFile(path);
-		const bytes = buf.buffer.slice(
-			buf.byteOffset,
-			buf.byteOffset + buf.byteLength,
-		) as ArrayBuffer;
-		const reviewer = await DocxReviewer.fromBuffer(bytes, "Patrick");
-		const text = reviewer.getContentAsText().trim();
+		const text = await extractDocxText(new Uint8Array(await readFile(path)));
 		docxTextCache.set(path, { mtimeMs, text });
 		return text;
 	} catch {
@@ -391,7 +398,11 @@ export async function pinnedSourcesMessage(
 					return [];
 				}
 			}
-			const text = await docxText(folder, src.filename);
+			const text = await docxText(
+				folder,
+				src.filename,
+				!!meta[src.filename]?.unlocked,
+			);
 			console.log(
 				`[context] ${src.filename} → docx text, ${text.length} chars`,
 			);
@@ -440,12 +451,14 @@ export async function pinnedWithRequiredPrimary(
 	} as ModelMessage;
 }
 
-// The tools Patrick gets for a turn: editor tools (no execute — they run against
-// the live editor client-side) + the law/search/HITL tools. Web search and the
-// open-a-file proposal are conditional. Built in one place so the inspection
-// panel can list the exact active tool names without drifting from what ships.
+// The tools Patrick gets for a turn: the draft tools (server-executed against
+// the active draft on disk, through the dance) + the law/search/HITL tools.
+// Web search and the open-a-file proposal are conditional. Built in one place
+// so the inspection panel can list the exact active tool names without
+// drifting from what ships.
 function buildChatTools(opts: {
 	folder: string;
+	activeDraft: string | null;
 	profile: Profile;
 	provider: Provider;
 	apiKey: string;
@@ -454,9 +467,7 @@ function buildChatTools(opts: {
 	hasDocs: boolean;
 }) {
 	return {
-		...Object.fromEntries(
-			Object.entries(getAiSdkTools()).filter(([name]) => TOOL_ALLOW.has(name)),
-		),
+		...buildDraftTools(opts.folder, opts.activeDraft),
 		suggestLabel,
 		suggestBrief,
 		suggestPrompt,
@@ -498,7 +509,7 @@ export async function handleChat(c: Context) {
 
 	const pinnedSources = body.pinnedSources ?? [];
 	const activeDraft = body.activeDraft ?? null;
-	const available = await availableDocs(
+	const { available, otherDrafts } = await availableDocs(
 		task.folder,
 		pinnedSources,
 		activeDraft,
@@ -519,12 +530,14 @@ export async function handleChat(c: Context) {
 		available,
 		charts,
 		template,
+		otherDrafts,
 	);
 
 	// Adding/removing a capability? Do it in buildChatTools — and update
 	// PATRICK_CAPABILITIES in @patrick/shared so the prompt describes Patrick honestly.
 	const tools = buildChatTools({
 		folder: task.folder,
+		activeDraft,
 		profile,
 		provider,
 		apiKey,

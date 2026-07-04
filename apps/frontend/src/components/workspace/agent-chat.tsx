@@ -1,14 +1,14 @@
 import { useChat } from "@ai-sdk/react";
-import { useDocxAgentTools } from "@eigenpal/docx-editor-agents/react";
-import type { DocxEditorRef } from "@eigenpal/docx-editor-react";
 import {
 	type Chat,
 	contextWindowFor,
+	DRAFT_TOOL_NAMES,
 	docKind,
 	type ExchangeContext,
 	type ExchangeMetadata,
 	MODELS_BY_ID,
 	MUTATING_CHART_TOOLS,
+	MUTATING_DRAFT_TOOLS,
 	type PinnedSource,
 	READ_CHART_TOOL,
 	toStoredMessage,
@@ -26,7 +26,6 @@ import {
 } from "ai";
 import { ArrowUp, ChevronDown, Globe, Square } from "lucide-react";
 import {
-	type RefObject,
 	useCallback,
 	useEffect,
 	useLayoutEffect,
@@ -52,7 +51,6 @@ import {
 	useUpdateTask,
 } from "@/hooks/use-tasks";
 import { useActiveChat } from "@/lib/active-chat";
-import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { estimateDocTokens, useDocSize } from "@/lib/doc-size";
@@ -73,13 +71,13 @@ import { ContextRing, type ContextSource } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
 import { SystemCard } from "./system-card";
 
-// Tools that execute on the server (their results stream back) — the client must
-// not route them to the docx editor, which would error "Editor not ready". Like
-// HITL tools, they're skipped in onToolCall.
+// Tools that execute on the server (their results stream back) — the client
+// skips them in onToolCall, like HITL tools.
 // Chart-driving tools run on the server (they read/write the Chart JSON). The mutating ones
 // refresh the open chart viewer via query invalidation; read_chart is read-only. Names come
 // from @patrick/shared so they can't drift from what buildChartTools actually ships.
 const CHART_TOOLS = new Set<string>(MUTATING_CHART_TOOLS);
+const DRAFT_MUTATORS = new Set<string>(MUTATING_DRAFT_TOOLS);
 
 const SERVER_TOOLS = new Set<string>([
 	"patrick_help",
@@ -89,6 +87,9 @@ const SERVER_TOOLS = new Set<string>([
 	"google_search",
 	READ_CHART_TOOL,
 	...CHART_TOOLS,
+	// Draft tools run server-side too — headless tracked changes on the .docx
+	// on disk (through the dance); nothing executes in the webview.
+	...DRAFT_TOOL_NAMES,
 ]);
 
 // One user message + every assistant message that follows it (the loop produces
@@ -249,11 +250,11 @@ function ChatSession({
 		initial?.pinnedSources ?? [],
 	);
 
-	// Patrick edits ONE live draft at a time (the editor tools bind to a single
-	// editor). The active draft is sticky: the focused editable doc, else the one
-	// you were last editing, else any open editable doc — so it doesn't vanish
-	// when you focus a source to read it. It's not in the static context; the
-	// agent reads it live via the editor tools.
+	// Patrick edits ONE draft at a time (the draft tools bind to a single file).
+	// The active draft is sticky: the focused editable doc, else the one you were
+	// last editing, else any open editable doc — so it doesn't vanish when you
+	// focus a source to read it. It's not in the static context; the agent reads
+	// the file live via read_draft.
 	const focusedDoc = focused ? getDoc(focused) : undefined;
 	const openEditableIds = useMemo(() => {
 		return columnList
@@ -267,20 +268,16 @@ function ChatSession({
 		setActiveDraft((prev) => {
 			if (focusedDoc?.editable) return focusedDoc.id;
 			if (prev && openEditableIds.includes(prev)) return prev;
+			// A draft the workspace doesn't know yet (just created/unlocked, the
+			// documents refetch still in flight) stays active — clobbering it here
+			// would race the agent loop's auto-continue with activeDraft: null.
+			if (prev && !getDoc(prev)) return prev;
 			return openEditableIds[0] ?? null;
 		});
-	}, [focusedDoc, openEditableIds]);
-	const editorRef = useEditorRefFor(activeDraft);
-	const waitForEditor = useEditorReadiness();
-
+	}, [focusedDoc, openEditableIds, getDoc]);
 	// The chart tab in focus, so "this chart" resolves server-side. Unlike the draft it isn't
 	// sticky — Patrick reads any chart by id via read_chart; this only disambiguates deixis.
 	const openChart = focused && getChart(focused) ? focused : null;
-
-	const { executeToolCall } = useDocxAgentTools({
-		editorRef: editorRef as RefObject<DocxEditorRef | null>,
-		author: profile?.identity.author?.trim() || "Patrick",
-	});
 
 	// Web search: a per-chat toolbar toggle (default on). Patrick can search the
 	// web; off removes the tool for the turn (also the escape hatch if a model
@@ -395,48 +392,54 @@ function ChatSession({
 				});
 				return;
 			}
-			let output: unknown;
-			try {
-				output = executeToolCall(
-					toolCall.toolName,
-					toolCall.input as Record<string, unknown>,
-				);
-			} catch (err) {
-				output = {
-					success: false,
-					error: err instanceof Error ? err.message : "tool execution failed",
-				};
-			}
+			// Anything else would be a tool nobody executes — resolve it rather than
+			// hang the agent loop forever.
 			addToolResult({
 				tool: toolCall.toolName,
 				toolCallId: toolCall.toolCallId,
-				output,
+				output: { error: `unknown client tool: ${toolCall.toolName}` },
 			});
 		},
 	});
 
-	// Chart tools mutate the Chart JSON server-side; refresh the charts list and any open
-	// viewer when one completes. Dedupe by toolCallId so each result invalidates once.
+	// Chart and draft tools mutate server-side state; refresh their viewers the
+	// moment a mutating result streams back. Dedupe by toolCallId so each result
+	// invalidates once.
 	const queryClient = useQueryClient();
-	const seenChartTools = useRef(new Set<string>());
+	const seenMutatingTools = useRef(new Set<string>());
 	useEffect(() => {
 		const taskId = activeTaskIdRef.current;
 		if (!taskId) return;
-		// Only the last assistant message can carry a newly-arrived chart result (earlier ones
+		// Only the last assistant message can carry a newly-arrived result (earlier ones
 		// were handled while they were last, deduped by toolCallId) — so don't re-walk the whole
 		// transcript on every streaming tick.
 		const last = messages[messages.length - 1];
 		if (last?.role !== "assistant") return;
-		let hit = false;
+		let chartHit = false;
+		let draftHit = false;
 		for (const part of last.parts) {
 			if (!isToolUIPart(part) || part.state !== "output-available") continue;
-			if (!CHART_TOOLS.has(getToolName(part))) continue;
-			if (seenChartTools.current.has(part.toolCallId)) continue;
-			seenChartTools.current.add(part.toolCallId);
-			hit = true;
+			const name = getToolName(part);
+			const isChart = CHART_TOOLS.has(name);
+			const isDraft = DRAFT_MUTATORS.has(name);
+			if (!isChart && !isDraft) continue;
+			if (seenMutatingTools.current.has(part.toolCallId)) continue;
+			seenMutatingTools.current.add(part.toolCallId);
+			if (isChart) chartHit = true;
+			if (isDraft) draftHit = true;
 		}
-		if (hit)
+		if (chartHit)
 			queryClient.invalidateQueries({ queryKey: ["tasks", taskId, "charts"] });
+		if (draftHit && activeDraftRef.current) {
+			// The draft file changed on disk (or an edit parked) — refresh the
+			// preview and the dance status without waiting for the poll.
+			queryClient.invalidateQueries({
+				queryKey: ["tasks", taskId, "docx-text", activeDraftRef.current],
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["tasks", taskId, "draft-status", activeDraftRef.current],
+			});
+		}
 	}, [messages, queryClient]);
 
 	const [composerEmpty, setComposerEmpty] = useState(true);
@@ -573,13 +576,16 @@ function ChatSession({
 			},
 			// Return null on failure rather than throwing — the card awaits this and
 			// must always resolve the tool call, or the agent loop hangs forever.
-			// Wait for the new editor to mount + its agent to be ready before
-			// resolving, so the agent's first edit doesn't race an unbound editor.
+			// Set the active draft SYNCHRONOUSLY (state + the ref the transport
+			// reads): the agent loop auto-continues the moment the tool resolves,
+			// racing the documents refetch — waiting on the workspace effect would
+			// ship activeDraft: null and the agent's first read_draft would fail.
 			createDraft: async (name) => {
 				try {
 					const res = await createDoc.mutateAsync(name);
+					setActiveDraft(res.filename);
+					activeDraftRef.current = res.filename;
 					open(res.filename);
-					await waitForEditor(res.filename);
 					return res.filename;
 				} catch {
 					return null;
@@ -588,8 +594,9 @@ function ChatSession({
 			unlockSource: async (filename) => {
 				try {
 					const res = await unlockDoc.mutateAsync(filename);
+					setActiveDraft(res.filename);
+					activeDraftRef.current = res.filename;
 					open(res.filename);
-					await waitForEditor(res.filename);
 					return res.filename;
 				} catch {
 					return null;
@@ -651,7 +658,6 @@ function ChatSession({
 			fetchPub.mutateAsync,
 			updateTask.mutate,
 			updateProfile.mutate,
-			waitForEditor,
 		],
 	);
 

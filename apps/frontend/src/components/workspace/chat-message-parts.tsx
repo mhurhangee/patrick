@@ -37,36 +37,27 @@ type Presenter = {
 };
 
 const PRESENTERS: Record<string, Presenter> = {
-	read_document: {
-		label: "Read the document",
-		runningLabel: "Reading the document…",
+	read_draft: {
+		label: "Read the draft",
+		runningLabel: "Reading the draft…",
 	},
-	read_selection: {
-		label: "Read the selection",
-		runningLabel: "Reading the selection…",
+	edit_paragraph: {
+		label: "Redline a paragraph",
+		runningLabel: "Drafting a redline…",
+		summary: (input, output) =>
+			output?.error ??
+			(output?.parked
+				? "parked — lands when the draft is closed"
+				: (input?.new_text ?? null)),
 	},
-	read_page: { label: "Read a page", runningLabel: "Reading a page…" },
-	read_pages: { label: "Read pages", runningLabel: "Reading pages…" },
-	find_text: {
-		label: "Find text",
-		runningLabel: "Searching the document…",
-		summary: (input) => input?.query ?? input?.text ?? null,
-	},
-	read_changes: {
-		label: "Review tracked changes",
-		runningLabel: "Reviewing changes…",
-	},
-	read_comments: { label: "Read comments", runningLabel: "Reading comments…" },
-	add_comment: {
-		label: "Add a comment",
+	add_draft_comment: {
+		label: "Add a comment to the draft",
 		runningLabel: "Adding a comment…",
-		summary: (input) => input?.text ?? null,
+		summary: (input, output) => output?.error ?? input?.text ?? null,
 	},
-	suggest_change: {
-		label: "Suggest a change",
-		runningLabel: "Proposing a tracked change…",
-		summary: (input) =>
-			input?.replaceWith ?? input?.replacement ?? input?.search ?? null,
+	read_draft_comments: {
+		label: "Read the draft's comments",
+		runningLabel: "Reading comments…",
 	},
 	ep_law_lookup: {
 		label: "Recall EPC law",
@@ -492,7 +483,7 @@ export type ToolUiHandlers = {
 	setLabel: (filename: string, label: string, suggestions?: string[]) => void;
 	/** Create a blank draft + open it; resolves to its filename (createDraft). */
 	createDraft: (name: string) => Promise<string | null>;
-	/** Make an editable copy of an original + open it (requestUnlock). */
+	/** Unlock an original for in-place editing + open it (requestUnlock). */
 	unlockSource: (filename: string) => Promise<string | null>;
 	/** Apply a proposed task brief — replace it, or append a note (suggestBrief acceptance). */
 	suggestBrief: (brief: string, append?: boolean) => void;
@@ -613,8 +604,8 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 	},
 	requestUnlock: {
 		icon: <FilePen size={13} className={iconCls} />,
-		title: (i) => <>Make an editable copy of {bold(i.filename)} to draft in?</>,
-		acceptLabel: "Create copy",
+		title: (i) => <>Unlock {bold(i.filename)} for tracked-changes editing?</>,
+		acceptLabel: "Unlock",
 		rejectLabel: "No",
 		accept: async (i, h) => {
 			const filename = i.filename ? await h.unlockSource(i.filename) : null;
@@ -623,7 +614,7 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 		reject: () => ({ unlocked: false }),
 		resolved: (o) =>
 			o.unlocked ? (
-				<>Created editable copy {bold(o.filename)}.</>
+				<>Unlocked {bold(o.filename)} for editing.</>
 			) : (
 				<>Left it as-is.</>
 			),

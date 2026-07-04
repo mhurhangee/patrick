@@ -42,21 +42,22 @@ import {
 	readExtractedText,
 	readSearchIndex,
 	renameDocument,
-	saveDocumentBytes,
 	saveExtractedText,
 	saveRetrievedDocument,
 	saveSearchIndex,
-	unlockDocumentCopy,
+	unlockDocumentInPlace,
 	writeDocumentMeta,
 } from "../lib/documents";
+import { danceFor } from "../lib/docx/dance";
+import { readDraftRuns } from "../lib/docx/redline";
 import { fetchPublication } from "../lib/patents";
 import { readProfile } from "../lib/profiles";
 import { deleteTask, listTasks, readTask, writeTask } from "../lib/tasks";
 
 export const tasks = new Hono();
 
-// Patrick chat — streams a UI message response; docx tool calls round-trip to
-// the client to run against the live editor. See lib/ai/chat.ts.
+// Patrick chat — streams a UI message response; draft edits execute server-side
+// against the .docx on disk (tracked changes via the dance). See lib/ai/chat.ts.
 tasks.post("/:id/chat", handleChat);
 
 // Persisted chats (under <folder>/.patrick/chats). Saved on each turn's finish.
@@ -362,33 +363,18 @@ tasks.post("/:id/publication", async (c) => {
 	return c.json({ filename, summary: result.summary }, 201);
 });
 
-// Unlock an original for editing → visible "(Patrick)" working copy in the folder.
-tasks.post("/:id/documents/:filename/copy", async (c) => {
+// Unlock an original .docx for in-place tracked-changes editing (the pristine
+// bytes are snapshotted to .patrick/backups first).
+tasks.post("/:id/documents/:filename/unlock", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const name = await unlockDocumentCopy(
+	const name = await unlockDocumentInPlace(
 		task.folder,
 		basename(c.req.param("filename")),
 	);
 	return name
 		? c.json({ filename: name }, 201)
 		: c.json({ error: "not found" }, 404);
-});
-
-// Save edited bytes back to a Patrick-owned doc. Originals are refused.
-tasks.put("/:id/documents/:filename", async (c) => {
-	const task = await readTask(c.req.param("id"));
-	if (!task) return c.json({ error: "not found" }, 404);
-	const bytes = await c.req.arrayBuffer();
-	const result = await saveDocumentBytes(
-		task.folder,
-		basename(c.req.param("filename")),
-		bytes,
-	);
-	if (result === "not-found") return c.json({ error: "file not found" }, 404);
-	if (result === "forbidden")
-		return c.json({ error: "original is read-only" }, 403);
-	return c.json({ ok: true });
 });
 
 // Rename a Patrick-owned doc. Originals are refused.
@@ -465,6 +451,67 @@ tasks.get("/:id/documents/:filename/text", async (c) => {
 		basename(c.req.param("filename")),
 	);
 	return doc ? c.json(doc) : c.json({ error: "not found" }, 404);
+});
+
+// The dance, observable: lock state, parked edits, last save, @Patrick comment
+// mentions — the draft panel polls this while a docx tab is open.
+tasks.get("/:id/documents/:filename/draft-status", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const dance = danceFor(task.folder, basename(c.req.param("filename")));
+	return c.json(await dance.status());
+});
+
+// Acknowledge surfaced parked-edit failures (the panel showed them).
+tasks.post(
+	"/:id/documents/:filename/draft-status/clear-failures",
+	async (c) => {
+		const task = await readTask(c.req.param("id"));
+		if (!task) return c.json({ error: "not found" }, 404);
+		danceFor(task.folder, basename(c.req.param("filename"))).clearFailures();
+		return c.json({ ok: true });
+	},
+);
+
+// A .docx as paragraphs-of-runs, pending redlines marked ins/del — the in-app
+// preview; the real review (accept/reject) happens in Word.
+tasks.get("/:id/documents/:filename/docx-text", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const name = basename(c.req.param("filename"));
+	const file = Bun.file(join(task.folder, name));
+	if (!(await file.exists())) return c.json({ error: "file not found" }, 404);
+	try {
+		const paragraphs = await readDraftRuns(
+			new Uint8Array(await file.arrayBuffer()),
+		);
+		return c.json({ paragraphs });
+	} catch {
+		return c.json({ error: "could not read this .docx" }, 422);
+	}
+});
+
+// Open a document in its native app (Word/LibreOffice) — the api runs on the
+// attorney's machine (Tauri sidecar / local dev), so a plain OS opener works.
+tasks.post("/:id/documents/:filename/open", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const name = basename(c.req.param("filename"));
+	const path = join(task.folder, name);
+	if (!(await Bun.file(path).exists()))
+		return c.json({ error: "file not found" }, 404);
+	const cmd =
+		process.platform === "darwin"
+			? ["open", path]
+			: process.platform === "win32"
+				? ["cmd", "/c", "start", "", path]
+				: ["xdg-open", path];
+	try {
+		Bun.spawn(cmd, { stdout: "ignore", stderr: "ignore" });
+		return c.json({ ok: true });
+	} catch {
+		return c.json({ error: "could not open the document" }, 500);
+	}
 });
 
 // Store / load the search-index sidecar for a document — the frontend builds it
