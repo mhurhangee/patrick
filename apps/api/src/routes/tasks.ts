@@ -41,6 +41,7 @@ import {
 	listDocuments,
 	readExtractedText,
 	readSearchIndex,
+	relockDocument,
 	renameDocument,
 	saveExtractedText,
 	saveRetrievedDocument,
@@ -375,6 +376,17 @@ tasks.post("/:id/documents/:filename/unlock", async (c) => {
 	return name
 		? c.json({ filename: name }, 201)
 		: c.json({ error: "not found" }, 404);
+});
+
+// Re-lock an unlocked original — flip it back to read-only.
+tasks.post("/:id/documents/:filename/relock", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const ok = await relockDocument(
+		task.folder,
+		basename(c.req.param("filename")),
+	);
+	return ok ? c.json({ ok: true }) : c.json({ error: "not unlocked" }, 400);
 });
 
 // Rename a Patrick-owned doc. Originals are refused.

@@ -19,6 +19,7 @@ import {
 	FileImage,
 	FilePlus2,
 	FileText,
+	Lock,
 	LockOpen,
 	Pencil,
 	Plus,
@@ -40,6 +41,7 @@ import {
 	useExtractText,
 	useGenerateLabel,
 	useRefreshDocuments,
+	useRelockDocument,
 	useRenameDocument,
 	useSaveDocuments,
 	useTaskDocuments,
@@ -66,6 +68,7 @@ export function DocumentsNav() {
 	const save = useSaveDocuments(taskId);
 	const create = useCreateDocument(taskId);
 	const unlock = useUnlockDocument(taskId);
+	const relock = useRelockDocument(taskId);
 	const rename = useRenameDocument(taskId);
 	const del = useDeleteDocument(taskId);
 	const refresh = useRefreshDocuments(taskId);
@@ -139,6 +142,8 @@ export function DocumentsNav() {
 			onSuccess: ({ filename: name }) => openDoc(name),
 		});
 
+	const relockDoc = (filename: string) => relock.mutate(filename);
+
 	const renameDoc = (from: string, to: string) =>
 		rename.mutate(
 			{ from, to },
@@ -179,6 +184,7 @@ export function DocumentsNav() {
 			onOpen={() => openDoc(doc.filename)}
 			onUpdate={(patch) => update(doc.filename, patch)}
 			onUnlock={() => unlockDoc(doc.filename)}
+			onRelock={() => relockDoc(doc.filename)}
 			onRename={(to) => renameDoc(doc.filename, to)}
 			onDelete={() => deleteDoc(doc.filename)}
 			onExtract={() => extractText(doc.filename)}
@@ -266,6 +272,7 @@ function DocumentRow({
 	onOpen,
 	onUpdate,
 	onUnlock,
+	onRelock,
 	onRename,
 	onDelete,
 	onExtract,
@@ -279,6 +286,7 @@ function DocumentRow({
 	onOpen: () => void;
 	onUpdate: (patch: Partial<Document>) => void;
 	onUnlock: () => void;
+	onRelock: () => void;
 	onRename: (to: string) => void;
 	onDelete: () => void;
 	onExtract: () => void;
@@ -357,6 +365,7 @@ function DocumentRow({
 						kind={kind}
 						onUpdate={onUpdate}
 						onUnlock={onUnlock}
+						onRelock={onRelock}
 						onStartRename={() => setRenaming(true)}
 						onAskDelete={() => setConfirmDelete(true)}
 						onExtract={onExtract}
@@ -408,6 +417,7 @@ function DocumentMenu({
 	kind,
 	onUpdate,
 	onUnlock,
+	onRelock,
 	onStartRename,
 	onAskDelete,
 	onExtract,
@@ -420,6 +430,7 @@ function DocumentMenu({
 	kind: DocKind;
 	onUpdate: (patch: Partial<Document>) => void;
 	onUnlock: () => void;
+	onRelock: () => void;
 	onStartRename: () => void;
 	onAskDelete: () => void;
 	onExtract: () => void;
@@ -433,6 +444,7 @@ function DocumentMenu({
 	// pristine backup is snapshotted under .patrick/backups first).
 	const isPatrick = !!doc.createdInPatrick;
 	const canUnlock = kind === "docx" && !isPatrick && !doc.unlocked;
+	const canRelock = !isPatrick && !!doc.unlocked;
 	const mode = doc.contextMode ?? "image";
 
 	return (
@@ -532,6 +544,15 @@ function DocumentMenu({
 						<DropdownMenuItem onSelect={onUnlock}>
 							<LockOpen />
 							Unlock for editing
+						</DropdownMenuItem>
+					</>
+				)}
+				{canRelock && (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onSelect={onRelock}>
+							<Lock />
+							Lock (stop editing)
 						</DropdownMenuItem>
 					</>
 				)}

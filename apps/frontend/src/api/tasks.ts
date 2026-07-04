@@ -149,6 +149,12 @@ export const tasksApi = {
 			`/tasks/${id}/documents/${encodeURIComponent(filename)}/unlock`,
 			{},
 		),
+	/** Re-lock an unlocked original — back to read-only. */
+	relockDocument: (id: string, filename: string) =>
+		api.post<{ ok: boolean }>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/relock`,
+			{},
+		),
 	/** Rename a Patrick-owned doc; returns the (possibly deduped) new filename. */
 	renameDocument: (id: string, from: string, to: string) =>
 		api.post<{ filename: string }>(

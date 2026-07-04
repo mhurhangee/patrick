@@ -98,6 +98,14 @@ export function useUnlockDocument(id: string) {
 	});
 }
 
+export function useRelockDocument(id: string) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (filename: string) => tasksApi.relockDocument(id, filename),
+		onSuccess: () => qc.invalidateQueries({ queryKey: keys.documents(id) }),
+	});
+}
+
 export function useGenerateLabel(id: string) {
 	const qc = useQueryClient();
 	return useMutation({

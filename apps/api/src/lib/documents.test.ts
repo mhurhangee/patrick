@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readDocumentMeta, unlockDocumentInPlace } from "./documents";
+import {
+	readDocumentMeta,
+	relockDocument,
+	unlockDocumentInPlace,
+} from "./documents";
 
 let folder: string;
 
@@ -47,5 +51,26 @@ describe("unlockDocumentInPlace", () => {
 	test("refuses non-docx and missing files", async () => {
 		expect(await unlockDocumentInPlace(folder, "art.pdf")).toBeNull();
 		expect(await unlockDocumentInPlace(folder, "ghost.docx")).toBeNull();
+	});
+});
+
+describe("relockDocument", () => {
+	test("flips an unlocked original back to read-only (backup stays)", async () => {
+		await unlockDocumentInPlace(folder, "filing.docx");
+		expect(await relockDocument(folder, "filing.docx")).toBe(true);
+		expect((await readDocumentMeta(folder))["filing.docx"]?.unlocked).toBe(
+			undefined,
+		);
+		// The pristine backup is kept — re-unlock reuses it.
+		expect(
+			await readFile(
+				join(folder, ".patrick", "backups", "filing.docx"),
+				"utf8",
+			),
+		).toBe("original bytes");
+	});
+
+	test("refuses a doc that isn't an unlocked original", async () => {
+		expect(await relockDocument(folder, "filing.docx")).toBe(false);
 	});
 });
