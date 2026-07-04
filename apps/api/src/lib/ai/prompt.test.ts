@@ -24,6 +24,7 @@ function build(
 		pinned?: PinnedSource[];
 		draft?: string | null;
 		available?: AvailableDoc[];
+		otherDrafts?: AvailableDoc[];
 		charts?: string;
 		middle?: string;
 	} = {},
@@ -35,6 +36,7 @@ function build(
 		opts.available ?? [],
 		opts.charts ?? "",
 		opts.middle ?? "",
+		opts.otherDrafts ?? [],
 	);
 }
 
@@ -86,6 +88,16 @@ describe("buildSystemPrompt — manifest (lists, never content)", () => {
 		expect(withDraft).toContain("Active draft: Response (Patrick).docx");
 		expect(withDraft).toContain("edit_paragraph");
 		expect(build({ draft: null })).toContain("No editable draft is open.");
+	});
+
+	test("names other editable drafts (they must not vanish from Patrick's world)", () => {
+		const out = build({
+			draft: "Response (Patrick).docx",
+			otherDrafts: [{ filename: "claims.docx", label: "amended claims" }],
+		});
+		expect(out).toContain("Other editable drafts");
+		expect(out).toContain("claims.docx — amended claims");
+		expect(build({ draft: "x.docx" })).not.toContain("Other editable drafts");
 	});
 
 	test("folder-awareness lists available docs with labels + the requestOpenFile gate", () => {

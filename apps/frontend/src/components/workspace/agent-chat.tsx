@@ -268,9 +268,13 @@ function ChatSession({
 		setActiveDraft((prev) => {
 			if (focusedDoc?.editable) return focusedDoc.id;
 			if (prev && openEditableIds.includes(prev)) return prev;
+			// A draft the workspace doesn't know yet (just created/unlocked, the
+			// documents refetch still in flight) stays active — clobbering it here
+			// would race the agent loop's auto-continue with activeDraft: null.
+			if (prev && !getDoc(prev)) return prev;
 			return openEditableIds[0] ?? null;
 		});
-	}, [focusedDoc, openEditableIds]);
+	}, [focusedDoc, openEditableIds, getDoc]);
 	// The chart tab in focus, so "this chart" resolves server-side. Unlike the draft it isn't
 	// sticky — Patrick reads any chart by id via read_chart; this only disambiguates deixis.
 	const openChart = focused && getChart(focused) ? focused : null;
@@ -572,9 +576,15 @@ function ChatSession({
 			},
 			// Return null on failure rather than throwing — the card awaits this and
 			// must always resolve the tool call, or the agent loop hangs forever.
+			// Set the active draft SYNCHRONOUSLY (state + the ref the transport
+			// reads): the agent loop auto-continues the moment the tool resolves,
+			// racing the documents refetch — waiting on the workspace effect would
+			// ship activeDraft: null and the agent's first read_draft would fail.
 			createDraft: async (name) => {
 				try {
 					const res = await createDoc.mutateAsync(name);
+					setActiveDraft(res.filename);
+					activeDraftRef.current = res.filename;
 					open(res.filename);
 					return res.filename;
 				} catch {
@@ -584,6 +594,8 @@ function ChatSession({
 			unlockSource: async (filename) => {
 				try {
 					const res = await unlockDoc.mutateAsync(filename);
+					setActiveDraft(res.filename);
+					activeDraftRef.current = res.filename;
 					open(res.filename);
 					return res.filename;
 				} catch {

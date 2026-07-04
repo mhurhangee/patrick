@@ -1,4 +1,10 @@
-// The document-safe runner is a deep import the package doesn't ship types for.
+// Deep imports the package doesn't ship types for.
+declare module "@ansonlai/docx-redline-js/core/types.js" {
+	/** Bumps the module-global revision-id counter past every id already in the
+	 *  document — comments would otherwise collide after a process restart. */
+	export function seedRevisionIdsFromDocument(xmlDoc: unknown): number;
+}
+
 declare module "@ansonlai/docx-redline-js/services/standalone-operation-runner.js" {
 	export type RedlineOperation = {
 		type: "redline";

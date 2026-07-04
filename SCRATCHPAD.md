@@ -6,6 +6,28 @@ Tags: `[high|med|low]` rough priority · *italic trigger* = when it becomes wort
 
 ---
 
+# Headless docx redlining (post-editor)
+
+Deferred from the PR #169 code-review triage (the confirmed bugs were fixed on the branch):
+- `ENGINE FIRST-MATCH TARGETING` **[med]**: `applyOperationToDocumentXml` resolves the target
+  paragraph by FIRST base-text match — when two paragraphs share base text, an edit meant for the
+  second is attempted on the first. The strict post-verify refuses it (error, never corruption), but
+  the right fix is applying the redline to the paragraph fragment ourselves (`applyRedlineToOxml` +
+  splice) so the adapter's own resolution is authoritative. *Trigger: a real draft hits the
+  "did not land (engine mismatch)" error.*
+- `TEXT-BOX CONTENT INVISIBLE` **[low]**: `w:txbxContent` (and `mc:Fallback`) are skipped in all
+  text walks so box text can't duplicate/corrupt — but Patrick can't read or edit box text at all
+  (parity with the old editor's render-only headers). *Trigger: a user needs box text edited.*
+- `DANCE REGISTRY EVICTION` **[low]**: `danceFor` keeps one DraftDance + 1s unref'd timer per draft
+  path forever (bounded by drafts touched per session; local app). *Trigger: long-running cloud
+  variant.*
+- `ATTORNEY-REVISION PARAGRAPHS` **[med]**: Patrick refuses to edit a paragraph carrying the
+  attorney's own pending tracked changes (safe, honest error). Proper multi-author support =
+  supersede only Patrick's runs and diff against the attorney-accepted view. *Trigger: the refusal
+  proves annoying in real drafting sessions.*
+
+---
+
 # DOCX editor
 
 ## Removed in refactor slice 0 — re-add as real features when wanted

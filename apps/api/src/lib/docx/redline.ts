@@ -1,9 +1,11 @@
 import {
 	configureXmlProvider,
 	ensureCommentsArtifactsInZip,
+	ensureNumberingArtifactsInZip,
 	injectCommentsIntoOoxml,
 	setDefaultAuthor,
 } from "@ansonlai/docx-redline-js";
+import { seedRevisionIdsFromDocument } from "@ansonlai/docx-redline-js/core/types.js";
 import { applyOperationToDocumentXml } from "@ansonlai/docx-redline-js/services/standalone-operation-runner.js";
 import type { DraftComment } from "@patrick/shared";
 import {
@@ -66,12 +68,34 @@ const parseXml = (xml: string): XmlDocument =>
 const serializeXml = (node: XmlNode) =>
 	new XMLSerializer().serializeToString(node);
 
-function paragraphsOf(doc: XmlDocument): XmlElement[] {
+const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+
+// Elements a text walk must NOT descend into: text-box bodies (their inner w:p
+// would otherwise be read twice — inside the host paragraph AND as their own
+// paragraph) and mc:Fallback (a duplicate of the mc:Choice next to it). Box
+// text is therefore invisible to Patrick — a documented limitation, like the
+// old editor's render-only headers — rather than duplicated and corrupting.
+function isOpaque(el: XmlElement): boolean {
+	return (
+		(el.namespaceURI === W_NS && el.localName === "txbxContent") ||
+		(el.namespaceURI === MC_NS && el.localName === "Fallback")
+	);
+}
+
+type ParagraphEntry = {
+	el: XmlElement;
+	/** Inside another paragraph (a text box) — hidden from reads and edits, but
+	 *  it keeps its slot so indices stay aligned with the comment engine's
+	 *  all-`w:p` numbering. */
+	nested: boolean;
+};
+
+function paragraphsOf(doc: XmlDocument): ParagraphEntry[] {
 	const list = doc.getElementsByTagNameNS(W_NS, "p");
-	const out: XmlElement[] = [];
+	const out: ParagraphEntry[] = [];
 	for (let i = 0; i < list.length; i++) {
 		const p = list[i];
-		if (p) out.push(p);
+		if (p) out.push({ el: p, nested: hasAncestor(p, "p", doc) });
 	}
 	return out;
 }
@@ -95,10 +119,15 @@ function hasAncestor(
 /** Paragraph text in a given view: accepted (ins in, del out) or base (the reverse). */
 function paragraphText(p: XmlElement, view: "accepted" | "base"): string {
 	let text = "";
+	const include = (el: XmlElement) =>
+		view === "accepted"
+			? !hasAncestor(el, "del", p)
+			: !hasAncestor(el, "ins", p);
 	const walk = (node: XmlNode) => {
 		for (let c = node.firstChild; c; c = c.nextSibling) {
 			if (c.nodeType !== 1) continue;
 			const el = c as XmlElement;
+			if (isOpaque(el)) continue;
 			if (el.namespaceURI === W_NS && el.localName === "t") {
 				if (view === "accepted" || !hasAncestor(el, "ins", p))
 					text += el.textContent ?? "";
@@ -106,6 +135,17 @@ function paragraphText(p: XmlElement, view: "accepted" | "base"): string {
 			}
 			if (el.namespaceURI === W_NS && el.localName === "delText") {
 				if (view === "base") text += el.textContent ?? "";
+				continue;
+			}
+			// Tabs and breaks are visible separators — losing them would fuse
+			// "Applicant:<tab>Acme" into "Applicant:Acme" and break matching.
+			if (
+				el.namespaceURI === W_NS &&
+				(el.localName === "tab" ||
+					el.localName === "br" ||
+					el.localName === "cr")
+			) {
+				if (include(el)) text += el.localName === "tab" ? "\t" : "\n";
 				continue;
 			}
 			walk(el);
@@ -127,11 +167,16 @@ export async function readDraftParagraphs(
 ): Promise<DraftParagraph[]> {
 	const zip = await JSZip.loadAsync(bytes);
 	const doc = parseXml(await documentXmlOf(zip));
-	return paragraphsOf(doc).map((p, i) => ({
-		index: i + 1,
-		text: paragraphText(p, "accepted"),
-		hasRevisions: paragraphHasRevisions(p),
-	}));
+	// Nested (text-box) paragraphs are dropped but keep their index slot, so
+	// [n] numbering stays aligned with the comment engine's all-w:p count.
+	return paragraphsOf(doc)
+		.map((p, i) => ({ entry: p, index: i + 1 }))
+		.filter(({ entry }) => !entry.nested)
+		.map(({ entry, index }) => ({
+			index,
+			text: paragraphText(entry.el, "accepted"),
+			hasRevisions: paragraphHasRevisions(entry.el),
+		}));
 }
 
 export type DraftRun = { text: string; kind: "text" | "ins" | "del" };
@@ -151,16 +196,32 @@ function paragraphRuns(p: XmlElement): DraftRun[] {
 		if (last && last.kind === kind) last.text += text;
 		else runs.push({ text, kind });
 	};
+	const kindOf = (el: XmlElement): DraftRun["kind"] =>
+		hasAncestor(el, "del", p)
+			? "del"
+			: hasAncestor(el, "ins", p)
+				? "ins"
+				: "text";
 	const walk = (node: XmlNode) => {
 		for (let c = node.firstChild; c; c = c.nextSibling) {
 			if (c.nodeType !== 1) continue;
 			const el = c as XmlElement;
+			if (isOpaque(el)) continue;
 			if (el.namespaceURI === W_NS && el.localName === "t") {
 				push(el.textContent ?? "", hasAncestor(el, "ins", p) ? "ins" : "text");
 				continue;
 			}
 			if (el.namespaceURI === W_NS && el.localName === "delText") {
 				push(el.textContent ?? "", "del");
+				continue;
+			}
+			if (
+				el.namespaceURI === W_NS &&
+				(el.localName === "tab" ||
+					el.localName === "br" ||
+					el.localName === "cr")
+			) {
+				push(el.localName === "tab" ? "\t" : "\n", kindOf(el));
 				continue;
 			}
 			walk(el);
@@ -175,11 +236,14 @@ export async function readDraftRuns(
 ): Promise<DraftParagraphRuns[]> {
 	const zip = await JSZip.loadAsync(bytes);
 	const doc = parseXml(await documentXmlOf(zip));
-	return paragraphsOf(doc).map((p, i) => ({
-		index: i + 1,
-		runs: paragraphRuns(p),
-		hasRevisions: paragraphHasRevisions(p),
-	}));
+	return paragraphsOf(doc)
+		.map((p, i) => ({ entry: p, index: i + 1 }))
+		.filter(({ entry }) => !entry.nested)
+		.map(({ entry, index }) => ({
+			index,
+			runs: paragraphRuns(entry.el),
+			hasRevisions: paragraphHasRevisions(entry.el),
+		}));
 }
 
 /** Plain text of a .docx (paragraphs joined by newlines) — context extraction. */
@@ -290,8 +354,12 @@ export async function applyRedline(
 	const paragraphs = paragraphsOf(doc);
 
 	const matches = paragraphs
-		.map((p, i) => ({ p, i }))
-		.filter(({ p }) => norm(paragraphText(p, "accepted")).includes(target));
+		.map((entry, i) => ({ entry, i }))
+		.filter(
+			({ entry }) =>
+				!entry.nested &&
+				norm(paragraphText(entry.el, "accepted")).includes(target),
+		);
 	if (matches.length === 0)
 		return {
 			applied: false,
@@ -304,7 +372,18 @@ export async function applyRedline(
 			reason: `target text matches ${matches.length} paragraphs — quote more of the paragraph so the target is unique`,
 		};
 
-	const { p, i } = matches[0] as { p: XmlElement; i: number };
+	const { entry, i } = matches[0] as { entry: ParagraphEntry; i: number };
+	const p = entry.el;
+
+	// The ATTORNEY's own pending tracked changes are theirs to resolve — editing
+	// through them risks absorbing their revisions into a Patrick-authored
+	// change (destroying authorship and what reject-all restores). Refuse.
+	if (hasOtherAuthorsRevisions(p, author))
+		return {
+			applied: false,
+			reason:
+				"this paragraph has the attorney's own pending tracked changes — ask them to accept/reject those in Word first, or add a comment instead of editing",
+		};
 
 	// Supersede: strip our own pending revisions from this one paragraph so the
 	// engine rebuilds original → newText instead of stacking redlines.
@@ -324,32 +403,51 @@ export async function applyRedline(
 			reason: `the redline engine could not apply the edit (status: ${result.status})`,
 		};
 
-	// Verify before returning: the paragraph's as-if-accepted text must now be
-	// the requested text (same index, or anywhere if the edit split paragraphs).
+	// Verify before returning — STRICTLY at the edited position: the accepted
+	// text of the paragraph at index i (or, when the engine split the edit into
+	// several paragraphs, of the contiguous block i..i+delta) must equal the
+	// requested text. No document-wide fallback: newText legitimately appearing
+	// elsewhere (claim boilerplate) must never vouch for a mangled application.
 	const outXml = stripGhostFormatRevisions(result.documentXml, author);
 	const outDoc = parseXml(outXml);
 	const outParagraphs = paragraphsOf(outDoc);
 	const wanted = norm(edit.newText);
-	const atIndex = outParagraphs[i]
-		? norm(paragraphText(outParagraphs[i] as XmlElement, "accepted"))
-		: "";
-	const landed =
-		atIndex === wanted ||
-		norm(
-			outParagraphs.map((op) => paragraphText(op, "accepted")).join(" "),
-		).includes(wanted);
-	if (!landed)
+	const delta = Math.max(0, outParagraphs.length - paragraphs.length);
+	const blockText = norm(
+		outParagraphs
+			.slice(i, i + delta + 1)
+			.map((op) => paragraphText(op.el, "accepted"))
+			.join(" "),
+	);
+	if (blockText !== wanted)
 		return {
 			applied: false,
 			reason:
 				"the edit did not land as requested (engine mismatch) — nothing was changed",
 		};
 
+	// List-shaped rewrites can mint numbering definitions — merge them or the
+	// document references w:numId entries that don't exist (Word repair prompt).
+	if (result.numberingXml)
+		await ensureNumberingArtifactsInZip(zip, result.numberingXml);
+
 	return {
 		applied: true,
 		bytes: await writeDocumentXml(zip, outXml),
 		paragraphIndex: i + 1,
 	};
+}
+
+/** Any pending w:ins/w:del in the paragraph NOT authored by `author`. */
+function hasOtherAuthorsRevisions(p: XmlElement, author: string): boolean {
+	for (const localName of ["ins", "del"]) {
+		const list = p.getElementsByTagNameNS(W_NS, localName);
+		for (let i = 0; i < list.length; i++) {
+			const el = list[i] as XmlElement;
+			if (el && el.getAttributeNS(W_NS, "author") !== author) return true;
+		}
+	}
+	return false;
 }
 
 export type CommentRequest = {
@@ -370,8 +468,13 @@ export async function addComment(
 	author = REDLINE_AUTHOR,
 ): Promise<CommentResult> {
 	const zip = await JSZip.loadAsync(bytes);
+	const documentXml = await documentXmlOf(zip);
+	// The engine's revision-id counter is process-global and resets on restart;
+	// seed it past every id already in the document or a comment added to a
+	// draft commented in an earlier session throws "Duplicate comment id".
+	seedRevisionIdsFromDocument(parseXml(documentXml));
 	const result = (await injectCommentsIntoOoxml(
-		await documentXmlOf(zip),
+		documentXml,
 		[
 			{
 				paragraphIndex: request.paragraphIndex,

@@ -167,23 +167,6 @@ export async function unlockDocumentInPlace(
 
 export type SaveResult = "ok" | "not-found" | "forbidden";
 
-/**
- * Overwrite a document's bytes. Guards the attorney's originals: only editable
- * files (Patrick-created, or unlocked in place) may be written.
- */
-export async function saveDocumentBytes(
-	folder: string,
-	filename: string,
-	bytes: ArrayBuffer,
-): Promise<SaveResult> {
-	if (!(await fileExists(folder, filename))) return "not-found";
-	const meta = await readDocumentMeta(folder);
-	if (!meta[filename]?.createdInPatrick && !meta[filename]?.unlocked)
-		return "forbidden";
-	await writeFile(join(folder, filename), Buffer.from(bytes));
-	return "ok";
-}
-
 /** Delete a Patrick-owned document (file + its meta entry). Originals refused. */
 export async function deleteDocument(
 	folder: string,

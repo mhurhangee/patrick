@@ -92,19 +92,32 @@ async function availableDocs(
 	folder: string,
 	pinned: PinnedSource[],
 	activeDraft: string | null,
-): Promise<AvailableDoc[]> {
+): Promise<{ available: AvailableDoc[]; otherDrafts: AvailableDoc[] }> {
 	const docs = await listDocuments(folder);
 	const pinnedNames = new Set(pinned.map((p) => p.filename));
-	return docs
-		.filter((d) => {
-			return (
-				!isEditableDoc(d) &&
-				!d.excluded &&
-				!pinnedNames.has(d.filename) &&
-				d.filename !== activeDraft
-			);
-		})
-		.map((d) => ({ filename: d.filename, label: d.label }));
+	const toEntry = (d: { filename: string; label?: string }) => ({
+		filename: d.filename,
+		label: d.label,
+	});
+	return {
+		available: docs
+			.filter(
+				(d) =>
+					!isEditableDoc(d) &&
+					!d.excluded &&
+					!pinnedNames.has(d.filename) &&
+					d.filename !== activeDraft,
+			)
+			.map(toEntry),
+		// Editable drafts other than the active one: the tools can't touch them,
+		// but the manifest must still name them or they vanish from Patrick's
+		// world (the attorney focuses a draft's tab to make it active).
+		otherDrafts: docs
+			.filter(
+				(d) => isEditableDoc(d) && !d.excluded && d.filename !== activeDraft,
+			)
+			.map(toEntry),
+	};
 }
 
 // HITL: no-execute tools. The model calls them to propose an action; the call
@@ -266,10 +279,23 @@ const epcLookup = tool({
 // Read-only docx → plain text, headless from disk. Originals don't change, so
 // memoise by path+mtime — a multi-turn chat then extracts each pinned docx
 // once, not every turn.
+//
+// A pinned docx that was later UNLOCKED is a special case: the live file is now
+// the mutable draft (Patrick's pending redlines would read as accepted text,
+// and every edit would churn the cached prefix). The pinned source stays what
+// the attorney actually pinned — the pristine snapshot under .patrick/backups.
 const docxTextCache = new Map<string, { mtimeMs: number; text: string }>();
 
-async function docxText(folder: string, filename: string): Promise<string> {
-	const path = join(folder, filename);
+async function docxText(
+	folder: string,
+	filename: string,
+	pristine = false,
+): Promise<string> {
+	const backup = join(folder, ".patrick", "backups", filename);
+	const path =
+		pristine && (await stat(backup).catch(() => null))
+			? backup
+			: join(folder, filename);
 	try {
 		const mtimeMs = (await stat(path)).mtimeMs;
 		const cached = docxTextCache.get(path);
@@ -372,7 +398,11 @@ export async function pinnedSourcesMessage(
 					return [];
 				}
 			}
-			const text = await docxText(folder, src.filename);
+			const text = await docxText(
+				folder,
+				src.filename,
+				!!meta[src.filename]?.unlocked,
+			);
 			console.log(
 				`[context] ${src.filename} → docx text, ${text.length} chars`,
 			);
@@ -479,7 +509,7 @@ export async function handleChat(c: Context) {
 
 	const pinnedSources = body.pinnedSources ?? [];
 	const activeDraft = body.activeDraft ?? null;
-	const available = await availableDocs(
+	const { available, otherDrafts } = await availableDocs(
 		task.folder,
 		pinnedSources,
 		activeDraft,
@@ -500,6 +530,7 @@ export async function handleChat(c: Context) {
 		available,
 		charts,
 		template,
+		otherDrafts,
 	);
 
 	// Adding/removing a capability? Do it in buildChatTools — and update

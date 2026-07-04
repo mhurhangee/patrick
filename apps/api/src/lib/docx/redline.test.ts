@@ -144,6 +144,126 @@ describe("applyRedline", () => {
 	});
 });
 
+// Minimal hand-built docx: real enough for the engine, small enough to shape
+// exactly the structures a test needs (text boxes, tabs, shared base text).
+async function buildDocx(bodyXml: string): Promise<Uint8Array> {
+	const zip = new JSZip();
+	zip.file(
+		"[Content_Types].xml",
+		`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`,
+	);
+	zip.file(
+		"_rels/.rels",
+		`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`,
+	);
+	zip.file(
+		"word/document.xml",
+		`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+<w:body>${bodyXml}<w:sectPr/></w:body></w:document>`,
+	);
+	return zip.generateAsync({ type: "uint8array" });
+}
+
+const para = (t: string) =>
+	`<w:p><w:r><w:t xml:space="preserve">${t}</w:t></w:r></w:p>`;
+
+describe("guards", () => {
+	test("refuses to edit a paragraph carrying the attorney's tracked changes", async () => {
+		// The attorney's own pending revision (author ≠ Patrick) in the paragraph.
+		const withTheirs = await applyRedline(
+			await fixtureBytes(),
+			{ targetText: TARGET, newText: `${TARGET} Their own addition.` },
+			"Michael Hurhangee",
+		);
+		expect(withTheirs.applied).toBe(true);
+		if (!withTheirs.applied) return;
+
+		const result = await applyRedline(withTheirs.bytes, {
+			targetText: "Their own addition",
+			newText: "Patrick tramples the attorney's revision.",
+		});
+		expect(result.applied).toBe(false);
+		if (result.applied) return;
+		expect(result.reason).toContain("attorney's own pending tracked changes");
+	});
+
+	test("wrong-paragraph engine match is refused, not silently accepted", async () => {
+		// Two paragraphs share BASE text; a Patrick redline makes the second one's
+		// accepted view unique. The engine matches by FIRST base occurrence (the
+		// wrong paragraph) — the strict at-index verification must refuse rather
+		// than let newText-elsewhere vouch for it.
+		const SHARED = "The same boilerplate sentence appears twice in this draft.";
+		const bytes = await buildDocx(
+			[para(SHARED), para("A middle paragraph."), para(SHARED)].join(""),
+		);
+		const first = await applyRedline(bytes, {
+			targetText: SHARED,
+			newText: "irrelevant",
+		});
+		// Ambiguous by accepted view — refused outright.
+		expect(first.applied).toBe(false);
+
+		const unique = await buildDocx(
+			[para(SHARED), para("A middle paragraph."), para(`${SHARED} Tail.`)].join(
+				"",
+			),
+		);
+		const edit = await applyRedline(unique, {
+			targetText: `${SHARED} Tail.`,
+			newText: "Completely new third paragraph.",
+		});
+		// Either the engine hits the right paragraph (applied, verified at index 3)
+		// or it base-matched paragraph 1 and verification refused — never a silent
+		// wrong-paragraph write.
+		if (edit.applied) {
+			const paragraphs = await readDraftParagraphs(edit.bytes);
+			expect(paragraphs[2]?.text.replace(/\s+/g, " ").trim()).toBe(
+				"Completely new third paragraph.",
+			);
+			expect(paragraphs[0]?.text).toBe(SHARED);
+		} else {
+			expect(edit.reason).toContain("did not land");
+		}
+	});
+});
+
+describe("structure handling", () => {
+	test("tabs and breaks extract as separators, not fused text", async () => {
+		const bytes = await buildDocx(
+			`<w:p><w:r><w:t>Applicant:</w:t><w:tab/><w:t>Acme Corp</w:t></w:r></w:p>`,
+		);
+		const paragraphs = await readDraftParagraphs(bytes);
+		expect(paragraphs[0]?.text).toBe("Applicant:\tAcme Corp");
+	});
+
+	test("text-box content is not duplicated and stays unambiguous", async () => {
+		const box =
+			`<w:p><w:r><w:t>Host paragraph.</w:t>` +
+			`<mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><w:txbxContent><w:p><w:r><w:t>Box text here</w:t></w:r></w:p></w:txbxContent></w:drawing></mc:Choice>` +
+			`<mc:Fallback><w:pict><w:txbxContent><w:p><w:r><w:t>Box text here</w:t></w:r></w:p></w:txbxContent></w:pict></mc:Fallback></mc:AlternateContent>` +
+			`</w:r></w:p>` +
+			para("A normal second paragraph.");
+		const bytes = await buildDocx(box);
+		const paragraphs = await readDraftParagraphs(bytes);
+		// Box paragraphs are hidden; host paragraph doesn't absorb their text.
+		const texts = paragraphs.map((p) => p.text);
+		expect(texts.join(" ")).not.toContain("Box text here");
+		expect(texts).toContain("Host paragraph.");
+		expect(texts).toContain("A normal second paragraph.");
+		// Indices keep the engine-aligned slots (nested w:p still counted).
+		expect(paragraphs.at(-1)?.index).toBeGreaterThan(paragraphs.length);
+	});
+});
+
 describe("readDraftRuns", () => {
 	test("pending redlines surface as ins/del runs for the preview", async () => {
 		const result = await applyRedline(await fixtureBytes(), {

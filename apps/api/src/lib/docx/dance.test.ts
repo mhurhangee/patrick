@@ -128,6 +128,45 @@ describe("applyOrPark", () => {
 		expect(comments.length).toBe(baseline + 12);
 	});
 
+	test("a new op never jumps ahead of older parked ops (stale-supersede)", async () => {
+		// Edit A parks while locked. After unlock, edit B (which depends on A's
+		// text) arrives BEFORE any tick — the queue must drain A first, or A would
+		// later supersede B.
+		await writeFile(lockPath(), "lo");
+		await dance.applyOrPark({
+			kind: "redline",
+			edit: { targetText: TARGET, newText: MODIFIED },
+		});
+		await unlink(lockPath());
+		const outcome = await dance.applyOrPark({
+			kind: "redline",
+			edit: {
+				targetText: MODIFIED,
+				newText: `${MODIFIED} And a follow-up sentence.`,
+			},
+		});
+		expect(outcome.status).toBe("applied");
+		const text = await extractDocxText(await draftBytes());
+		expect(text).toContain("responsive to the amendment. And a follow-up");
+	});
+
+	test("parked ops survive a restart (persisted under .patrick/parked)", async () => {
+		await writeFile(lockPath(), "lo");
+		await dance.applyOrPark({
+			kind: "redline",
+			edit: { targetText: TARGET, newText: MODIFIED },
+		});
+		// A fresh instance (new process) must see and apply the parked edit.
+		const revived = new DraftDance(folder, DRAFT);
+		expect((await revived.status()).parkedEdits).toBe(1);
+		await unlink(lockPath());
+		await revived.tick();
+		expect((await revived.status()).parkedEdits).toBe(0);
+		expect(await extractDocxText(await draftBytes())).toContain(
+			"responsive to the amendment",
+		);
+	});
+
 	test("records a failure when a parked edit no longer applies", async () => {
 		await writeFile(lockPath(), "lo");
 		await dance.applyOrPark({

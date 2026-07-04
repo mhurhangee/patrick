@@ -42,7 +42,6 @@ import {
 	readExtractedText,
 	readSearchIndex,
 	renameDocument,
-	saveDocumentBytes,
 	saveExtractedText,
 	saveRetrievedDocument,
 	saveSearchIndex,
@@ -376,22 +375,6 @@ tasks.post("/:id/documents/:filename/unlock", async (c) => {
 	return name
 		? c.json({ filename: name }, 201)
 		: c.json({ error: "not found" }, 404);
-});
-
-// Save edited bytes back to a Patrick-owned doc. Originals are refused.
-tasks.put("/:id/documents/:filename", async (c) => {
-	const task = await readTask(c.req.param("id"));
-	if (!task) return c.json({ error: "not found" }, 404);
-	const bytes = await c.req.arrayBuffer();
-	const result = await saveDocumentBytes(
-		task.folder,
-		basename(c.req.param("filename")),
-		bytes,
-	);
-	if (result === "not-found") return c.json({ error: "file not found" }, 404);
-	if (result === "forbidden")
-		return c.json({ error: "original is read-only" }, 403);
-	return c.json({ ok: true });
 });
 
 // Rename a Patrick-owned doc. Originals are refused.
