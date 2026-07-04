@@ -29,15 +29,18 @@ importers:
       '@ai-sdk/openai':
         specifier: ^4.0.0
         version: 4.0.0(zod@4.4.3)
-      '@eigenpal/docx-editor-agents':
-        specifier: workspace:*
-        version: link:../../packages/docx-editor-agents
+      '@ansonlai/docx-redline-js':
+        specifier: github:AnsonLai/docx-redline-js#541a6cf
+        version: https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056(@xmldom/xmldom@0.9.10)
       '@patrick/law':
         specifier: workspace:*
         version: link:../../packages/law
       '@patrick/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@xmldom/xmldom':
+        specifier: ^0.9.10
+        version: 0.9.10
       ai:
         specifier: ^7.0.2
         version: 7.0.2(zod@4.4.3)
@@ -570,6 +573,16 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@ansonlai/docx-redline-js@https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056':
+    resolution: {gitHosted: true, integrity: sha512-I8xOULUGQzT2bAxYoenngeWOrvS+qU/3vf2G+Vqfffu1gC5v+JfSgIaGamfXXe9l6uQyKSIqYHxq2vkQI9WTeg==, tarball: https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056}
+    version: 0.1.4
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@xmldom/xmldom': '>=0.8.0'
+    peerDependenciesMeta:
+      '@xmldom/xmldom':
+        optional: true
 
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
@@ -3499,6 +3512,9 @@ packages:
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
+  diff-match-patch@1.0.5:
+    resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
+
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
     engines: {node: '>=0.3.1'}
@@ -5073,6 +5089,12 @@ snapshots:
       - zod
 
   '@alloc/quick-lru@5.2.0': {}
+
+  '@ansonlai/docx-redline-js@https://codeload.github.com/AnsonLai/docx-redline-js/tar.gz/541a6cfb97cc816cf1aecce506ac87765fde9056(@xmldom/xmldom@0.9.10)':
+    dependencies:
+      diff-match-patch: 1.0.5
+    optionalDependencies:
+      '@xmldom/xmldom': 0.9.10
 
   '@antfu/install-pkg@1.1.0':
     dependencies:
@@ -7754,6 +7776,8 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  diff-match-patch@1.0.5: {}
 
   diff@8.0.4: {}
 

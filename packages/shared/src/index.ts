@@ -2,6 +2,7 @@ export * from "./ai-models";
 export * from "./chart";
 export * from "./chat";
 export * from "./claim-prompts";
+export * from "./draft";
 export * from "./law";
 export * from "./match";
 export * from "./patrick-docs.generated";
