@@ -1,6 +1,5 @@
 # Bun is Patrick's test runner. Discovery spans the whole monorepo (apps/ +
 # packages/; node_modules excluded). Run `bun test` from the repo root so the
-# editor's round-trip tests resolve their fixtures via process.cwd() at
-# e2e/fixtures/.
+# docx suites resolve their fixture via process.cwd() at e2e/fixtures/.
 [test]
 root = "."
