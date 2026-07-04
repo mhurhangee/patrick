@@ -1,5 +1,10 @@
 # Editor teardown & headless-redline integration
 
+> **Status:** PR 1 (engine + dance + tool swap + DraftPanel) is CODE-COMPLETE on
+> `spike/docx-redline-js` — check green, 1,758 tests pass, new routes
+> smoke-tested live. Remaining before PR 2 (package deletion): in-app
+> end-to-end run with a real chat, and the Windows Word checkpoint.
+
 **Decision (final):** the vendored docx editor goes wholesale — all three `packages/docx-editor-*` packages. Patrick edits `.docx` on disk via headless reconciliation redlines (`@ansonlai/docx-redline-js`, MIT); Word/LibreOffice is the viewing + review surface. Spikes proving both halves live in `spikes/docx-redline/` (branch `spike/docx-redline-js`).
 
 ## Current integration surface (measured)
