@@ -15,7 +15,6 @@ import type {
 	SearchIndex,
 } from "@patrick/shared";
 import { parse, stringify } from "yaml";
-import { ensureParaIds } from "./docx";
 
 // What counts as a "document" in the attorney's folder. Plain-text (.md/.txt)
 // covers Patrick-retrieved references like prior art fetched from EPO OPS.
@@ -76,12 +75,6 @@ export async function mergeDocumentMeta(
 	await writeDocumentMeta(folder, meta);
 }
 
-/** "report.docx" → "report (Patrick).docx". */
-function patrickCopyName(original: string): string {
-	const ext = extname(original);
-	return `${original.slice(0, original.length - ext.length)} (Patrick)${ext}`;
-}
-
 /** Pick a sibling name that doesn't collide: "x.docx" → "x 2.docx" → … */
 async function uniqueName(folder: string, candidate: string): Promise<string> {
 	const ext = extname(candidate);
@@ -108,11 +101,7 @@ export async function createBlankDocument(
 	candidate?: string,
 ): Promise<string> {
 	const name = await uniqueName(folder, asDocxName(candidate));
-	// Backfill paragraph ids so the agent's anchor-by-id tools work from the start.
-	await writeFile(
-		join(folder, name),
-		await ensureParaIds(await readFile(BLANK_DOCX)),
-	);
+	await writeFile(join(folder, name), await readFile(BLANK_DOCX));
 	await mergeDocumentMeta(folder, name, { createdInPatrick: true });
 	return name;
 }
@@ -151,38 +140,36 @@ export async function saveRetrievedDocument(
 }
 
 /**
- * Unlock an original for editing: copy its bytes to a visible "(Patrick)" sibling
- * in the same folder, carrying its label. The original is never touched.
- * Returns the new filename, or null if the source is missing or not a .docx —
- * only Word documents are editable (editable ≡ createdInPatrick && .docx), so an
- * "editable copy" of a PDF would be an owned-but-uneditable dead end.
+ * Unlock an original .docx for IN-PLACE tracked-changes editing. The file itself
+ * becomes the draft — no "(Patrick) copy" — because every Patrick edit is a
+ * surgical tracked change (reject-all restores the text exactly). Safety net:
+ * the pristine bytes are snapshotted once to .patrick/backups/<filename> before
+ * Patrick can ever write. Returns the filename, or null if the file is missing
+ * or not a .docx (only Word documents are editable).
  */
-export async function unlockDocumentCopy(
+export async function unlockDocumentInPlace(
 	folder: string,
-	source: string,
+	filename: string,
 ): Promise<string | null> {
-	if (!source.toLowerCase().endsWith(".docx")) return null;
-	if (!(await fileExists(folder, source))) return null;
-	const dest = await uniqueName(folder, patrickCopyName(source));
-	// Backfill paragraph ids: real filings often have none, which breaks the
-	// agent's anchor-by-id comment/suggest tools on the editable copy.
-	await writeFile(
-		join(folder, dest),
-		await ensureParaIds(await readFile(join(folder, source))),
-	);
-	const meta = await readDocumentMeta(folder);
-	await mergeDocumentMeta(folder, dest, {
-		createdInPatrick: true,
-		label: meta[source]?.label,
-	});
-	return dest;
+	if (!filename.toLowerCase().endsWith(".docx")) return null;
+	if (!(await fileExists(folder, filename))) return null;
+	const backupDir = join(folder, ".patrick", "backups");
+	const backup = join(backupDir, filename);
+	try {
+		await stat(backup); // an earlier unlock already snapshotted the original
+	} catch {
+		await mkdir(backupDir, { recursive: true });
+		await writeFile(backup, await readFile(join(folder, filename)));
+	}
+	await mergeDocumentMeta(folder, filename, { unlocked: true });
+	return filename;
 }
 
 export type SaveResult = "ok" | "not-found" | "forbidden";
 
 /**
- * Overwrite a document's bytes. Guards the attorney's originals: only files
- * Patrick created (createdInPatrick) may be written — never an original.
+ * Overwrite a document's bytes. Guards the attorney's originals: only editable
+ * files (Patrick-created, or unlocked in place) may be written.
  */
 export async function saveDocumentBytes(
 	folder: string,
@@ -191,7 +178,8 @@ export async function saveDocumentBytes(
 ): Promise<SaveResult> {
 	if (!(await fileExists(folder, filename))) return "not-found";
 	const meta = await readDocumentMeta(folder);
-	if (!meta[filename]?.createdInPatrick) return "forbidden";
+	if (!meta[filename]?.createdInPatrick && !meta[filename]?.unlocked)
+		return "forbidden";
 	await writeFile(join(folder, filename), Buffer.from(bytes));
 	return "ok";
 }
@@ -252,6 +240,7 @@ export async function listDocuments(folder: string): Promise<Document[]> {
 			excluded: m.excluded,
 			starred: m.starred,
 			createdInPatrick: m.createdInPatrick,
+			unlocked: m.unlocked,
 			retrieved: m.retrieved,
 			source: m.source,
 			// Derived from the sidecar's existence, not stored in the writable meta.

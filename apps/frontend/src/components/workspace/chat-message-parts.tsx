@@ -483,7 +483,7 @@ export type ToolUiHandlers = {
 	setLabel: (filename: string, label: string, suggestions?: string[]) => void;
 	/** Create a blank draft + open it; resolves to its filename (createDraft). */
 	createDraft: (name: string) => Promise<string | null>;
-	/** Make an editable copy of an original + open it (requestUnlock). */
+	/** Unlock an original for in-place editing + open it (requestUnlock). */
 	unlockSource: (filename: string) => Promise<string | null>;
 	/** Apply a proposed task brief — replace it, or append a note (suggestBrief acceptance). */
 	suggestBrief: (brief: string, append?: boolean) => void;
@@ -604,8 +604,8 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 	},
 	requestUnlock: {
 		icon: <FilePen size={13} className={iconCls} />,
-		title: (i) => <>Make an editable copy of {bold(i.filename)} to draft in?</>,
-		acceptLabel: "Create copy",
+		title: (i) => <>Unlock {bold(i.filename)} for tracked-changes editing?</>,
+		acceptLabel: "Unlock",
 		rejectLabel: "No",
 		accept: async (i, h) => {
 			const filename = i.filename ? await h.unlockSource(i.filename) : null;
@@ -614,7 +614,7 @@ const HITL_SPECS: Record<string, HitlSpec> = {
 		reject: () => ({ unlocked: false }),
 		resolved: (o) =>
 			o.unlocked ? (
-				<>Created editable copy {bold(o.filename)}.</>
+				<>Unlocked {bold(o.filename)} for editing.</>
 			) : (
 				<>Left it as-is.</>
 			),

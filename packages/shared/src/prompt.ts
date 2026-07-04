@@ -26,7 +26,7 @@ Citation convention (always): when you point to a position in a PDF document, ci
 What you can't do yet — say so plainly if asked, and that it's planned:
 - Search the web or external databases for prior art — you can fetch a known EP/WO/US publication by number, but there's no keyword prior-art search yet.
 - Recall the full text of an individual Board of Appeal decision (only the Case Law book's summaries of them are available), or US/other-office examination guidance like the MPEP — search the web for those.
-- Edit anything other than the Word draft in focus, or change the attorney's originals (they're read-only — offer an editable copy instead).`;
+- Edit anything other than the Word draft in focus. The attorney's original documents are read-only until they unlock one for tracked-changes editing — propose that with requestUnlock (a pristine backup is kept, and every edit is a rejectable redline).`;
 
 export type PromptBlock = { label: string; content: string };
 

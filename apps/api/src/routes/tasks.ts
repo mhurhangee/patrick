@@ -46,7 +46,7 @@ import {
 	saveExtractedText,
 	saveRetrievedDocument,
 	saveSearchIndex,
-	unlockDocumentCopy,
+	unlockDocumentInPlace,
 	writeDocumentMeta,
 } from "../lib/documents";
 import { danceFor } from "../lib/docx/dance";
@@ -364,11 +364,12 @@ tasks.post("/:id/publication", async (c) => {
 	return c.json({ filename, summary: result.summary }, 201);
 });
 
-// Unlock an original for editing → visible "(Patrick)" working copy in the folder.
-tasks.post("/:id/documents/:filename/copy", async (c) => {
+// Unlock an original .docx for in-place tracked-changes editing (the pristine
+// bytes are snapshotted to .patrick/backups first).
+tasks.post("/:id/documents/:filename/unlock", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
-	const name = await unlockDocumentCopy(
+	const name = await unlockDocumentInPlace(
 		task.folder,
 		basename(c.req.param("filename")),
 	);

@@ -142,10 +142,10 @@ export const tasksApi = {
 			throw new Error(data.error ?? `publication fetch failed: ${res.status}`);
 		return data as { filename: string; summary: string };
 	},
-	/** Unlock an original → working copy; returns the copy's filename. */
+	/** Unlock an original .docx for in-place editing; returns its filename. */
 	unlockDocument: (id: string, filename: string) =>
 		api.post<{ filename: string }>(
-			`/tasks/${id}/documents/${encodeURIComponent(filename)}/copy`,
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/unlock`,
 			{},
 		),
 	/** Rename a Patrick-owned doc; returns the (possibly deduped) new filename. */

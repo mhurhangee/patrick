@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileCachedFetcher, lookupProvisions } from "@patrick/law";
 import {
 	type ExchangeMetadata,
+	isEditableDoc,
 	modelsForProvider,
 	PATRICK_DOCS,
 	type PinnedSource,
@@ -96,10 +97,8 @@ async function availableDocs(
 	const pinnedNames = new Set(pinned.map((p) => p.filename));
 	return docs
 		.filter((d) => {
-			const editable =
-				d.filename.toLowerCase().endsWith(".docx") && !!d.createdInPatrick;
 			return (
-				!editable &&
+				!isEditableDoc(d) &&
 				!d.excluded &&
 				!pinnedNames.has(d.filename) &&
 				d.filename !== activeDraft
@@ -176,7 +175,7 @@ const createDraft = tool({
 
 const requestUnlock = tool({
 	description:
-		"Propose making an editable copy of an original .docx document (the attorney's originals are read-only) so you can draft amendments in it. The attorney accepts; the copy opens as the active draft. Only works on .docx files — PDFs and other formats can't be edited, so don't propose it for them; instead explain that, or use createDraft to start a fresh document.",
+		"Propose unlocking an original .docx for editing — the attorney's originals are read-only until they unlock one. On accept, the document itself becomes the active draft you edit as tracked changes (a pristine backup is snapshotted first; rejecting your redlines in Word restores the text exactly). Only works on .docx files — PDFs and other formats can't be edited, so don't propose it for them; instead explain that, or use createDraft to start a fresh document.",
 	inputSchema: z.object({
 		filename: z
 			.string()
