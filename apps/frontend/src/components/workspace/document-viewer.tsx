@@ -13,7 +13,7 @@ import { Fragment } from "react";
 import { DocIcon } from "@/components/doc-icon";
 import { PanelToggleButton } from "@/components/shell/panel-toggle-button";
 import { ClaimChartViewer } from "@/components/workspace/claim-chart-viewer";
-import { DocxViewer } from "@/components/workspace/docx-viewer";
+import { DraftPanel } from "@/components/workspace/draft-panel";
 import { PdfViewer } from "@/components/workspace/pdf-viewer";
 import { TextViewer } from "@/components/workspace/text-viewer";
 import { cn } from "@/lib/utils";
@@ -67,7 +67,7 @@ function Column({
 	isFirst: boolean;
 	isLast: boolean;
 }) {
-	const { focused, focus, close, splitRight, getDoc } = useWorkspace();
+	const { focused, focus, close, splitRight } = useWorkspace();
 	const active =
 		focused && column.tabs.includes(focused) ? focused : column.tabs[0];
 
@@ -107,15 +107,11 @@ function Column({
 
 			<div className="relative min-h-0 flex-1 overflow-auto">
 				{column.tabs.map((id) => {
-					const isActive = id === active;
-					// The active tab renders. Editable drafts also stay mounted (hidden)
-					// when inactive so the agent's editor stays registered while you read
-					// a source on top — otherwise its tool calls hit an unmounted editor.
-					// Read-only tabs unmount when inactive (cheap to re-render; PDFs are
-					// heavy to keep alive).
-					if (!isActive && !getDoc(id)?.editable) return null;
+					// Only the active tab renders — the draft lives on disk and Patrick
+					// edits it server-side, so nothing needs to stay mounted behind it.
+					if (id !== active) return null;
 					return (
-						<div key={id} className={cn("h-full", !isActive && "hidden")}>
+						<div key={id} className="h-full">
 							<DocContent id={id} />
 						</div>
 					);
@@ -205,6 +201,5 @@ function DocContent({ id }: { id: string }) {
 	}
 	if (doc.kind === "pdf") return <PdfViewer filename={doc.id} />;
 	if (doc.kind === "text") return <TextViewer key={doc.id} filename={doc.id} />;
-	// key per file so autosave + buffer state never leak across tab switches.
-	return <DocxViewer key={doc.id} filename={doc.id} editable={doc.editable} />;
+	return <DraftPanel key={doc.id} filename={doc.id} editable={doc.editable} />;
 }

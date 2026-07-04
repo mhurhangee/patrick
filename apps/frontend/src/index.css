@@ -10,12 +10,6 @@
    scans the app's own tree by default). */
 @source "../../../packages/ui/src";
 
-/* The vendored docx editor is consumed from source; this app's Tailwind
-   generates its utility classes, which live in the React adapter's components.
-   The editor's chrome stylesheet + `--docx-*` tokens come from
-   docx-editor-react/src/styles/editor.css, imported where the editor mounts. */
-@source "../../../packages/docx-editor-react/src";
-
 /* radix data-state variants, no-scrollbar utility, accordion keyframes */
 @theme inline {
 	@keyframes accordion-down {
@@ -202,9 +196,6 @@
 .tiptap-prose {
 	@apply outline-none;
 }
-/* docx-editor's CSS ships a global `[contenteditable=true]{caret-color:#000}`
-   (same specificity as a class, wins by load order). Out-specify it so our
-   caret follows the theme and stays visible in dark mode. */
 .tiptap-prose[contenteditable="true"] {
 	caret-color: var(--foreground);
 }

@@ -37,36 +37,27 @@ type Presenter = {
 };
 
 const PRESENTERS: Record<string, Presenter> = {
-	read_document: {
-		label: "Read the document",
-		runningLabel: "Reading the document…",
+	read_draft: {
+		label: "Read the draft",
+		runningLabel: "Reading the draft…",
 	},
-	read_selection: {
-		label: "Read the selection",
-		runningLabel: "Reading the selection…",
+	edit_paragraph: {
+		label: "Redline a paragraph",
+		runningLabel: "Drafting a redline…",
+		summary: (input, output) =>
+			output?.error ??
+			(output?.parked
+				? "parked — lands when the draft is closed"
+				: (input?.new_text ?? null)),
 	},
-	read_page: { label: "Read a page", runningLabel: "Reading a page…" },
-	read_pages: { label: "Read pages", runningLabel: "Reading pages…" },
-	find_text: {
-		label: "Find text",
-		runningLabel: "Searching the document…",
-		summary: (input) => input?.query ?? input?.text ?? null,
-	},
-	read_changes: {
-		label: "Review tracked changes",
-		runningLabel: "Reviewing changes…",
-	},
-	read_comments: { label: "Read comments", runningLabel: "Reading comments…" },
-	add_comment: {
-		label: "Add a comment",
+	add_draft_comment: {
+		label: "Add a comment to the draft",
 		runningLabel: "Adding a comment…",
-		summary: (input) => input?.text ?? null,
+		summary: (input, output) => output?.error ?? input?.text ?? null,
 	},
-	suggest_change: {
-		label: "Suggest a change",
-		runningLabel: "Proposing a tracked change…",
-		summary: (input) =>
-			input?.replaceWith ?? input?.replacement ?? input?.search ?? null,
+	read_draft_comments: {
+		label: "Read the draft's comments",
+		runningLabel: "Reading comments…",
 	},
 	ep_law_lookup: {
 		label: "Recall EPC law",

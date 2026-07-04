@@ -6,6 +6,7 @@ import type {
 	ClaimLimitation,
 	Document,
 	DocumentMeta,
+	DraftStatus,
 	ExtractedDoc,
 	LimitationRead,
 	SearchIndex,
@@ -158,12 +159,26 @@ export const tasksApi = {
 		api.del<{ ok: boolean }>(
 			`/tasks/${id}/documents/${encodeURIComponent(filename)}`,
 		),
-	/** Overwrite a Patrick-owned doc's bytes (editor autosave). */
-	saveFile: async (id: string, filename: string, bytes: ArrayBuffer) => {
-		const res = await fetch(
-			`${BASE_URL}/tasks/${id}/documents/${encodeURIComponent(filename)}`,
-			{ method: "PUT", body: bytes },
-		);
-		if (!res.ok) throw new Error(`save ${filename} failed: ${res.status}`);
-	},
+	/** The dance status for a docx draft: lock, parked edits, @Patrick mentions. */
+	draftStatus: (id: string, filename: string) =>
+		api.get<DraftStatus>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/draft-status`,
+		),
+	/** Acknowledge surfaced parked-edit failures. */
+	clearDraftFailures: (id: string, filename: string) =>
+		api.post<{ ok: boolean }>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/draft-status/clear-failures`,
+			{},
+		),
+	/** A .docx as plain paragraphs (tracked changes as-if-accepted) — the preview. */
+	docxText: (id: string, filename: string) =>
+		api.get<{
+			paragraphs: { index: number; text: string; hasRevisions: boolean }[];
+		}>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/docx-text`),
+	/** Open a document in its native app (Word/LibreOffice) on the attorney's machine. */
+	openDocument: (id: string, filename: string) =>
+		api.post<{ ok: boolean }>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/open`,
+			{},
+		),
 };

@@ -1,9 +1,8 @@
 import { useChat } from "@ai-sdk/react";
-import { useDocxAgentTools } from "@eigenpal/docx-editor-agents/react";
-import type { DocxEditorRef } from "@eigenpal/docx-editor-react";
 import {
 	type Chat,
 	contextWindowFor,
+	DRAFT_TOOL_NAMES,
 	docKind,
 	type ExchangeContext,
 	type ExchangeMetadata,
@@ -26,7 +25,6 @@ import {
 } from "ai";
 import { ArrowUp, ChevronDown, Globe, Square } from "lucide-react";
 import {
-	type RefObject,
 	useCallback,
 	useEffect,
 	useLayoutEffect,
@@ -52,7 +50,6 @@ import {
 	useUpdateTask,
 } from "@/hooks/use-tasks";
 import { useActiveChat } from "@/lib/active-chat";
-import { useEditorReadiness, useEditorRefFor } from "@/lib/active-editor";
 import { useActiveProfile } from "@/lib/active-profile";
 import { useActiveTask } from "@/lib/active-task";
 import { estimateDocTokens, useDocSize } from "@/lib/doc-size";
@@ -73,9 +70,8 @@ import { ContextRing, type ContextSource } from "./context-ring";
 import { ExchangePanel, type ExchangePanelData } from "./exchange-panel";
 import { SystemCard } from "./system-card";
 
-// Tools that execute on the server (their results stream back) — the client must
-// not route them to the docx editor, which would error "Editor not ready". Like
-// HITL tools, they're skipped in onToolCall.
+// Tools that execute on the server (their results stream back) — the client
+// skips them in onToolCall, like HITL tools.
 // Chart-driving tools run on the server (they read/write the Chart JSON). The mutating ones
 // refresh the open chart viewer via query invalidation; read_chart is read-only. Names come
 // from @patrick/shared so they can't drift from what buildChartTools actually ships.
@@ -89,6 +85,9 @@ const SERVER_TOOLS = new Set<string>([
 	"google_search",
 	READ_CHART_TOOL,
 	...CHART_TOOLS,
+	// Draft tools run server-side too — headless tracked changes on the .docx
+	// on disk (through the dance); nothing executes in the webview.
+	...DRAFT_TOOL_NAMES,
 ]);
 
 // One user message + every assistant message that follows it (the loop produces
@@ -249,11 +248,11 @@ function ChatSession({
 		initial?.pinnedSources ?? [],
 	);
 
-	// Patrick edits ONE live draft at a time (the editor tools bind to a single
-	// editor). The active draft is sticky: the focused editable doc, else the one
-	// you were last editing, else any open editable doc — so it doesn't vanish
-	// when you focus a source to read it. It's not in the static context; the
-	// agent reads it live via the editor tools.
+	// Patrick edits ONE draft at a time (the draft tools bind to a single file).
+	// The active draft is sticky: the focused editable doc, else the one you were
+	// last editing, else any open editable doc — so it doesn't vanish when you
+	// focus a source to read it. It's not in the static context; the agent reads
+	// the file live via read_draft.
 	const focusedDoc = focused ? getDoc(focused) : undefined;
 	const openEditableIds = useMemo(() => {
 		return columnList
@@ -270,17 +269,9 @@ function ChatSession({
 			return openEditableIds[0] ?? null;
 		});
 	}, [focusedDoc, openEditableIds]);
-	const editorRef = useEditorRefFor(activeDraft);
-	const waitForEditor = useEditorReadiness();
-
 	// The chart tab in focus, so "this chart" resolves server-side. Unlike the draft it isn't
 	// sticky — Patrick reads any chart by id via read_chart; this only disambiguates deixis.
 	const openChart = focused && getChart(focused) ? focused : null;
-
-	const { executeToolCall } = useDocxAgentTools({
-		editorRef: editorRef as RefObject<DocxEditorRef | null>,
-		author: profile?.identity.author?.trim() || "Patrick",
-	});
 
 	// Web search: a per-chat toolbar toggle (default on). Patrick can search the
 	// web; off removes the tool for the turn (also the escape hatch if a model
@@ -395,22 +386,12 @@ function ChatSession({
 				});
 				return;
 			}
-			let output: unknown;
-			try {
-				output = executeToolCall(
-					toolCall.toolName,
-					toolCall.input as Record<string, unknown>,
-				);
-			} catch (err) {
-				output = {
-					success: false,
-					error: err instanceof Error ? err.message : "tool execution failed",
-				};
-			}
+			// Anything else would be a tool nobody executes — resolve it rather than
+			// hang the agent loop forever.
 			addToolResult({
 				tool: toolCall.toolName,
 				toolCallId: toolCall.toolCallId,
-				output,
+				output: { error: `unknown client tool: ${toolCall.toolName}` },
 			});
 		},
 	});
@@ -573,13 +554,10 @@ function ChatSession({
 			},
 			// Return null on failure rather than throwing — the card awaits this and
 			// must always resolve the tool call, or the agent loop hangs forever.
-			// Wait for the new editor to mount + its agent to be ready before
-			// resolving, so the agent's first edit doesn't race an unbound editor.
 			createDraft: async (name) => {
 				try {
 					const res = await createDoc.mutateAsync(name);
 					open(res.filename);
-					await waitForEditor(res.filename);
 					return res.filename;
 				} catch {
 					return null;
@@ -589,7 +567,6 @@ function ChatSession({
 				try {
 					const res = await unlockDoc.mutateAsync(filename);
 					open(res.filename);
-					await waitForEditor(res.filename);
 					return res.filename;
 				} catch {
 					return null;
@@ -651,7 +628,6 @@ function ChatSession({
 			fetchPub.mutateAsync,
 			updateTask.mutate,
 			updateProfile.mutate,
-			waitForEditor,
 		],
 	);
 
