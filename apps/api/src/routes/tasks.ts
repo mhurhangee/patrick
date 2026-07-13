@@ -41,6 +41,7 @@ import {
 	listDocuments,
 	readExtractedText,
 	readSearchIndex,
+	relockDocument,
 	renameDocument,
 	saveExtractedText,
 	saveRetrievedDocument,
@@ -49,7 +50,7 @@ import {
 	writeDocumentMeta,
 } from "../lib/documents";
 import { danceFor } from "../lib/docx/dance";
-import { readDraftRuns } from "../lib/docx/redline";
+import { readDraftReview } from "../lib/docx/redline";
 import { fetchPublication } from "../lib/patents";
 import { readProfile } from "../lib/profiles";
 import { deleteTask, listTasks, readTask, writeTask } from "../lib/tasks";
@@ -377,6 +378,19 @@ tasks.post("/:id/documents/:filename/unlock", async (c) => {
 		: c.json({ error: "not found" }, 404);
 });
 
+// Re-lock an unlocked original — flip it back to read-only, and drop any of
+// Patrick's parked edits (the attorney locked it to STOP editing; queued edits
+// must not drain into it when Word next closes).
+tasks.post("/:id/documents/:filename/relock", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const name = basename(c.req.param("filename"));
+	const ok = await relockDocument(task.folder, name);
+	if (!ok) return c.json({ error: "not unlocked" }, 400);
+	await danceFor(task.folder, name).discardParked();
+	return c.json({ ok: true });
+});
+
 // Rename a Patrick-owned doc. Originals are refused.
 tasks.post("/:id/documents/:filename/rename", async (c) => {
 	const task = await readTask(c.req.param("id"));
@@ -473,8 +487,38 @@ tasks.post(
 	},
 );
 
-// A .docx as paragraphs-of-runs, pending redlines marked ins/del — the in-app
-// preview; the real review (accept/reject) happens in Word.
+// Accept or reject Patrick's redline in one paragraph, in place — the in-app
+// equivalent of Word's accept/reject. Rides the dance (parks while open in Word).
+tasks.post("/:id/documents/:filename/resolve", async (c) => {
+	const task = await readTask(c.req.param("id"));
+	if (!task) return c.json({ error: "not found" }, 404);
+	const body: {
+		paragraphIndex?: number;
+		action?: "accept" | "reject";
+		expectedText?: string;
+	} = await c.req.json().catch(() => ({}));
+	const { paragraphIndex, action, expectedText } = body;
+	if (
+		typeof paragraphIndex !== "number" ||
+		(action !== "accept" && action !== "reject") ||
+		typeof expectedText !== "string"
+	)
+		return c.json(
+			{ error: "paragraphIndex + action + expectedText required" },
+			400,
+		);
+	const dance = danceFor(task.folder, basename(c.req.param("filename")));
+	const outcome = await dance.applyOrPark({
+		kind: "resolve",
+		paragraphIndex,
+		action,
+		expectedText,
+	});
+	return c.json(outcome);
+});
+
+// A .docx as paragraphs-of-runs (pending redlines marked ins/del) + its
+// comments — the review view. The real accept/reject can happen in Word too.
 tasks.get("/:id/documents/:filename/docx-text", async (c) => {
 	const task = await readTask(c.req.param("id"));
 	if (!task) return c.json({ error: "not found" }, 404);
@@ -482,10 +526,8 @@ tasks.get("/:id/documents/:filename/docx-text", async (c) => {
 	const file = Bun.file(join(task.folder, name));
 	if (!(await file.exists())) return c.json({ error: "file not found" }, 404);
 	try {
-		const paragraphs = await readDraftRuns(
-			new Uint8Array(await file.arrayBuffer()),
-		);
-		return c.json({ paragraphs });
+		const bytes = new Uint8Array(await file.arrayBuffer());
+		return c.json(await readDraftReview(bytes));
 	} catch {
 		return c.json({ error: "could not read this .docx" }, 422);
 	}

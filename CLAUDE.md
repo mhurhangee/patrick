@@ -1,16 +1,20 @@
-# Patrick — Claude context
+# Patrick — Agent Instructions & Project Guidelines
 
-**Patrick is an agent-first patent-prosecution assistant. Open source, private by design, local-first.** Everything lives in the attorney's own folder, in open formats (`.docx`, `.pdf`), readable without the app. Every competitor is cloud SaaS with your documents on their servers; Patrick is the opposite — zero lock-in, zero hidden state. Tauri desktop today; a marketing/docs site is live (`apps/site`); a web and a hosted/cloud version are planned (they reuse the same `apps/frontend` + `packages/shared`).
+**Patrick is an agent-first patent-prosecution assistant. Open source, private by design, local-first.** Everything lives in the attorney's own folder, in open formats (`.docx`, `.pdf`), readable without the app. Zero lock-in, zero hidden state.
 
-**There is no in-app document editor.** Patrick edits `.docx` files **on disk** as **native Word tracked changes** (headless reconciliation redlines), and **Word/LibreOffice is where the attorney reads, writes, and accepts/rejects** — the one review surface attorneys already trust. In-app, a draft is a live text preview + status, deliberately not a Word imitation. See "Headless docx redlining (THE editing model)".
-
-This file is mostly a **map** — what exists and where, so you can navigate to the code — but it also carries the load-bearing **why** behind the non-obvious architecture, so contributors (and their AI tools) don't reintroduce mistakes already fixed. Where a section says "don't", it's because doing the obvious thing caused a real bug.
+## Core Identity & Architecture
+- **Product:** Agent-first patent-prosecution assistant (Tauri desktop app).
+- **Core Philosophy:** Open-source (Apache-2.0), private by design, local-first. Zero lock-in, zero hidden state.
+- **File Handling:** Read/write directly to native `.docx` (as tracked changes) and `.pdf` in the user's existing local folders. No proprietary databases.
+- **AI & Data:** Bring-your-own-keys (Anthropic, OpenAI, Google, Vercel AI Gateway). Zero server uploads.
+- **Transparency:** The system prompts, chain-of-thought, tool calls, context, and token costs must be fully visible to the user.
+- **Voice**: Plain, Precise & Honest. Use factual, confident and careful language. Say exactly what Patrick does without hype or overselling whilst acknowledging limitations. 
 
 ## Monorepo
 
 ```
 apps/
-  frontend/   React 19 + Vite (rolldown) + Tailwind v4 + shadcn — the UI (webview for desktop; reused by web/cloud later)
+  frontend/   React 19 + Vite (rolldown) + Tailwind v4 + shadcn — the UI (webview for desktop)
   api/        Hono on Bun — local backend (compiles to a Tauri sidecar binary)
   desktop/    Tauri wrapper (webview = frontend, sidecar = api)
   site/       Next.js marketing + docs site (apps.patrick…) — alpha messaging, download, an own-MDX docs system
@@ -18,18 +22,19 @@ packages/
   shared/     types, model catalog, prompt token catalog, in-app docs (generated) — imported by frontend + api
   ui/          @patrick/ui — the shared design system: shadcn primitives (`components/*`) + cn + the stone/emerald tokens (`src/theme.css`), consumed by frontend + site (source-only)
   law/         @patrick/law — the EP law dataset + retrieval: EPC, EPO Guidelines, PCT-EPO Guidelines, Case Law of the Boards. Verbatim recall + find-the-law search source
-  benchmarking/ a standalone grounding benchmark (the dev runs it himself — see the benchmarking memories)
+  benchmarking/ a standalone grounding benchmark
 scripts/        gen-patrick-docs.ts → packages/shared/src/patrick-docs.generated.ts (the agent's `patrick_help` corpus)
 e2e/fixtures/   real-world .docx test fixtures for the headless redlining suites (run `bun test` from the repo root)
 spikes/         throwaway proof-of-concept scripts (lint/knip-exempt, run by hand with bun)
 living-docs/    transient per-task plans, deleted when the work ships (not durable docs)
+SCRATCHPAD.md   is the **committed engineering backlog** — deferred bugs, parked refactors, and technical follow-ups surfaced during work; put durable engineering deferrals there (transient `living-docs/`).
 ```
 
 **pnpm workspace**; configs (`pnpm-workspace.yaml`, `biome.json`, `tsconfig.base.json`, `knip.config.ts`, `bunfig.toml`) live at the root. A hosted/cloud app is the main future slot.
 
 ## Stack
 
-React 19 + Vite + Tailwind v4 + shadcn (stone/emerald) · TanStack Router (file-based) + TanStack Query · @ansonlai/docx-redline-js (headless OOXML tracked changes, pinned + wrapped) · Hono on Bun · AI SDK v6 + `@ai-sdk/react` (Anthropic / OpenAI / Google / Gateway, **BYOK**) · Next.js (`apps/site`) · pnpm · Biome · TS strict · Streamdown (chat markdown) · `bun:test` (runner).
+React 19 + Vite + Tailwind v4 + shadcn (stone/emerald) · TanStack Router (file-based) + TanStack Query · @ansonlai/docx-redline-js (headless OOXML tracked changes, pinned + wrapped) · Hono on Bun · AI SDK v7 + `@ai-sdk/react` (Anthropic / OpenAI / Google / Gateway, **BYOK**) · Next.js (`apps/site`) · pnpm · Biome · TS strict · Streamdown (chat markdown) · `bun:test` (runner).
 
 ## Headless docx redlining (THE editing model)
 
@@ -87,11 +92,6 @@ Two document classes, on the `isEditableDoc` line:
 
 Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
 
-**Why it's built this way (and the footguns):**
-- **Caching ≠ attention loss.** Prompt caching caches the KV of byte-identical prefix tokens — full fidelity, just skips recompute; it is NOT a context-approximation trick (RAG/summarisation/sliding-window). So **don't** re-send the full context every turn to "preserve attention" — that's the old waste this model removes (sources are large and stable; pinning caches them after turn 1, a ~5–10× input-cost win on source-heavy chats).
-- **Open ≠ pinned — "send accretes; new chat resets."** A source commits to the chat only when you *send* a message with it open (snapshot at send), so browsing docs to find the right one — and closing the rest — never pins them and never costs tokens. **Don't** pin a source the moment it's opened (an old accumulation bug silently absorbed every browsed doc and burned credits), and **don't** treat closing as removal (rewriting earlier turns to drop a doc corrupted history — pinned context is append-only).
-- **The prompt and the model freeze at first send** so the cached prefix stays stable for the chat. **Don't** re-resolve a running chat's prompt or model against the now-current profile (it breaks the cache and the lock) — surface the mismatch (the system-card banner) and let the attorney start a new chat.
-
 ## Patrick (the agent)
 
 `useChat` (client) ↔ `POST /tasks/:id/chat` (`streamText`, BYOK model resolved per chat, reasoning per `effort`). The **draft tools execute server-side** against the `.docx` on disk (see "Headless docx redlining") — there is no client editor round-trip. The loop still auto-continues (`sendAutomaticallyWhen`) for HITL cards and the client-run `search_document`, so "busy" is derived from `lastAssistantMessageIsCompleteWithToolCalls`, not raw status. After a `createDraft`/`requestUnlock` accept, the handler sets the active draft **synchronously** (state + transport ref) — the auto-continued turn must not ship `activeDraft: null`.
@@ -127,20 +127,30 @@ Context is assembled **server-side from disk** (`apps/api/src/lib/ai/`).
 - **Patrick's other targeted tests** — the stable, high-stakes, pure-logic cores: `@patrick/shared` `match.ts` (citation matchers) + `mergeColumnReads` (chart merge), `apps/api/.../prompt.ts` `buildSystemPrompt` (context assembly = manifest-only-never-content), and `documents.ts` unlock/backup semantics. Test the stable cores + test-as-you-go.
 - **Adding tests to a package:** co-locate `*.test.ts(x)`; the package needs `@types/bun` + `"types": ["bun"]` in its tsconfig (the DOM-free strict base won't resolve `bun:test` otherwise, and strict index access needs a typed `first()` helper or `toMatchObject`).
 
-## Conventions
+Here is a rewritten, highly condensed version of those instructions, stripped of the historical commentary and optimized for developer cadence (high signal, strictly imperative):
 
-- **pnpm** only (never npm/yarn). Biome for lint/format (root `biome.json`). TS strict — no `any`, no skipping types. `pnpm check` = typecheck + lint:fix + knip; run before considering work done. `bun test` is the other gate.
-- **Comments explain the code, not history** — never "this used to…", "previously…", or rebuild/migration commentary.
-- **Git hygiene — the dev wants active help here, so be proactive about it:**
-  - **Branch for every piece of work** — a feature, a fix, a refactor. Never pile changes onto `main`; `main` stays releasable.
-  - **Small, focused, atomic commits** — one logical change each (don't grab-bag unrelated edits into one commit). Stage only what belongs together; keep the working tree from drifting.
-  - **Messages:** present tense, *what + why* (the why when it's non-obvious). **Never** add a Claude co-author line.
-  - **Ask before committing** — propose a commit at a clean, green checkpoint and wait for an explicit "commit"; don't infer standing permission. But *do* proactively suggest the commit/branch at the right moment rather than waiting to be asked.
-  - **Verify checks GREEN before merging — never on assumption.** After pushing a PR, poll until CI **and** the Vercel deploy resolve (`gh pr checks <n>`), confirm `pass`, *then* merge; re-confirm `main`'s CI + prod deploy after. **Local green ≠ CI green** — generated/gitignored artifacts (e.g. the TanStack `routeTree.gen.ts`) exist on your machine but not in a fresh CI checkout. (Learned the hard way: a batch of PRs merged blind left CI red + prod broken for hours.)
-  - The full branch→PR→merge-commit→release standard is in `CONTRIBUTING.md`.
-- **Review before merging:** run **`/code-review`** on a feature branch's diff before merging it — fresh eyes catch the author's blind spots that re-reading your own code won't. Use a thorough pass (high effort) for anything substantial; `ultra` is the deep multi-agent cloud review the dev triggers. Proactively suggest it at merge points and other meaningful milestones, then triage the findings together before merging. **Lead with confirmed correctness bugs; weigh efficiency/cleanup/altitude findings on their merits, and verify any finding against the actual code before acting on it.**
-- MVP/startup mode: working > perfect, simple > clever; let it crash by default (catch only at real boundaries). Ask before structural/dependency/schema changes.
-- **Build UI from shadcn/radix primitives** (Button, Dialog, Sheet, DropdownMenu, Empty…) — never hand-roll equivalents with raw divs + state; they drift and miss focus/scroll/a11y. The primitives live in **`@patrick/ui`** (the shared design system) — import from `@patrick/ui/components/<name>`; the stone/emerald tokens are in `packages/ui/src/theme.css` (edit the palette there, not per-app). If a primitive isn't installed, add it to `packages/ui` rather than routing around it. A consuming app's CSS needs a relative `@import` of `theme.css` + `@source "…/packages/ui/src"` (Tailwind v4 only scans the app's own tree).
+## Git, PR & Release Workflow
+
+### Branching & Commits
+- **Branching:** Branch per change (`type/short-desc`). Keep `main` strictly green and releasable.
+- **Commits:** Atomic, single-purpose, present-tense messages.
+- **Merging:** Always use **merge commits** (never squash) to preserve history. 
+
+### Pre-Merge Gates (Strict Order)
+Never merge blindly. Execute these steps in order:
+1. **Scope:** Measure full impact across all consumers before large refactors.
+2. **Local Checks:** `pnpm check` + `bun test` must pass.
+3. **Smoke Test:** Wait for the user to manually verify visible/UI changes locally.
+4. **Code Review:** Mandatory `/code-review` on the diff. Triage findings with the user.
+5. **CI Verification:** Poll `gh pr checks <n>`. DO NOT merge until GitHub Actions **and** Vercel are 100% GREEN. (Local green ≠ CI green due to gitignored generated files).
+
+### Release Process
+- **Changelogs:** Add an `[Unreleased]` bullet in `CHANGELOG.md` for every user-facing PR.
+- **Release Checklist:** 
+  1. Bump versions (`tauri.conf.json`, `Cargo.toml`).
+  2. Roll changelog (`[Unreleased]` → `[X.Y.Z] - YYYY-MM-DD`).
+  3. Commit, tag `vX.Y.Z`, and push.
+  4. CI drafts the GitHub release. Paste the changelog section into the body and publish (not as pre-release).
 
 ## Running
 
@@ -153,4 +163,3 @@ pnpm test             # bun test — run from the repo root (docx fixtures resol
 pnpm gen:docs         # regenerate the agent's bundled docs after editing them
 ```
 
-`BRAND.md` is the brand & positioning keystone (one-liner, the three pillars — Open · Transparent · Yours — voice, visual identity) — the source for the site, docs, and in-app copy; read it before touching `apps/site` or in-app copy. `IDEAS.md` is the dev's personal product/feature backlog (gitignored — don't write to it). `SCRATCHPAD.md` is the **committed engineering backlog** — deferred bugs, parked refactors, and technical follow-ups surfaced during work; put durable engineering deferrals there (not in `IDEAS.md` or transient `living-docs/`).

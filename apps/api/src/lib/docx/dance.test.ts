@@ -69,12 +69,63 @@ describe("applyOrPark", () => {
 		await dance.tick(); // still locked — nothing happens
 		expect((await dance.status()).parkedEdits).toBe(1);
 
+		// While parked, status surfaces what's waiting (the panel shows "queued").
+		expect((await dance.status()).parkedOps).toEqual([
+			{ kind: "redline", summary: TARGET.slice(0, 80) },
+		]);
+
 		await unlink(lockPath());
 		await dance.tick();
 		const status = await dance.status();
 		expect(status.parkedEdits).toBe(0);
+		expect(status.parkedOps).toEqual([]);
 		expect(status.failures).toEqual([]);
 		expect(await extractDocxText(await draftBytes())).toContain(
+			"responsive to the amendment",
+		);
+	});
+
+	test("a resolve op accepts a redline in place (and parks like an edit)", async () => {
+		// Land an edit, then accept it via a resolve op.
+		await dance.applyOrPark({
+			kind: "redline",
+			edit: { targetText: TARGET, newText: MODIFIED },
+		});
+		const p = (await import("./redline"))
+			.readDraftParagraphs(await draftBytes())
+			.then((ps) => ps.find((x) => x.text === MODIFIED));
+		const edp = await p;
+		expect(edp).toBeDefined();
+		if (!edp) return;
+		const paragraphIndex = edp.index;
+		const outcome = await dance.applyOrPark({
+			kind: "resolve",
+			paragraphIndex,
+			action: "accept",
+			expectedText: edp.text,
+		});
+		expect(outcome.status).toBe("applied");
+		const paragraphs = await (await import("./redline")).readDraftParagraphs(
+			await draftBytes(),
+		);
+		expect(
+			paragraphs.find((p) => p.index === paragraphIndex)?.hasRevisions,
+		).toBe(false);
+	});
+
+	test("discardParked drops queued ops (re-lock: they must not drain)", async () => {
+		await writeFile(lockPath(), "lo");
+		await dance.applyOrPark({
+			kind: "redline",
+			edit: { targetText: TARGET, newText: MODIFIED },
+		});
+		expect((await dance.status()).parkedEdits).toBe(1);
+		await dance.discardParked();
+		expect((await dance.status()).parkedEdits).toBe(0);
+		// Closing the draft now applies nothing.
+		await unlink(lockPath());
+		await dance.tick();
+		expect(await extractDocxText(await draftBytes())).not.toContain(
 			"responsive to the amendment",
 		);
 	});

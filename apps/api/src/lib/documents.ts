@@ -165,6 +165,25 @@ export async function unlockDocumentInPlace(
 	return filename;
 }
 
+/**
+ * Re-lock an unlocked original — flip it back to read-only (it drops out of the
+ * draft world; still readable/pinnable). One-way per document, reversible via
+ * unlock again (which reuses the pristine backup, never re-snapshotting). Any
+ * of Patrick's tracked changes already in the file stay — the attorney resolves
+ * them in Word. Returns false if the doc isn't an unlocked original.
+ */
+export async function relockDocument(
+	folder: string,
+	filename: string,
+): Promise<boolean> {
+	const meta = await readDocumentMeta(folder);
+	const entry = meta[filename];
+	if (!entry?.unlocked || entry.createdInPatrick) return false;
+	delete entry.unlocked;
+	await writeDocumentMeta(folder, meta);
+	return true;
+}
+
 export type SaveResult = "ok" | "not-found" | "forbidden";
 
 /** Delete a Patrick-owned document (file + its meta entry). Originals refused. */

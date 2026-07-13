@@ -179,49 +179,77 @@ export async function readDraftParagraphs(
 		}));
 }
 
-export type DraftRun = { text: string; kind: "text" | "ins" | "del" };
+export type DraftRun = {
+	text: string;
+	kind: "text" | "ins" | "del";
+	/** The enclosing revision's w:id — the accept/reject handle (ins/del only). */
+	revisionId?: number;
+	/** The revision's author (ins/del only) — the attorney's own show distinctly. */
+	author?: string;
+};
 export type DraftParagraphRuns = {
 	index: number;
 	runs: DraftRun[];
 	hasRevisions: boolean;
+	/** Carries Patrick's own redline → can be accepted/rejected in-app. */
+	resolvable: boolean;
 };
 
-/** Paragraph content split into runs with revision kind — the preview's shape,
- *  so pending redlines render as real ins/del marks, not invisible text. */
+/** The nearest enclosing w:ins/w:del of a node (with its id + author), if any. */
+function revisionAncestor(
+	node: XmlNode,
+	until: XmlNode,
+): { kind: "ins" | "del"; id: number; author: string } | null {
+	for (let n = node.parentNode; n && n !== until; n = n.parentNode) {
+		if (n.nodeType !== 1 || (n as XmlElement).namespaceURI !== W_NS) continue;
+		const el = n as XmlElement;
+		if (el.localName === "ins" || el.localName === "del")
+			return {
+				kind: el.localName,
+				id: Number(el.getAttributeNS(W_NS, "id") ?? "-1"),
+				author: el.getAttributeNS(W_NS, "author") ?? "",
+			};
+	}
+	return null;
+}
+
+/** Paragraph content split into runs with revision kind/id/author — the review
+ *  view's shape, so pending redlines render as real ins/del marks each carrying
+ *  its own accept/reject handle. */
 function paragraphRuns(p: XmlElement): DraftRun[] {
 	const runs: DraftRun[] = [];
-	const push = (text: string, kind: DraftRun["kind"]) => {
+	const push = (text: string, rev: ReturnType<typeof revisionAncestor>) => {
 		if (!text) return;
+		const kind = rev?.kind ?? "text";
 		const last = runs[runs.length - 1];
-		if (last && last.kind === kind) last.text += text;
-		else runs.push({ text, kind });
+		if (last && last.kind === kind && last.revisionId === rev?.id)
+			last.text += text;
+		else
+			runs.push(
+				rev
+					? { text, kind, revisionId: rev.id, author: rev.author }
+					: { text, kind },
+			);
 	};
-	const kindOf = (el: XmlElement): DraftRun["kind"] =>
-		hasAncestor(el, "del", p)
-			? "del"
-			: hasAncestor(el, "ins", p)
-				? "ins"
-				: "text";
 	const walk = (node: XmlNode) => {
 		for (let c = node.firstChild; c; c = c.nextSibling) {
 			if (c.nodeType !== 1) continue;
 			const el = c as XmlElement;
 			if (isOpaque(el)) continue;
-			if (el.namespaceURI === W_NS && el.localName === "t") {
-				push(el.textContent ?? "", hasAncestor(el, "ins", p) ? "ins" : "text");
-				continue;
-			}
-			if (el.namespaceURI === W_NS && el.localName === "delText") {
-				push(el.textContent ?? "", "del");
-				continue;
-			}
-			if (
+			const isText = el.namespaceURI === W_NS && el.localName === "t";
+			const isDel = el.namespaceURI === W_NS && el.localName === "delText";
+			const isSep =
 				el.namespaceURI === W_NS &&
 				(el.localName === "tab" ||
 					el.localName === "br" ||
-					el.localName === "cr")
-			) {
-				push(el.localName === "tab" ? "\t" : "\n", kindOf(el));
+					el.localName === "cr");
+			if (isText || isDel || isSep) {
+				const text = isSep
+					? el.localName === "tab"
+						? "\t"
+						: "\n"
+					: (el.textContent ?? "");
+				push(text, revisionAncestor(el, p));
 				continue;
 			}
 			walk(el);
@@ -231,11 +259,7 @@ function paragraphRuns(p: XmlElement): DraftRun[] {
 	return runs;
 }
 
-export async function readDraftRuns(
-	bytes: Uint8Array,
-): Promise<DraftParagraphRuns[]> {
-	const zip = await JSZip.loadAsync(bytes);
-	const doc = parseXml(await documentXmlOf(zip));
+function paragraphRunsFromDoc(doc: XmlDocument): DraftParagraphRuns[] {
 	return paragraphsOf(doc)
 		.map((p, i) => ({ entry: p, index: i + 1 }))
 		.filter(({ entry }) => !entry.nested)
@@ -243,7 +267,31 @@ export async function readDraftRuns(
 			index,
 			runs: paragraphRuns(entry.el),
 			hasRevisions: paragraphHasRevisions(entry.el),
+			// Resolvable in-app = carries Patrick's own redline (only those can be
+			// accepted/rejected here; the attorney's own are resolved in Word).
+			resolvable: paragraphHasAuthorRevisions(entry.el, REDLINE_AUTHOR),
 		}));
+}
+
+export async function readDraftRuns(
+	bytes: Uint8Array,
+): Promise<DraftParagraphRuns[]> {
+	const zip = await JSZip.loadAsync(bytes);
+	return paragraphRunsFromDoc(parseXml(await documentXmlOf(zip)));
+}
+
+/** The review view's single read: paragraphs-of-runs + comments, one unzip and
+ *  one document.xml parse shared between them (the hot, polled path). */
+export async function readDraftReview(bytes: Uint8Array): Promise<{
+	paragraphs: DraftParagraphRuns[];
+	comments: DraftComment[];
+}> {
+	const zip = await JSZip.loadAsync(bytes);
+	const doc = parseXml(await documentXmlOf(zip));
+	return {
+		paragraphs: paragraphRunsFromDoc(doc),
+		comments: await commentsFromZip(zip, doc),
+	};
 }
 
 /** Plain text of a .docx (paragraphs joined by newlines) — context extraction. */
@@ -260,6 +308,29 @@ export async function extractDocxText(bytes: Uint8Array): Promise<string> {
 // boundaries, so byte-equality is the wrong test for "is this the same text".
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
+/** One author's w:ins/w:del elements inside a paragraph (NodeList → array). */
+function collectByAuthor(
+	p: XmlElement,
+	localName: string,
+	author: string,
+): XmlElement[] {
+	const list = p.getElementsByTagNameNS(W_NS, localName);
+	const out: XmlElement[] = [];
+	for (let i = 0; i < list.length; i++) {
+		const el = list[i] as XmlElement;
+		if (el && el.getAttributeNS(W_NS, "author") === author) out.push(el);
+	}
+	return out;
+}
+
+/** Does the paragraph carry pending w:ins/w:del authored by `author`? */
+function paragraphHasAuthorRevisions(p: XmlElement, author: string): boolean {
+	return (
+		collectByAuthor(p, "ins", author).length > 0 ||
+		collectByAuthor(p, "del", author).length > 0
+	);
+}
+
 /**
  * Reject one author's pending revisions inside ONE paragraph — DOM surgery,
  * not the engine: Patrick only ever emits plain `w:ins` (drop whole) and
@@ -268,21 +339,9 @@ const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 function rejectAuthorRevisionsIn(p: XmlElement, author: string): void {
 	const doc = p.ownerDocument;
 	if (!doc) return;
-	const byAuthor = (el: XmlElement) =>
-		el.getAttributeNS(W_NS, "author") === author;
-
-	const collect = (localName: string): XmlElement[] => {
-		const list = p.getElementsByTagNameNS(W_NS, localName);
-		const out: XmlElement[] = [];
-		for (let i = 0; i < list.length; i++) {
-			const el = list[i] as XmlElement;
-			if (el && byAuthor(el)) out.push(el);
-		}
-		return out;
-	};
-
-	for (const ins of collect("ins")) ins.parentNode?.removeChild(ins);
-	for (const del of collect("del")) {
+	for (const ins of collectByAuthor(p, "ins", author))
+		ins.parentNode?.removeChild(ins);
+	for (const del of collectByAuthor(p, "del", author)) {
 		const parent = del.parentNode;
 		if (!parent) continue;
 		// delText → t inside the wrapper, then lift its children out.
@@ -298,6 +357,105 @@ function rejectAuthorRevisionsIn(p: XmlElement, author: string): void {
 		while (del.firstChild) parent.insertBefore(del.firstChild, del);
 		parent.removeChild(del);
 	}
+}
+
+/**
+ * Accept one author's pending revisions inside ONE paragraph — the mirror of
+ * rejectAuthorRevisionsIn: an insertion is kept (unwrap the `w:ins`), a deletion
+ * is made permanent (drop the `w:del` and its text). Same safe DOM surgery.
+ */
+function acceptAuthorRevisionsIn(p: XmlElement, author: string): void {
+	// Deletion accepted → the text goes away.
+	for (const del of collectByAuthor(p, "del", author))
+		del.parentNode?.removeChild(del);
+	// Insertion accepted → keep the runs, drop the wrapper.
+	for (const ins of collectByAuthor(p, "ins", author)) {
+		const parent = ins.parentNode;
+		if (!parent) continue;
+		while (ins.firstChild) parent.insertBefore(ins.firstChild, ins);
+		parent.removeChild(ins);
+	}
+}
+
+export type ResolveResult =
+	| { applied: true; bytes: Uint8Array }
+	| { applied: false; reason: string };
+
+/**
+ * Accept or reject Patrick's pending redline in ONE paragraph, in place — the
+ * in-app equivalent of Word's accept/reject, without opening Word.
+ *
+ * CONTENT-ADDRESSED, not index-addressed: the UI showed a specific paragraph's
+ * accepted text, so we resolve against THAT (`expectedText`) — a Word-side save
+ * or a Patrick list-rewrite can shift paragraph indices between the read and the
+ * click, and a bare index would then resolve the WRONG paragraph. The result is
+ * VERIFIED before the write, like every other mutation; a failure never mutates.
+ * Only `author`'s revisions are touched (a paragraph only ever holds one round
+ * of Patrick's — the adapter supersedes); the attorney's own are left intact.
+ */
+export async function resolveParagraphRevision(
+	bytes: Uint8Array,
+	paragraphIndex: number,
+	action: "accept" | "reject",
+	expectedText: string,
+	author = REDLINE_AUTHOR,
+): Promise<ResolveResult> {
+	const zip = await JSZip.loadAsync(bytes);
+	const doc = parseXml(await documentXmlOf(zip));
+	const paragraphs = paragraphsOf(doc);
+
+	// Candidates: non-nested paragraphs that actually carry this author's redline.
+	const candidates = paragraphs
+		.map((entry, i) => ({ p: entry.el, i, nested: entry.nested }))
+		.filter((c) => !c.nested && paragraphHasAuthorRevisions(c.p, author));
+	const want = norm(expectedText);
+
+	// Prefer the paragraph at the given index IF it still matches the shown text;
+	// otherwise fall back to a unique content match anywhere in the document.
+	let chosen = candidates.find(
+		(c) =>
+			c.i === paragraphIndex - 1 &&
+			norm(paragraphText(c.p, "accepted")) === want,
+	);
+	if (!chosen && want) {
+		const matches = candidates.filter(
+			(c) => norm(paragraphText(c.p, "accepted")) === want,
+		);
+		if (matches.length === 1) chosen = matches[0];
+		else if (matches.length > 1)
+			return {
+				applied: false,
+				reason:
+					"that text now appears in several places — refresh and try again",
+			};
+	}
+	if (!chosen)
+		return {
+			applied: false,
+			reason:
+				"that change is no longer in the draft (it may have been edited in Word) — refresh the review",
+		};
+
+	const p = chosen.p;
+	// Snapshot the expectation, apply the surgery, then verify before writing.
+	const before = {
+		accepted: norm(paragraphText(p, "accepted")),
+		base: norm(paragraphText(p, "base")),
+	};
+	if (action === "accept") acceptAuthorRevisionsIn(p, author);
+	else rejectAuthorRevisionsIn(p, author);
+	const now = norm(paragraphText(p, "accepted"));
+	const expectedAfter = action === "accept" ? before.accepted : before.base;
+	if (now !== expectedAfter || paragraphHasAuthorRevisions(p, author))
+		return {
+			applied: false,
+			reason: "the change could not be resolved cleanly — nothing was written",
+		};
+
+	return {
+		applied: true,
+		bytes: await writeDocumentXml(zip, serializeXml(doc)),
+	};
 }
 
 // Patrick never makes formatting-only edits, so any Patrick-authored
@@ -500,12 +658,31 @@ export async function addComment(
 	return { applied: true, bytes: await writeDocumentXml(zip, result.oxml) };
 }
 
-/** All comments in the draft (word/comments.xml), in document order. */
-export async function listComments(bytes: Uint8Array): Promise<DraftComment[]> {
-	const zip = await JSZip.loadAsync(bytes);
+/** commentId → 1-based paragraph index, from the anchors in document.xml. The
+ *  anchor (`w:commentRangeStart`) lives in the body, not in comments.xml. */
+function commentAnchors(doc: XmlDocument): Map<string, number> {
+	const anchors = new Map<string, number>();
+	const paragraphs = paragraphsOf(doc);
+	paragraphs.forEach((entry, i) => {
+		const starts = entry.el.getElementsByTagNameNS(W_NS, "commentRangeStart");
+		for (let j = 0; j < starts.length; j++) {
+			const id = (starts[j] as XmlElement).getAttributeNS(W_NS, "id");
+			if (id && !anchors.has(id)) anchors.set(id, i + 1);
+		}
+	});
+	return anchors;
+}
+
+/** Comments from an already-open zip, anchored via an already-parsed document.xml
+ *  (so a combined review read parses the body once for runs AND anchors). */
+async function commentsFromZip(
+	zip: JSZip,
+	documentDoc: XmlDocument,
+): Promise<DraftComment[]> {
 	const entry = zip.file("word/comments.xml");
 	if (!entry) return [];
 	const doc = parseXml(await entry.async("string"));
+	const anchors = commentAnchors(documentDoc);
 	const comments = doc.getElementsByTagNameNS(W_NS, "comment");
 	const out: DraftComment[] = [];
 	for (let i = 0; i < comments.length; i++) {
@@ -514,11 +691,19 @@ export async function listComments(bytes: Uint8Array): Promise<DraftComment[]> {
 		const texts = el.getElementsByTagNameNS(W_NS, "t");
 		let text = "";
 		for (let j = 0; j < texts.length; j++) text += texts[j]?.textContent ?? "";
+		const id = el.getAttributeNS(W_NS, "id") ?? String(i);
 		out.push({
-			id: el.getAttributeNS(W_NS, "id") ?? String(i),
+			id,
 			author: el.getAttributeNS(W_NS, "author") ?? "",
 			text,
+			paragraphIndex: anchors.get(id),
 		});
 	}
 	return out;
+}
+
+/** All comments in the draft (word/comments.xml), each with its anchor paragraph. */
+export async function listComments(bytes: Uint8Array): Promise<DraftComment[]> {
+	const zip = await JSZip.loadAsync(bytes);
+	return commentsFromZip(zip, parseXml(await documentXmlOf(zip)));
 }

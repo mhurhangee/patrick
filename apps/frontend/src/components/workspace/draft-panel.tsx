@@ -1,8 +1,13 @@
-import type { DraftStatus } from "@patrick/shared";
+import type { DraftComment, DraftStatus } from "@patrick/shared";
+import { Badge } from "@patrick/ui/components/badge";
 import { Button } from "@patrick/ui/components/button";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, MessageSquareText, X } from "lucide-react";
-import { useEffect } from "react";
+import {
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@patrick/ui/components/toggle-group";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, ExternalLink, MessageSquareText, Undo2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { tasksApi } from "@/api/tasks";
 import { Patrick } from "@/components/patrick";
 import { useActiveTask } from "@/lib/active-task";
@@ -11,9 +16,32 @@ import { cn } from "@/lib/utils";
 
 // The .docx surface after the editor teardown: Patrick edits the file on disk
 // (headless tracked changes); Word is where the attorney reads, writes, and
-// accepts/rejects. In-app, a draft is a live text preview + the dance status —
-// deliberately not a Word imitation. "Save = talk to Patrick. Close = let
-// Patrick write."
+// accepts/rejects. In-app, a draft is a REVIEW surface — its pending changes and
+// comments condensed into cards you accept/reject without opening Word — plus a
+// plain "Document" reading mode. Deliberately not a Word imitation.
+// "Save = talk to Patrick. Close = let Patrick write."
+
+type DocxRun = {
+	text: string;
+	kind: "text" | "ins" | "del";
+	revisionId?: number;
+	author?: string;
+};
+type DocxParagraph = {
+	index: number;
+	runs: DocxRun[];
+	hasRevisions: boolean;
+	resolvable: boolean;
+};
+
+/** A paragraph's accepted-view text (keep insertions, drop deletions) — what the
+ *  card shows as the result, and the content-address sent with a resolve. */
+function acceptedText(p: DocxParagraph): string {
+	return p.runs
+		.filter((r) => r.kind !== "del")
+		.map((r) => r.text)
+		.join("");
+}
 
 function useDraftStatus(filename: string, enabled: boolean) {
 	const { activeTaskId } = useActiveTask();
@@ -35,6 +63,7 @@ export function DraftPanel({
 	const { activeTaskId } = useActiveTask();
 	const queryClient = useQueryClient();
 	const { data: status } = useDraftStatus(filename, editable);
+	const [mode, setMode] = useState<"review" | "document">("review");
 
 	const {
 		data: doc,
@@ -46,8 +75,8 @@ export function DraftPanel({
 		enabled: !!activeTaskId,
 	});
 
-	// A Word-side save (or a landed parked edit) bumps lastSavedMs — refresh the
-	// preview so what's on screen tracks what's on disk.
+	// A Word-side save (or a landed parked edit/resolve) bumps lastSavedMs —
+	// refresh so what's on screen tracks what's on disk.
 	const lastSavedMs = status?.lastSavedMs;
 	useEffect(() => {
 		if (lastSavedMs == null) return;
@@ -85,54 +114,274 @@ export function DraftPanel({
 
 	return (
 		<div className="flex h-full flex-col bg-background">
-			{editable && <DraftStatusBar filename={filename} status={status} />}
-			<div className="min-h-0 flex-1 overflow-auto px-6 py-8 text-foreground">
-				<div className="mx-auto max-w-3xl text-sm">
-					{doc.paragraphs.every((p) => !paragraphHasText(p)) ? (
-						<p className="text-muted-foreground">
-							This document is empty — ask Patrick to start drafting, or open it
-							in Word.
-						</p>
-					) : (
-						doc.paragraphs.map((p) =>
-							paragraphHasText(p) ? (
-								<p
-									key={p.index}
-									className={cn(
-										"mt-3 leading-relaxed",
-										p.hasRevisions &&
-											"-ml-3 border-l-2 border-l-primary/60 pl-3",
-									)}
-								>
-									{/* Pending redlines render as real marks; accept/reject
-									    still happens in Word's review pane. */}
-									{renderRuns(p.runs)}
-								</p>
-							) : null,
-						)
-					)}
-				</div>
+			{editable && (
+				<DraftStatusBar
+					filename={filename}
+					status={status}
+					mode={mode}
+					onModeChange={setMode}
+				/>
+			)}
+			<div className="min-h-0 flex-1 overflow-auto">
+				{editable && mode === "review" ? (
+					<ReviewView
+						filename={filename}
+						paragraphs={doc.paragraphs}
+						comments={doc.comments}
+						status={status}
+					/>
+				) : (
+					<DocumentView paragraphs={doc.paragraphs} />
+				)}
 			</div>
 		</div>
 	);
 }
 
-function paragraphHasText(p: {
-	runs: { text: string; kind: string }[];
-}): boolean {
+// --- Review mode: only the changed / commented paragraphs, as cards ---------
+
+function ReviewView({
+	filename,
+	paragraphs,
+	comments,
+	status,
+}: {
+	filename: string;
+	paragraphs: DocxParagraph[];
+	comments: DraftComment[];
+	status: DraftStatus | undefined;
+}) {
+	const { activeTaskId } = useActiveTask();
+	const queryClient = useQueryClient();
+
+	const commentsByPara = useMemo(() => {
+		const map = new Map<number, DraftComment[]>();
+		for (const c of comments) {
+			const key = c.paragraphIndex ?? 0;
+			const list = map.get(key) ?? [];
+			list.push(c);
+			map.set(key, list);
+		}
+		return map;
+	}, [comments]);
+
+	const [error, setError] = useState<string | null>(null);
+
+	// Paragraphs the reviewer cares about: a pending redline, or a comment.
+	const items = paragraphs.filter(
+		(p) => p.hasRevisions || commentsByPara.has(p.index),
+	);
+	// Comments whose anchor couldn't be placed (paragraphIndex undefined → key 0)
+	// still surface, in a trailing section — never silently dropped.
+	const unanchored = commentsByPara.get(0) ?? [];
+
+	// Paragraphs with a resolve waiting for the draft to close — read structurally
+	// from the parked op, not by regexing its display summary.
+	const queued = useMemo(() => {
+		const s = new Set<number>();
+		for (const op of status?.parkedOps ?? [])
+			if (op.kind === "resolve" && op.paragraphIndex != null)
+				s.add(op.paragraphIndex);
+		return s;
+	}, [status?.parkedOps]);
+
+	const resolve = useMutation({
+		mutationFn: ({
+			paragraph,
+			action,
+		}: {
+			paragraph: DocxParagraph;
+			action: "accept" | "reject";
+		}) =>
+			tasksApi.resolveDraft(
+				activeTaskId ?? "",
+				filename,
+				paragraph.index,
+				action,
+				acceptedText(paragraph),
+			),
+		onSuccess: (outcome) => {
+			setError(outcome.status === "failed" ? outcome.reason : null);
+		},
+		onError: () => setError("Couldn't apply that — please try again."),
+		onSettled: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["tasks", activeTaskId, "docx-text", filename],
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["tasks", activeTaskId, "draft-status", filename],
+			});
+		},
+	});
+
+	if (items.length === 0 && unanchored.length === 0)
+		return (
+			<div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground text-sm">
+				<Check className="size-5 text-emerald-500" />
+				<p>
+					No pending changes. Ask Patrick to draft or amend, and its tracked
+					changes will appear here to review.
+				</p>
+			</div>
+		);
+
+	return (
+		<div className="mx-auto max-w-3xl space-y-3 px-4 py-6">
+			{error && (
+				<div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-xs">
+					{error}
+				</div>
+			)}
+			{items.map((p) => (
+				<ChangeCard
+					key={p.index}
+					paragraph={p}
+					comments={commentsByPara.get(p.index) ?? []}
+					queued={queued.has(p.index)}
+					busy={resolve.isPending}
+					onAccept={() => resolve.mutate({ paragraph: p, action: "accept" })}
+					onReject={() => resolve.mutate({ paragraph: p, action: "reject" })}
+				/>
+			))}
+			{unanchored.length > 0 && (
+				<div className="rounded-lg border bg-card">
+					<div className="border-b px-3 py-1.5 text-muted-foreground text-xs">
+						Comments (not anchored to a paragraph)
+					</div>
+					{unanchored.map((c) => (
+						<CommentRow key={c.id} comment={c} />
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function ChangeCard({
+	paragraph,
+	comments,
+	queued,
+	busy,
+	onAccept,
+	onReject,
+}: {
+	paragraph: DocxParagraph;
+	comments: DraftComment[];
+	queued: boolean;
+	busy: boolean;
+	onAccept: () => void;
+	onReject: () => void;
+}) {
+	return (
+		<div className="rounded-lg border bg-card">
+			<div className="flex items-center gap-2 border-b px-3 py-1.5">
+				<Badge variant="outline" className="font-mono text-[10px]">
+					¶{paragraph.index}
+				</Badge>
+				{queued && (
+					<Badge variant="secondary" className="text-[10px]">
+						queued — close the draft in Word to apply
+					</Badge>
+				)}
+				{/* A tracked change that isn't Patrick's own can only be resolved in
+				    Word — offer no in-app buttons that would silently no-op. */}
+				{paragraph.hasRevisions && !paragraph.resolvable && (
+					<span className="text-muted-foreground text-[10px]">
+						tracked change — accept/reject in Word
+					</span>
+				)}
+				<span className="flex-1" />
+				{paragraph.resolvable && !queued && (
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-7 gap-1 text-emerald-600 text-xs hover:text-emerald-600"
+							disabled={busy}
+							onClick={onAccept}
+						>
+							<Check className="size-3.5" /> Accept
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-7 gap-1 text-muted-foreground text-xs"
+							disabled={busy}
+							onClick={onReject}
+						>
+							<Undo2 className="size-3.5" /> Reject
+						</Button>
+					</div>
+				)}
+			</div>
+			<p className="px-3 py-2.5 text-sm leading-relaxed">
+				{renderRuns(paragraph.runs)}
+			</p>
+			{comments.map((c) => (
+				<CommentRow key={c.id} comment={c} />
+			))}
+		</div>
+	);
+}
+
+function CommentRow({ comment }: { comment: DraftComment }) {
+	return (
+		<div className="flex items-start gap-2 border-t bg-muted/30 px-3 py-2 text-muted-foreground text-xs">
+			<MessageSquareText className="mt-0.5 size-3.5 shrink-0" />
+			<span>
+				<span className="font-medium text-foreground">{comment.author}</span>:{" "}
+				{comment.text}
+			</span>
+		</div>
+	);
+}
+
+// --- Document mode: the whole draft as plain text with redline marks --------
+
+function DocumentView({ paragraphs }: { paragraphs: DocxParagraph[] }) {
+	if (paragraphs.every((p) => !paragraphHasText(p)))
+		return (
+			<div className="mx-auto max-w-3xl px-6 py-8 text-muted-foreground text-sm">
+				This document is empty — ask Patrick to start drafting, or open it in
+				Word.
+			</div>
+		);
+	return (
+		<div className="mx-auto max-w-3xl px-6 py-8 text-foreground text-sm">
+			{paragraphs.map((p) =>
+				paragraphHasText(p) ? (
+					<p
+						key={p.index}
+						className={cn(
+							"mt-3 leading-relaxed",
+							p.hasRevisions && "-ml-3 border-l-2 border-l-primary/60 pl-3",
+						)}
+					>
+						{renderRuns(p.runs)}
+					</p>
+				) : null,
+			)}
+		</div>
+	);
+}
+
+function paragraphHasText(p: { runs: { text: string }[] }): boolean {
 	return p.runs.some((r) => r.text.trim());
 }
 
 // Keys derive from each run's kind + character offset — stable for a given
 // fetched paragraph, no array-index keys.
-function renderRuns(runs: { text: string; kind: "text" | "ins" | "del" }[]) {
+function renderRuns(runs: DocxRun[]) {
 	let offset = 0;
 	return runs.map((r) => {
 		const key = `${r.kind}@${offset}`;
 		offset += r.text.length;
 		if (r.kind === "ins")
 			return (
-				<ins key={key} className="text-primary decoration-primary/60">
+				<ins
+					key={key}
+					className="text-primary no-underline decoration-primary/60"
+				>
 					{r.text}
 				</ins>
 			);
@@ -149,9 +398,13 @@ function renderRuns(runs: { text: string; kind: "text" | "ins" | "del" }[]) {
 function DraftStatusBar({
 	filename,
 	status,
+	mode,
+	onModeChange,
 }: {
 	filename: string;
 	status: DraftStatus | undefined;
+	mode: "review" | "document";
+	onModeChange: (m: "review" | "document") => void;
 }) {
 	const { activeTaskId } = useActiveTask();
 	const queryClient = useQueryClient();
@@ -170,11 +423,24 @@ function DraftStatusBar({
 					/>
 					{open
 						? parked > 0
-							? `Open in Word — ${parked} edit${parked === 1 ? "" : "s"} waiting (close it and they'll appear)`
-							: "Open in Word — Patrick will apply edits when you close it"
+							? `Open in Word — ${parked} change${parked === 1 ? "" : "s"} waiting (close it and they'll apply)`
+							: "Open in Word — Patrick will apply changes when you close it"
 						: "Closed — Patrick can edit right now"}
 				</span>
 				<span className="flex-1" />
+				<ToggleGroup
+					type="single"
+					size="sm"
+					value={mode}
+					onValueChange={(v) => v && onModeChange(v as "review" | "document")}
+				>
+					<ToggleGroupItem value="review" className="h-7 px-2 text-xs">
+						Review
+					</ToggleGroupItem>
+					<ToggleGroupItem value="document" className="h-7 px-2 text-xs">
+						Document
+					</ToggleGroupItem>
+				</ToggleGroup>
 				<Button
 					variant="outline"
 					size="sm"
@@ -203,7 +469,7 @@ function DraftStatusBar({
 					<span className="min-w-0 flex-1">
 						{status?.failures.map((f) => (
 							<span key={f} className="block truncate">
-								A parked edit couldn't be applied: {f}
+								A parked change couldn't be applied: {f}
 							</span>
 						))}
 					</span>

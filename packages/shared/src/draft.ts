@@ -25,6 +25,8 @@ export type DraftComment = {
 	id: string;
 	author: string;
 	text: string;
+	/** 1-based paragraph the comment is anchored in (0 = unanchored/unknown). */
+	paragraphIndex?: number;
 };
 
 /**
@@ -39,6 +41,14 @@ export type DraftStatus = {
 	openInEditor: boolean;
 	/** Redlines/comments computed but waiting for the draft to be closed. */
 	parkedEdits: number;
+	/** What's waiting — one summary per parked op, so the panel can show
+	 *  "queued, close the doc to apply" against the affected change.
+	 *  `paragraphIndex` is set on resolve ops so the UI matches them structurally. */
+	parkedOps: {
+		kind: "redline" | "comment" | "resolve";
+		summary: string;
+		paragraphIndex?: number;
+	}[];
 	/** mtime of the draft file (ms), null when it doesn't exist. */
 	lastSavedMs: number | null;
 	/** Non-Patrick comments in the draft that mention @Patrick. */

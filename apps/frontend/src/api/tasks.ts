@@ -6,6 +6,7 @@ import type {
 	ClaimLimitation,
 	Document,
 	DocumentMeta,
+	DraftComment,
 	DraftStatus,
 	ExtractedDoc,
 	LimitationRead,
@@ -148,6 +149,12 @@ export const tasksApi = {
 			`/tasks/${id}/documents/${encodeURIComponent(filename)}/unlock`,
 			{},
 		),
+	/** Re-lock an unlocked original — back to read-only. */
+	relockDocument: (id: string, filename: string) =>
+		api.post<{ ok: boolean }>(
+			`/tasks/${id}/documents/${encodeURIComponent(filename)}/relock`,
+			{},
+		),
 	/** Rename a Patrick-owned doc; returns the (possibly deduped) new filename. */
 	renameDocument: (id: string, from: string, to: string) =>
 		api.post<{ filename: string }>(
@@ -170,15 +177,42 @@ export const tasksApi = {
 			`/tasks/${id}/documents/${encodeURIComponent(filename)}/draft-status/clear-failures`,
 			{},
 		),
-	/** A .docx as paragraphs-of-runs, pending redlines marked ins/del — the preview. */
+	/** A .docx as paragraphs-of-runs (each run carrying its revision id + author)
+	 *  plus its comments — the review view's single fetch. `resolvable` marks a
+	 *  paragraph that carries Patrick's own redline (accept/reject-able in-app). */
 	docxText: (id: string, filename: string) =>
 		api.get<{
 			paragraphs: {
 				index: number;
-				runs: { text: string; kind: "text" | "ins" | "del" }[];
+				runs: {
+					text: string;
+					kind: "text" | "ins" | "del";
+					revisionId?: number;
+					author?: string;
+				}[];
 				hasRevisions: boolean;
+				resolvable: boolean;
 			}[];
+			comments: DraftComment[];
 		}>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/docx-text`),
+	/** Accept or reject Patrick's redline in one paragraph, in place.
+	 *  expectedText content-addresses the paragraph (indices shift on disk). */
+	resolveDraft: (
+		id: string,
+		filename: string,
+		paragraphIndex: number,
+		action: "accept" | "reject",
+		expectedText: string,
+	) =>
+		api.post<
+			| { status: "applied" }
+			| { status: "parked"; parkedEdits: number }
+			| { status: "failed"; reason: string }
+		>(`/tasks/${id}/documents/${encodeURIComponent(filename)}/resolve`, {
+			paragraphIndex,
+			action,
+			expectedText,
+		}),
 	/** Open a document in its native app (Word/LibreOffice) on the attorney's machine. */
 	openDocument: (id: string, filename: string) =>
 		api.post<{ ok: boolean }>(
